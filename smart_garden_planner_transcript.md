@@ -14,7 +14,7 @@ This archive compiles the chronological engineering analysis, stress tests, logi
 ### B. Hardware Processing & Sensor-Primary Mapping
 * **The Translation Matrix:** Rather than utilizing an arbitrary grid mapping tool, touch-screen interactions map coordinates directly to real-world dimensions using a pixel-to-meter aspect ratio derived from physical user entries.
 * **The IMU Measuring Tool:** To allow users to measure distances in the field without tape measures, the system runs a double-integration algorithm on raw linear acceleration vectors captured via device accelerometers and gyroscopes.
-* **Perspective Distortion Protection:** To protect the double-integration math from being corrupted by physical tilt or swaying out in the patch, the app continuously monitors device pitch and roll rotation vectors. If the phone skews more than \pm 5^\circ away from the flat baseline calibration plane, active distance calculations are instantly invalidated.
+* **Perspective Distortion Protection:** To protect the double-integration math from being corrupted by physical tilt or swaying out in the patch, the app continuously monitors device pitch and roll rotation vectors. If the phone skews more than 5° away from the flat baseline calibration plane, active distance calculations are instantly invalidated.
 * **Fiducial Anchor Matrix (Optional Corner Flags):** To combat natural hardware sensor drift over wide spaces, users can choose to place colored markers (e.g., flags or sticks) at the real-world corners of their plot. They map corresponding digital pins on screen over these flags. The app uses this polygon bounding box as an anchor layout, stretching or squaring the canvas boundaries to compensate for sensor deviations while keeping sensor math running inside.
 
 ### C. The Germination Failure "Plan B" Contingency Engine
@@ -44,7 +44,7 @@ This archive compiles the chronological engineering analysis, stress tests, logi
 ### A. Subsystem 1 (Sensors & Image Processing) Implementation Logic
 * **Hardware Camera Integration:** Configures standard `CameraX` pipelines targeting a rigid downscaling routine forcing a fixed height constraint of exactly 1080 pixels while ensuring non-volatile application memory caps are managed via explicit `StatFs` space tracking blocks before activation.
 * **Inertial Measurement Double Integration:** Enforces a raw integration matrix calculation loop capturing high-frequency linear acceleration variations, subtracting system bias vectors tracking static offsets calculated inside a 3-second pre-capture loop initialization block.
-* **Rotational Constraints:** Monitors orientation rotation parameters directly via `SensorManager` transformation utilities. If device orientation skews past a tight \pm 5^\circ operational variance window relative to the primary sensor baseline, calculations discard the active dataset and drop into a state re-calibration loop layout mode.
+* **Rotational Constraints:** Monitors orientation rotation parameters directly via `SensorManager` transformation utilities. If device orientation skews past a tight 5° operational variance window relative to the primary sensor baseline, calculations discard the active dataset and drop into a state re-calibration loop layout mode.
 
 ### B. Subsystem 2 (Local Database & Crop Intelligence) Implementation Logic
 * **Relational SQLite Mapping:** Establishes data layers descending directly from modern Room library structural components configured with explicit `WRITE_AHEAD_LOGGING` processing hooks.

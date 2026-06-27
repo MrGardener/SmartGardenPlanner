@@ -10,6 +10,9 @@ MASTER MASTER PLAN: SMART GARDEN PLANNER
   complete, updated Master Plan at the beginning of every single response in this project.
 - VERSIONING DIRECTIVE [PERMANENT]: The AI collaborator must increment and display 
   the active version number in the header block of the Master Plan with every single iteration.
+- EXIT PROTOCOL COMMAND TRIGGER [NEW]: Upon interception of the explicit user phrase 
+  "I am done for today" (or equivalent variants), the AI shall automatically activate File 3 
+  (Automated Handoff) and generate all system files completely with zero truncated placeholders.
 
 2. REQUIREMENTS HIERARCHY STRUCTURING
 - T1 Level: Customer-Specific Adaptation Requirements (Reserved for future clients).
@@ -198,7 +201,7 @@ T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - FULLY SEAL
 [HLR-UI-100] The location configuration view controller shall capture input sequences and validate them against active database lookup tables; if an entry returns a null entity reference, the layout engine shall block save transitions and surface an unrecognized-parameter error notification.
 
 ================================================================================
-T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - ATOMIC 3:1 DECOMPOSITION)
+T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION)
 ================================================================================
 --- SUBSYSTEM 1 LLRs (SENSORS & IMAGE PROCESSING) ---
 [LLR-SEN-010-A] Query active Android WindowManager configuration metrics to capture screen dimensions.
