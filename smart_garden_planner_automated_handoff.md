@@ -18,7 +18,7 @@ Immediately following the file print dumps, the system shall append the followin
 > Your daily tracking generation is compiled above. Save these text structures locally to overwrite your workspace files. To secure your compliance trail before you shut down for the day, copy and paste the terminal tracking commands below into your offline repository environment:
 > 
 > ```bash
-> git add smart_garden_planner_master_plan.md smart_garden_planner_transcript.md smart_garden_planner_automated_handoff.md
-> git commit -m "Sealed version development footprint v20.16"
+> git add smart_garden_planner_master_plan.md smart_garden_planner_transcript.md smart_garden_planner_automated_handoff.md session_restart_prompt.txt
+> git commit -m "Sealed version development footprint v20.17"
 > git push
 > ```
