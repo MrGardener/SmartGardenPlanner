@@ -6,13 +6,17 @@ MASTER MASTER PLAN: SMART GARDEN PLANNER
 - Core Concept: Offline Android app for garden plot imagery mapping, sensor-based 
   distance estimation, automated seed spacing/germination tracking, and irrigation layout design.
 - Lifecycle Rigor: ARP4754A and DO-178C requirements-driven development.
-- MANDATORY OPERATIONAL DIRECTIVE [PERMANENT]: The AI collaborator must output the 
-  complete, updated Master Plan at the beginning of every single response in this project.
+- MODIFIED OPERATIONAL DIRECTIVE [UPDATE V20.14]: To preserve token efficiency and 
+  streamline the technical iteration workspace, the AI collaborator is no longer required 
+  to print the Master Plan or Transcript file at the beginning of every response. Instead, 
+  the complete, uncut Master Plan and Transcript files shall be bundled and delivered exclusively 
+  upon session initialization (restart) and session termination (handoff/exit protocol triggers).
 - VERSIONING DIRECTIVE [PERMANENT]: The AI collaborator must increment and display 
   the active version number in the header block of the Master Plan with every single iteration.
-- EXIT PROTOCOL COMMAND TRIGGER [NEW]: Upon interception of the explicit user phrase 
-  "I am done for today" (or equivalent variants), the AI shall automatically activate File 3 
-  (Automated Handoff) and generate all system files completely with zero truncated placeholders.
+- EXIT PROTOCOL COMMAND TRIGGER [PERMANENT]: Upon interception of the explicit user phrase 
+  "I am done for today", "save files", or equivalent variants requesting the final versions of files 
+  for local serialization, the AI shall automatically activate File 3 (Automated Handoff) and generate 
+  all system files completely with zero truncated placeholders.
 
 2. REQUIREMENTS HIERARCHY STRUCTURING
 - T1 Level: Customer-Specific Adaptation Requirements (Reserved for future clients).
@@ -29,33 +33,22 @@ MASTER MASTER PLAN: SMART GARDEN PLANNER
 - [EVAL-06]: Sensor-Primary Hybrid Anchor Matrix (Optional Visual Fiducial Corner Flares).
 
 4. CURRENT LIFE CYCLE STEP & NEXT TASKS
-- Status: SYSTEM COMPILING PHASE — Monolithic Uncut Master Plan Assembly Phase.
+- Status: WORKSPACE MAINTENANCE COMPLETED — Governance Framework Updated to v20.14.
 - Next Up: Codebase Template Generation or Formal Verification Test Verification.
 
 ================================================================================
-T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - FULLY SEALED)
+T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - UPDATE V20.11)
 ================================================================================
-[T2-FUN-010] The system shall capture a digital image of a planting zone (pot or field) 
-             using the device’s native hardware camera.
-[T2-FUN-020] The system shall allow the user to input the physical dimensions of the 
-             captured planting zone to establish a spatial scale.
-[T2-FUN-025] The system shall provide a local measuring tool utilizing onboard device 
-             sensors to estimate physical distances or dimensions post-capture.
-[T2-FUN-030] The system shall allow the user to log the type of seed planted and the 
-             exact date it was planted.
-[T2-FUN-040] The system shall record and visually display where seeds are organized 
-             and planted within the captured zone.
-[T2-FUN-050] The system shall calculate and display the correct physical spacing required 
-             between seeds during layout planning.
-[T2-FUN-060] The system shall calculate and overlay an optimized layout grid for irrigation 
-             (drip lines, hoses, or sprinklers) across the field image.
-[T2-FUN-070] The system shall provide capabilities to Update and Delete/Archive 
-             previously recorded plots and seed nodes.
-[T2-FUN-080] The system shall evaluate germination status based on elapsed time and 
-             present a comprehensive suite of concurrent agricultural contingency options 
-             ("Plan B") upon a user-declared germination failure.
-[T2-FUN-090] The system shall allow the user to input a location parameter (ZIP code or 
-             geographic coordinates) associated with the planting zone.
+[T2-FUN-010] The system shall capture a digital image of a planting zone (pot or field) using the device’s native hardware camera.
+[T2-FUN-020] The system shall allow the user to input the physical dimensions of the captured planting zone to establish a spatial scale.
+[T2-FUN-025] The system shall provide a local measuring tool utilizing onboard device sensors to estimate physical distances or dimensions post-capture.
+[T2-FUN-030] The system shall allow the user to log the type of seed planted and the exact date it was planted.
+[T2-FUN-040] The system shall record and visually display where seeds are organized and planted within the captured zone.
+[T2-FUN-050] The system shall calculate and display the correct physical spacing required between seeds during layout planning.
+[T2-FUN-060] The system shall calculate and overlay an optimized layout grid for irrigation (drip lines, hoses, or sprinklers) across the field image.
+[T2-FUN-070] The system shall provide capabilities to Update and Delete/Archive previously recorded plots and seed nodes.
+[T2-FUN-080] The system shall evaluate germination status based on elapsed time and present a comprehensive suite of concurrent agricultural contingency options ("Plan B") upon a user-declared germination failure.
+[T2-FUN-090] The system shall allow the user to input a location parameter (ZIP code or geographic coordinates) associated with the planting zone.
 
 [T2-DAT-010] The system shall calculate and display target harvest dates based on the planting date.
 [T2-DAT-020] The system shall identify and display possible pests that may attack the specific plants selected.
@@ -67,78 +60,46 @@ T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - FULLY SEALED)
              - C: Soil coverage status (Covered vs. Uncovered).
              - D: Germination watering intensity (Light vs. Heavy watering).
              - E: Target planting depth.
-[T2-DAT-060] The system shall provide an interface for the user to create, read, update, 
-             and delete custom seed profiles within the local data repository.
-[T2-DAT-070] The system shall compute and present concurrent fallback pathways (including 
-             shorter-season varieties, transplant methodologies, and alternative catch-crops) 
-             by recalculating the remaining seasonal timeline against the local botanical matrix.
-[T2-DAT-080] The system shall maintain an offline climatic database mapping location 
-             parameters to USDA Plant Hardiness Zones and historical frost-date models.
-[T2-DAT-090] The system shall cross-reference the local climatic constants against the 
-             botanical dictionary to calculate optimal seasonal planting windows.
-[T2-DAT-100] The system shall extract historical growing season windows from local datasets 
-             and recommend crop varieties dynamically optimized for the localized climate profile.
+[T2-DAT-060] The system shall provide an interface for the user to create, read, update, and delete custom seed profiles within the local data repository.
+[T2-DAT-065] Custom seed profile creation interfaces shall enforce the assignment of a broad, pre-defined botanical family reference to anchor default fallback contingency behaviors.
+[T2-DAT-070] The system shall compute and present concurrent fallback pathways (including shorter-season varieties, transplant methodologies, and alternative catch-crops) by recalculating the remaining seasonal timeline against the local botanical matrix.
+[T2-DAT-080] The system shall maintain an offline climatic database mapping location parameters to USDA Plant Hardiness Zones and historical frost-date models.
+[T2-DAT-090] The system shall cross-reference the local climatic constants against the botanical dictionary to calculate optimal seasonal planting windows.
+[T2-DAT-100] The system shall extract historical growing season windows from local datasets and recommend crop varieties dynamically optimized for the localized climate profile.
 
-[T2-CON-010] The system shall execute all data storage, calculations, and image processing 
-             locally on the device with zero network dependencies.
-[T2-CON-020] The system shall strictly omit any history tracking, telemetry, or analytics 
-             SDKs (including Google Analytics).
-[T2-CON-030] The system shall persist all application states and configurations into 
-             non-volatile local storage on any state change transaction.
-[T2-CON-040] The system shall downscale and compress captured image data prior to 
-             non-volatile storage serialization to enforce a hard maximum storage cap.
+[T2-CON-010] The system shall execute all data storage, calculations, and image processing locally on the device with zero network dependencies.
+[T2-CON-020] The system shall strictly omit any history tracking, telemetry, or analytics SDKs (including Google Analytics).
+[T2-CON-030] The system shall persist all application states and configurations into non-volatile local storage on any state change transaction.
+[T2-CON-040] The system shall downscale and compress captured image data prior to non-volatile storage serialization to enforce a hard maximum storage cap.
 
-[T2-VAL-010] The system shall prevent the layout configuration from saving if the 
-             spatial scale fields (length or width) are unpopulated or set to zero.
-[T2-VAL-015] The system shall validate user-entered dimensions against a predefined 
-             operational threshold and trigger a confirmation prompt if values are 
-             unrealistically small or large.
-[T2-VAL-020] The system shall validate user-entered seed node coordinates to ensure they 
-             fall strictly within the boundaries of the defined layout image.
-[T2-VAL-030] The system shall provide a single-step "Undo" and "Redo" buffer for active 
-             seed node placement manipulations on the canvas screen.
+[T2-VAL-010] The system shall prevent the layout configuration from saving if the spatial scale fields (length or width) are unpopulated or set to zero.
+[T2-VAL-012] The system shall clear all active canvas seed node placements and require a layout reset if the user changes the configuration scale engine source type post-initialization.
+[T2-VAL-015] The system shall validate user-entered dimensions against a predefined operational threshold and trigger a confirmation prompt if values are unrealistically small or large.
+[T2-VAL-017] The system shall reject updates to a plot's physical scale dimensions if the modification recomputes existing node pin coordinates to lie outside the newly bound layout boundary.
+[T2-VAL-020] The system shall validate user-entered seed node coordinates to ensure they fall strictly within the boundaries of the defined layout image.
+[T2-VAL-030] The system shall provide a single-step "Undo" and "Redo" buffer for active seed node placement manipulations on the canvas screen.
 
-[T2-ENV-010] The system shall lock the application orientation to a specific user-chosen 
-             mode (e.g., Portrait) during active canvas plotting to prevent coordinate recalculation errors.
-[T2-ENV-020] The system shall serialize temporary session state variables during Android 
-             onPause/onStop lifecycle interruptions to prevent current transactional data loss.
-[T2-ENV-030] The system shall continuously evaluate ambient device light sensors post-camera 
-             activation and present a low-lux warning UI if illumination levels threaten 
-             image-processing fidelity.
+[T2-ENV-010] The system shall lock the application orientation to a specific user-chosen mode (e.g., Portrait) during active canvas plotting to prevent coordinate recalculation errors.
+[T2-ENV-020] The system shall serialize temporary session state variables during Android onPause/onStop lifecycle interruptions to prevent current transactional data loss.
+[T2-ENV-025] The localization data processor shall reject automated device geographic coordinate readings failing to satisfy a maximum horizontal uncertainty limit of +/- 15 meters.
+[T2-ENV-030] The system shall continuously evaluate ambient device light sensors post-camera activation and present a low-lux warning UI if illumination levels threaten image-processing fidelity.
 
-[T2-INT-010] If a user alters the global spatial dimensions of a plot, the system shall 
-             automatically recalculate and update all existing seed nodes' physical 
-             spacing overlays based on the updated scale.
-[T2-INT-020] If a user changes the global "Planting Date," the system shall recalculate 
-             and update all derived dependent attributes (germination thresholds, target harvest dates).
-[T2-INT-030] The system shall continuously monitor spatial coordinates of seed nodes and 
-             trigger a visual conflict warning if a newly designated node violates the botanical 
-             exclusion zone (companion planting restriction) of an adjacent node.
-[T2-INT-040] The system shall generate an inverse graphical overlay ("Weed Control Mask") 
-             defining all coordinate matrices outside the active seed and spacing areas as 
-             unplanted/clearance target zones.
+[T2-INT-010] If a user alters the global spatial dimensions of a plot, the system shall automatically recalculate and update all existing seed nodes' physical spacing overlays based on the updated scale.
+[T2-INT-020] If a user changes the global "Planting Date," the system shall recalculate and update all derived dependent attributes (germination thresholds, target harvest dates).
+[T2-INT-030] The system shall continuously monitor spatial coordinates of seed nodes and trigger a visual conflict warning if a newly designated node violates the botanical exclusion zone (companion planting restriction) of an adjacent node.
+[T2-INT-040] The system shall generate an inverse graphical overlay ("Weed Control Mask") defining all coordinate matrices outside the active seed and spacing areas as unplanted/clearance target zones.
 
-[T2-PRE-010] The system shall require a sensor calibration routine (e.g., planar reference step) 
-             before generating measurement data from the onboard IMU/camera framework.
-[T2-PRE-020] The system shall display estimated dimensions with an explicit tolerance 
-             margin indication (e.g., +/- X cm) based on sensor accuracy readings.
-[T2-PRE-030] The system shall maintain raw IMU sensor alignment calculations as the 
-             primary coordinate tracking matrix.
-[T2-PRE-040] The system shall provide an optional interface allowing the user to map visual 
-             fiducial indicators (colorful flags) at boundary thresholds (corners) to bound 
-             and correct coordinate positioning drift on the visual canvas matrix.
+[T2-PRE-010] The system shall require a sensor calibration routine (e.g., planar reference step) before generating measurement data from the onboard IMU/camera framework.
+[T2-PRE-020] The system shall display estimated dimensions with an explicit tolerance margin indication (e.g., +/- X cm) based on sensor accuracy readings.
+[T2-PRE-030] The system shall maintain raw IMU sensor alignment calculations as the primary coordinate tracking matrix.
+[T2-PRE-040] The system shall provide an optional interface allowing the user to map visual fiducial indicators (colorful flags) at boundary thresholds (corners) to bound and correct coordinate positioning drift on the visual canvas matrix.
 
-[T2-ERR-010] Upon detection of an unrecoverable database read/write exception, the system 
-             shall terminate the active action safely and display a descriptive local error message.
-[T2-ERR-020] Upon reaching 95% of allocated local application storage capacity, the system 
-             shall generate a system warning and prohibit new image captures until space is cleared.
-[T2-ERR-030] If the local image transformation process exceeds the available JVM memory heap 
-             allocation during spatial scaling, the system shall safely terminate the transform layer 
-             and fall back to displaying the raw, un-overlayed plot image rather than triggering 
-             an OutOfMemory runtime crash.
+[T2-ERR-010] Upon detection of an unrecoverable database read/write exception, the system shall terminate the active action safely and display a descriptive local error message.
+[T2-ERR-020] Upon reaching 95% of allocated local application storage capacity, the system shall generate a system warning and prohibit new image captures until space is cleared.
+[T2-ERR-030] If the local image transformation process exceeds the available JVM memory heap allocation during spatial scaling, the system shall safely terminate the transform layer and fall back to displaying the raw, un-overlayed plot image rather than triggering an OutOfMemory runtime crash.
 
 ================================================================================
-T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - FULLY SEALED)
+T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - UPDATE V20.12)
 ================================================================================
 --- SUBSYSTEM 1: SENSORS & IMAGE PROCESSING ---
 [HLR-SEN-010] Interface with Android CameraX API core pipeline to establish a local preview lifecycle.
@@ -171,22 +132,14 @@ T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - FULLY SEAL
 [HLR-DAT-100] Render an optimized physical drip irrigation routing path grid across interactive coordinate arrays.
 [HLR-DAT-110] Configure foreign-key constraint triggers with strict ON DELETE CASCADE configuration parameters.
 [HLR-DAT-120] Reject custom profile database insertions failing string-type validations or integer field integrity.
-[HLR-DAT-130] The database shall maintain a static lookup entity (`ClimaticZipZones`) mapping unique ZIP code 
-              strings to USDA Plant Hardiness Zone integers and median first/last frost timestamps.
-[HLR-DAT-140] The database shall maintain a static geospatial entity (`ClimaticGeoZones`) storing localized 
-              bounding box matrices (Latitude/Longitude thresholds with standard geographic tolerances) 
-              mapping coordinate points to corresponding Hardiness Zone metrics.
-[HLR-DAT-150] The timeline calculator shall intercept climate zone data from active tables and discard 
-              any crop variety or contingency option whose calculated maturation date extends beyond 
-              the local historical first-frost date threshold.
-[HLR-DAT-160] Construct a unified query structure that extracts the target crop record’s companion fields, 
-              watering strategies, pest warning matrices, and germination profiles whenever a localized 
-              node interaction event is intercepted on the visual layout canvas.
-[HLR-DAT-170] The node creation entry transaction shall automatically extract the host system's hardware clock 
-              timestamp to populate the base date_planted table row, unless an explicit override array is received.
-[HLR-DAT-180] Execute a conversion algorithm mapping pixel resolution dimension limits (W_px, H_px) directly to 
-              the physical measurement parameters computed by the sensor matrix, establishing a dynamic layout 
-              ratio constraint for all seed spacing radius calculations.
+[HLR-DAT-130] The database shall maintain a static lookup entity (`ClimaticZipZones`) mapping unique ZIP code strings to USDA Plant Hardiness Zone integers and median first/last frost timestamps.
+[HLR-DAT-140] The database shall maintain a static geospatial entity (`ClimaticGeoZones`) storing localized bounding box matrices (Latitude/Longitude thresholds with standard geographic tolerances) mapping coordinate points to corresponding Hardiness Zone metrics.
+[HLR-DAT-150] The timeline calculator shall intercept climate zone data from active tables and discard any crop variety or contingency option whose calculated maturation date extends beyond the local historical first-frost date threshold.
+[HLR-DAT-160] Construct a unified query structure that extracts the target crop record’s companion fields, watering strategies, pest warning matrices, and germination profiles whenever a localized node interaction event is intercepted on the visual layout canvas.
+[HLR-DAT-170] The node creation entry transaction shall automatically extract the host system's hardware clock timestamp to populate the base date_planted table row, unless an explicit override array is received.
+[HLR-DAT-180] Execute a conversion algorithm mapping pixel resolution dimension limits (W_px, H_px) directly to the physical measurement parameters computed by the sensor matrix, establishing a dynamic layout ratio constraint for all seed spacing radius calculations.
+[HLR-DAT-190] Enforce a database table constraint on custom seed profiles requiring a valid foreign key reference to a fixed baseline botanical family schema record. [Tracks: T2-DAT-065]
+[HLR-DAT-200] Intercept hardware location updates and discard coordinate inputs if the structural Location object's horizontal accuracy radius value exceeds 15.0 meters. [Tracks: T2-ENV-025]
 
 --- SUBSYSTEM 3: USER INTERFACE, STATE CONTROL & INTER-PROCESS TRANSITIONS ---
 [HLR-UI-010] The software shall implement a single-Activity, multi-Fragment navigation architecture using the Android Jetpack Navigation Component.
@@ -199,9 +152,11 @@ T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - FULLY SEAL
 [HLR-UI-080] The navigation manager shall instantiate an active interception callback on native system exit events; if the working memory contains uncommitted changes, it shall pause routing loops and surface an exit-confirmation modal.
 [HLR-UI-090] The user interface framework shall display a non-interactive, modal calibration state overlay upon Canvas initialization, intercepting all touch inputs and blocking mapping operations until Subsystem 1 signals a successful calibration event match.
 [HLR-UI-100] The location configuration view controller shall capture input sequences and validate them against active database lookup tables; if an entry returns a null entity reference, the layout engine shall block save transitions and surface an unrecognized-parameter error notification.
+[HLR-UI-110] Intercept scale engine source switch actions within the plot creator UI framework, clearing the active transactional Node collection and throwing a modal reset state initialization command. [Tracks: T2-VAL-012]
+[HLR-UI-120] Intercept text input modifications to physical plot width or height bounds, validate all existing coordinate node coordinates against the re-projected boundary matrix, and block saving operations if any node coordinate intercepts a negative-space or out-of-bounds index. [Tracks: T2-VAL-017]
 
 ================================================================================
-T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION)
+T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.13)
 ================================================================================
 --- SUBSYSTEM 1 LLRs (SENSORS & IMAGE PROCESSING) ---
 [LLR-SEN-010-A] Query active Android WindowManager configuration metrics to capture screen dimensions.
@@ -332,6 +287,15 @@ T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION)
 [LLR-DAT-180-A] Read raw canvas display pixel parameters mapping width and height monitor vector states.
 [LLR-DAT-180-B] Interpolate coordinate pixel sets against real-world dimensions verified by IMU tracking tools.
 [LLR-DAT-180-C] Establish a definitive layout conversion scaling constraint guiding real-space drawing paths.
+[LLR-DAT-190-A] Append a `@ForeignKey` configuration block inside the local custom `SeedProfile` table entity definition structure.
+[LLR-DAT-190-B] Establish a strict mapping constraint linking the `parent_botanical_id` column to the immutable primary key index row of the static `BotanicalFamily` table.
+[LLR-DAT-190-C] Implement an input validation checkpoint routine within the custom seed profile execution DAO compiler intercepting raw entry attempts.
+[LLR-DAT-190-D] Throw a compilation structural exception if the insertion parameter payload maps an unindexed or null botanical identifier reference.
+[LLR-DAT-200-A] Implement a functional interception wrapper surrounding incoming hardware `android.location.Location` sensor data callbacks.
+[LLR-DAT-200-B] Call the standard hardware property extraction routine `Location.getHorizontalAccuracyMeters()` on incoming sensor instances.
+[LLR-DAT-200-C] Evaluate the returned floating-point metric value against an absolute functional ceiling constraint threshold of 15.0f meters.
+[LLR-DAT-200-D] Immediately discard the location object payload and drop downstream climate zone search requests if the accuracy index exceeds 15.0f meters.
+[LLR-DAT-200-E] Emit a specialized precision warning signal state up to the host application state tracking pipeline upon packet drops.
 
 --- SUBSYSTEM 3 LLRs (USER INTERFACE & NAVIGATION) ---
 [LLR-UI-010-A] Attach a high-level NavHostFragment element inside the baseline system layout window container.
@@ -364,4 +328,12 @@ T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION)
 [LLR-UI-100-A] Intercept manual location input string data parameters passed through input view frames.
 [LLR-UI-100-B] Query input parameters against static database lookup entities; check for null data references.
 [LLR-UI-100-C] Highlight components red, lock navigation routes, and raise visual error notification strings if empty.
-================================================================================
+[LLR-UI-110-A] Attach an explicit interaction state listener checking selection events on the Creator screen's scale engine selector configuration dropdown.
+[LLR-UI-110-B] Compare the newly chosen selection string source context index value against the currently persisted active memory configuration state.
+[LLR-UI-110-C] Fire a complete memory purge execution track clearing the current operational layout transactional node collection arrays if a configuration source shift is detected.
+[LLR-UI-110-D] Instantiate and render an un-dismissible modal structural alert component notifying the user of the layout tracking computation clear state.
+[LLR-UI-120-A] Attach real-time structural data monitoring text-watchers to physical canvas container dimension configuration interface fields.
+[LLR-UI-120-B] Intercept editing sequences and compute temporary spatial canvas transformation variables reflecting the newly requested dimensions layout.
+[LLR-UI-120-C] Iterate through all currently active placed layout node coordinate matrices, validating each point coordinate against the temporary projection canvas boundaries.
+[LLR-UI-120-D] Set the interface confirmation container command layout configuration parameter directly to state `isEnabled = false` if any placed pin intersects an out-of-bounds index.
+[LLR-UI-120-E] Surface a persistent, localized out-of-bounds warning layout layer highlighting the conflicting node positions across the visual matrix interface.

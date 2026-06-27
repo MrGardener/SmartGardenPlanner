@@ -20,4 +20,5 @@ Immediately following the file print dumps, the system shall append the followin
 > ```bash
 > git add smart_garden_planner_master_plan.md smart_garden_planner_transcript.md smart_garden_planner_automated_handoff.md
 > git commit -m "Sealed version development footprint v20.1"
+> git push
 > ```

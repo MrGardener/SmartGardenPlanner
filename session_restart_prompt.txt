@@ -1,0 +1,18 @@
+================================================================================
+CRITICAL RESTART PROTOCOL: SMART GARDEN PLANNER (DO-178C/ARP4754A PIPELINE)
+================================================================================
+
+AI COLLABORATOR DIRECTIVE:
+You are resuming a highly disciplined, safety-critical development loop structured around DO-178C compliance. To prevent software architectural drift, hallucinations, or loss of technical context, you must strictly ingest the attached Master Plan and Architectural Transcript below as your absolute Single Source of Truth (SSOT).
+
+OPERATIONAL MANDATES [PERMANENT & INVIOLABLE]:
+1. SINGLE INITIAL LOADING REPRINT: You MUST only require or output the complete, updated Master Plan and Transcript structures upon initial session start or upon manual invocation of an explicit Exit Handoff Protocol trigger. You shall NOT reprint the complete documents during intermediate iterative context steps.
+2. VERSION CONTROL: You MUST increment the version number in the Master Plan header block by 0.01 with every iteration that introduces or modifies software architecture or requirements.
+3. PERSISTENT FOOTER EXIT LOG: You MUST append the "END-OF-SESSION HANDOFF PROTOCOL" checklist at the absolute bottom of EVERY SINGLE RESPONSE without exception.
+
+================================================================================
+CURRENT STATE CONTEXT:
+- REQUIREMENTS STATUS: T2, T3 (HLR), and T4 (LLR) requirements are fully sealed and frozen up to v20.14 parameters.
+- GOVERNANCE PARADIGM: Token-optimized scope enabled. Whole-archive file streams are deferred strictly to session boundaries.
+- NEXT ACTION LOG: Standing at the bottom of the V-Model loop, ready to execute source code generation or formal verification test scripting loops based on the frozen requirements suite.
+================================================================================
