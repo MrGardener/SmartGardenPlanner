@@ -1,0 +1,21 @@
+============================================================
+MASTER PROJECT BRIEF: SMART GARDEN PLANNER (DO-178C/ARP4754A PROCESS)
+============================================================
+
+1. PROJECT OVERVIEW
+- Core Concept: An Android application for mapping garden plots via phone camera imagery, calculating optimal seed spacing, forecasting harvest cycles, and modeling irrigation grids.
+- Lifecycle Methodology: Strict requirements-driven development inspired by ARP4754A (System Level) and DO-178C (Software Level). 
+
+2. TECH STACK & PRIVACY RULES
+- Target Environment: Android OS.
+- Architectural Constraints: 100% Offline-First. Local database execution (no external cloud connections). Zero telemetric/analytic code hooks. 
+- Process Rigor: Bidirectional traceability from Customer Requirements -> High-Level Requirements (HLR) -> Low-Level Requirements (LLR) -> Source Code / Test Cases.
+
+3. ARCHITECTURAL IDEAS UNDER EVALUATION (PAUSED)
+- [EVAL-01]: Core 4-Screen Layout (Dashboard, Creator, Canvas, Encyclopedia).
+- [EVAL-02]: Direct finger-tap coordinate plotting over static local image matrix.
+
+4. CURRENT STEP & NEXT TASKS
+- Status: Transitioned to formal engineering lifecycle.
+- Next Up: Customer Requirements Document (CRD) baseline definition and review.
+============================================================

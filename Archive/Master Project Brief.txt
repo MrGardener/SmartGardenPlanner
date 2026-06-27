@@ -1,0 +1,34 @@
+Here is my local Master Project Brief. Read it and let's pick up right where we left off:
+============================================================
+MASTER PROJECT BRIEF: SMART GARDEN & IRRIGATION PLANNER
+============================================================
+
+1. PROJECT OVERVIEW
+- Core Concept: An Android app that allows users to photograph a physical garden plot/pot and map out exactly where seeds are planted. It calculates optimal spacing, schedules harvest dates, predicts pest challenges, suggests companion plants, and designs an irrigation overlay.
+- User Profile: Beginner to intermediate gardeners with zero coding experience who value absolute privacy.
+- Primary Platform: Android Mobile.
+
+2. TECH STACK & PRIVACY RULES
+- Development Tool: AI No-Code Platform (Manus AI / Thunkable).
+- Architecture: 100% Offline-First. 
+- Privacy Constraints: Zero data uploaded to the cloud. All image processing, photo storage, database entries, and planting maps must be processed locally on the physical Android device. No Google Analytics or third-party tracking allowed.
+
+3. CORE FEATURE REQUIREMENTS
+A. Visual Plot Mapping:
+   - User takes a photo of a field, pot, or garden bed.
+   - The app allows the user to digitally "drop pins" or draw grid lines over the photo to mark exactly where specific seeds were planted.
+B. Seed Intelligence Engine (Local Database):
+   - Calculates the correct spacing between seeds based on variety.
+   - Provides optimal germination temperatures and conditions.
+   - Automates calendar math: Logs the "Planted Date" and dynamically calculates the expected "Harvest Date."
+C. Horticultural Advisories:
+   - Companion Planting: Displays "friends" (plants that boost growth) and "foes" (plants to keep away).
+   - Pest Watch: Warns about common insects/diseases for that specific seed type.
+   - Care & Watering Guidelines: Outlines explicit watering strategies based on the crop type.
+D. Irrigation Layout Calculator:
+   - Calculates a visual grid overlay showing how to run drip lines, soaker hoses, or sprinklers efficiently across the photographed plot.
+
+4. CURRENT STEP & NEXT TASKS
+- Status: Project Initiated. System architecture and scope defined.
+- Next Up: Break down the visual screen flows and outline how the local seed database will work without internet access.
+============================================================
