@@ -1,0 +1,7 @@
+| ID | Category | Type | Description | Mitigation / Action |
+| :--- | :--- | :--- | :--- | :--- |
+| **RSK-01** | Hardware | Risk | Rapid IMU calculation divergence (drift) leading to incorrect spatial measurements. | **Mitigation:** Enforced 3-second static noise baseline calibration (HLR-SEN-060) and 5-degree rotational abort bounds. |
+| **RSK-02** | System | Risk | `OutOfMemoryError` runtime crashes during bitmap transformation of large camera frames. | **Mitigation:** Try-catch wrappers, forced 1080px downscaling, and safe fallback to raw render pipelines (HLR-SEN-110). |
+| **RSK-03** | Data | Risk | Device shutdown during low-battery camera override corrupting the active database transaction. | **Mitigation:** Room atomic transactions and `WRITE_AHEAD_LOGGING` ensure clean rollbacks (LLR-DAT-020). |
+| **OPP-01** | Platform | Opportunity | Shared JSON data schemas allow for a future Web/Desktop application expansion. | **Action:** Maintain strict decoupling of business logic from the UI layer (T2-PLT-030). |
+| **OPP-02** | Features | Opportunity | Machine learning image recognition to auto-detect sprouted weeds inside the inverse weed mask. | **Action:** Logged for future v21.0 scope; currently out of scope to preserve offline/storage constraints. |
