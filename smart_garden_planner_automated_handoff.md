@@ -6,10 +6,10 @@
 * **Execution Behavior:** When triggered, the AI collaborator is mathematically restricted from emitting standard conversational text, partial summaries, summaries with abbreviations, or markdown placeholders (`...`). It must instead execute a full dump of the complete, uncut state repository arrays.
 
 ## 2. Dynamic Output Generation Sequence
-Upon receiving the command trigger, the system will output three discrete code containment layers sequentially in a single response transmission block:
+Upon receiving the command trigger, the system will execute an 11-perspective audit, produce required compliance summaries (Gap, Compliance, Traceability, Risk Delta), and then output three discrete code containment layers sequentially in a single response transmission block:
 1. **Pristine Monolithic Stream 1:** The completely populated text of `smart_garden_planner_master_plan.md` from the current session version index baseline.
 2. **Pristine Monolithic Stream 2:** The completely populated text of `smart_garden_planner_transcript.md` summarizing all cumulative engineering parameters.
-3. **Pristine Monolithic Stream 3:** The exact structural Markdown matrices mapping bidirectional requirements cross-traces.
+3. **Pristine Monolithic Stream 3:** The exact structural Markdown matrices mapping bidirectional requirements cross-traces and this runtime script.
 
 ## 3. Mandatory User-Side Git Serialization Routine
 Immediately following the file print dumps, the system shall append the following execution instructions verbatim to force compliance with your local local storage tracking before your disconnect window:
@@ -19,6 +19,6 @@ Immediately following the file print dumps, the system shall append the followin
 > 
 > ```bash
 > git add smart_garden_planner_master_plan.md smart_garden_planner_transcript.md smart_garden_planner_automated_handoff.md
-> git commit -m "Sealed version development footprint v20.1"
+> git commit -m "Sealed version development footprint v20.16"
 > git push
 > ```

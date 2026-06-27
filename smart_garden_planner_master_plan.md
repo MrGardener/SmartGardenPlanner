@@ -1,44 +1,49 @@
 ================================================================================
 MASTER MASTER PLAN: SMART GARDEN PLANNER
+PROJECT OVERVIEW & GOVERNANCE RULES
+
+Core Concept: Offline Android app for garden plot imagery mapping, sensor-based
+distance estimation, automated seed spacing/germination tracking, and irrigation layout design.
+
+Lifecycle Rigor: ARP4754A and DO-178C requirements-driven development.
+
+MODIFIED OPERATIONAL DIRECTIVE [UPDATE V20.16]: To preserve token efficiency and
+streamline the technical iteration workspace, the AI collaborator is no longer required
+to print the Master Plan or Transcript file at the beginning of every response. Instead,
+the complete, uncut Master Plan and Transcript files shall be bundled and delivered exclusively
+upon session initialization (restart) and session termination (handoff/exit protocol triggers).
+
+VERSIONING DIRECTIVE [PERMANENT]: The AI collaborator must increment and display
+the active version number in the header block of the Master Plan with every single iteration.
+
+EXIT PROTOCOL COMMAND TRIGGER [PERMANENT]: Upon interception of the explicit user phrase
+"I am done for today", "save files", or equivalent variants requesting the final versions of files
+for local serialization, the AI shall automatically activate File 3 (Automated Handoff) and generate
+all system files completely with zero truncated placeholders.
+
+REQUIREMENTS HIERARCHY STRUCTURING
+
+T1 Level: Customer-Specific Adaptation Requirements (Reserved for future clients).
+T2 Level: Product-Level Base Requirements (Frozen and Consolidated Below).
+T3 Level: Software High-Level Requirements (HLRs) (Frozen and Consolidated Below).
+T4 Level: Software Low-Level Requirements (LLRs) (Sealed and Fully Consolidated Below).
+
+ARCHITECTURAL BASELINE & FUTURE DEVELOPMENT IDEAS
+
+[EVAL-01]: Core 4-Screen Layout (Dashboard, Creator, Canvas, Encyclopedia).
+[EVAL-02]: Touch-coordinate plotting over static local image matrix.
+[EVAL-03]: Android Sensor Framework (IMU/Camera) for local distance estimation.
+[EVAL-04]: Comprehensive Contingency Menu Presentation Architecture (All Options Available).
+[EVAL-05]: Binary Plot Vector Mapping (Plant Zone vs. Weed/Exclusion Zone Matrix).
+[EVAL-06]: Sensor-Primary Hybrid Anchor Matrix (Optional Visual Fiducial Corner Flares).
+
+CURRENT LIFE CYCLE STEP & NEXT TASKS
+
+Status: WORKSPACE MAINTENANCE COMPLETED — Governance Framework Updated to v20.16.
+Next Up: Codebase Template Generation or Formal Verification Test Verification.
+
 ================================================================================
-
-1. PROJECT OVERVIEW & GOVERNANCE RULES
-- Core Concept: Offline Android app for garden plot imagery mapping, sensor-based 
-  distance estimation, automated seed spacing/germination tracking, and irrigation layout design.
-- Lifecycle Rigor: ARP4754A and DO-178C requirements-driven development.
-- MODIFIED OPERATIONAL DIRECTIVE [UPDATE V20.14]: To preserve token efficiency and 
-  streamline the technical iteration workspace, the AI collaborator is no longer required 
-  to print the Master Plan or Transcript file at the beginning of every response. Instead, 
-  the complete, uncut Master Plan and Transcript files shall be bundled and delivered exclusively 
-  upon session initialization (restart) and session termination (handoff/exit protocol triggers).
-- VERSIONING DIRECTIVE [PERMANENT]: The AI collaborator must increment and display 
-  the active version number in the header block of the Master Plan with every single iteration.
-- EXIT PROTOCOL COMMAND TRIGGER [PERMANENT]: Upon interception of the explicit user phrase 
-  "I am done for today", "save files", or equivalent variants requesting the final versions of files 
-  for local serialization, the AI shall automatically activate File 3 (Automated Handoff) and generate 
-  all system files completely with zero truncated placeholders.
-
-2. REQUIREMENTS HIERARCHY STRUCTURING
-- T1 Level: Customer-Specific Adaptation Requirements (Reserved for future clients).
-- T2 Level: Product-Level Base Requirements (Frozen and Consolidated Below).
-- T3 Level: Software High-Level Requirements (HLRs) (Frozen and Consolidated Below).
-- T4 Level: Software Low-Level Requirements (LLRs) (Sealed and Fully Consolidated Below).
-
-3. ARCHITECTURAL BASELINE & FUTURE DEVELOPMENT IDEAS
-- [EVAL-01]: Core 4-Screen Layout (Dashboard, Creator, Canvas, Encyclopedia).
-- [EVAL-02]: Touch-coordinate plotting over static local image matrix.
-- [EVAL-03]: Android Sensor Framework (IMU/Camera) for local distance estimation.
-- [EVAL-04]: Comprehensive Contingency Menu Presentation Architecture (All Options Available).
-- [EVAL-05]: Binary Plot Vector Mapping (Plant Zone vs. Weed/Exclusion Zone Matrix).
-- [EVAL-06]: Sensor-Primary Hybrid Anchor Matrix (Optional Visual Fiducial Corner Flares).
-
-4. CURRENT LIFE CYCLE STEP & NEXT TASKS
-- Status: WORKSPACE MAINTENANCE COMPLETED — Governance Framework Updated to v20.14.
-- Next Up: Codebase Template Generation or Formal Verification Test Verification.
-
-================================================================================
-T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - UPDATE V20.11)
-================================================================================
+T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - UPDATE V20.16)
 [T2-FUN-010] The system shall capture a digital image of a planting zone (pot or field) using the device’s native hardware camera.
 [T2-FUN-020] The system shall allow the user to input the physical dimensions of the captured planting zone to establish a spatial scale.
 [T2-FUN-025] The system shall provide a local measuring tool utilizing onboard device sensors to estimate physical distances or dimensions post-capture.
@@ -55,11 +60,11 @@ T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - UPDATE V20.11)
 [T2-DAT-030] The system shall identify and display the best companion plants for the selected seeds.
 [T2-DAT-040] The system shall provide care and specific watering strategies tailored to the field/crop type.
 [T2-DAT-050] The system shall display optimal conditions required for seed germination, to include:
-             - A: Total expected germination time.
-             - B: Lighting exposure rules (Dark vs. Light).
-             - C: Soil coverage status (Covered vs. Uncovered).
-             - D: Germination watering intensity (Light vs. Heavy watering).
-             - E: Target planting depth.
+- A: Total expected germination time.
+- B: Lighting exposure rules (Dark vs. Light).
+- C: Soil coverage status (Covered vs. Uncovered).
+- D: Germination watering intensity (Light vs. Heavy watering).
+- E: Target planting depth.
 [T2-DAT-060] The system shall provide an interface for the user to create, read, update, and delete custom seed profiles within the local data repository.
 [T2-DAT-065] Custom seed profile creation interfaces shall enforce the assignment of a broad, pre-defined botanical family reference to anchor default fallback contingency behaviors.
 [T2-DAT-070] The system shall compute and present concurrent fallback pathways (including shorter-season varieties, transplant methodologies, and alternative catch-crops) by recalculating the remaining seasonal timeline against the local botanical matrix.
@@ -98,9 +103,33 @@ T2 BASELINE REQUIREMENTS DOCUMENT (PRODUCT LEVEL - UPDATE V20.11)
 [T2-ERR-020] Upon reaching 95% of allocated local application storage capacity, the system shall generate a system warning and prohibit new image captures until space is cleared.
 [T2-ERR-030] If the local image transformation process exceeds the available JVM memory heap allocation during spatial scaling, the system shall safely terminate the transform layer and fall back to displaying the raw, un-overlayed plot image rather than triggering an OutOfMemory runtime crash.
 
+[T2-SEC-010] Encrypt persisted application data at rest.
+[T2-SEC-020] Validate imported data before processing.
+[T2-SEC-030] Maintain tamper-evident audit records.
+[T2-SEC-040] Support digitally signed export packages.
+
+[T2-SAF-010] Low battery shall not hard-block camera operation.
+[T2-SAF-020] Display warning when battery falls below configured threshold.
+[T2-SAF-030] Permit user-approved override continuation.
+[T2-SAF-040] Record override events locally.
+
+[T2-CON-050] Evaluate hardware capabilities during onboarding.
+[T2-CON-060] Gracefully degrade when optional sensors are unavailable.
+
+[T2-DAT-110] Support dataset export/import.
+[T2-DAT-120] Support ownership metadata.
+[T2-DAT-130] Support conflict-aware merges.
+[T2-DAT-140] Support Owner, Contributor, Viewer roles.
+
+[T2-PLT-010] Canonical data model shall be platform-neutral.
+[T2-PLT-020] Desktop/Web clients shall use identical schemas.
+[T2-PLT-030] Business logic shall remain UI-independent.
+
+[T2-GOV-010] Execute formal 11-perspective audits.
+[T2-GOV-020] Produce review artifacts at handoff.
+
 ================================================================================
-T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - UPDATE V20.12)
-================================================================================
+T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - UPDATE V20.16)
 --- SUBSYSTEM 1: SENSORS & IMAGE PROCESSING ---
 [HLR-SEN-010] Interface with Android CameraX API core pipeline to establish a local preview lifecycle.
 [HLR-SEN-020] Capture images asynchronously via ImageCapture.OnImageSavedCallback structure.
@@ -118,6 +147,10 @@ T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - UPDATE V20
 [HLR-SEN-140] Map sensor translation scalar measurements to populate canvas scaling pixel-to-dimension variables.
 [HLR-SEN-150] Invalidate active measurement streams if rotational pitch/roll vectors deviate by more than +/- 5 degrees.
 [HLR-SEN-160] Check disk block states via Android StatFs API; block camera execution if free space is <= 5%.
+[HLR-SEN-170] Monitor battery state during camera use.
+[HLR-SEN-180] Display low-battery risk workflow.
+[HLR-SEN-190] Permit continuation after explicit user confirmation.
+[HLR-SEN-200] Record override actions.
 
 --- SUBSYSTEM 2: LOCAL DATABASE & CROP INTELLIGENCE ---
 [HLR-DAT-010] Implement a local relational database infrastructure utilizing Android Room library over SQLite.
@@ -132,39 +165,51 @@ T3 BASELINE SOFTWARE REQUIREMENTS DOCUMENT (HIGH-LEVEL REQUIREMENTS - UPDATE V20
 [HLR-DAT-100] Render an optimized physical drip irrigation routing path grid across interactive coordinate arrays.
 [HLR-DAT-110] Configure foreign-key constraint triggers with strict ON DELETE CASCADE configuration parameters.
 [HLR-DAT-120] Reject custom profile database insertions failing string-type validations or integer field integrity.
-[HLR-DAT-130] The database shall maintain a static lookup entity (`ClimaticZipZones`) mapping unique ZIP code strings to USDA Plant Hardiness Zone integers and median first/last frost timestamps.
-[HLR-DAT-140] The database shall maintain a static geospatial entity (`ClimaticGeoZones`) storing localized bounding box matrices (Latitude/Longitude thresholds with standard geographic tolerances) mapping coordinate points to corresponding Hardiness Zone metrics.
-[HLR-DAT-150] The timeline calculator shall intercept climate zone data from active tables and discard any crop variety or contingency option whose calculated maturation date extends beyond the local historical first-frost date threshold.
-[HLR-DAT-160] Construct a unified query structure that extracts the target crop record’s companion fields, watering strategies, pest warning matrices, and germination profiles whenever a localized node interaction event is intercepted on the visual layout canvas.
-[HLR-DAT-170] The node creation entry transaction shall automatically extract the host system's hardware clock timestamp to populate the base date_planted table row, unless an explicit override array is received.
-[HLR-DAT-180] Execute a conversion algorithm mapping pixel resolution dimension limits (W_px, H_px) directly to the physical measurement parameters computed by the sensor matrix, establishing a dynamic layout ratio constraint for all seed spacing radius calculations.
-[HLR-DAT-190] Enforce a database table constraint on custom seed profiles requiring a valid foreign key reference to a fixed baseline botanical family schema record. [Tracks: T2-DAT-065]
-[HLR-DAT-200] Intercept hardware location updates and discard coordinate inputs if the structural Location object's horizontal accuracy radius value exceeds 15.0 meters. [Tracks: T2-ENV-025]
+[HLR-DAT-130] The database shall maintain a static lookup entity mapping unique ZIP code strings to USDA Plant Hardiness.
+[HLR-DAT-140] The database shall maintain a static geospatial entity storing localized bounding box matrices.
+[HLR-DAT-150] The timeline calculator shall intercept climate zone data and discard crops extending beyond historical first-frost.
+[HLR-DAT-160] Construct a unified query structure extracting target crop records whenever a localized node interaction event is intercepted.
+[HLR-DAT-170] Node creation shall automatically extract host system clock timestamps to populate baseline date_planted.
+[HLR-DAT-180] Execute conversion algorithm mapping pixel limits to physical measurement parameters computed by sensors.
+[HLR-DAT-190] Enforce database constraint requiring a valid foreign key reference to a fixed baseline botanical family.
+[HLR-DAT-200] Intercept hardware location updates and discard coordinate inputs if accuracy radius exceeds 15.0 meters.
+[HLR-DAT-210] Associate ownership metadata with datasets.
+[HLR-DAT-220] Execute merge conflict detection/resolution.
+[HLR-DAT-230] Serialize portable exchange packages.
 
 --- SUBSYSTEM 3: USER INTERFACE, STATE CONTROL & INTER-PROCESS TRANSITIONS ---
-[HLR-UI-010] The software shall implement a single-Activity, multi-Fragment navigation architecture using the Android Jetpack Navigation Component.
-[HLR-UI-020] The application layer shall instantiate four top-level UI destinations: DashboardFragment, CreatorFragment, CanvasFragment, and EncyclopediaFragment.
-[HLR-UI-030] The CanvasFragment shall force a strict orientation lock via Activity.setRequestedOrientation based on a user-defined plot configuration state to block view reconstruction errors during coordinate plotting.
-[HLR-UI-040] The user interface framework shall utilize Android Jetpack ViewModel architecture to separate transactional layout variables from layout lifecycle destrains.
-[HLR-UI-050] The system shall intercept Android lifecycle state mutations (onSaveInstanceState) and automatically serialize uncommitted coordinate objects into an encrypted local Cache repository.
-[HLR-UI-060] The software shall reload cached state vectors on process restoration (onCreate) and execute a smooth state reconciliation sequence if uncommitted transaction metrics are discovered.
-[HLR-UI-070] The Canvas engine shall maintain an operational double-stack pointer registry (UndoStack, RedoStack) within the isolated layout context, capturing chronological coordinate array snapshots up to a fixed deep boundary.
-[HLR-UI-080] The navigation manager shall instantiate an active interception callback on native system exit events; if the working memory contains uncommitted changes, it shall pause routing loops and surface an exit-confirmation modal.
-[HLR-UI-090] The user interface framework shall display a non-interactive, modal calibration state overlay upon Canvas initialization, intercepting all touch inputs and blocking mapping operations until Subsystem 1 signals a successful calibration event match.
-[HLR-UI-100] The location configuration view controller shall capture input sequences and validate them against active database lookup tables; if an entry returns a null entity reference, the layout engine shall block save transitions and surface an unrecognized-parameter error notification.
-[HLR-UI-110] Intercept scale engine source switch actions within the plot creator UI framework, clearing the active transactional Node collection and throwing a modal reset state initialization command. [Tracks: T2-VAL-012]
-[HLR-UI-120] Intercept text input modifications to physical plot width or height bounds, validate all existing coordinate node coordinates against the re-projected boundary matrix, and block saving operations if any node coordinate intercepts a negative-space or out-of-bounds index. [Tracks: T2-VAL-017]
+[HLR-UI-010] Implement single-Activity, multi-Fragment navigation using Android Jetpack Navigation Component.
+[HLR-UI-020] Instantiate top-level UI destinations: Dashboard, Creator, Canvas, Encyclopedia.
+[HLR-UI-030] CanvasFragment shall force strict orientation lock to block view reconstruction errors.
+[HLR-UI-040] Utilize Jetpack ViewModel architecture to separate transactional layout variables from lifecycle destrains.
+[HLR-UI-050] Intercept Android lifecycle state mutations and automatically serialize uncommitted coordinate objects.
+[HLR-UI-060] Reload cached state vectors on process restoration and execute state reconciliation sequence.
+[HLR-UI-070] Maintain operational double-stack pointer registry (UndoStack, RedoStack) capturing chronological coordinates.
+[HLR-UI-080] Instantiate active interception callback on native system exit events; surface exit-confirmation modal.
+[HLR-UI-090] Display non-interactive, modal calibration state overlay upon Canvas initialization.
+[HLR-UI-100] Location configuration controller shall capture and validate input sequences against lookup tables.
+[HLR-UI-110] Intercept scale engine source switch actions, clearing active Nodes and throwing modal reset.
+[HLR-UI-120] Intercept modifications to physical bounds, validate existing nodes, and block saving if out-of-bounds.
+[HLR-UI-130] Execute onboarding capability assessment.
+[HLR-UI-140] Present degraded-mode guidance.
+
+--- SUBSYSTEM 4: SECURITY & GOVERNANCE ---
+[HLR-SEC-010] Encrypt persistence using platform-backed key storage.
+[HLR-SEC-020] Validate imported package integrity and schema compliance.
+[HLR-SEC-030] Sign exported packages.
+[HLR-SEC-040] Maintain tamper-evident audit logs.
+[HLR-GOV-010] Generate 11-perspective review reports.
+[HLR-GOV-020] Execute review workflow during handoff.
 
 ================================================================================
-T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.13)
-================================================================================
+T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.16)
 --- SUBSYSTEM 1 LLRs (SENSORS & IMAGE PROCESSING) ---
 [LLR-SEN-010-A] Query active Android WindowManager configuration metrics to capture screen dimensions.
 [LLR-SEN-010-B] Instantiate an Android CameraX ProcessCameraProvider instance asynchronously.
 [LLR-SEN-010-C] Bind the native camera preview lifecycle instance directly to the host activity context.
 [LLR-SEN-010-D] Target output image buffer frames to render continuously onto the layout's PreviewView node.
 [LLR-SEN-020-A] Instantiate a localized ImageCapture.Builder thread engine structure.
-[LLR-SEN-020-B] Configure the ImageCapture target resolution and aspect ratio constraints to match preview configurations.
+[LLR-SEN-020-B] Configure the ImageCapture target resolution and aspect ratio constraints.
 [LLR-SEN-020-C] Implement an asynchronous ImageCapture.OnImageSavedCallback object framework listener.
 [LLR-SEN-020-D] Execute disk serialization streaming raw binary payloads into an isolated private local file path.
 [LLR-SEN-030-A] Query native Android SensorManager services inside the active resume lifecycle hook.
@@ -185,78 +230,86 @@ T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.13
 [LLR-SEN-060-B] Block active measurement integration tasks during the calibration countdown execution state.
 [LLR-SEN-060-C] Sample N consecutive raw vector inputs captured across accelerometer and gyroscope channels.
 [LLR-SEN-060-D] Mathematically compute the arithmetic mean vector component values across the sampled N metrics.
-[LLR-SEN-060-E] Persist resulting mean vector coordinates into immutable memory spaces as the primary noise bias constants.
+[LLR-SEN-060-E] Persist resulting mean vector coordinates into immutable memory spaces as primary noise bias constants.
 [LLR-SEN-070-A] Extract instantaneous three-axis linear acceleration values from the active FASTEST sensor queue.
-[LLR-SEN-070-B] Subtract the pre-calculated static noise bias constants from raw input parameters: a_clean = a_raw - bias.
-[LLR-SEN-070-C] Integrate clean acceleration vectors across elapsed time steps to calculate velocity vectors: v = v + a_clean * dt.
-[LLR-SEN-070-D] Integrate velocity vectors across identical time steps to calculate displacement vectors: d = d + v * dt.
-[LLR-SEN-070-E] Apply a horizontal Cartesian reduction matrix to isolate one-dimensional spatial translations: delta_d = sqrt(x^2 + y^2).
+[LLR-SEN-070-B] Subtract the pre-calculated static noise bias constants from raw input parameters.
+[LLR-SEN-070-C] Integrate clean acceleration vectors across elapsed time steps to calculate velocity vectors.
+[LLR-SEN-070-D] Integrate velocity vectors across identical time steps to calculate displacement vectors.
+[LLR-SEN-070-E] Apply a horizontal Cartesian reduction matrix to isolate one-dimensional spatial translations.
 [LLR-SEN-080-A] Intercept continuous SensorEvent metadata properties payload streams arriving from hardware channels.
 [LLR-SEN-080-B] Parse structural status integer flags embedded inside incoming event parameters packets.
-[LLR-SEN-080-C] Evaluate if parsed status integers match the definition of SensorManager.SENSOR_STATUS_UNRELIABLE.
-[LLR-SEN-080-D] Multiply active layout covariance error indices (sigma bounds parameters) by a scaling modifier of exactly 1.5x.
-[LLR-SEN-080-E] Convert current sigma indices into textual string formats displaying an update margin on screen (+/- X cm).
+[LLR-SEN-080-C] Evaluate if parsed status integers match SENSOR_STATUS_UNRELIABLE.
+[LLR-SEN-080-D] Multiply active layout covariance error indices by a scaling modifier of exactly 1.5x.
+[LLR-SEN-080-E] Convert current sigma indices into textual string formats displaying an update margin on screen.
 [LLR-SEN-090-A] Open an uncompressed java.io.FileOutputStream stream tied directly to private local file targets.
 [LLR-SEN-090-B] Bind volatile raw canvas memory bitmap image allocations into the open stream context layer.
 [LLR-SEN-090-C] Configure output target formats strictly to Bitmap.CompressFormat.JPEG transformations engines.
-[LLR-SEN-090-D] Enforce a quality compression integer parameter boundary fixed precisely at a value metric of 85.
+[LLR-SEN-090-D] Enforce a quality compression integer parameter boundary fixed precisely at 85.
 [LLR-SEN-100-A] Ingest targeted local raw captured bitmap file pointers inside decoding transformation pipelines.
 [LLR-SEN-100-B] Extract the absolute pixel height parameter dimensions from incoming canvas image files.
 [LLR-SEN-100-C] Evaluate if captured picture heights violate a hard application constraint of exactly 1080 pixels.
-[LLR-SEN-100-D] Scale the asset width proportionally based on structural aspect ratio metrics to secure balanced formats.
-[LLR-SEN-100-E] Pass the resolved structural configurations to an output matrix to generate resized destination file rows.
-[LLR-SEN-110-A] Encapsulate bitmap creation, rendering, transformation, and duplication actions inside Java try-catch frames.
-[LLR-SEN-110-B] Intercept Java java.lang.OutOfMemoryError exceptions before unhandled runtime background crashes cascade.
-[LLR-SEN-110-C] Fire manual system garbage collection routines instantly using explicit java.lang.System.gc() prompts.
-[LLR-SEN-110-D] Clear and flush volatile memory canvas drawing layers and historical undo/redo stack buffers.
+[LLR-SEN-100-D] Scale the asset width proportionally based on structural aspect ratio metrics.
+[LLR-SEN-100-E] Pass the resolved structural configurations to an output matrix to generate resized files.
+[LLR-SEN-110-A] Encapsulate bitmap creation/rendering actions inside Java try-catch frames.
+[LLR-SEN-110-B] Intercept Java OutOfMemoryError exceptions before unhandled runtime background crashes cascade.
+[LLR-SEN-110-C] Fire manual system garbage collection routines instantly using explicit System.gc() prompts.
+[LLR-SEN-110-D] Clear and flush volatile memory canvas drawing layers and historical undo/redo buffers.
 [LLR-SEN-110-E] Re-route visualization pipelines to load and render raw, un-overlayed plot backgrounds safely.
 [LLR-SEN-120-A] Initialize a localized visual rendering layout manipulation framework using android.graphics.Matrix().
 [LLR-SEN-120-B] Inject the created transform matrix object into custom canvas graphics rendering view managers.
-[LLR-SEN-120-C] Configure real-time redraw listener parameters tracking configuration changes over active visual viewports.
-[LLR-SEN-130-A] Capture continuous interactive click trace indicators dropped on screen to designate real-world boundaries.
-[LLR-SEN-130-B] Restrict point placements to exactly four entries tracking real-world corner flag components.
-[LLR-SEN-130-C] Package coordinate sets into a structured floatArrayOf collection containing eight discrete parameters.
-[LLR-SEN-130-D] Execute android.graphics.Matrix.setPolyToPoly mapping raw coordinates onto an aligned rectangle grid model.
-[LLR-SEN-140-A] Listen for successful distance translation scalars (meters) emitted by the IMU integration routine.
-[LLR-SEN-140-B] Extract active monitor pixel resolution constraints from the host view display framework context.
-[LLR-SEN-140-C] Compute an active canvas translation constant: pixels_per_meter = canvas_view_width_pixels / delta_d.
-[LLR-SEN-140-D] Persist calculated pixel scale constants inside layout settings models to align plotting computations.
-[LLR-SEN-150-A] Query active device orientation vector arrays using SensorManager.getRotationMatrixFromVector calculations.
-[LLR-SEN-150-B] Compute separate instantaneous rotational pitch (theta) and roll (phi) tilt angles parameters.
-[LLR-SEN-150-C] Evaluate calculated tilt values against baseline reference vectors established during calibration cycles.
-[LLR-SEN-150-D] Monitor if either angle skews beyond an absolute allowed boundary constraint of +/- 5 degrees deviation.
-[LLR-SEN-150-E] Clear current integration queues, discard distance values, and surface a re-calibration UI page if violated.
-[LLR-SEN-160-A] Query private storage structures using Android StatFs configurations prior to initiating camera capture loops.
+[LLR-SEN-120-C] Configure real-time redraw listener parameters tracking configuration changes over viewports.
+[LLR-SEN-130-A] Capture continuous interactive click trace indicators dropped on screen.
+[LLR-SEN-130-B] Restrict point placements to exactly four entries tracking real-world corner flags.
+[LLR-SEN-130-C] Package coordinate sets into a structured floatArrayOf collection containing eight parameters.
+[LLR-SEN-130-D] Execute Matrix.setPolyToPoly mapping raw coordinates onto an aligned rectangle grid.
+[LLR-SEN-140-A] Listen for successful distance translation scalars emitted by IMU integration.
+[LLR-SEN-140-B] Extract active monitor pixel resolution constraints from host view framework.
+[LLR-SEN-140-C] Compute an active canvas translation constant: pixels_per_meter.
+[LLR-SEN-140-D] Persist calculated pixel scale constants inside layout settings models.
+[LLR-SEN-150-A] Query active device orientation vector arrays using SensorManager.getRotationMatrixFromVector.
+[LLR-SEN-150-B] Compute separate instantaneous rotational pitch and roll tilt angles parameters.
+[LLR-SEN-150-C] Evaluate calculated tilt values against baseline reference vectors.
+[LLR-SEN-150-D] Monitor if either angle skews beyond allowed boundary constraint of +/- 5 degrees.
+[LLR-SEN-150-E] Clear current integration queues, discard distance values, and surface a re-calibration UI page.
+[LLR-SEN-160-A] Query private storage structures using Android StatFs prior to initiating camera capture.
 [LLR-SEN-160-B] Solve filesystem variables: free_blocks_ratio = availableBlocksLong / blockCountLong.
-[LLR-SEN-160-C] Evaluate if solved storage parameters fall below or meet an absolute floor metric boundary of 0.05 (5%).
-[LLR-SEN-160-D] Set the camera viewfinder shutter layout button configuration parameter directly to isEnabled = false.
-[LLR-SEN-160-E] Broadcast a descriptive low-storage workspace warning alert up to the active interface layout frame.
+[LLR-SEN-160-C] Evaluate if solved storage parameters fall below floor metric of 0.05 (5%).
+[LLR-SEN-160-D] Set the camera viewfinder shutter layout button parameter to isEnabled = false.
+[LLR-SEN-160-E] Broadcast descriptive low-storage workspace warning alert.
+[LLR-SEN-170-A] Subscribe to BatteryManager state updates.
+[LLR-SEN-170-B] Compare battery percentage to threshold.
+[LLR-SEN-180-A] Render low-battery warning dialog.
+[LLR-SEN-180-B] Present risk messaging.
+[LLR-SEN-190-A] Provide Continue/Cancel actions.
+[LLR-SEN-190-B] Resume workflow following confirmation.
+[LLR-SEN-200-A] Persist timestamped override events.
+[LLR-SEN-200-B] Associate events with active plot identifiers.
 
 --- SUBSYSTEM 2 LLRs (LOCAL DATABASE & CROP INTELLIGENCE) ---
-[LLR-DAT-010-A] Set up abstract database definitions descending from the RoomDatabase library baseline.
+[LLR-DAT-010-A] Set up abstract database definitions descending from RoomDatabase.
 [LLR-DAT-010-B] Bundle data entities mapping specifications for Plots, Seeds, and PlantedNodes layers.
-[LLR-DAT-010-C] Export abstract class access functions retrieving distinct Data Access Objects (DAOs).
-[LLR-DAT-020-A] Force local persistent configuration settings to establish WRITE_AHEAD_LOGGING protocols.
+[LLR-DAT-010-C] Export abstract class access functions retrieving DAOs.
+[LLR-DAT-020-A] Force local persistent configuration settings to establish WRITE_AHEAD_LOGGING.
 [LLR-DAT-020-B] Bind database write access mutation routines to isolated background single-thread loops.
-[LLR-DAT-020-C] Decorate transaction queries using the @Transaction rule to force rollback safe states.
+[LLR-DAT-020-C] Decorate transaction queries using @Transaction rule.
 [LLR-DAT-030-A] Declare table fields mapping Plots records containing spatial sizing variables and file paths.
 [LLR-DAT-030-B] Declare table fields mapping Seeds references tracking species rules and lifecycle offsets.
-[LLR-DAT-030-C] Declare table fields mapping PlantedNodes records linking coordinate metrics and data parameters.
+[LLR-DAT-030-C] Declare table fields mapping PlantedNodes records linking coordinate metrics and parameters.
 [LLR-DAT-040-A] Load required variant separation constant indices from local dataset data records.
 [LLR-DAT-040-B] Resolve display layout pixel lengths: radius = (spacing_cm / 100) * pixels_per_meter.
 [LLR-DAT-040-C] Render circle boundaries over target coordinate pins on canvas layout layers.
 [LLR-DAT-050-A] Ingest complete array listings of all existing node pins assigned to a target parent plot.
 [LLR-DAT-050-B] Loop through data positions calculating mutual distance spaces via Euclidean formulas.
-[LLR-DAT-050-C] Append a collision flag to tracking nodes if distance scales fall below combined spacing limits.
-[LLR-DAT-060-A] Declare a layout path container boundary tracking absolute dimensions of active drawings.
-[LLR-DAT-060-B] Subtract every active node layout radius boundary footprint via Path.Op.DIFFERENCE loop queries.
+[LLR-DAT-050-C] Append collision flag to tracking nodes if distance scales fall below combined limits.
+[LLR-DAT-060-A] Declare layout path container boundary tracking absolute dimensions of active drawings.
+[LLR-DAT-060-B] Subtract every active node layout radius boundary footprint via Path.Op.DIFFERENCE.
 [LLR-DAT-060-C] Paint residual unallocated space paths using semi-transparent colored early weed alerts.
 [LLR-DAT-070-A] Retrieve explicit planting instance timestamp metrics from targeted layout database items.
-[LLR-DAT-070-B] Multiply defined maturation integer parameters by a static day value (86400000ms scaling).
+[LLR-DAT-070-B] Multiply defined maturation integer parameters by static day value (86400000ms scaling).
 [LLR-DAT-070-C] Append solved timeline lengths to planting times to establish target harvest milestones.
-[LLR-DAT-080-A] Monitor ongoing hardware system clock updates matching against pending database records.
-[LLR-DAT-080-B] Check if elapsed intervals cross calculated variety thresholds: current - planted > germination.
-[LLR-DAT-080-C] Flip internal node alerts to error state triggers when milestones lapse without a confirm state.
+[LLR-DAT-080-A] Monitor ongoing hardware system clock updates matching against pending records.
+[LLR-DAT-080-B] Check if elapsed intervals cross calculated variety thresholds.
+[LLR-DAT-080-C] Flip internal node alerts to error state triggers when milestones lapse without confirm state.
 [LLR-DAT-090-A] Intercept active sprout failure triggers to initialize alternative routing calculation tasks.
 [LLR-DAT-090-B] Search local botanical dictionary rows for crop items matching available temporal tracks.
 [LLR-DAT-090-C] Group short-maturity options, nursery offsets, and catch-crops side-by-side inside lists.
@@ -266,60 +319,64 @@ T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.13
 [LLR-DAT-110-A] Attach strict ForeignKey constraints linking node data directly to parent plot table records.
 [LLR-DAT-110-B] Define relational trigger parameters configured explicitly to cascade data drop events.
 [LLR-DAT-110-C] Purge child node data entries instantly from disk when a parent plot row is deleted.
-[LLR-DAT-120-A] Intercept manual user custom seed dataset entries at the validation interface layer.
-[LLR-DAT-120-B] Evaluate numeric value boundaries checking that spacing and duration parameters are non-positive.
-[LLR-DAT-120-C] Terminate write transactions and raise descriptive missing-field errors if tests fail.
-[LLR-DAT-130-A] Establish static climatic_zip_zones reference data tables inside internal system scopes.
-[LLR-DAT-130-B] Index 5-character manual text string parameters to optimize database lookup performance.
-[LLR-DAT-130-C] Export matching hardiness integer rules and expected first/last frost date strings to local files.
-[LLR-DAT-140-A] Establish static geospatial climatic_geo_zones reference data tables inside internal scopes.
+[LLR-DAT-120-A] Intercept manual user custom seed dataset entries at validation interface layer.
+[LLR-DAT-120-B] Evaluate numeric value boundaries checking spacing and duration parameters.
+[LLR-DAT-120-C] Terminate write transactions and raise missing-field errors if tests fail.
+[LLR-DAT-130-A] Establish static climatic_zip_zones reference data tables.
+[LLR-DAT-130-B] Index 5-character manual text string parameters.
+[LLR-DAT-130-C] Export matching hardiness integer rules and expected frost date strings.
+[LLR-DAT-140-A] Establish static geospatial climatic_geo_zones reference data tables.
 [LLR-DAT-140-B] Index bounding box min/max latitude and longitude coordinate coordinates ranges.
 [LLR-DAT-140-C] Export hardiness indices and frost date references tied to coordinate boundary limits.
-[LLR-DAT-150-A] Access device position inputs to process geofenced lookup query commands across tables.
+[LLR-DAT-150-A] Access device position inputs to process geofenced lookup query commands.
 [LLR-DAT-150-B] Check user coordinates across geo ranges; fallback directly to text inputs if lookup fails.
-[LLR-DAT-150-C] Cache matched frost boundaries into active configurations to guide season timeline math loops.
-[LLR-DAT-160-A] Accept a targeted canvas node layout coordinate user touch-interaction vector command.
-[LLR-DAT-160-B] Execute a consolidated single-transaction SQLite query fetch traversing related data fields.
+[LLR-DAT-150-C] Cache matched frost boundaries into active configurations.
+[LLR-DAT-160-A] Accept targeted canvas node layout coordinate user touch-interaction vector command.
+[LLR-DAT-160-B] Execute consolidated single-transaction SQLite query fetch traversing related data fields.
 [LLR-DAT-160-C] Map matching bugs, care strategies, companion alerts, and water constants into single payloads.
-[LLR-DAT-170-A] Intercept new node registration entry events arriving from the active creation viewport.
-[LLR-DAT-170-B] Evaluate if explicit planting date parameters are passed down inside incoming data parameters.
-[LLR-DAT-170-C] Capture the hardware clock timestamp automatically to populate rows if fields are empty.
-[LLR-DAT-180-A] Read raw canvas display pixel parameters mapping width and height monitor vector states.
-[LLR-DAT-180-B] Interpolate coordinate pixel sets against real-world dimensions verified by IMU tracking tools.
-[LLR-DAT-180-C] Establish a definitive layout conversion scaling constraint guiding real-space drawing paths.
-[LLR-DAT-190-A] Append a `@ForeignKey` configuration block inside the local custom `SeedProfile` table entity definition structure.
-[LLR-DAT-190-B] Establish a strict mapping constraint linking the `parent_botanical_id` column to the immutable primary key index row of the static `BotanicalFamily` table.
-[LLR-DAT-190-C] Implement an input validation checkpoint routine within the custom seed profile execution DAO compiler intercepting raw entry attempts.
-[LLR-DAT-190-D] Throw a compilation structural exception if the insertion parameter payload maps an unindexed or null botanical identifier reference.
-[LLR-DAT-200-A] Implement a functional interception wrapper surrounding incoming hardware `android.location.Location` sensor data callbacks.
-[LLR-DAT-200-B] Call the standard hardware property extraction routine `Location.getHorizontalAccuracyMeters()` on incoming sensor instances.
-[LLR-DAT-200-C] Evaluate the returned floating-point metric value against an absolute functional ceiling constraint threshold of 15.0f meters.
-[LLR-DAT-200-D] Immediately discard the location object payload and drop downstream climate zone search requests if the accuracy index exceeds 15.0f meters.
-[LLR-DAT-200-E] Emit a specialized precision warning signal state up to the host application state tracking pipeline upon packet drops.
+[LLR-DAT-170-A] Intercept new node registration entry events arriving from active creation viewport.
+[LLR-DAT-170-B] Evaluate if explicit planting date parameters are passed down inside incoming data.
+[LLR-DAT-170-C] Capture hardware clock timestamp automatically to populate rows if fields are empty.
+[LLR-DAT-180-A] Read raw canvas display pixel parameters mapping width and height vectors.
+[LLR-DAT-180-B] Interpolate coordinate pixel sets against real-world dimensions verified by IMU tracking.
+[LLR-DAT-180-C] Establish a definitive layout conversion scaling constraint.
+[LLR-DAT-190-A] Append @ForeignKey configuration block inside custom SeedProfile table entity.
+[LLR-DAT-190-B] Establish mapping constraint linking parent_botanical_id column to immutable primary key.
+[LLR-DAT-190-C] Implement input validation checkpoint routine within custom seed profile execution DAO compiler.
+[LLR-DAT-190-D] Throw compilation structural exception if payload maps unindexed or null botanical identifier.
+[LLR-DAT-200-A] Implement functional interception wrapper surrounding incoming hardware android.location.Location sensor data callbacks.
+[LLR-DAT-200-B] Call standard hardware property extraction routine Location.getHorizontalAccuracyMeters().
+[LLR-DAT-200-C] Evaluate returned metric against an absolute ceiling constraint threshold of 15.0f meters.
+[LLR-DAT-200-D] Discard location object payload and drop downstream climate zone searches if accuracy exceeds 15.0f meters.
+[LLR-DAT-200-E] Emit precision warning signal state up to host application tracking pipeline.
+[LLR-DAT-210-A] Add ownership metadata fields.
+[LLR-DAT-220-A] Compare imported and local revisions.
+[LLR-DAT-220-B] Present merge-resolution options.
+[LLR-DAT-230-A] Serialize portable exchange packages.
 
 --- SUBSYSTEM 3 LLRs (USER INTERFACE & NAVIGATION) ---
-[LLR-UI-010-A] Attach a high-level NavHostFragment element inside the baseline system layout window container.
-[LLR-UI-010-B] Bind single-Activity initialization steps to map routing controls over host visual windows.
-[LLR-UI-010-C] Direct presentation layers to deploy structural Fragment view routing configurations.
-[LLR-UI-020-A] Hardcode destination targets into isolated res/navigation configuration XML asset schemas.
+[LLR-UI-010-A] Attach high-level NavHostFragment element inside baseline system layout.
+[LLR-UI-010-B] Bind single-Activity initialization steps to map routing controls.
+[LLR-UI-010-C] Direct presentation layers to deploy structural Fragment view configurations.
+[LLR-UI-020-A] Hardcode destination targets into isolated res/navigation configuration XML.
 [LLR-UI-020-B] Define structural transition parameters governing Dashboard, Creator, Canvas, and Encyclopedia views.
-[LLR-UI-020-C] Establish deep-linked resource arguments passing plot reference tokens across interface shifts.
-[LLR-UI-030-A] Intercept active view entrance lifecycle triggers targeted inside the Canvas layout components.
-[LLR-UI-030-B] Dispatch requireActivity().requestedOrientation = SCREEN_ORIENTATION_LOCKED directives on entrance.
-[LLR-UI-030-C] Restore standard global orientation tracking attributes upon firing layout exit execution tracks.
-[LLR-UI-040-A] Establish abstract presentation frameworks descending directly from Jetpack ViewModel components.
-[LLR-UI-040-B] Declare transactional variables inside non-volatile StateFlow data pipeline configurations.
-[LLR-UI-040-C] Expose un-degradeable LiveData channels decoupling workspace inputs from lifecycle terminations.
+[LLR-UI-020-C] Establish deep-linked resource arguments passing plot reference tokens.
+[LLR-UI-030-A] Intercept active view entrance lifecycle triggers targeted inside Canvas layout.
+[LLR-UI-030-B] Dispatch requireActivity().requestedOrientation = SCREEN_ORIENTATION_LOCKED.
+[LLR-UI-030-C] Restore standard global orientation tracking attributes upon exit.
+[LLR-UI-040-A] Establish abstract presentation frameworks descending directly from Jetpack ViewModel.
+[LLR-UI-040-B] Declare transactional variables inside non-volatile StateFlow data pipeline.
+[LLR-UI-040-C] Expose un-degradeable LiveData channels decoupling workspace inputs.
 [LLR-UI-050-A] Intercept system-directed process interruptions by overriding standard onSaveInstanceState hooks.
-[LLR-UI-050-B] Flatten volatile transient layout vectors into string blocks using structured JSON models.
-[LLR-UI-050-C] Write string blocks to disk inside private encrypted SharedPreferences key-value repositories.
+[LLR-UI-050-B] Flatten volatile transient layout vectors into string blocks using structured JSON.
+[LLR-UI-050-C] Write string blocks to disk inside private encrypted SharedPreferences.
 [LLR-UI-060-A] Query private encrypted local cache directories during layout onCreateView initialization sweeps.
-[LLR-UI-060-B] Parse discoveries using string layout decoders if data data caches are discovered on launch.
-[LLR-UI-060-C] Launch an interactive state reconciliation notification screen enabling configuration recoveries.
-[LLR-UI-070-A] Declare separate front-and-back ArrayDeque structures inside active presentation view model scopes.
-[LLR-UI-070-B] Capture snapshot clones of active layout configurations upon every valid node trace mutation event.
+[LLR-UI-060-B] Parse discoveries using string layout decoders if data data caches are discovered.
+[LLR-UI-060-C] Launch interactive state reconciliation notification screen enabling configuration recoveries.
+[LLR-UI-070-A] Declare separate front-and-back ArrayDeque structures inside active presentation scopes.
+[LLR-UI-070-B] Capture snapshot clones of active layout configurations upon every valid node trace mutation.
 [LLR-UI-070-C] Drop terminal base row items automatically if total data cache entries exceed a maximum of 25.
-[LLR-UI-080-A] Attach a custom OnBackPressedCallback interface hook to active window lifecycle tracking managers.
+[LLR-UI-080-A] Attach custom OnBackPressedCallback interface hook to active window lifecycle.
 [LLR-UI-080-B] Inspect workspace dirty flag statuser checks if active workspaces maintain uncommitted edits.
 [LLR-UI-080-C] Stop exit loops completely and raise confirmation warning dialog overlay frames if states are dirty.
 [LLR-UI-090-A] Inject an un-dismissible modal progress overlay layout element over active visualization surfaces.
@@ -328,12 +385,24 @@ T4 BASELINE DOCUMENT (LOW-LEVEL REQUIREMENTS - HYPER-ATOMIC DECOMPOSITION V20.13
 [LLR-UI-100-A] Intercept manual location input string data parameters passed through input view frames.
 [LLR-UI-100-B] Query input parameters against static database lookup entities; check for null data references.
 [LLR-UI-100-C] Highlight components red, lock navigation routes, and raise visual error notification strings if empty.
-[LLR-UI-110-A] Attach an explicit interaction state listener checking selection events on the Creator screen's scale engine selector configuration dropdown.
-[LLR-UI-110-B] Compare the newly chosen selection string source context index value against the currently persisted active memory configuration state.
-[LLR-UI-110-C] Fire a complete memory purge execution track clearing the current operational layout transactional node collection arrays if a configuration source shift is detected.
-[LLR-UI-110-D] Instantiate and render an un-dismissible modal structural alert component notifying the user of the layout tracking computation clear state.
-[LLR-UI-120-A] Attach real-time structural data monitoring text-watchers to physical canvas container dimension configuration interface fields.
-[LLR-UI-120-B] Intercept editing sequences and compute temporary spatial canvas transformation variables reflecting the newly requested dimensions layout.
-[LLR-UI-120-C] Iterate through all currently active placed layout node coordinate matrices, validating each point coordinate against the temporary projection canvas boundaries.
-[LLR-UI-120-D] Set the interface confirmation container command layout configuration parameter directly to state `isEnabled = false` if any placed pin intersects an out-of-bounds index.
-[LLR-UI-120-E] Surface a persistent, localized out-of-bounds warning layout layer highlighting the conflicting node positions across the visual matrix interface.
+[LLR-UI-110-A] Attach explicit interaction state listener checking selection events on Creator screen's scale engine selector.
+[LLR-UI-110-B] Compare newly chosen selection string source context index value against currently persisted active memory configuration state.
+[LLR-UI-110-C] Fire complete memory purge execution track clearing current operational layout transactional node arrays if configuration source shift detected.
+[LLR-UI-110-D] Instantiate and render un-dismissible modal structural alert component notifying user of layout tracking computation clear state.
+[LLR-UI-120-A] Attach real-time structural data monitoring text-watchers to physical canvas container dimension fields.
+[LLR-UI-120-B] Intercept editing sequences and compute temporary spatial canvas transformation variables reflecting newly requested dimensions layout.
+[LLR-UI-120-C] Iterate through all currently active placed layout node coordinate matrices, validating each point coordinate against temporary projection canvas boundaries.
+[LLR-UI-120-D] Set interface confirmation container command layout configuration parameter directly to state isEnabled = false if any placed pin intersects out-of-bounds index.
+[LLR-UI-120-E] Surface persistent, localized out-of-bounds warning layout layer highlighting conflicting node positions across visual matrix interface.
+[LLR-UI-130-A] Execute onboarding hardware scan.
+[LLR-UI-130-B] Persist capability profile.
+[LLR-UI-140-A] Enable fallback paths when sensors unavailable.
+
+--- SUBSYSTEM 4 LLRs (SECURITY & GOVERNANCE) ---
+[LLR-SEC-010-A] Encrypt Room database using Android Keystore protected keys.
+[LLR-SEC-020-A] Validate schema version before import.
+[LLR-SEC-020-B] Reject malformed payloads.
+[LLR-SEC-030-A] Generate signature package during export.
+[LLR-SEC-040-A] Append immutable audit entries.
+[LLR-GOV-010-A] Generate review report objects.
+[LLR-GOV-020-A] Generate handoff package artifacts.
