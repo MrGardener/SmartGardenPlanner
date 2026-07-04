@@ -3,6 +3,7 @@ package com.example.smartgardenplanner.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartgardenplanner.core.SecurityKeyManager
 import com.example.smartgardenplanner.data.AppConfig
 import com.example.smartgardenplanner.data.AppDatabase
 import com.example.smartgardenplanner.data.SecurityRepository
@@ -20,10 +21,11 @@ class StorageViewModel(
     private val repository: SecurityRepository
 ) : AndroidViewModel(application) {
 
-    // FIX: This secondary constructor is exactly what Android's default factory needs!
-    constructor(application: Application) : this(
+    constructor(application: Application, keyManager: SecurityKeyManager) : this(
         application = application,
-        repository = SecurityRepositoryImpl(AppDatabase.getInstance(application).configDao())
+        repository = SecurityRepositoryImpl(
+            AppDatabase.getInstance(application, keyManager).configDao()
+        )
     )
 
     private val _targetConfigState = MutableStateFlow<AppConfig?>(null)

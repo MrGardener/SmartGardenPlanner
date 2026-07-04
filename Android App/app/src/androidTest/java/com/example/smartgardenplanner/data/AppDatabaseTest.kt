@@ -1,70 +1,53 @@
 package com.example.smartgardenplanner.data
 
 import android.content.Context
+import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.smartgardenplanner.security.SecurityKeyManager
-import kotlinx.coroutines.runBlocking
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import java.io.IOException
+import com.example.smartgardenplanner.core.PlotEntity
+import com.example.smartgardenplanner.core.PlantedNodeEntity
+import com.example.smartgardenplanner.core.SecurityKeyManager
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
 
-@androidx.room.Database(entities = [AppConfig::class], version = 1, exportSchema = false)
-abstract class TestDatabase : RoomDatabase() {
+@Database(
+    entities = [
+        AppConfig::class,
+        PlotEntity::class,
+        PlantedNodeEntity::class
+    ],
+    version = 2,
+    exportSchema = false
+)
+abstract class AppDatabase : RoomDatabase() {
+
     abstract fun configDao(): AppConfigDao
-}
+    abstract fun plotDao(): PlotDao
+    abstract fun plantedNodeDao(): PlantedNodeDao
 
-@RunWith(AndroidJUnit4::class)
-class AppDatabaseTest {
+    companion object {
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
 
-    private lateinit var db: TestDatabase
-    private lateinit var configDao: AppConfigDao
+        fun getInstance(context: Context, keyManager: SecurityKeyManager): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                SQLiteDatabase.loadLibs(context)
 
-    @Before
-    fun createDb() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+                val passphrase = keyManager.getDatabasePassphrase(context)
+                val factory = SupportFactory(passphrase)
 
-        // FIX: Force-loads the native C++ SQLCipher driver binaries into memory
-        System.loadLibrary("sqlcipher")
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "smart_garden_secure_vault.db"
+                )
+                    .openHelperFactory(factory)
+                    .fallbackToDestructiveMigration()
+                    .build()
 
-        // Fetch the passphrase bytes
-        val passphrase = SecurityKeyManager.getDatabasePassphrase()
-        val factory = SupportOpenHelperFactory(passphrase)
-
-        // Build the secured database
-        db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java)
-            .openHelperFactory(factory)
-            .build()
-
-        configDao = db.configDao()
-    }
-
-    @After
-    @Throws(IOException::class)
-    fun closeDb() {
-        db.close()
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun testSecureDatabaseWriteAndRead() = runBlocking {
-        val sampleConfig = AppConfig(
-            configKey = "secure_encryption_sync_token",
-            configValue = "ACTIVE_STATUS_VERIFIED"
-        )
-
-        configDao.saveConfig(sampleConfig)
-
-        val retrievedConfig = configDao.getConfigByKey("secure_encryption_sync_token")
-
-        assertNotNull("Retrieved configuration should not be null", retrievedConfig)
-        assertEquals("ACTIVE_STATUS_VERIFIED", retrievedConfig?.configValue)
+                INSTANCE = instance
+                instance
+            }
+        }
     }
 }

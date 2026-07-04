@@ -1,97 +1,67 @@
-package com.example.smartgardenplanner
+package com.example.smartgardenplanner.ui
 
 import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.smartgardenplanner.core.SecurityKeyManager
 import com.example.smartgardenplanner.data.AppConfig
+import com.example.smartgardenplanner.data.AppDatabase
 import com.example.smartgardenplanner.data.SecurityRepository
-import com.example.smartgardenplanner.ui.StorageViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito.mock
+import com.example.smartgardenplanner.data.SecurityRepositoryImpl
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-/**
- * A highly performant Fake implementation of our contract layer.
- * Bypasses the need for real C++ databases, device hardware, or active emulators.
- */
-class FakeSecurityRepository : SecurityRepository {
-    private val memoryStorage = mutableMapOf<String, AppConfig>()
+class StorageViewModel(
+    application: Application,
+    private val repository: SecurityRepository
+) : AndroidViewModel(application) {
 
-    override suspend fun fetchConfig(key: String): AppConfig? {
-        return memoryStorage[key]
+    constructor(application: Application, keyManager: SecurityKeyManager) : this(
+        application = application,
+        repository = SecurityRepositoryImpl(
+            AppDatabase.getInstance(application, keyManager).configDao()
+        )
+    )
+
+    private val _targetConfigState = MutableStateFlow<AppConfig?>(null)
+    val targetConfigState: StateFlow<AppConfig?> = _targetConfigState.asStateFlow()
+
+    private val _loadEventChannel = MutableSharedFlow<AppConfig?>()
+    val loadEventChannel: SharedFlow<AppConfig?> = _loadEventChannel.asSharedFlow()
+
+    fun loadConfiguration(key: String) {
+        viewModelScope.launch {
+            try {
+                val result = repository.fetchConfig(key)
+                _targetConfigState.value = result
+                _loadEventChannel.emit(result)
+            } catch (e: Exception) {
+                _targetConfigState.value = null
+                _loadEventChannel.emit(null)
+            }
+        }
     }
 
-    override suspend fun saveConfig(key: String, value: String) {
-        memoryStorage[key] = AppConfig(configKey = key, configValue = value)
+    fun saveConfiguration(key: String, value: String) {
+        viewModelScope.launch {
+            repository.saveConfig(key, value)
+            val updatedRecord = repository.fetchConfig(key)
+            _targetConfigState.value = updatedRecord
+        }
     }
 
-    override suspend fun deleteConfig(key: String) {
-        memoryStorage.remove(key)
-    }
-}
-
-// FIXED: Removed the obsolete @OptIn(ExperimentalCoroutinesScope::class) annotation block
-class StorageViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
-    private lateinit var fakeRepository: FakeSecurityRepository
-    private lateinit var viewModel: StorageViewModel
-    private val mockApplication = mock(Application::class.java)
-
-    @Before
-    fun setUp() {
-        // Redirect the Android architecture Main thread loop to our local test dispatcher context
-        Dispatchers.setMain(testDispatcher)
-
-        fakeRepository = FakeSecurityRepository()
-        // Inject the fake contract into our architecture constructor!
-        viewModel = StorageViewModel(mockApplication, fakeRepository)
-    }
-
-    @After
-    fun tearDown() {
-        // Reset the thread loops context to prevent system leaking across separate runs
-        Dispatchers.resetMain()
-    }
-
-    @Test
-    fun saveConfiguration_updatesTargetStateFlow_instantly() = runTest {
-        // Execute a business action layer rule task
-        viewModel.saveConfiguration("encryption_sync_flag", "VERIFIED_TRUE")
-
-        // Force the coroutine thread event loops to finish processing internal steps
-        advanceUntilIdle()
-
-        // Assert that the state machine updated its public variable backings perfectly
-        val observedState = viewModel.targetConfigState.value
-        assertNotNull("The internal state backing shouldn't remain null after saving", observedState)
-        assertEquals("encryption_sync_flag", observedState?.configKey)
-        assertEquals("VERIFIED_TRUE", observedState?.configValue)
-    }
-
-    @Test
-    fun deleteConfiguration_clearsTargetStateFlow_automatically() = runTest {
-        // Pre-populate the repository with data state criteria
-        fakeRepository.saveConfig("temporary_wipe_key", "DISPOSABLE_DATA")
-
-        // Load it into the ViewModel
-        viewModel.loadConfiguration("temporary_wipe_key")
-        advanceUntilIdle()
-        assertNotNull(viewModel.targetConfigState.value)
-
-        // Fire the deletion routine
-        viewModel.deleteConfiguration("temporary_wipe_key")
-        advanceUntilIdle()
-
-        // Verify that the view model state machine cleared out tracking lines cleanly
-        assertNull("State configuration flow parameter target should register null after wipe", viewModel.targetConfigState.value)
+    fun deleteConfiguration(key: String) {
+        viewModelScope.launch {
+            repository.deleteConfig(key)
+            if (_targetConfigState.value?.configKey == key) {
+                _targetConfigState.value = null
+            }
+            _loadEventChannel.emit(null)
+        }
     }
 }

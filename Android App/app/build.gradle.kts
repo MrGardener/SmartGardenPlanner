@@ -65,21 +65,16 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
-    // Universal Flexible SQLCipher Engine
-    implementation("net.zetetic:sqlcipher-android:4.6.1@aar")
-    implementation("androidx.sqlite:sqlite:2.4.0")
+    // SQLCipher + SQLite Bridge for Room
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
+    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+
 
     // --- TESTING HARNESS SUITES ---
-    // Basic JUnit
     testImplementation("junit:junit:4.13.2")
-
-    // FIX: Core engines required for Local Unit Coroutine & ViewModel Testing
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.mockito:mockito-core:5.5.0")
 
-    // Instrumented Android Emulator Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("net.zetetic:sqlcipher-android:4.6.1@aar")
-    androidTestImplementation("androidx.sqlite:sqlite:2.4.0")
 }
