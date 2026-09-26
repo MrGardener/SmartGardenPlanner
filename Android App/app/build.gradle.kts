@@ -13,7 +13,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "20.19"
+        versionName = "20.20" // bumped: real schema migrations + missing subsystems added this revision
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Safe-Haven Local Storage Database Stack
     implementation("androidx.room:room-runtime:2.6.1")
@@ -69,6 +70,13 @@ dependencies {
     implementation("net.zetetic:android-database-sqlcipher:4.5.4")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
 
+    // [NEW] CameraX — previously entirely absent despite T2-FUN-010 / HLR-SEN-010/020 requiring
+    // camera capture. Version 1.3.1 matches the Integration Plan's documented toolchain (Part 3 §2.1).
+    val cameraxVersion = "1.3.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
 
     // --- TESTING HARNESS SUITES ---
     testImplementation("junit:junit:4.13.2")

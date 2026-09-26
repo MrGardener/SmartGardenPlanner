@@ -1,53 +1,81 @@
 package com.example.smartgardenplanner.data
 
-import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import com.example.smartgardenplanner.core.PlotEntity
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.smartgardenplanner.core.PlantedNodeEntity
-import com.example.smartgardenplanner.core.SecurityKeyManager
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
+import com.example.smartgardenplanner.core.PlotEntity
+import com.example.smartgardenplanner.core.RealSecurityKeyManager
+import com.example.smartgardenplanner.core.SeedEntity
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
-@Database(
-    entities = [
-        AppConfig::class,
-        PlotEntity::class,
-        PlantedNodeEntity::class
-    ],
-    version = 2,
-    exportSchema = false
-)
-abstract class AppDatabase : RoomDatabase() {
+/**
+ * [FIXED] This file previously contained a verbatim copy of AppDatabase.kt itself — same
+ * package, same class name, zero @Test functions. That would (at best) contribute nothing,
+ * and very likely cause a duplicate-class build failure once the androidTest classpath merges
+ * with the main classpath. This is now a real instrumented test exercising the actual database.
+ */
+@RunWith(AndroidJUnit4::class)
+class AppDatabaseTest {
 
-    abstract fun configDao(): AppConfigDao
-    abstract fun plotDao(): PlotDao
-    abstract fun plantedNodeDao(): PlantedNodeDao
+    private lateinit var db: AppDatabase
 
-    companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+    @Before
+    fun setUp() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val keyManager = RealSecurityKeyManager().apply { initializeKeyStore() }
+        db = AppDatabase.buildInMemoryForTest(context, keyManager)
+    }
 
-        fun getInstance(context: Context, keyManager: SecurityKeyManager): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                SQLiteDatabase.loadLibs(context)
+    @After
+    fun tearDown() {
+        db.close()
+    }
 
-                val passphrase = keyManager.getDatabasePassphrase(context)
-                val factory = SupportFactory(passphrase)
+    @Test
+    fun insertAndRetrievePlot_returnsCommittedRecord() = runBlocking {
+        val plotId = db.plotDao().insert(
+            PlotEntity(name = "Backyard Bed", lengthM = 3.0f, widthM = 2.0f)
+        )
 
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "smart_garden_secure_vault.db"
-                )
-                    .openHelperFactory(factory)
-                    .fallbackToDestructiveMigration()
-                    .build()
+        val plots = db.plotDao().getAllPlots()
+        assertEquals(1, plots.size)
+        assertEquals("Backyard Bed", plots.first().name)
+        assertTrue(plotId > 0)
+    }
 
-                INSTANCE = instance
-                instance
-            }
-        }
+    @Test
+    fun deletingPlot_cascadesToPlantedNodes() = runBlocking {
+        db.seedDao().insert(
+            SeedEntity(botanicalCode = "TEST-001", commonName = "Test Plant", botanicalFamily = "Testaceae", exclusionRadiusM = 0.5f)
+        )
+        val plotId = db.plotDao().insert(PlotEntity(name = "Cascade Test", lengthM = 1.0f, widthM = 1.0f))
+        db.plantedNodeDao().insert(
+            PlantedNodeEntity(plotId = plotId, seedCode = "TEST-001", coordinateXM = 0.5f, coordinateYM = 0.5f)
+        )
+
+        assertEquals(1, db.plantedNodeDao().getByPlotId(plotId).size)
+
+        val plot = db.plotDao().getById(plotId)
+        assertNotNull(plot)
+        db.plotDao().delete(plot!!)
+
+        assertEquals(0, db.plantedNodeDao().getByPlotId(plotId).size)
+    }
+
+    @Test
+    fun seedDictionary_seedsInsertSuccessfully() = runBlocking {
+        db.seedDao().insert(
+            SeedEntity(botanicalCode = "SOL-LYC", commonName = "Tomato", botanicalFamily = "Solanaceae", exclusionRadiusM = 1.25f)
+        )
+        val seed = db.seedDao().getByCode("SOL-LYC")
+        assertNotNull(seed)
+        assertEquals("Tomato", seed?.commonName)
     }
 }

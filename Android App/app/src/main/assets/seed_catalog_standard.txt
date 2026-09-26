@@ -1,0 +1,600 @@
+TOM-001|Tomato - Brandywine|Solanaceae|VEGETABLE|ANNUAL|3|11|0.61|7|73|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-002|Tomato - Cherokee Purple|Solanaceae|VEGETABLE|ANNUAL|3|11|0.59|5|73|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-003|Tomato - San Marzano|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|8|66|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-004|Tomato - Early Girl|Solanaceae|VEGETABLE|ANNUAL|3|11|0.65|6|73|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-005|Tomato - Better Boy|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|6|78|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-006|Tomato - Roma|Solanaceae|VEGETABLE|ANNUAL|3|11|0.59|6|74|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-007|Tomato - Beefsteak|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|6|65|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-008|Tomato - Sun Gold|Solanaceae|VEGETABLE|ANNUAL|3|11|0.61|8|72|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-009|Tomato - Green Zebra|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|5|72|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-010|Tomato - Mortgage Lifter|Solanaceae|VEGETABLE|ANNUAL|3|11|0.59|7|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-011|Tomato - Celebrity|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|8|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-012|Tomato - Big Boy|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|6|62|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-013|Tomato - Yellow Pear|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|9|72|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-014|Tomato - Black Krim|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|8|67|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-015|Tomato - Amish Paste|Solanaceae|VEGETABLE|ANNUAL|3|11|0.61|8|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-016|Tomato - Juliet|Solanaceae|VEGETABLE|ANNUAL|3|11|0.58|6|70|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-017|Tomato - Sweet 100|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|7|63|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-018|Tomato - Costoluto Genovese|Solanaceae|VEGETABLE|ANNUAL|3|11|0.59|6|78|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-019|Tomato - Pineapple|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|7|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-020|Tomato - Stupice|Solanaceae|VEGETABLE|ANNUAL|3|11|0.63|6|62|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-021|Tomato - Berkeley Tie Dye|Solanaceae|VEGETABLE|ANNUAL|3|11|0.64|8|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-022|Tomato - Chocolate Cherry|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|5|77|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-023|Tomato - Green Grape|Solanaceae|VEGETABLE|ANNUAL|3|11|0.63|5|76|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-024|Tomato - Opalka|Solanaceae|VEGETABLE|ANNUAL|3|11|0.65|6|67|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-025|Tomato - Purple Cherokee|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|8|77|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-026|Tomato - Striped German|Solanaceae|VEGETABLE|ANNUAL|3|11|0.64|5|65|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-027|Tomato - Yellow Brandywine|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|9|71|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-028|Tomato - Black Cherry|Solanaceae|VEGETABLE|ANNUAL|3|11|0.62|6|77|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-029|Tomato - Blue Beauty|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|8|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-030|Tomato - Paul Robeson|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|9|63|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-031|Tomato - Speckled Roman|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|5|66|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-032|Tomato - White Wonder|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|6|70|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-033|Tomato - Azoychka|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|7|71|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-034|Tomato - Marglobe|Solanaceae|VEGETABLE|ANNUAL|3|11|0.62|5|73|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-035|Tomato - Rutgers|Solanaceae|VEGETABLE|ANNUAL|3|11|0.65|8|76|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-036|Tomato - Homestead|Solanaceae|VEGETABLE|ANNUAL|3|11|0.64|5|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-037|Tomato - Arkansas Traveler|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|9|77|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-038|Tomato - Box Car Willie|Solanaceae|VEGETABLE|ANNUAL|3|11|0.58|7|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-039|Tomato - Kellogg's Breakfast|Solanaceae|VEGETABLE|ANNUAL|3|11|0.63|8|74|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-040|Tomato - Aunt Ruby's German Green|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|8|71|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-041|Tomato - Hillbilly|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|9|74|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-042|Tomato - Mr. Stripey|Solanaceae|VEGETABLE|ANNUAL|3|11|0.58|6|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-043|Tomato - Persimmon|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|7|62|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-044|Tomato - Radiator Charlie's Mortgage Lifter|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|7|66|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-045|Tomato - Old German|Solanaceae|VEGETABLE|ANNUAL|3|11|0.65|7|66|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-046|Tomato - Dr. Wyche's Yellow|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|8|73|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-047|Tomato - Nebraska Wedding|Solanaceae|VEGETABLE|ANNUAL|3|11|0.65|8|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-048|Tomato - Cuostralee|Solanaceae|VEGETABLE|ANNUAL|3|11|0.63|6|66|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-049|Tomato - Anna Russian|Solanaceae|VEGETABLE|ANNUAL|3|11|0.63|9|64|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-050|Tomato - Black Prince|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|6|62|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-051|Tomato - Japanese Black Trifele|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|7|71|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-052|Tomato - Malachite Box|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|6|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-053|Tomato - Pink Berkeley Tie Dye|Solanaceae|VEGETABLE|ANNUAL|3|11|0.6|5|72|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-054|Tomato - Chocolate Stripes|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|9|65|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-055|Tomato - Black Cherry|Solanaceae|VEGETABLE|ANNUAL|3|11|0.62|7|63|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-056|Tomato - Gold Medal|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|5|63|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-057|Tomato - Djena Lee's Golden Girl|Solanaceae|VEGETABLE|ANNUAL|3|11|0.55|6|75|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-058|Tomato - Moskvich|Solanaceae|VEGETABLE|ANNUAL|3|11|0.56|9|63|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-059|Tomato - Silvery Fir Tree|Solanaceae|VEGETABLE|ANNUAL|3|11|0.62|7|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-060|Tomato - Amish Paste Roma|Solanaceae|VEGETABLE|ANNUAL|3|11|0.61|8|72|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+TOM-061|Tomato - Federle|Solanaceae|VEGETABLE|ANNUAL|3|11|0.57|9|68|BAS,MAR,CAR|CAB,FEN|Hornworms, aphids, whiteflies|Deep consistent watering; stake or cage.
+PEP-001|Pepper - California Wonder|Solanaceae|VEGETABLE|ANNUAL|4|11|0.45|10|83|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-002|Pepper - Jalapeno|Solanaceae|VEGETABLE|ANNUAL|4|11|0.45|9|78|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-003|Pepper - Habanero|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|8|72|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-004|Pepper - Serrano|Solanaceae|VEGETABLE|ANNUAL|4|11|0.45|12|79|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-005|Pepper - Poblano|Solanaceae|VEGETABLE|ANNUAL|4|11|0.44|8|75|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-006|Pepper - Cayenne|Solanaceae|VEGETABLE|ANNUAL|4|11|0.5|12|80|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-007|Pepper - Anaheim|Solanaceae|VEGETABLE|ANNUAL|4|11|0.47|11|76|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-008|Pepper - Carmen|Solanaceae|VEGETABLE|ANNUAL|4|11|0.4|9|71|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-009|Pepper - Cubanelle|Solanaceae|VEGETABLE|ANNUAL|4|11|0.49|9|69|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-010|Pepper - King of the North|Solanaceae|VEGETABLE|ANNUAL|4|11|0.48|11|71|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-011|Pepper - Hungarian Wax|Solanaceae|VEGETABLE|ANNUAL|4|11|0.44|11|80|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-012|Pepper - Thai Chili|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|12|71|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-013|Pepper - Ghost Pepper|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|12|77|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-014|Pepper - Shishito|Solanaceae|VEGETABLE|ANNUAL|4|11|0.5|12|72|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-015|Pepper - Corno di Toro|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|11|71|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-016|Pepper - Fresno|Solanaceae|VEGETABLE|ANNUAL|4|11|0.47|8|68|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-017|Pepper - Scotch Bonnet|Solanaceae|VEGETABLE|ANNUAL|4|11|0.45|9|67|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-018|Pepper - Pimento|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|8|69|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-019|Pepper - Banana Pepper|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|11|67|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-020|Pepper - Aji Amarillo|Solanaceae|VEGETABLE|ANNUAL|4|11|0.46|12|67|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-021|Pepper - Trinidad Scorpion|Solanaceae|VEGETABLE|ANNUAL|4|11|0.42|10|75|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-022|Pepper - Padron|Solanaceae|VEGETABLE|ANNUAL|4|11|0.49|9|82|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-023|Pepper - Shishito Gold|Solanaceae|VEGETABLE|ANNUAL|4|11|0.47|11|73|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-024|Pepper - Poblano Ancho|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|9|74|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-025|Pepper - Datil|Solanaceae|VEGETABLE|ANNUAL|4|11|0.44|11|73|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-026|Pepper - Fish Pepper|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|9|67|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-027|Pepper - Carolina Reaper|Solanaceae|VEGETABLE|ANNUAL|4|11|0.47|8|68|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-028|Pepper - Trinidad Moruga Scorpion|Solanaceae|VEGETABLE|ANNUAL|4|11|0.45|12|68|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-029|Pepper - 7 Pot Douglah|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|12|74|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-030|Pepper - Bhut Jolokia|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|11|83|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-031|Pepper - Fatalii|Solanaceae|VEGETABLE|ANNUAL|4|11|0.49|8|76|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-032|Pepper - Aji Charapita|Solanaceae|VEGETABLE|ANNUAL|4|11|0.42|12|68|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-033|Pepper - Peter Pepper|Solanaceae|VEGETABLE|ANNUAL|4|11|0.47|9|77|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-034|Pepper - Buena Mulata|Solanaceae|VEGETABLE|ANNUAL|4|11|0.43|10|69|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-035|Pepper - Chocolate Habanero|Solanaceae|VEGETABLE|ANNUAL|4|11|0.46|12|72|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-036|Pepper - Bishop's Crown|Solanaceae|VEGETABLE|ANNUAL|4|11|0.4|8|74|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-037|Pepper - Numex Twilight|Solanaceae|VEGETABLE|ANNUAL|4|11|0.46|10|74|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-038|Pepper - Pretty in Purple|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|11|80|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-039|Pepper - Marconi|Solanaceae|VEGETABLE|ANNUAL|4|11|0.42|11|79|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-040|Pepper - Jimmy Nardello|Solanaceae|VEGETABLE|ANNUAL|4|11|0.48|8|83|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-041|Pepper - Cubanelle Sweet|Solanaceae|VEGETABLE|ANNUAL|4|11|0.5|8|71|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-042|Pepper - Lipstick|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|11|83|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-043|Pepper - Big Bertha|Solanaceae|VEGETABLE|ANNUAL|4|11|0.48|12|76|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-044|Pepper - Golden California Wonder|Solanaceae|VEGETABLE|ANNUAL|4|11|0.48|10|81|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-045|Pepper - Purple Beauty|Solanaceae|VEGETABLE|ANNUAL|4|11|0.41|10|74|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+PEP-046|Pepper - Chervena Chushka|Solanaceae|VEGETABLE|ANNUAL|4|11|0.5|8|68|BAS,ONI,CAR|FEN,KOH|Aphids, pepper weevils|Warm soil, consistent moisture.
+CUC-001|Cucumber - Marketmore|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.29|5|65|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-002|Cucumber - Straight Eight|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.33|7|68|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-003|Cucumber - Lemon|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.31|8|52|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-004|Cucumber - Boston Pickling|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.31|5|66|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-005|Cucumber - Armenian|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.35|4|64|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-006|Cucumber - Persian|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.27|6|57|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-007|Cucumber - Suyo Long|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.3|8|52|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-008|Cucumber - National Pickling|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.33|8|59|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-009|Cucumber - English Telegraph|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.26|8|55|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-010|Cucumber - Poona Kheera|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.3|6|67|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-011|Cucumber - Diva|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.28|5|65|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+CUC-012|Cucumber - Muncher|Cucurbitaceae|VEGETABLE|ANNUAL|4|11|0.29|8|67|BEA,COR,RAD|POT,SAG|Cucumber beetles, powdery mildew|Trellis for straighter fruit, even watering.
+LET-001|Lettuce - Buttercrunch|Asteraceae|VEGETABLE|ANNUAL|3|10|0.21|6|52|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-002|Lettuce - Black Seeded Simpson|Asteraceae|VEGETABLE|ANNUAL|3|10|0.23|5|50|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-003|Lettuce - Romaine|Asteraceae|VEGETABLE|ANNUAL|3|10|0.24|8|47|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-004|Lettuce - Red Sails|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|5|47|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-005|Lettuce - Oakleaf|Asteraceae|VEGETABLE|ANNUAL|3|10|0.16|8|43|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-006|Lettuce - Iceberg|Asteraceae|VEGETABLE|ANNUAL|3|10|0.17|9|54|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-007|Lettuce - Little Gem|Asteraceae|VEGETABLE|ANNUAL|3|10|0.19|9|50|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-008|Lettuce - Lollo Rossa|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|5|48|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-009|Lettuce - Deer Tongue|Asteraceae|VEGETABLE|ANNUAL|3|10|0.18|9|50|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-010|Lettuce - Tom Thumb|Asteraceae|VEGETABLE|ANNUAL|3|10|0.19|5|52|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-011|Lettuce - Freckles|Asteraceae|VEGETABLE|ANNUAL|3|10|0.15|5|49|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-012|Lettuce - Salad Bowl|Asteraceae|VEGETABLE|ANNUAL|3|10|0.2|8|54|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-013|Lettuce - Merlot|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|7|43|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-014|Lettuce - Winter Density|Asteraceae|VEGETABLE|ANNUAL|3|10|0.19|8|51|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-015|Lettuce - Rouge d'Hiver|Asteraceae|VEGETABLE|ANNUAL|3|10|0.16|9|56|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-016|Lettuce - Forellenschluss|Asteraceae|VEGETABLE|ANNUAL|3|10|0.21|7|43|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-017|Lettuce - Reine des Glaces|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|9|47|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-018|Lettuce - Cimarron|Asteraceae|VEGETABLE|ANNUAL|3|10|0.21|8|57|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-019|Lettuce - Amish Deer Tongue|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|6|52|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-020|Lettuce - Bronze Arrow|Asteraceae|VEGETABLE|ANNUAL|3|10|0.19|5|55|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-021|Lettuce - Flashy Trout Back|Asteraceae|VEGETABLE|ANNUAL|3|10|0.24|5|44|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-022|Lettuce - Speckled Amish|Asteraceae|VEGETABLE|ANNUAL|3|10|0.17|6|57|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-023|Lettuce - Marvel of Four Seasons|Asteraceae|VEGETABLE|ANNUAL|3|10|0.15|8|56|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-024|Lettuce - May Queen|Asteraceae|VEGETABLE|ANNUAL|3|10|0.2|6|45|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-025|Lettuce - Rouge d'Hiver|Asteraceae|VEGETABLE|ANNUAL|3|10|0.25|6|51|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-026|Lettuce - Tango|Asteraceae|VEGETABLE|ANNUAL|3|10|0.16|6|51|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-027|Lettuce - New Red Fire|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|6|47|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-028|Lettuce - Jericho|Asteraceae|VEGETABLE|ANNUAL|3|10|0.22|7|45|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+LET-029|Lettuce - Sierra|Asteraceae|VEGETABLE|ANNUAL|3|10|0.23|9|49|CAR,RAD,CUC||Aphids, slugs|Cool-season; bolts in heat.
+CAR-001|Carrot - Danvers|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|13|65|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-002|Carrot - Nantes|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|14|78|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-003|Carrot - Chantenay|Apiaceae|VEGETABLE|ANNUAL|3|10|0.1|16|74|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-004|Carrot - Purple Haze|Apiaceae|VEGETABLE|ANNUAL|3|10|0.09|15|68|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-005|Carrot - Cosmic Purple|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|15|70|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-006|Carrot - Little Finger|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|14|74|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-007|Carrot - Scarlet Nantes|Apiaceae|VEGETABLE|ANNUAL|3|10|0.06|16|74|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-008|Carrot - Yellowstone|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|15|62|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+CAR-009|Carrot - Atomic Red|Apiaceae|VEGETABLE|ANNUAL|3|10|0.05|16|69|PEA,ONI,LEE|DIL|Carrot rust fly|Loose deep soil for straight roots.
+ONI-001|Onion - Yellow Sweet Spanish|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.06|8|102|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-002|Onion - Red Burgundy|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.09|9|100|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-003|Onion - Walla Walla|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.07|8|101|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-004|Onion - White Sweet Spanish|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.07|8|95|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-005|Onion - Texas Early Grano|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.09|12|97|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-006|Onion - Candy|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.05|9|97|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-007|Onion - Patterson|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.12|12|98|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-008|Onion - Cippolini|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.1|8|104|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-009|Onion - Early Season|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.09|11|99|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+BEA-001|Bush Bean - Blue Lake|Fabaceae|VEGETABLE|ANNUAL|3|11|0.19|9|47|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-002|Bush Bean - Provider|Fabaceae|VEGETABLE|ANNUAL|3|11|0.12|10|56|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-003|Bush Bean - Contender|Fabaceae|VEGETABLE|ANNUAL|3|11|0.17|9|53|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-004|Bush Bean - Royal Burgundy|Fabaceae|VEGETABLE|ANNUAL|3|11|0.12|8|56|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-005|Bush Bean - Jade|Fabaceae|VEGETABLE|ANNUAL|3|11|0.19|9|57|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-006|Bush Bean - Tendergreen|Fabaceae|VEGETABLE|ANNUAL|3|11|0.1|6|58|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-007|Bush Bean - Dragon Tongue|Fabaceae|VEGETABLE|ANNUAL|3|11|0.18|8|57|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-008|Bush Bean - Yellow Wax|Fabaceae|VEGETABLE|ANNUAL|3|11|0.16|8|48|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-009|Bush Bean - Cannellini|Fabaceae|VEGETABLE|ANNUAL|3|11|0.14|10|55|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-010|Bush Bean - Black Turtle|Fabaceae|VEGETABLE|ANNUAL|3|11|0.11|7|47|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-011|Bush Bean - Kentucky Blue|Fabaceae|VEGETABLE|ANNUAL|3|11|0.12|7|55|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+BEA-012|Bush Bean - Purple Podded Pole|Fabaceae|VEGETABLE|ANNUAL|3|11|0.16|10|53|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
+PEA-001|Pea - Sugar Snap|Fabaceae|VEGETABLE|ANNUAL|3|9|0.07|6|61|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-002|Pea - Snow Pea|Fabaceae|VEGETABLE|ANNUAL|3|9|0.06|7|54|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-003|Pea - Green Arrow|Fabaceae|VEGETABLE|ANNUAL|3|9|0.13|9|60|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-004|Pea - Little Marvel|Fabaceae|VEGETABLE|ANNUAL|3|9|0.13|7|59|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-005|Pea - Wando|Fabaceae|VEGETABLE|ANNUAL|3|9|0.07|10|62|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-006|Pea - Early Season|Fabaceae|VEGETABLE|ANNUAL|3|9|0.06|6|55|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-007|Pea - Mid-Season|Fabaceae|VEGETABLE|ANNUAL|3|9|0.08|8|52|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-008|Pea - Late Season|Fabaceae|VEGETABLE|ANNUAL|3|9|0.09|7|64|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+PEA-009|Pea - Extra Early|Fabaceae|VEGETABLE|ANNUAL|3|9|0.06|9|60|CAR,RAD,CUC|ONI,GAR|Aphids, powdery mildew|Cool-season; plant early spring or fall.
+ZUC-001|Zucchini - Black Beauty|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.64|5|48|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-002|Zucchini - Cocozelle|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.58|7|42|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-003|Zucchini - Golden|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.56|5|51|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-004|Zucchini - Costata Romanesco|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.64|8|45|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-005|Zucchini - Eight Ball|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.6|8|52|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-006|Zucchini - Early Season|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.61|9|48|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-007|Zucchini - Mid-Season|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.64|6|53|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-008|Zucchini - Late Season|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.6|7|44|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+ZUC-009|Zucchini - Extra Early|Cucurbitaceae|VEGETABLE|ANNUAL|3|11|0.61|8|44|COR,MAR,NAS|POT|Squash vine borer, powdery mildew|Full sun, rich soil, consistent moisture.
+SQW-001|Winter Squash - Butternut|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.89|7|108|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-002|Winter Squash - Acorn|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.93|5|103|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-003|Winter Squash - Delicata|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.88|5|97|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-004|Winter Squash - Spaghetti|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.9|9|97|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-005|Winter Squash - Hubbard|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.88|8|107|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-006|Winter Squash - Kabocha|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.91|8|93|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-007|Winter Squash - Buttercup|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.91|5|96|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-008|Winter Squash - Sweet Dumpling|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.86|5|95|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-009|Winter Squash - Carnival|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.91|6|102|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-010|Winter Squash - Blue Hubbard|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.89|5|108|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-011|Winter Squash - Waltham Butternut|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.88|5|107|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+SQW-012|Winter Squash - Red Kuri|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|0.89|9|92|COR,BEA|POT|Squash bugs, vine borer|Needs long season and full sun.
+BRO-001|Broccoli - Calabrese|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.48|6|68|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-002|Broccoli - Waltham 29|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.47|6|64|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-003|Broccoli - Purple Sprouting|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.41|4|70|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-004|Broccoli - Di Cicco|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.44|5|60|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-005|Broccoli - Green Magic|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.44|5|64|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-006|Broccoli - Belstar|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.5|7|60|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-007|Broccoli - Arcadia|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.47|5|59|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-008|Broccoli - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.5|7|68|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+BRO-009|Broccoli - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.43|5|70|ONI,DIL,MAR|TOM,STR|Cabbage worms|Cool-season; harvest central head first.
+CAB-001|Cabbage - Early Jersey Wakefield|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.44|7|74|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-002|Cabbage - Red Acre|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.42|6|65|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-003|Cabbage - Savoy|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.4|8|73|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-004|Cabbage - Golden Acre|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.41|8|68|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-005|Cabbage - Copenhagen Market|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.38|6|73|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-006|Cabbage - Storage No. 4|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.41|4|70|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-007|Cabbage - January King|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.43|7|63|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-008|Cabbage - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.38|4|69|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+CAB-009|Cabbage - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.42|4|77|ONI,DIL,CEL|TOM,STR|Cabbage worms, aphids|Consistent moisture; cool-season crop.
+KAL-001|Kale - Lacinato|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.3|6|57|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-002|Kale - Curly Scotch|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.39|6|51|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-003|Kale - Red Russian|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.34|5|60|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-004|Kale - Redbor|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.4|4|52|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-005|Kale - Winterbor|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.38|5|55|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-006|Kale - Dinosaur|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.4|8|63|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-007|Kale - Premier|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.33|6|63|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-008|Kale - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.37|4|56|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+KAL-009|Kale - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.34|4|51|ONI,DIL,MAR|STR|Cabbage worms, aphids|Frost improves flavor; cut-and-come-again.
+RAD-001|Radish - Cherry Belle|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.06|3|29|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-002|Radish - French Breakfast|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.09|2|21|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-003|Radish - Watermelon|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.05|3|20|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-004|Radish - Daikon|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.07|3|32|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-005|Radish - Black Spanish|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.07|4|31|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-006|Radish - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.05|3|19|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-007|Radish - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.09|4|26|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-008|Radish - Late Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.05|4|25|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+RAD-009|Radish - Extra Early|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.12|2|33|PEA,CUC,LET|HYS|Flea beetles, root maggot|Fast crop; sow every 2 weeks for succession.
+SPI-001|Spinach - Bloomsdale|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.18|5|44|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-002|Spinach - Space|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.13|7|41|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-003|Spinach - Tyee|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.1|6|46|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-004|Spinach - Baby's Leaf|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.15|8|42|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-005|Spinach - Early Season|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.14|6|45|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-006|Spinach - Mid-Season|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.17|6|46|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-007|Spinach - Late Season|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.2|9|44|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-008|Spinach - Extra Early|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.15|7|43|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+SPI-009|Spinach - Storage Type|Amaranthaceae|VEGETABLE|ANNUAL|3|9|0.14|5|53|STR,BEA||Leaf miners|Cool-season; bolts in heat.
+BEE-001|Beet - Detroit Dark Red|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.14|7|55|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-002|Beet - Golden|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.07|8|47|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-003|Beet - Chioggia|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.08|8|60|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-004|Beet - Cylindra|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.11|6|57|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-005|Beet - Early Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.08|8|59|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-006|Beet - Mid-Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.06|7|61|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-007|Beet - Late Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.07|9|63|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-008|Beet - Extra Early|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.08|5|57|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+BEE-009|Beet - Storage Type|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.14|9|63|ONI,LET,CAB|POL|Leaf miners|Both roots and greens are edible.
+COR-001|Sweet Corn - Silver Queen|Poaceae|VEGETABLE|ANNUAL|3|10|0.35|6|75|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-002|Sweet Corn - Golden Bantam|Poaceae|VEGETABLE|ANNUAL|3|10|0.32|9|79|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-003|Sweet Corn - Peaches and Cream|Poaceae|VEGETABLE|ANNUAL|3|10|0.29|9|80|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-004|Sweet Corn - Honey Select|Poaceae|VEGETABLE|ANNUAL|3|10|0.3|9|75|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-005|Sweet Corn - Country Gentleman|Poaceae|VEGETABLE|ANNUAL|3|10|0.3|8|70|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-006|Sweet Corn - Bodacious|Poaceae|VEGETABLE|ANNUAL|3|10|0.31|5|80|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-007|Sweet Corn - Ambrosia|Poaceae|VEGETABLE|ANNUAL|3|10|0.31|5|75|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-008|Sweet Corn - Early Season|Poaceae|VEGETABLE|ANNUAL|3|10|0.25|5|69|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+COR-009|Sweet Corn - Mid-Season|Poaceae|VEGETABLE|ANNUAL|3|10|0.28|6|83|BEA,SQW,CUC|TOM|Corn earworm, borers|Plant in blocks for pollination.
+POT-001|Potato - Yukon Gold|Solanaceae|VEGETABLE|ANNUAL|3|10|0.33|12|94|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-002|Potato - Russet Burbank|Solanaceae|VEGETABLE|ANNUAL|3|10|0.32|15|97|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-003|Potato - Red Pontiac|Solanaceae|VEGETABLE|ANNUAL|3|10|0.3|12|98|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-004|Potato - Kennebec|Solanaceae|VEGETABLE|ANNUAL|3|10|0.32|15|86|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-005|Potato - Fingerling|Solanaceae|VEGETABLE|ANNUAL|3|10|0.29|16|88|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-006|Potato - Purple Majesty|Solanaceae|VEGETABLE|ANNUAL|3|10|0.3|13|95|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-007|Potato - German Butterball|Solanaceae|VEGETABLE|ANNUAL|3|10|0.26|14|82|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-008|Potato - Early Season|Solanaceae|VEGETABLE|ANNUAL|3|10|0.3|15|87|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+POT-009|Potato - Mid-Season|Solanaceae|VEGETABLE|ANNUAL|3|10|0.31|15|87|BEA,COR,MAR|TOM,CUC,SUN|Colorado potato beetle|Hill soil around stems as they grow.
+GAR-001|Garlic - Music|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.1|12|239|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-002|Garlic - German Extra Hardy|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.15|12|247|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-003|Garlic - Chesnok Red|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.1|15|232|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-004|Garlic - Silverskin|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.11|16|241|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-005|Garlic - Elephant|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.07|15|247|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-006|Garlic - Early Season|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.09|12|232|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-007|Garlic - Mid-Season|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.12|12|240|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-008|Garlic - Late Season|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.15|12|233|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+GAR-009|Garlic - Extra Early|Amaryllidaceae|VEGETABLE|PERENNIAL|3|10|0.06|12|246|TOM,BEE|BEA,PEA|Rust, white rot|Plant cloves in fall for summer harvest.
+BAS-001|Basil - Genovese|Lamiaceae|HERB|ANNUAL|3|11|0.34|7|51|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-002|Basil - Thai|Lamiaceae|HERB|ANNUAL|3|11|0.27|5|42|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-003|Basil - Purple Ruffles|Lamiaceae|HERB|ANNUAL|3|11|0.28|8|50|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-004|Basil - Lemon|Lamiaceae|HERB|ANNUAL|3|11|0.34|4|47|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-005|Basil - Cinnamon|Lamiaceae|HERB|ANNUAL|3|11|0.3|5|58|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-006|Basil - Lettuce Leaf|Lamiaceae|HERB|ANNUAL|3|11|0.35|5|53|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-007|Basil - Greek|Lamiaceae|HERB|ANNUAL|3|11|0.29|8|55|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-008|Basil - Spicy Globe|Lamiaceae|HERB|ANNUAL|3|11|0.28|7|57|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-009|Basil - African Blue|Lamiaceae|HERB|ANNUAL|3|11|0.35|5|44|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-010|Basil - Holy Basil (Tulsi)|Lamiaceae|HERB|ANNUAL|3|11|0.3|6|44|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+BAS-011|Basil - Red Rubin|Lamiaceae|HERB|ANNUAL|3|11|0.26|5|42|TOM,PEP||Japanese beetles, aphids|Pinch flowers to prolong leaf production.
+MIN-001|Mint - Spearmint|Lamiaceae|HERB|PERENNIAL|3|11|0.37|12|63|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-002|Mint - Peppermint|Lamiaceae|HERB|PERENNIAL|3|11|0.4|11|62|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-003|Mint - Chocolate|Lamiaceae|HERB|PERENNIAL|3|11|0.37|8|63|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-004|Mint - Apple Mint|Lamiaceae|HERB|PERENNIAL|3|11|0.43|12|68|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-005|Mint - Early Season|Lamiaceae|HERB|PERENNIAL|3|11|0.42|10|57|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-006|Mint - Mid-Season|Lamiaceae|HERB|PERENNIAL|3|11|0.38|11|62|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-007|Mint - Late Season|Lamiaceae|HERB|PERENNIAL|3|11|0.43|12|53|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-008|Mint - Extra Early|Lamiaceae|HERB|PERENNIAL|3|11|0.42|12|61|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+MIN-009|Mint - Storage Type|Lamiaceae|HERB|PERENNIAL|3|11|0.45|8|57|CAB,TOM||Rarely bothered|Highly invasive; grow in a container.
+ROS-001|Rosemary - Tuscan Blue|Lamiaceae|HERB|PERENNIAL|7|11|0.58|23|94|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-002|Rosemary - Arp|Lamiaceae|HERB|PERENNIAL|7|11|0.59|23|85|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-003|Rosemary - Barbeque|Lamiaceae|HERB|PERENNIAL|7|11|0.57|21|87|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-004|Rosemary - Salem|Lamiaceae|HERB|PERENNIAL|7|11|0.61|20|85|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-005|Rosemary - Blue Spires|Lamiaceae|HERB|PERENNIAL|7|11|0.6|21|84|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-006|Rosemary - Early Season|Lamiaceae|HERB|PERENNIAL|7|11|0.65|19|83|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-007|Rosemary - Mid-Season|Lamiaceae|HERB|PERENNIAL|7|11|0.63|23|84|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-008|Rosemary - Late Season|Lamiaceae|HERB|PERENNIAL|7|11|0.58|22|88|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+ROS-009|Rosemary - Extra Early|Lamiaceae|HERB|PERENNIAL|7|11|0.58|23|87|CAB,BEA,CAR||Rarely bothered|Drought tolerant once established.
+THY-001|Thyme - English|Lamiaceae|HERB|PERENNIAL|4|10|0.27|13|75|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-002|Thyme - Lemon|Lamiaceae|HERB|PERENNIAL|4|10|0.27|14|86|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-003|Thyme - Creeping|Lamiaceae|HERB|PERENNIAL|4|10|0.28|13|73|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-004|Thyme - French|Lamiaceae|HERB|PERENNIAL|4|10|0.21|12|77|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-005|Thyme - Silver Posie|Lamiaceae|HERB|PERENNIAL|4|10|0.25|14|76|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-006|Thyme - Wooly Thyme|Lamiaceae|HERB|PERENNIAL|4|10|0.21|13|81|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-007|Thyme - Early Season|Lamiaceae|HERB|PERENNIAL|4|10|0.27|12|81|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-008|Thyme - Mid-Season|Lamiaceae|HERB|PERENNIAL|4|10|0.22|12|78|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+THY-009|Thyme - Late Season|Lamiaceae|HERB|PERENNIAL|4|10|0.24|14|83|CAB,TOM||Rarely bothered|Low-growing groundcover herb.
+SAG-001|Sage - Common|Lamiaceae|HERB|PERENNIAL|4|10|0.48|12|69|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-002|Sage - Purple|Lamiaceae|HERB|PERENNIAL|4|10|0.46|12|73|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-003|Sage - Tricolor|Lamiaceae|HERB|PERENNIAL|4|10|0.45|14|76|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-004|Sage - Berggarten|Lamiaceae|HERB|PERENNIAL|4|10|0.52|15|69|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-005|Sage - Early Season|Lamiaceae|HERB|PERENNIAL|4|10|0.51|12|68|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-006|Sage - Mid-Season|Lamiaceae|HERB|PERENNIAL|4|10|0.51|15|78|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-007|Sage - Late Season|Lamiaceae|HERB|PERENNIAL|4|10|0.48|14|77|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-008|Sage - Extra Early|Lamiaceae|HERB|PERENNIAL|4|10|0.47|15|80|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+SAG-009|Sage - Storage Type|Lamiaceae|HERB|PERENNIAL|4|10|0.55|14|77|CAR,CAB,TOM|CUC|Rarely bothered|Drought tolerant, woody perennial.
+ORE-001|Oregano - Greek|Lamiaceae|HERB|PERENNIAL|4|10|0.33|10|75|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-002|Oregano - Italian|Lamiaceae|HERB|PERENNIAL|4|10|0.26|9|75|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-003|Oregano - Golden|Lamiaceae|HERB|PERENNIAL|4|10|0.28|12|80|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-004|Oregano - Early Season|Lamiaceae|HERB|PERENNIAL|4|10|0.28|8|85|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-005|Oregano - Mid-Season|Lamiaceae|HERB|PERENNIAL|4|10|0.25|8|75|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-006|Oregano - Late Season|Lamiaceae|HERB|PERENNIAL|4|10|0.35|8|84|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-007|Oregano - Extra Early|Lamiaceae|HERB|PERENNIAL|4|10|0.25|11|74|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-008|Oregano - Storage Type|Lamiaceae|HERB|PERENNIAL|4|10|0.27|12|76|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+ORE-009|Oregano - Baby/Petite|Lamiaceae|HERB|PERENNIAL|4|10|0.33|10|76|TOM,PEP||Rarely bothered|Spreads readily; divide every few years.
+MAR-001|Marigold - French Petite|Asteraceae|FLOWER|ANNUAL|2|11|0.34|5|47|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-002|Marigold - African Tall|Asteraceae|FLOWER|ANNUAL|2|11|0.32|3|52|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-003|Marigold - Signet|Asteraceae|FLOWER|ANNUAL|2|11|0.32|7|42|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-004|Marigold - Crackerjack|Asteraceae|FLOWER|ANNUAL|2|11|0.29|4|58|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-005|Marigold - Bonanza|Asteraceae|FLOWER|ANNUAL|2|11|0.28|6|43|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-006|Marigold - Durango|Asteraceae|FLOWER|ANNUAL|2|11|0.33|3|47|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-007|Marigold - Sparky|Asteraceae|FLOWER|ANNUAL|2|11|0.25|4|50|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-008|Marigold - Vanilla|Asteraceae|FLOWER|ANNUAL|2|11|0.34|5|51|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-009|Marigold - Strawberry Blonde|Asteraceae|FLOWER|ANNUAL|2|11|0.35|5|56|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-010|Marigold - Fireball|Asteraceae|FLOWER|ANNUAL|2|11|0.25|6|52|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-011|Marigold - Zenith Mix|Asteraceae|FLOWER|ANNUAL|2|11|0.28|7|42|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+MAR-012|Marigold - Alumia Vanilla Cream|Asteraceae|FLOWER|ANNUAL|2|11|0.35|3|58|TOM,PEP,BEA||Natural pest deterrent|Full sun, tolerant of poor soil.
+ZIN-001|Zinnia - California Giant|Asteraceae|FLOWER|ANNUAL|2|11|0.28|9|68|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-002|Zinnia - Cactus Flower|Asteraceae|FLOWER|ANNUAL|2|11|0.27|8|60|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-003|Zinnia - Persian Carpet|Asteraceae|FLOWER|ANNUAL|2|11|0.28|5|64|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-004|Zinnia - Envy|Asteraceae|FLOWER|ANNUAL|2|11|0.33|7|65|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-005|Zinnia - Queen Lime|Asteraceae|FLOWER|ANNUAL|2|11|0.31|6|68|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-006|Zinnia - Benary's Giant|Asteraceae|FLOWER|ANNUAL|2|11|0.34|9|68|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-007|Zinnia - Thumbelina|Asteraceae|FLOWER|ANNUAL|2|11|0.28|8|64|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-008|Zinnia - Oklahoma Series|Asteraceae|FLOWER|ANNUAL|2|11|0.26|9|59|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-009|Zinnia - Zowie Yellow Flame|Asteraceae|FLOWER|ANNUAL|2|11|0.29|8|53|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-010|Zinnia - Uproar Rose|Asteraceae|FLOWER|ANNUAL|2|11|0.33|6|56|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-011|Zinnia - Salmon Rose|Asteraceae|FLOWER|ANNUAL|2|11|0.35|5|54|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-012|Zinnia - Purple Prince|Asteraceae|FLOWER|ANNUAL|2|11|0.25|6|64|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-013|Zinnia - Green Envy|Asteraceae|FLOWER|ANNUAL|2|11|0.33|7|67|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-014|Zinnia - Whirligig|Asteraceae|FLOWER|ANNUAL|2|11|0.34|7|66|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+ZIN-015|Zinnia - Peppermint Stick|Asteraceae|FLOWER|ANNUAL|2|11|0.27|5|52|||Japanese beetles, powdery mildew|Full sun, great cut flower.
+SUN-001|Sunflower - Mammoth|Asteraceae|FLOWER|ANNUAL|3|10|0.5|8|73|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-002|Sunflower - Autumn Beauty|Asteraceae|FLOWER|ANNUAL|3|10|0.54|9|84|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-003|Sunflower - Teddy Bear|Asteraceae|FLOWER|ANNUAL|3|10|0.51|8|72|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-004|Sunflower - Lemon Queen|Asteraceae|FLOWER|ANNUAL|3|10|0.48|10|84|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-005|Sunflower - Russian Giant|Asteraceae|FLOWER|ANNUAL|3|10|0.52|10|77|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-006|Sunflower - ProCut Series|Asteraceae|FLOWER|ANNUAL|3|10|0.45|12|77|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-007|Sunflower - Chocolate Cherry|Asteraceae|FLOWER|ANNUAL|3|10|0.5|9|79|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-008|Sunflower - Italian White|Asteraceae|FLOWER|ANNUAL|3|10|0.51|11|85|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-009|Sunflower - Strawberry Blonde|Asteraceae|FLOWER|ANNUAL|3|10|0.53|11|77|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-010|Sunflower - Ring of Fire|Asteraceae|FLOWER|ANNUAL|3|10|0.47|12|83|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-011|Sunflower - Chocolate Cherry|Asteraceae|FLOWER|ANNUAL|3|10|0.46|12|84|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-012|Sunflower - Solar Flash|Asteraceae|FLOWER|ANNUAL|3|10|0.53|10|74|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+SUN-013|Sunflower - Sunbelievable|Asteraceae|FLOWER|ANNUAL|3|10|0.51|12|78|CUC,POL|POT|Birds, aphids|Full sun; tall varieties need wind shelter.
+COS-001|Cosmos - Sensation|Asteraceae|FLOWER|ANNUAL|2|11|0.38|5|58|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-002|Cosmos - Sonata|Asteraceae|FLOWER|ANNUAL|2|11|0.41|7|68|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-003|Cosmos - Double Click|Asteraceae|FLOWER|ANNUAL|2|11|0.41|7|59|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-004|Cosmos - Bright Lights|Asteraceae|FLOWER|ANNUAL|2|11|0.38|9|61|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-005|Cosmos - Rubenza|Asteraceae|FLOWER|ANNUAL|2|11|0.38|9|55|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-006|Cosmos - Cupcakes|Asteraceae|FLOWER|ANNUAL|2|11|0.45|9|53|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-007|Cosmos - Scarlet Series|Asteraceae|FLOWER|ANNUAL|2|11|0.39|6|61|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-008|Cosmos - Golden Yellow Series|Asteraceae|FLOWER|ANNUAL|2|11|0.41|9|59|||Rarely bothered|Self-seeds readily, drought tolerant.
+COS-009|Cosmos - Snow White Form|Asteraceae|FLOWER|ANNUAL|2|11|0.4|5|65|||Rarely bothered|Self-seeds readily, drought tolerant.
+STR-001|Strawberry - Albion|Rosaceae|FRUIT|PERENNIAL|3|10|0.28|11|55|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-002|Strawberry - Seascape|Rosaceae|FRUIT|PERENNIAL|3|10|0.29|11|63|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-003|Strawberry - Eversweet|Rosaceae|FRUIT|PERENNIAL|3|10|0.32|10|52|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-004|Strawberry - Sparkle|Rosaceae|FRUIT|PERENNIAL|3|10|0.29|8|68|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-005|Strawberry - Chandler|Rosaceae|FRUIT|PERENNIAL|3|10|0.29|8|55|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-006|Strawberry - Ozark Beauty|Rosaceae|FRUIT|PERENNIAL|3|10|0.31|10|60|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-007|Strawberry - Quinault|Rosaceae|FRUIT|PERENNIAL|3|10|0.28|9|58|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-008|Strawberry - Early Season|Rosaceae|FRUIT|PERENNIAL|3|10|0.31|9|63|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+STR-009|Strawberry - Mid-Season|Rosaceae|FRUIT|PERENNIAL|3|10|0.28|11|68|BEA,SPI,LET|CAB,BRO|Slugs, birds|Everbearing or June-bearing types.
+BLU-001|Blueberry - Bluecrop|Ericaceae|FRUIT|PERENNIAL|3|10|1.23|19|722|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-002|Blueberry - Duke|Ericaceae|FRUIT|PERENNIAL|3|10|1.2|20|736|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-003|Blueberry - Patriot|Ericaceae|FRUIT|PERENNIAL|3|10|1.16|22|732|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-004|Blueberry - Pink Lemonade|Ericaceae|FRUIT|PERENNIAL|3|10|1.15|23|728|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-005|Blueberry - Legacy|Ericaceae|FRUIT|PERENNIAL|3|10|1.24|21|738|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-006|Blueberry - Chandler|Ericaceae|FRUIT|PERENNIAL|3|10|1.2|20|737|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-007|Blueberry - Elliott|Ericaceae|FRUIT|PERENNIAL|3|10|1.23|23|734|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-008|Blueberry - Sunshine Blue|Ericaceae|FRUIT|PERENNIAL|3|10|1.19|19|728|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-009|Blueberry - Top Hat|Ericaceae|FRUIT|PERENNIAL|3|10|1.16|22|726|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+BLU-010|Blueberry - Perpetua|Ericaceae|FRUIT|PERENNIAL|3|10|1.17|20|735|||Birds, spotted wing drosophila|Needs acidic soil, pH 4.5-5.5.
+RAS-001|Raspberry - Heritage|Rosaceae|FRUIT|PERENNIAL|3|9|0.63|14|367|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-002|Raspberry - Fall Gold|Rosaceae|FRUIT|PERENNIAL|3|9|0.63|12|367|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-003|Raspberry - Latham|Rosaceae|FRUIT|PERENNIAL|3|9|0.6|15|364|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-004|Raspberry - Boyne|Rosaceae|FRUIT|PERENNIAL|3|9|0.56|14|358|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-005|Raspberry - Anne|Rosaceae|FRUIT|PERENNIAL|3|9|0.63|14|362|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-006|Raspberry - Joan J|Rosaceae|FRUIT|PERENNIAL|3|9|0.6|15|359|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-007|Raspberry - Caroline|Rosaceae|FRUIT|PERENNIAL|3|9|0.64|16|362|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-008|Raspberry - Early Season|Rosaceae|FRUIT|PERENNIAL|3|9|0.58|15|360|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+RAS-009|Raspberry - Mid-Season|Rosaceae|FRUIT|PERENNIAL|3|9|0.58|12|361|GAR|POT,TOM|Cane borers, Japanese beetles|Perennial cane fruit; prune after fruiting.
+GRA-001|Grape - Concord|Vitaceae|FRUIT|PERENNIAL|4|10|1.77|21|731|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-002|Grape - Thompson Seedless|Vitaceae|FRUIT|PERENNIAL|4|10|1.79|23|730|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-003|Grape - Niagara|Vitaceae|FRUIT|PERENNIAL|4|10|1.82|23|734|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-004|Grape - Catawba|Vitaceae|FRUIT|PERENNIAL|4|10|1.76|20|729|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-005|Grape - Reliance|Vitaceae|FRUIT|PERENNIAL|4|10|1.77|19|726|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-006|Grape - Himrod|Vitaceae|FRUIT|PERENNIAL|4|10|1.82|21|736|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-007|Grape - Interlaken|Vitaceae|FRUIT|PERENNIAL|4|10|1.82|19|737|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-008|Grape - Marquis|Vitaceae|FRUIT|PERENNIAL|4|10|1.84|19|736|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-009|Grape - Steuben|Vitaceae|FRUIT|PERENNIAL|4|10|1.78|19|736|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-010|Grape - Cotton Candy|Vitaceae|FRUIT|PERENNIAL|4|10|1.8|21|736|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-011|Grape - Cotton Candy Red|Vitaceae|FRUIT|PERENNIAL|4|10|1.82|22|727|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-012|Grape - Moon Drops|Vitaceae|FRUIT|PERENNIAL|4|10|1.77|20|734|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-013|Grape - Jupiter|Vitaceae|FRUIT|PERENNIAL|4|10|1.8|22|736|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-014|Grape - Vanessa|Vitaceae|FRUIT|PERENNIAL|4|10|1.81|19|738|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+GRA-015|Grape - Somerset Seedless|Vitaceae|FRUIT|PERENNIAL|4|10|1.83|23|737|||Japanese beetles, powdery mildew|Needs sturdy trellis; prune heavily each winter.
+APP-001|Apple - Honeycrisp|Rosaceae|FRUIT|PERENNIAL|3|9|3.05|21|1467|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-002|Apple - Gala|Rosaceae|FRUIT|PERENNIAL|3|9|3.02|21|1460|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-003|Apple - Fuji|Rosaceae|FRUIT|PERENNIAL|3|9|3.03|20|1461|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-004|Apple - Granny Smith|Rosaceae|FRUIT|PERENNIAL|3|9|3.01|21|1456|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-005|Apple - McIntosh|Rosaceae|FRUIT|PERENNIAL|3|9|3.02|20|1466|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-006|Apple - Braeburn|Rosaceae|FRUIT|PERENNIAL|3|9|3.05|21|1452|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-007|Apple - Jonagold|Rosaceae|FRUIT|PERENNIAL|3|9|2.99|20|1467|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-008|Apple - Pink Lady|Rosaceae|FRUIT|PERENNIAL|3|9|2.98|22|1467|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-009|Apple - Cortland|Rosaceae|FRUIT|PERENNIAL|3|9|2.95|21|1456|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-010|Apple - Empire|Rosaceae|FRUIT|PERENNIAL|3|9|3.0|22|1465|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-011|Apple - Liberty|Rosaceae|FRUIT|PERENNIAL|3|9|3.01|19|1461|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-012|Apple - Winesap|Rosaceae|FRUIT|PERENNIAL|3|9|2.98|21|1458|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-013|Apple - Northern Spy|Rosaceae|FRUIT|PERENNIAL|3|9|3.03|19|1462|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-014|Apple - Arkansas Black|Rosaceae|FRUIT|PERENNIAL|3|9|2.96|20|1458|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-015|Apple - Esopus Spitzenburg|Rosaceae|FRUIT|PERENNIAL|3|9|3.03|23|1453|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-016|Apple - Roxbury Russet|Rosaceae|FRUIT|PERENNIAL|3|9|3.02|19|1460|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-017|Apple - Ashmead's Kernel|Rosaceae|FRUIT|PERENNIAL|3|9|2.99|22|1463|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-018|Apple - Calville Blanc d'Hiver|Rosaceae|FRUIT|PERENNIAL|3|9|2.97|23|1456|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-019|Apple - Cox's Orange Pippin|Rosaceae|FRUIT|PERENNIAL|3|9|2.98|21|1460|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-020|Apple - Wolf River|Rosaceae|FRUIT|PERENNIAL|3|9|3.02|23|1462|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-021|Apple - Golden Russet|Rosaceae|FRUIT|PERENNIAL|3|9|2.97|22|1463|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-022|Apple - King David|Rosaceae|FRUIT|PERENNIAL|3|9|3.04|20|1458|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-023|Apple - Baldwin|Rosaceae|FRUIT|PERENNIAL|3|9|2.99|20|1465|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-024|Apple - Rhode Island Greening|Rosaceae|FRUIT|PERENNIAL|3|9|3.04|19|1452|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-025|Apple - Jonagold|Rosaceae|FRUIT|PERENNIAL|3|9|3.0|19|1460|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-026|Apple - Idared|Rosaceae|FRUIT|PERENNIAL|3|9|2.96|23|1454|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-027|Apple - Zestar|Rosaceae|FRUIT|PERENNIAL|3|9|3.01|20|1461|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-028|Apple - SweeTango|Rosaceae|FRUIT|PERENNIAL|3|9|2.96|21|1465|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-029|Apple - Opal|Rosaceae|FRUIT|PERENNIAL|3|9|3.01|23|1468|||Codling moth, apple scab|Most varieties need a pollinator partner.
+APP-030|Apple - Envy|Rosaceae|FRUIT|PERENNIAL|3|9|3.05|22|1462|||Codling moth, apple scab|Most varieties need a pollinator partner.
+EGG-001|Eggplant - Black Beauty|Solanaceae|VEGETABLE|ANNUAL|4|11|0.52|10|78|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-002|Eggplant - Ichiban|Solanaceae|VEGETABLE|ANNUAL|4|11|0.54|7|72|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-003|Eggplant - Rosa Bianca|Solanaceae|VEGETABLE|ANNUAL|4|11|0.54|9|87|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-004|Eggplant - Fairy Tale|Solanaceae|VEGETABLE|ANNUAL|4|11|0.51|10|86|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-005|Eggplant - Listada de Gandia|Solanaceae|VEGETABLE|ANNUAL|4|11|0.46|8|76|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-006|Eggplant - Japanese White|Solanaceae|VEGETABLE|ANNUAL|4|11|0.52|10|75|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-007|Eggplant - Early Season|Solanaceae|VEGETABLE|ANNUAL|4|11|0.51|7|85|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-008|Eggplant - Mid-Season|Solanaceae|VEGETABLE|ANNUAL|4|11|0.52|9|85|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+EGG-009|Eggplant - Late Season|Solanaceae|VEGETABLE|ANNUAL|4|11|0.53|8|72|BEA,PEP,MAR|FEN|Flea beetles, aphids|Full sun, warm soil, consistent water.
+MEL-001|Melon - Cantaloupe|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.95|8|86|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-002|Melon - Honeydew|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.94|7|92|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-003|Melon - Charentais|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.88|5|85|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-004|Melon - Crenshaw|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.94|9|88|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-005|Melon - Galia|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.85|8|85|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-006|Melon - Early Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.93|8|92|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-007|Melon - Mid-Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.88|7|86|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-008|Melon - Late Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.88|7|84|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+MEL-009|Melon - Extra Early|Cucurbitaceae|FRUIT|ANNUAL|4|11|0.89|5|85|COR,RAD|POT|Aphids, cucumber beetle|Full sun, warm soil, consistent water.
+WAT-001|Watermelon - Sugar Baby|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.19|8|90|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-002|Watermelon - Crimson Sweet|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.22|9|83|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-003|Watermelon - Charleston Gray|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.17|7|93|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-004|Watermelon - Moon and Stars|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.22|7|84|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-005|Watermelon - Yellow Doll|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.21|7|90|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-006|Watermelon - Early Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.17|8|92|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-007|Watermelon - Mid-Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.2|8|86|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-008|Watermelon - Late Season|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.15|6|81|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+WAT-009|Watermelon - Extra Early|Cucurbitaceae|FRUIT|ANNUAL|4|11|1.19|8|92|COR,MAR|POT|Aphids, cucumber beetle|Needs heat and space to vine.
+PUM-001|Pumpkin - Connecticut Field|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.16|9|113|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-002|Pumpkin - Sugar Pie|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.17|6|107|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-003|Pumpkin - Jack-O-Lantern|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.21|6|115|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-004|Pumpkin - Cinderella|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.19|5|102|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-005|Pumpkin - Baby Bear|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.23|5|102|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-006|Pumpkin - Big Max|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.15|8|108|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-007|Pumpkin - Rouge Vif d'Etampes|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.23|6|110|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-008|Pumpkin - Long Island Cheese|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.16|8|115|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+PUM-009|Pumpkin - Early Season|Cucurbitaceae|VEGETABLE|ANNUAL|3|10|1.19|9|116|COR,BEA|POT|Squash bugs, powdery mildew|Give plenty of room to vine.
+CHA-001|Swiss Chard - Bright Lights|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.27|9|55|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-002|Swiss Chard - Fordhook Giant|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.28|9|60|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-003|Swiss Chard - Ruby Red|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.22|7|56|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-004|Swiss Chard - Early Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.24|6|52|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-005|Swiss Chard - Mid-Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.26|9|51|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-006|Swiss Chard - Late Season|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.24|7|47|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-007|Swiss Chard - Extra Early|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.28|6|57|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-008|Swiss Chard - Storage Type|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.22|5|58|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+CHA-009|Swiss Chard - Baby/Petite|Amaranthaceae|VEGETABLE|ANNUAL|3|10|0.28|9|63|BEA,ONI||Leaf miners|Cut-and-come-again; heat tolerant.
+TUR-001|Turnip - Purple Top White Globe|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.12|4|51|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-002|Turnip - Hakurei|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.12|7|53|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-003|Turnip - Golden Ball|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.17|3|43|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-004|Turnip - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.15|4|57|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-005|Turnip - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.1|3|52|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-006|Turnip - Late Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.19|4|45|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-007|Turnip - Extra Early|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.14|6|46|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-008|Turnip - Storage Type|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.19|5|44|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+TUR-009|Turnip - Baby/Petite|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.15|4|47|PEA,ONI|POT|Flea beetles, root maggot|Cool-season; good for fall harvest.
+LEE-001|Leek - American Flag|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.16|11|100|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-002|Leek - King Richard|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.11|10|102|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-003|Leek - Bandit|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.1|11|106|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-004|Leek - Early Season|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.18|12|94|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-005|Leek - Mid-Season|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.16|14|94|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-006|Leek - Late Season|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.13|12|103|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-007|Leek - Extra Early|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.16|12|105|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-008|Leek - Storage Type|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.13|11|104|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+LEE-009|Leek - Baby/Petite|Amaryllidaceae|VEGETABLE|ANNUAL|3|9|0.16|13|95|CAR,CEL|BEA,PEA|Onion maggot|Blanch stems by mounding soil.
+DIL-001|Dill - Bouquet|Apiaceae|HERB|ANNUAL|3|10|0.21|12|56|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-002|Dill - Fernleaf|Apiaceae|HERB|ANNUAL|3|10|0.17|8|52|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-003|Dill - Mammoth|Apiaceae|HERB|ANNUAL|3|10|0.2|9|45|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-004|Dill - Early Season|Apiaceae|HERB|ANNUAL|3|10|0.2|8|50|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-005|Dill - Mid-Season|Apiaceae|HERB|ANNUAL|3|10|0.25|11|52|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-006|Dill - Late Season|Apiaceae|HERB|ANNUAL|3|10|0.22|10|58|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-007|Dill - Extra Early|Apiaceae|HERB|ANNUAL|3|10|0.25|12|45|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-008|Dill - Storage Type|Apiaceae|HERB|ANNUAL|3|10|0.16|8|55|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+DIL-009|Dill - Baby/Petite|Apiaceae|HERB|ANNUAL|3|10|0.19|9|52|CAB,CUC,LET|CAR|Rarely bothered|Self-seeds readily; attracts beneficial insects.
+CIL-001|Cilantro - Santo|Apiaceae|HERB|ANNUAL|3|11|0.17|6|53|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-002|Cilantro - Slow Bolt|Apiaceae|HERB|ANNUAL|3|11|0.18|7|58|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-003|Cilantro - Calypso|Apiaceae|HERB|ANNUAL|3|11|0.13|9|49|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-004|Cilantro - Early Season|Apiaceae|HERB|ANNUAL|3|11|0.17|8|49|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-005|Cilantro - Mid-Season|Apiaceae|HERB|ANNUAL|3|11|0.12|9|45|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-006|Cilantro - Late Season|Apiaceae|HERB|ANNUAL|3|11|0.16|7|48|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-007|Cilantro - Extra Early|Apiaceae|HERB|ANNUAL|3|11|0.19|6|46|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-008|Cilantro - Storage Type|Apiaceae|HERB|ANNUAL|3|11|0.14|7|45|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+CIL-009|Cilantro - Baby/Petite|Apiaceae|HERB|ANNUAL|3|11|0.18|7|44|BEA,PEA|FEN|Rarely bothered|Bolts quickly in heat; succession sow.
+PSN-001|Parsley - Italian Flat Leaf|Apiaceae|HERB|ANNUAL|4|10|0.16|20|63|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-002|Parsley - Moss Curled|Apiaceae|HERB|ANNUAL|4|10|0.2|20|62|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-003|Parsley - Early Season|Apiaceae|HERB|ANNUAL|4|10|0.18|22|77|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-004|Parsley - Mid-Season|Apiaceae|HERB|ANNUAL|4|10|0.19|20|65|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-005|Parsley - Late Season|Apiaceae|HERB|ANNUAL|4|10|0.24|20|75|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-006|Parsley - Extra Early|Apiaceae|HERB|ANNUAL|4|10|0.2|20|64|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-007|Parsley - Storage Type|Apiaceae|HERB|ANNUAL|4|10|0.18|23|72|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-008|Parsley - Baby/Petite|Apiaceae|HERB|ANNUAL|4|10|0.18|19|63|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+PSN-009|Parsley - Giant/Exhibition|Apiaceae|HERB|ANNUAL|4|10|0.17|23|63|TOM,ASP||Swallowtail caterpillars (beneficial)|Biennial usually grown as annual.
+CAU-001|Cauliflower - Snowball|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.48|5|67|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-002|Cauliflower - Purple of Sicily|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.43|5|78|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-003|Cauliflower - Cheddar|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.5|5|78|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-004|Cauliflower - Romanesco|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.42|8|74|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-005|Cauliflower - Veronica|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.44|9|63|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-006|Cauliflower - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.46|6|64|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-007|Cauliflower - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.4|8|69|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-008|Cauliflower - Late Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.49|6|72|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+CAU-009|Cauliflower - Extra Early|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.49|8|77|ONI,CEL|TOM,STR|Cabbage worms, aphids|Blanch heads by tying leaves over them.
+BSP-001|Brussels Sprouts - Long Island Improved|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.49|7|82|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-002|Brussels Sprouts - Diablo|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.54|6|93|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-003|Brussels Sprouts - Jade Cross|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.49|8|84|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-004|Brussels Sprouts - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.48|5|83|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-005|Brussels Sprouts - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.45|6|83|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-006|Brussels Sprouts - Late Season|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.46|5|82|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-007|Brussels Sprouts - Extra Early|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.47|7|98|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-008|Brussels Sprouts - Storage Type|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.54|7|83|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+BSP-009|Brussels Sprouts - Baby/Petite|Brassicaceae|VEGETABLE|ANNUAL|3|9|0.54|6|93|ONI,DIL|STR|Cabbage worms, aphids|Long season crop; frost sweetens sprouts.
+ARU-001|Arugula - Astro|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.15|4|42|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-002|Arugula - Wild Rocket|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.1|6|44|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-003|Arugula - Wasabi|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.1|3|40|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-004|Arugula - Early Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.14|4|40|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-005|Arugula - Mid-Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.13|6|43|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-006|Arugula - Late Season|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.12|3|36|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-007|Arugula - Extra Early|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.11|6|48|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-008|Arugula - Storage Type|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.18|3|39|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+ARU-009|Arugula - Baby/Petite|Brassicaceae|VEGETABLE|ANNUAL|3|10|0.12|4|46|LET,CAR|STR|Flea beetles|Fast-growing, peppery salad green.
+NAS-001|Nasturtium - Jewel Mix|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.32|8|52|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-002|Nasturtium - Alaska|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.3|9|54|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-003|Nasturtium - Empress of India|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.34|12|50|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-004|Nasturtium - Scarlet Series|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.33|12|54|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-005|Nasturtium - Golden Yellow Series|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.33|12|55|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-006|Nasturtium - Snow White Series|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.32|10|54|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-007|Nasturtium - Deep Rose Series|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.29|9|47|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-008|Nasturtium - Sky Blue Series|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.34|12|47|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+NAS-009|Nasturtium - Coral Pink Form|Tropaeolaceae|FLOWER|ANNUAL|2|11|0.34|9|58|CUC,SQW,TOM||Trap crop for aphids|Edible flowers and leaves; poor soil OK.
+PET-001|Petunia - Wave|Solanaceae|FLOWER|ANNUAL|2|11|0.28|12|62|||Aphids|Full sun, regular deadheading extends bloom.
+PET-002|Petunia - Grandiflora|Solanaceae|FLOWER|ANNUAL|2|11|0.22|8|78|||Aphids|Full sun, regular deadheading extends bloom.
+PET-003|Petunia - Multiflora|Solanaceae|FLOWER|ANNUAL|2|11|0.22|9|73|||Aphids|Full sun, regular deadheading extends bloom.
+PET-004|Petunia - Supertunia|Solanaceae|FLOWER|ANNUAL|2|11|0.25|11|78|||Aphids|Full sun, regular deadheading extends bloom.
+PET-005|Petunia - Easy Wave|Solanaceae|FLOWER|ANNUAL|2|11|0.27|11|71|||Aphids|Full sun, regular deadheading extends bloom.
+PET-006|Petunia - Night Sky|Solanaceae|FLOWER|ANNUAL|2|11|0.29|11|77|||Aphids|Full sun, regular deadheading extends bloom.
+PET-007|Petunia - Pinstripe|Solanaceae|FLOWER|ANNUAL|2|11|0.2|11|78|||Aphids|Full sun, regular deadheading extends bloom.

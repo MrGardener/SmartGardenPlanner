@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="Theme.SmartGardenPlanner" parent="android:Theme.Material.Light.NoActionBar" />
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- [FIXED] This style was referenced by AndroidManifest.xml but never included in any
+         uploaded/reconstructed res/ content, causing "resource style/Theme.SmartGardenPlanner
+         not found" at build time. MainActivity.kt builds its own Compose MaterialTheme at
+         runtime, so this XML theme only needs to cover the system splash/window background
+         before Compose takes over. -->
+    <style name="Theme.SmartGardenPlanner" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="android:statusBarColor">@color/ic_launcher_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+    </style>
 </resources>
