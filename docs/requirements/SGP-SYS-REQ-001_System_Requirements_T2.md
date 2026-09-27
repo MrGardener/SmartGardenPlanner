@@ -387,7 +387,7 @@ Parent: KB Part 11 · Safety: FC-03 · Verify: Test · Status: Proposed
 ### T2-DAT-220 — Catalog data quality (NEW)
 **Statement:**
 - Every catalog entry shall have: a unique code, a name, a family, a category, a spacing radius
-  `[TBC-12: 0.02–10 m]`, germination days `[1–60]`, days to harvest `[1–1000]` and a zone range within 1–13.
+  `[TBC-12: 0.02–10 m]`, germination days `[1–365]`, days to harvest `[1–3650]` (perennials and fruit trees take years) and a zone range within 1–13.
 - Every companion or antagonist reference shall resolve to a species present in the same tier or in a
   species list shipped with the app.
 - The source of the spacing, germination and harvest values shall be documented.
@@ -956,7 +956,7 @@ Settle these whenever you're ready. Each proposal is what the requirement says u
 | 09 | DAT-080 | Climate coverage outside the US? | US only for now |
 | 10 | DAT-090 | Frost-tolerant crops may be sown before the last frost? | Yes, by a per-variety offset |
 | 11 | DAT-140 | Keep roles (Owner/Contributor/Viewer)? | Keep, future |
-| 12 | DAT-220 | Allowed ranges for catalog values | Radius 0.02–10 m, germination 1–60 d, harvest 1–1000 d, zones 1–13 |
+| 12 | DAT-220 | Allowed ranges for catalog values | Radius 0.02–10 m, germination 1–365 d, harvest 1–3650 d, zones 1–13 (bundled Pro data reaches 180 d germination and 2,560 d to harvest) |
 | 13 | CON-040 | Maximum stored photo size | 1 MB |
 | 14 | CON-070 | Oldest version whose data must survive an update | v20.20 |
 | 15 | CON-080 | Cold start to usable plot list | ≤ 2 s |

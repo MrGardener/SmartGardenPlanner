@@ -459,8 +459,8 @@ all are valid):
 - a botanical family chosen from a fixed list including "Other"
 - a category
 - a spacing radius of 0.02–10 m in the display unit
-- germination days 1–60
-- days to harvest 1–1000
+- germination days 1–365
+- days to harvest 1–3650
 - a zone range 1–13 with minimum ≤ maximum
 - companions and antagonists chosen from the species list
 - pest, care and watering text

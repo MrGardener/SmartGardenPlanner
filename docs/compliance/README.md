@@ -32,7 +32,8 @@ still to be done).
 ## Requirements
 
 - [SGP-SYS-REQ-001](../requirements/SGP-SYS-REQ-001_System_Requirements_T2.md): re-baselined system requirements (T2), Proposed.
-- [SGP-SW-HLR-001](../requirements/SGP-SW-HLR-001_Software_High_Level_Requirements.md): software high-level requirements, rewritten from scratch and traced to T2 (full coverage), Proposed. The v20.18 HLR/LLR IDs are retired. New LLRs to follow.
+- [SGP-SW-HLR-001](../requirements/SGP-SW-HLR-001_Software_High_Level_Requirements.md): software high-level requirements, rewritten from scratch and traced to T2 (full coverage), Proposed. The v20.18 HLR/LLR IDs are retired.
+- [SGP-SW-LLR-001](../requirements/SGP-SW-LLR-001_Software_Low_Level_Requirements.md): software low-level requirements by design component, traced to the HLRs (full coverage of active HLRs), with the error catalogue. Proposed.
 
 ## Life cycle data still to be produced (tracked in SGP-DWR-001)
 
