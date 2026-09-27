@@ -317,6 +317,29 @@ fun AppNavigationContainer(
         currentScreen = if (currentScreen == SgpScreen.INSIGHTS) SgpScreen.CANVAS else SgpScreen.DASHBOARD
     }
 
+    // FR-044: before first use, say plainly that the planner is an aid and results aren't guaranteed.
+    val disclaimerScope = rememberCoroutineScope()
+    var showDisclaimer by remember { mutableStateOf(false) }
+    val disclaimerSettings = remember { com.example.smartgardenplanner.data.SettingsRepository(com.example.smartgardenplanner.data.SecurityRepositoryImpl(database.configDao())) }
+    LaunchedEffect(Unit) {
+        showDisclaimer = try { !withContext(SgpExecutors.dbDispatcher) { disclaimerSettings.load().disclaimerAccepted } } catch (e: CancellationException) { throw e } catch (e: Exception) { true }
+    }
+    if (showDisclaimer) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(com.example.smartgardenplanner.core.Disclaimer.TITLE) },
+            text = { Text(com.example.smartgardenplanner.core.Disclaimer.TEXT + "\n\nYou can read this again in Settings.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDisclaimer = false
+                    disclaimerScope.launch {
+                        try { withContext(SgpExecutors.dbDispatcher) { disclaimerSettings.save(disclaimerSettings.load().copy(disclaimerAccepted = true)) } } catch (e: CancellationException) { throw e } catch (e: Exception) {}
+                    }
+                }) { Text("I understand") }
+            }
+        )
+    }
+
     when (currentScreen) {
         SgpScreen.DASHBOARD -> {
             DashboardScreen(
@@ -403,7 +426,7 @@ fun DashboardScreen(
             dashScope.launch {
                 fileMessage = try {
                     val text = com.example.smartgardenplanner.data.PlanFileIo.read(dashContext, uri)
-                    val report = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.PlanFileRepository(database).import(text) }
+                    val report = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.PlanFileRepository(database, filesDir = dashContext.filesDir).import(text) }
                     reloadPlots()
                     if (report.plotsImported == 0) "Couldn't open the file: " + report.messages.joinToString(" ")
                     else "Opened ${report.plotsImported} plot(s) with ${report.plantsImported} plants." + if (report.messages.isNotEmpty()) " " + report.messages.joinToString(" ") else ""
@@ -420,7 +443,7 @@ fun DashboardScreen(
             dashScope.launch {
                 fileMessage = try {
                     val text = withContext(SgpExecutors.dbDispatcher) {
-                        com.example.smartgardenplanner.data.PlanFileRepository(database).export(plotList.map { it.id }, com.example.smartgardenplanner.data.PlanFileIo.appVersion(dashContext))
+                        com.example.smartgardenplanner.data.PlanFileRepository(database, filesDir = dashContext.filesDir).export(plotList.map { it.id }, com.example.smartgardenplanner.data.PlanFileIo.appVersion(dashContext))
                     }
                     com.example.smartgardenplanner.data.PlanFileIo.write(dashContext, uri, text)
                     "Saved ${plotList.size} plot(s) to the file."
@@ -554,6 +577,7 @@ fun CreatorScreen(
     onWorkspaceInitialized: (Long) -> Unit
 ) {
     var plotName by remember { mutableStateOf("") }
+    var yardPests by remember { mutableStateOf<Set<com.example.smartgardenplanner.core.Pest>>(emptySet()) }
     var plotLength by remember { mutableStateOf("") }
     var plotWidth by remember { mutableStateOf("") }
     var scaleEngineSelection by remember { mutableStateOf("Manual Dimensions Entry") }
@@ -672,6 +696,9 @@ fun CreatorScreen(
             Text("Which way does the top edge of the plot face?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
             Text("Stand at the bottom edge and look across the plot. Used to place tall plants where they won't shade others, and for sun and shade.", fontSize = 11.sp, color = Color.Gray)
             com.example.smartgardenplanner.ui.CompassChips(topFaces) { topFaces = it }
+            Text("What pests or animals do you see regularly in your yard?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text("Tick all that apply. Plot insights → Care then shows how to keep them away (fencing and more) and which plants they go for. You can change this later.", fontSize = 11.sp, color = Color.Gray)
+            com.example.smartgardenplanner.ui.PestChips(yardPests) { yardPests = it }
             OutlinedTextField(
                 value = zipCode,
                 onValueChange = { zipCode = it.filter { c -> c.isDigit() }.take(5) },
@@ -711,7 +738,8 @@ fun CreatorScreen(
                                             locationZip = zip,
                                             latitude = location?.latitude,
                                             longitude = location?.longitude,
-                                            hardinessZone = zone
+                                            hardinessZone = zone,
+                                            pests = com.example.smartgardenplanner.core.Pest.encode(yardPests)
                                         )
                                     )
                                 }
@@ -781,7 +809,7 @@ private fun pointInPolygon(px: Float, py: Float, polygon: List<Offset>): Boolean
     return inside
 }
 
-enum class CanvasMode { PLACE_NODE, DRAW_PATH, SELECT_AREA, OUTLINE, SITE_AREA, BARRIER } // OUTLINE: FR-002, SITE_AREA: FR-003/004/005, BARRIER: FR-006
+enum class CanvasMode { PLACE_NODE, DRAW_PATH, SELECT_AREA, OUTLINE, SITE_AREA, BARRIER, PHOTO } // OUTLINE: FR-002, SITE_AREA: FR-003/004/005, BARRIER: FR-006, PHOTO: FR-046
 enum class AreaSelectSubMode { RECTANGLE, POLYGON } // [NEW — FR-001]
 enum class PathDrawSubMode { RECTANGLE, POINTS }
 
@@ -896,6 +924,8 @@ fun CanvasWorkspaceScreen(
     var planPreview by remember { mutableStateOf<AutoPlanResult?>(null) }
     var planRunning by remember { mutableStateOf(false) }
         val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
+        // FR-043: varieties marked "most important" in that list.
+        val planPriority = remember { mutableStateListOf<String>() }
     // FR-033 season history of this plot; FR-034 variety codes planted on any plot or season ("what you usually plant").
     var historyState by remember { mutableStateOf<List<PlantingHistoryEntity>>(emptyList()) }
     var historyYear by remember { mutableStateOf<Int?>(null) }
@@ -911,6 +941,14 @@ fun CanvasWorkspaceScreen(
     var showRotationDialog by remember { mutableStateOf(false) }
     // FR-041: duplicate the plot as a template.
     var showDuplicateDialog by remember { mutableStateOf(false) }
+    // FR-046: satellite photo under the plot.
+    var showPhotoDialog by remember { mutableStateOf(false) }
+    var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var photoVersion by remember { mutableIntStateOf(0) }
+    var photoCalibrating by remember { mutableStateOf(false) }
+    val photoPoints = remember { mutableStateListOf<Offset>() }
+    var photoDrag by remember { mutableStateOf(Offset.Zero) }
+    var photoAddress by remember { mutableStateOf("") }
     // FR-038: shade on a chosen day, whole day (null) or at a solar hour, with plants casting shade.
     var shadeDay by remember { mutableStateOf(ShadeDay.TODAY) }
     var shadeHour by remember { mutableStateOf<Double?>(null) }
@@ -928,7 +966,7 @@ fun CanvasWorkspaceScreen(
             exportScope.launch {
                 try {
                     val text = withContext(SgpExecutors.dbDispatcher) {
-                        com.example.smartgardenplanner.data.PlanFileRepository(database).export(listOf(plotId), com.example.smartgardenplanner.data.PlanFileIo.appVersion(canvasContext))
+                        com.example.smartgardenplanner.data.PlanFileRepository(database, filesDir = canvasContext.filesDir).export(listOf(plotId), com.example.smartgardenplanner.data.PlanFileIo.appVersion(canvasContext))
                     }
                     com.example.smartgardenplanner.data.PlanFileIo.write(canvasContext, uri, text)
                     snackbarMessage = "Plan file saved. Open it on another device with Plot list → Open plan file."
@@ -990,6 +1028,33 @@ fun CanvasWorkspaceScreen(
             } catch (e: Exception) {
                 snackbarMessage = "Couldn't save the change (${e.javaClass.simpleName}). Reopen the plot to see what was saved."
             }
+        }
+    }
+
+    // FR-046: the photo is loaded from the app's files; its placement lives on the plot row.
+    LaunchedEffect(plotId, photoVersion) {
+        photoBitmap = withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.load(canvasContext.filesDir, plotId) }
+    }
+    fun savePhotoPlacement(update: (com.example.smartgardenplanner.core.Backdrop) -> com.example.smartgardenplanner.core.Backdrop?) {
+        val plot = activePlot ?: return
+        val current = com.example.smartgardenplanner.core.Backdrop.parse(plot.backdropJson) ?: return
+        val updated = plot.copy(backdropJson = update(current)?.encode(), lastModifiedTimestamp = System.currentTimeMillis())
+        launchSafely {
+            withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
+            activePlot = updated
+        }
+    }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val plot = activePlot
+        if (uri != null && plot != null) launchSafely {
+            val size = withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.importFromUri(canvasContext, uri, plotId) }
+            if (size == null) { snackbarMessage = "That picture couldn't be read. Try a PNG or JPEG screenshot."; return@launchSafely }
+            val updated = plot.copy(backdropJson = com.example.smartgardenplanner.core.Backdrop.fresh(plot, size.first, size.second).encode(), lastModifiedTimestamp = System.currentTimeMillis())
+            withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
+            activePlot = updated
+            photoVersion++
+            canvasMode = CanvasMode.PHOTO; photoCalibrating = true; photoPoints.clear()
+            snackbarMessage = "Photo added. Set its scale: tap two points on the photo whose real distance you know (the Google Maps scale bar, or both ends of a fence)."
         }
     }
 
@@ -1400,6 +1465,8 @@ fun CanvasWorkspaceScreen(
                             }
                             // FR-041: copy this plot as a template.
                             DropdownMenuItem(text = { Text("Duplicate this plot…") }, onClick = { showOptionsMenu = false; showDuplicateDialog = true })
+                            // FR-046: a satellite photo under the plot, to trace trees, fences and buildings.
+                            DropdownMenuItem(text = { Text((if (canvasMode == CanvasMode.PHOTO) "✓ " else "") + "Satellite photo…") }, onClick = { showOptionsMenu = false; showPhotoDialog = true })
                             // FR-039: irrigation.
                             Text("Irrigation", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).forEach { type ->
@@ -1604,6 +1671,7 @@ fun CanvasWorkspaceScreen(
                                         CanvasMode.OUTLINE -> "Drawing plot outline"
                                         CanvasMode.SITE_AREA -> "Marking: ${siteAreaType.label}"
                                         CanvasMode.BARRIER -> "Placing: ${barrierType.label}"
+                                        CanvasMode.PHOTO -> if (photoCalibrating) "Setting photo scale" else "Moving the photo"
                                     },
                                 fontSize = 11.sp
                             )
@@ -2022,11 +2090,52 @@ fun CanvasWorkspaceScreen(
                                                 )
                                             }
                                         }
+                                        // FR-046: satellite photo — two taps set the scale; otherwise dragging moves the photo.
+                                        .pointerInput(canvasMode, photoCalibrating, zoomPanModeEnabled) {
+                                            if (canvasMode == CanvasMode.PHOTO && !zoomPanModeEnabled) {
+                                                if (photoCalibrating) {
+                                                    detectTapGestures(onTap = { offset ->
+                                                        if (photoPoints.size < 2) photoPoints.add(Offset((offset.x / size.width) * state.lengthM, (offset.y / size.height) * state.widthM))
+                                                    })
+                                                } else {
+                                                    detectDragGestures(
+                                                        onDrag = { change, amount ->
+                                                            change.consume()
+                                                            photoDrag += Offset(amount.x / size.width * state.lengthM, amount.y / size.height * state.widthM)
+                                                        },
+                                                        onDragEnd = {
+                                                            val d = photoDrag
+                                                            photoDrag = Offset.Zero
+                                                            savePhotoPlacement { it.moved(d.x, d.y) }
+                                                        },
+                                                        onDragCancel = { photoDrag = Offset.Zero }
+                                                    )
+                                                }
+                                            }
+                                        }
                                 ) {
                                     val canvasW = size.width
                                     val canvasH = size.height
                                     val scaleX = canvasW / state.lengthM
                                     val scaleY = canvasH / state.widthM
+
+                                    // FR-046: satellite photo under everything, placed in plot metres.
+                                    val photo = photoBitmap
+                                    val placement = com.example.smartgardenplanner.core.Backdrop.parse(state.backdropJson)
+                                    if (photo != null && placement != null && placement.visible) {
+                                        val nc = drawContext.canvas.nativeCanvas
+                                        nc.save()
+                                        nc.scale(scaleX, scaleY)
+                                        nc.translate(placement.xM + photoDrag.x, placement.yM + photoDrag.y)
+                                        nc.rotate(placement.rotationDeg)
+                                        nc.drawBitmap(photo, null, android.graphics.RectF(0f, 0f, placement.widthM, placement.heightM),
+                                            android.graphics.Paint().apply { alpha = (placement.opacity * 255).toInt(); isFilterBitmap = true })
+                                        nc.restore()
+                                    }
+                                    if (canvasMode == CanvasMode.PHOTO) photoPoints.forEach { p ->
+                                        drawCircle(Color(0xFF10B981), radius = 9f, center = Offset(p.x * scaleX, p.y * scaleY))
+                                    }
+                                    if (photoPoints.size == 2) drawLine(Color(0xFF10B981), Offset(photoPoints[0].x * scaleX, photoPoints[0].y * scaleY), Offset(photoPoints[1].x * scaleX, photoPoints[1].y * scaleY), strokeWidth = 4f)
 
                                     var gridX = 0f
                                     while (gridX < canvasW) {
@@ -2501,6 +2610,8 @@ fun CanvasWorkspaceScreen(
                                             canvasMode == CanvasMode.SITE_AREA -> "${siteAreaType.label}: tap corners (need 3+), then Finish • tap an existing area to edit it"
                                             canvasMode == CanvasMode.BARRIER && barrierType == SiteFeatureType.TREE -> "Tap where the tree trunk is • tap an existing barrier to edit it"
                                             canvasMode == CanvasMode.BARRIER -> "${barrierType.label}: tap points along it (2+), then Finish • tap an existing barrier to edit it"
+                                            canvasMode == CanvasMode.PHOTO && photoCalibrating -> "Set scale: tap two points on the photo whose real distance you know (${photoPoints.size} of 2)"
+                                            canvasMode == CanvasMode.PHOTO -> "Drag to move the satellite photo into line with the plot • menu → Satellite photo… for scale, turn and see-through"
                                             else -> "Drag to select an area to auto-populate"
                                         },
                                         color = if (zoomPanModeEnabled) Color(0xFF0EA5E9) else if (moveModeEnabled) Color(0xFFEF4444) else Color.LightGray, fontSize = 11.sp
@@ -2642,6 +2753,17 @@ fun CanvasWorkspaceScreen(
             AutoPlanRequestDialog(
                 seedDictionary = seedDictionary,
                                 rows = planRows,
+                priority = planPriority,
+                checksFor = { reqs ->
+                    val plot = activePlot
+                    if (plot == null) emptyList() else {
+                        val nowSeason = Seasons.currentSeason(nodesState, historyState)
+                        val hist = if (nextSeasonMode && nodesState.isNotEmpty()) historyState + Seasons.archive(plotId, nodesState, nowSeason) { seedFor(it) } else historyState
+                        val yr = if (nextSeasonMode && nodesState.isNotEmpty()) nowSeason + 1 else nowSeason
+                        com.example.smartgardenplanner.core.PlanChecks.check(plotContext(plot, if (nextSeasonMode) emptyList() else nodesState), area, reqs, hist, yr,
+                            com.example.smartgardenplanner.core.Pest.parse(plot.pests), settings.spacingMarginMultiplier)
+                    }
+                },
                 usual = Seasons.usualVarieties(allPlantedCodes, emptyList(), { seedFor(it) }),
                 layout = settings.planLayoutEnum,
                 onLayoutChange = { l ->
@@ -2776,7 +2898,7 @@ fun CanvasWorkspaceScreen(
                     val plants = nodesState; val paths = pathZonesState; val features = siteFeatures; val history = historyState
                     showDuplicateDialog = false
                     launchSafely {
-                        withContext(SgpExecutors.dbDispatcher) {
+                        val newId = withContext(SgpExecutors.dbDispatcher) {
                             database.withTransaction {
                                 val now = System.currentTimeMillis()
                                 val id = database.plotDao().insert(plot.copy(id = 0, name = name, createdTimestamp = now, lastModifiedTimestamp = now))
@@ -2784,13 +2906,98 @@ fun CanvasWorkspaceScreen(
                                 if (paths.isNotEmpty()) database.pathZoneDao().insertAll(paths.map { it.copy(id = 0, plotId = id) })
                                 if (features.isNotEmpty()) database.siteFeatureDao().insertAll(features.map { it.copy(id = 0, plotId = id) })
                                 if (withHistory && history.isNotEmpty()) database.plantingHistoryDao().insertAll(history.map { it.copy(id = 0, plotId = id) })
+                                id
                             }
                         }
+                        withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.copy(canvasContext.filesDir, plot.id, newId) }
                         snackbarMessage = "Made “$name”. The original is unchanged; open the copy from the plot list."
                     }
                 }) { Text("Duplicate") }
             },
             dismissButton = { TextButton(onClick = { showDuplicateDialog = false }) { Text("Cancel") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
+    // FR-046: satellite photo — find the yard on Google Maps, add a screenshot, set scale, move, turn, see-through.
+    if (showPhotoDialog) {
+        val plot = activePlot
+        val placement = plot?.let { com.example.smartgardenplanner.core.Backdrop.parse(it.backdropJson) }?.takeIf { photoBitmap != null }
+        if (photoAddress.isBlank()) photoAddress = plot?.locationZip.orEmpty()
+        AlertDialog(
+            onDismissRequest = { showPhotoDialog = false },
+            title = { Text("Satellite photo") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    if (placement == null) {
+                        Text("See your real trees, fences and buildings under the plot: open Google Maps in satellite view, zoom in on your yard, take a screenshot, then choose it here.", fontSize = 13.sp)
+                        OutlinedTextField(value = photoAddress, onValueChange = { photoAddress = it.take(200) }, label = { Text("Your address") }, singleLine = true)
+                        OutlinedButton(onClick = {
+                            val url = com.example.smartgardenplanner.core.Backdrop.googleMapsUrl(plot?.latitude, plot?.longitude, photoAddress.ifBlank { null })
+                            if (url == null) snackbarMessage = "Type your address first."
+                            else try { canvasContext.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } catch (e: Exception) { snackbarMessage = "No app can open Google Maps on this device." }
+                        }) { Text("Open Google Maps (satellite)") }
+                        Button(onClick = { showPhotoDialog = false; photoPicker.launch("image/*") }) { Text("Choose photo…") }
+                    } else {
+                        Text("Photo: ${"%.1f".format(placement.widthM)} m wide.", fontSize = 13.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = true; photoPoints.clear() }) { Text("Set scale") }
+                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = false; photoPoints.clear() }) { Text("Move") }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(onClick = { savePhotoPlacement { it.copy(visible = !it.visible) } }) { Text(if (placement.visible) "Hide" else "Show") }
+                            OutlinedButton(onClick = {
+                                val p = activePlot ?: return@OutlinedButton
+                                val updated = p.copy(backdropJson = null)
+                                showPhotoDialog = false
+                                if (canvasMode == CanvasMode.PHOTO) canvasMode = CanvasMode.PLACE_NODE
+                                launchSafely {
+                                    withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
+                                    withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.delete(canvasContext.filesDir, plotId) }
+                                    activePlot = updated; photoVersion++
+                                    snackbarMessage = "Photo removed."
+                                }
+                            }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                        }
+                        var opacity by remember(placement.opacity) { mutableFloatStateOf(placement.opacity) }
+                        Text("See-through: ${(opacity * 100).toInt()}%", fontSize = 12.sp)
+                        Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f, onValueChangeFinished = { val o = opacity; savePhotoPlacement { it.copy(opacity = o) } })
+                        var turn by remember(placement.rotationDeg) { mutableFloatStateOf(placement.rotationDeg.let { if (it > 180f) it - 360f else it }) }
+                        Text("Turn: ${turn.toInt()}°", fontSize = 12.sp)
+                        Slider(value = turn, onValueChange = { turn = it }, valueRange = -180f..180f, onValueChangeFinished = { val t = turn; savePhotoPlacement { it.copy(rotationDeg = ((t % 360f) + 360f) % 360f) } })
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showPhotoDialog = false }) { Text("Close") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+    if (canvasMode == CanvasMode.PHOTO && photoCalibrating && photoPoints.size == 2) {
+        var distanceText by remember { mutableStateOf("") }
+        val a = photoPoints[0]; val b = photoPoints[1]
+        val shown = kotlin.math.sqrt(((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).toDouble())
+        AlertDialog(
+            onDismissRequest = { photoPoints.clear() },
+            title = { Text("Set the photo's scale") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("On the photo these points are ${"%.2f".format(shown)} m apart at the current scale. How far apart are they really?", fontSize = 13.sp)
+                    OutlinedTextField(value = distanceText, onValueChange = { distanceText = it.filter { c -> c.isDigit() || c == '.' }.take(8) }, label = { Text("Real distance, m (1 ft = 0.3048 m)") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val m = distanceText.toFloatOrNull()
+                    val current = activePlot?.let { com.example.smartgardenplanner.core.Backdrop.parse(it.backdropJson) }
+                    val cal = if (m != null && current != null) current.calibrate(PlotPoint(a.x, a.y), PlotPoint(b.x, b.y), m) else null
+                    if (cal == null) { snackbarMessage = "Enter a distance between 0.1 and 2000 m, with the two points apart."; photoPoints.clear(); return@TextButton }
+                    photoPoints.clear(); photoCalibrating = false
+                    savePhotoPlacement { cal }
+                    snackbarMessage = "Scale set: the photo is ${"%.1f".format(cal.widthM)} m wide. Drag it to line up with the plot; turn it from menu → Satellite photo…"
+                }) { Text("Set scale") }
+            },
+            dismissButton = { TextButton(onClick = { photoPoints.clear() }) { Text("Cancel") } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3725,6 +3932,8 @@ private fun SiteFeatureDialog(
 private fun AutoPlanRequestDialog(
     seedDictionary: List<SeedEntity>,
         rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
+    priority: androidx.compose.runtime.snapshots.SnapshotStateList<String>,
+    checksFor: (List<PlantRequest>) -> List<com.example.smartgardenplanner.core.PlanCheck>,
     usual: List<Pair<SeedEntity, Int>>,
     layout: PlantingLayout,
     onLayoutChange: (PlantingLayout) -> Unit,
@@ -3740,12 +3949,21 @@ private fun AutoPlanRequestDialog(
 ) {
     var picking by remember { mutableStateOf(false) }
     val byCode = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
+    fun requests() = rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n, c in priority) } }
+    // FR-043: checks before planning, recomputed (off the main thread) as the list changes.
+    var checks by remember { mutableStateOf<List<com.example.smartgardenplanner.core.PlanCheck>>(emptyList()) }
+    val rowsKey = rows.toList(); val priorityKey = priority.toList()
+    LaunchedEffect(rowsKey, priorityKey) {
+        kotlinx.coroutines.delay(250)
+        val reqs = requests()
+        checks = try { withContext(Dispatchers.Default) { checksFor(reqs) } } catch (e: CancellationException) { throw e } catch (e: Exception) { emptyList() }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
                 title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together.", fontSize = 12.sp)
+                Text("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together. Tap ☆ on the plants that matter most: they're placed first, in the sunniest spots.", fontSize = 12.sp)
                 if (!orientationSet) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("⚠ The plot's direction isn't set, so north is assumed to be the top edge.", fontSize = 11.sp, color = Color(0xFFEAB308), modifier = Modifier.weight(1f))
@@ -3773,6 +3991,10 @@ private fun AutoPlanRequestDialog(
                     rows.forEachIndexed { i, (code, count) ->
                         val seed = byCode[code]
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            val starred = code in priority
+                            TextButton(onClick = { if (starred) priority.remove(code) else priority.add(code) }, contentPadding = PaddingValues(0.dp), modifier = Modifier.width(32.dp)) {
+                                Text(if (starred) "★" else "☆", fontSize = 18.sp, color = if (starred) Color(0xFFD97706) else Color.Gray)
+                            }
                             Box(modifier = Modifier.size(10.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
                             Spacer(Modifier.width(6.dp))
                                                         Column(modifier = Modifier.weight(1f)) {
@@ -3791,6 +4013,18 @@ private fun AutoPlanRequestDialog(
                     // FR-040: keep the list's proportions and scale to what the area holds.
                     TextButton(enabled = rows.isNotEmpty(), onClick = { onHowManyFit(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n.coerceAtLeast(1)) } }) }) { Text("How many fit?") }
                 }
+                if (checks.isNotEmpty()) {
+                    Text("Checks before planning", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Column(modifier = Modifier.heightIn(max = 160.dp).verticalScroll(rememberScrollState())) {
+                        checks.forEach { c ->
+                            Text(
+                                (when (c.severity) { com.example.smartgardenplanner.core.Severity.HIGH -> "⚠ "; com.example.smartgardenplanner.core.Severity.MEDIUM -> "• "; else -> "✓ " }) + c.text,
+                                fontSize = 11.sp,
+                                color = when (c.severity) { com.example.smartgardenplanner.core.Severity.HIGH -> MaterialTheme.colorScheme.error; com.example.smartgardenplanner.core.Severity.MEDIUM -> Color(0xFFB45309); else -> Color.Gray }
+                            )
+                        }
+                    }
+                }
                 // FR-032: clumps (default) or rows.
                 Text("How should each crop be arranged?", fontSize = 11.sp, color = Color.Gray)
                 PlantingLayout.entries.forEach { l ->
@@ -3805,7 +4039,7 @@ private fun AutoPlanRequestDialog(
         confirmButton = {
             TextButton(
                 enabled = rows.any { it.second > 0 } && !running,
-                onClick = { onPlan(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n) } }) }
+                onClick = { onPlan(requests()) }
             ) { Text(if (running) "Planning…" else "Plan it") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },

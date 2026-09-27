@@ -13,7 +13,7 @@ data class ImportReport(val plotsImported: Int, val plantsImported: Int, val mes
  * and encodes them; import decodes, validates, and stores everything as NEW plots in one transaction, so a
  * failure leaves the database unchanged. Existing plots are never overwritten.
  */
-class PlanFileRepository(private val database: AppDatabase) {
+class PlanFileRepository(private val database: AppDatabase, private val filesDir: java.io.File? = null) {
 
     suspend fun export(plotIds: List<Long>, appVersion: String): String {
         val seeds = database.seedDao().getAllSeeds().associateBy { it.botanicalCode }
@@ -24,7 +24,8 @@ class PlanFileRepository(private val database: AppDatabase) {
                 database.plantedNodeDao().getByPlotId(id),
                 database.pathZoneDao().getByPlotId(id),
                 database.siteFeatureDao().getByPlotId(id),
-                database.plantingHistoryDao().getByPlotId(id)
+                database.plantingHistoryDao().getByPlotId(id),
+                filesDir?.let { BackdropStore.readDataUrl(it, id) }
             )
         }
         return PlanFileCodec.encode(PlanBundle(plots, emptyList(), System.currentTimeMillis()), { seeds[it] }, appVersion)
@@ -66,6 +67,12 @@ class PlanFileRepository(private val database: AppDatabase) {
                 pp.features.forEach { database.siteFeatureDao().insert(it.copy(id = 0, plotId = plotId)) }
                 // Season history keeps its own variety names, so it is stored even for varieties not in this catalog.
                 if (pp.history.isNotEmpty()) database.plantingHistoryDao().insertAll(pp.history.map { it.copy(id = 0, plotId = plotId) })
+                // FR-046: the satellite photo is kept as a file next to the database.
+                val photo = pp.backdropImage
+                if (photo != null && filesDir != null && !BackdropStore.writeDataUrl(filesDir, plotId, photo)) {
+                    database.plotDao().update(pp.plot.copy(id = plotId, name = name, backdropJson = null))
+                    messages += "Plot '$name': its satellite photo couldn't be stored and was left out."
+                }
             }
             if (unknown > 0) messages += "$unknown plant(s) use varieties that aren't in this device's catalog and were skipped. Switch to a larger catalog tier (Settings → Catalog) and import again to include them."
         }

@@ -23,6 +23,26 @@ private val DIRECTIONS = listOf("N" to 0f, "NE" to 45f, "E" to 90f, "SE" to 135f
 
 fun compassName(deg: Float): String = DIRECTIONS[(((deg % 360f + 360f) % 360f + 22.5f) / 45f).toInt() % 8].first
 
+/** FR-042: "What pests or animals do you see in your yard?" as tick-chips, two per row. */
+@Composable
+fun PestChips(selected: Set<com.example.smartgardenplanner.core.Pest>, onChange: (Set<com.example.smartgardenplanner.core.Pest>) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        com.example.smartgardenplanner.core.Pest.entries.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { p ->
+                    FilterChip(
+                        selected = p in selected,
+                        onClick = { onChange(if (p in selected) selected - p else selected + p) },
+                        label = { Text(p.label, fontSize = 12.sp, maxLines = 2) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
 /** Eight compass buttons for "which way does the top edge of the plot face?" (FR-028). */
 @Composable
 fun CompassChips(bearing: Float?, onSelect: (Float) -> Unit) {

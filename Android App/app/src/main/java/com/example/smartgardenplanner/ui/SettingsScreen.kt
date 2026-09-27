@@ -155,6 +155,9 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            SettingsSection(title = "About this planner") {
+                Text(com.example.smartgardenplanner.core.Disclaimer.TEXT, fontSize = 12.sp)
+            }
             SettingsSection(title = "Units") {
                 Text("Distance unit", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Text("Everything is still stored in meters internally — this only changes how numbers are shown and entered.", fontSize = 11.sp, color = Color.Gray)

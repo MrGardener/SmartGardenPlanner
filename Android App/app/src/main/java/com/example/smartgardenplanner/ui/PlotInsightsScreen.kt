@@ -190,7 +190,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
                 }
                 1 -> HarmonyTab(snap, settings)
                 2 -> SuggestTab(snap, settings)
-                3 -> CareTab(snap, settings, careLog, online, ::saveSettings, { type ->
+                3 -> CareTab(snap, settings, careLog, online, ::saveSettings, { p -> savePlot(p, "Saved your yard's pests.") }, { type ->
                     launchSafely {
                         withContext(SgpExecutors.dbDispatcher) {
                             database.careLogDao().insert(CareLogEntity(plotId = plotId, taskType = type.name, doneAtEpochMillis = System.currentTimeMillis()))
@@ -541,15 +541,55 @@ private fun CareTab(
     careLog: List<CareLogEntity>,
     online: OnlineSources,
     saveSettings: (AppSettings) -> Unit,
+    savePlot: (PlotEntity) -> Unit,
     markDone: (CareTaskType) -> Unit,
     scope: kotlinx.coroutines.CoroutineScope
 ) {
         val plot = snap.context.plot
-    // FR-039: which plants each sprinkler, drip line or hose reaches.
-    Section("How each plant gets water", "Draw sprinklers, drip lines and hose taps from the layout menu → Irrigation.") {
-        com.example.smartgardenplanner.core.Irrigation.report(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
-            Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+    Text(com.example.smartgardenplanner.core.Disclaimer.SHORT, fontSize = 11.sp, color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+    // FR-042: pests and animals seen in the yard, with how to keep them out and which plants they go for.
+    Section("Pests and animals in your yard", "Tick what you see regularly; the tips below change to match.") {
+        val chosen = com.example.smartgardenplanner.core.Pest.parse(plot.pests)
+        com.example.smartgardenplanner.ui.PestChips(chosen.toSet()) { next -> savePlot(plot.copy(pests = com.example.smartgardenplanner.core.Pest.encode(next))) }
+        val seeds = snap.context.plantedSeeds()
+        val risks = com.example.smartgardenplanner.core.PestAdvisor.risks(chosen, seeds)
+        chosen.forEach { p ->
+            val atRisk = risks.first { it.pest == p }.atRisk
+            Column {
+                Text(p.label + when {
+                    atRisk.isNotEmpty() -> " — goes for your ${atRisk.take(5).joinToString(", ")}"
+                    p.targets.isEmpty() -> " — can damage most plants"
+                    else -> ""
+                }, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text("Signs: ${p.signs}", fontSize = 11.sp, color = Color.Gray)
+                p.tips.forEach { Text("• $it", fontSize = 11.sp) }
+            }
         }
+        if (chosen.isEmpty()) Text("None ticked yet. Deer, rabbits, groundhogs, raccoons and squirrels are the most common garden visitors in North America.", fontSize = 12.sp, color = Color.Gray)
+        Text("General tips", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.Pest.GENERAL_TIPS.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
+    }
+    // FR-039 / FR-045: watering advice, and which plants each sprinkler, drip line or hose reaches.
+    Section("Watering and irrigation", "Draw sprinklers, drip lines and hose taps from the layout menu → Irrigation, then turn on Show water map to see what gets wet.") {
+        if (snap.context.features.any { com.example.smartgardenplanner.core.SiteFeatureType.of(it.featureType)?.isIrrigation == true }) {
+            com.example.smartgardenplanner.core.Irrigation.report(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
+                Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+            }
+        }
+        com.example.smartgardenplanner.core.WateringAdvice.forPlot(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
+            Text("→ $it", fontSize = 12.sp)
+        }
+        val species = snap.context.plantedSeeds().distinctBy { com.example.smartgardenplanner.core.CropReference.speciesKey(it) }
+        if (species.isNotEmpty()) {
+            Text("How much water your plants need", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            species.sortedBy { com.example.smartgardenplanner.core.CropReference.forSeed(it).waterIntervalDays }.forEach {
+                Text("${com.example.smartgardenplanner.core.CropReference.speciesName(it)}: ${com.example.smartgardenplanner.core.WateringAdvice.needLabel(it)}", fontSize = 11.sp)
+            }
+        }
+        Text("Watering tips", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.WateringAdvice.GENERAL.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
+        Text("Choosing sprinklers, drip or hose", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.WateringAdvice.SYSTEMS.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
     }
     Section("Today's care", "FR-019: watering and fertilizing due now. Daily notifications can be switched on in Settings → Household & care.") {
         if (gate(Feature.CARE_REMINDERS, settings, "Care reminders")) {

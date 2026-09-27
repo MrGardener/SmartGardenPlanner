@@ -54,7 +54,8 @@ data class AppSettings(
     val preferredVendorId: String = "",          // FR-024 (Pro)
     val planLayout: String = "CLUMPS",           // FR-032: "CLUMPS" | "ROWS" for Plan an area for me
     val lastPlanList: String = "",               // FR-034: last Plan-an-area list, "CODE:count,CODE:count"
-    val showPlantLabels: Boolean = true          // FR-031: short names (e.g. "Bell red", "Cherry") on the layout
+    val showPlantLabels: Boolean = true,         // FR-031: short names (e.g. "Bell red", "Cherry") on the layout
+    val disclaimerAccepted: Boolean = false      // FR-044: the "guide, not a guarantee" notice was read
 ) {
     val carePreferenceEnum: CarePreference
         get() = if (carePreference == CarePreference.CONVENTIONAL.name) CarePreference.CONVENTIONAL else CarePreference.ORGANIC
