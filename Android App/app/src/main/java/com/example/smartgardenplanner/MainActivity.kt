@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.min
@@ -847,7 +848,7 @@ fun CanvasWorkspaceScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(activePlot?.name?.let { "Workspace UI Editor" } ?: "Loading Layout...") },
+                title = { Text(activePlot?.name ?: "Loading Layout...", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -1012,12 +1013,9 @@ fun CanvasWorkspaceScreen(
         }
     ) { paddingValues ->
         activePlot?.let { state: PlotEntity ->
-            Column(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
+            val headerSection: @Composable () -> Unit = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Plot Layout Size: ${DistanceFormatter.format(state.lengthM, settings.distanceUnit)} × ${DistanceFormatter.format(state.widthM, settings.distanceUnit)}",
@@ -1061,484 +1059,8 @@ fun CanvasWorkspaceScreen(
                         }
                     )
                 }
-
-                val rulerGutterDp = 22.dp
-                Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    Row(modifier = Modifier.fillMaxWidth().height(rulerGutterDp)) {
-                        Spacer(modifier = Modifier.width(rulerGutterDp))
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            Canvas(modifier = Modifier.fillMaxSize()) {
-                                drawRuler(axisLengthM = state.lengthM, canvasLengthPx = size.width, horizontal = true, tickIntervalM = settings.rulerTickIntervalM / zoomScale, fontSizePx = settings.rulerFontSizeSp * 2f, unit = settings.distanceUnit)
-                            }
-                        }
-                    }
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        Box(modifier = Modifier.width(rulerGutterDp).fillMaxHeight()) {
-                            Canvas(modifier = Modifier.fillMaxSize()) {
-                                drawRuler(axisLengthM = state.widthM, canvasLengthPx = size.height, horizontal = false, tickIntervalM = settings.rulerTickIntervalM / zoomScale, fontSizePx = settings.rulerFontSizeSp * 2f, unit = settings.distanceUnit)
-                            }
-                        }
-
-                        BoxWithConstraints(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                                .background(Color(0xFF070B14))
-                                // [FIXED] Real bug: the scroll modifiers used to live directly on
-                                // THIS BoxWithConstraints — the same one whose maxWidth/maxHeight
-                                // are used to compute the zoomed canvas size. Scrollable layouts
-                                // request relaxed/unbounded constraints in their scroll direction,
-                                // which corrupted that exact measurement the moment Zoom/Pan mode
-                                // turned on, producing a broken canvas size and pushing everything
-                                // (including every planted node) outside the visible viewport —
-                                // this is why plants appeared to "disappear" when zooming. Fix:
-                                // this outer Box no longer scrolls at all; only the inner Box
-                                // wrapping the Canvas below does, so this one's maxWidth/maxHeight
-                                // stay stable regardless of zoom/pan state.
-                        ) {
-                            val baseWidth = maxWidth
-                            val baseHeight = maxHeight
-                            // [NEW] Scrollable wrapper, separate from the measuring Box above —
-                            // holds ONLY the Canvas, so panning never affects the hint text or the
-                            // floating zoom controls below, which stay fixed in the viewport
-                            // exactly like Google Maps' zoom controls do.
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .then(
-                                        if (zoomPanModeEnabled) {
-                                            Modifier
-                                                .horizontalScroll(rememberScrollState())
-                                                .verticalScroll(rememberScrollState())
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
-                            ) {
-                            Canvas(
-                                modifier = Modifier
-                                    .size(baseWidth * zoomScale, baseHeight * zoomScale)
-                                    .pointerInput(canvasMode, pathSubMode, areaSubMode, moveModeEnabled, zoomPanModeEnabled) {
-                                        // [FIXED] Gated on !moveModeEnabled: while Move Mode is on, this
-                                        // tap detector steps aside entirely so it can't race the new drag
-                                        // detector below for the same touch — the two are deliberately
-                                        // mutually exclusive rather than both listening at once.
-                                        if (canvasMode == CanvasMode.PLACE_NODE && !moveModeEnabled && !zoomPanModeEnabled) {
-                                            detectTapGestures(
-                                                onDoubleTap = { offset: Offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-
-                                                    val candidateSeed = seedFor(activeSeedCode)
-                                                    if (candidateSeed == null) {
-                                                        snackbarMessage = "Select a seed variety first."
-                                                        return@detectTapGestures
-                                                    }
-
-                                                    if (isInsidePath(realXM, realYM, candidateSeed.exclusionRadiusM)) {
-                                                        snackbarMessage = "That spot overlaps a no-plant path."
-                                                        return@detectTapGestures
-                                                    }
-
-                                                    val candidateNode = PlantedNodeEntity(
-                                                        plotId = plotId,
-                                                        seedCode = activeSeedCode,
-                                                        coordinateXM = realXM,
-                                                        coordinateYM = realYM
-                                                    )
-                                                    val result = validator.validatePlacement(candidateNode, candidateSeed, nodesState, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
-
-                                                    if (!result.isValid) {
-                                                        val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
-                                                        val conflictNode = nodesState.find { it.id == conflictId }
-                                                        val conflictSeed = conflictNode?.let { seedFor(it.seedCode) }
-                                                        if (conflictNode != null && conflictSeed != null) {
-                                                            val dx = candidateNode.coordinateXM - conflictNode.coordinateXM
-                                                            val dy = candidateNode.coordinateYM - conflictNode.coordinateYM
-                                                            val actualDist = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
-                                                            val requiredDist = candidateSeed.exclusionRadiusM + conflictSeed.exclusionRadiusM
-                                                            snackbarMessage = if (result.antagonistViolations.contains(conflictId)) {
-                                                                "${candidateSeed.commonName} avoids ${conflictSeed.commonName} nearby — move at least ${"%.1f".format(requiredDist * 2)}m away."
-                                                            } else {
-                                                                "Too close to ${conflictSeed.commonName}: ${"%.2f".format(actualDist)}m apart, needs ${"%.2f".format(requiredDist)}m."
-                                                            }
-                                                        } else {
-                                                            snackbarMessage = "Spacing conflict: too close to an existing plant."
-                                                        }
-                                                    } else {
-                                                        val newNodes = nodesState + candidateNode
-                                                        launchSafely {
-                                                            withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insert(candidateNode) }
-                                                            reloadNodes()
-                                                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
-                                                            redoStack.clear()
-                                                        }
-                                                    }
-                                                },
-                                                onTap = { offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-                                                    val tappedNode = nodesState.minByOrNull {
-                                                        val dx = it.coordinateXM - realXM
-                                                        val dy = it.coordinateYM - realYM
-                                                        dx * dx + dy * dy
-                                                    }
-                                                    tappedNode?.let { node ->
-                                                        val dx = (node.coordinateXM - realXM)
-                                                        val dy = (node.coordinateYM - realYM)
-                                                        val distM = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
-                                                        if (distM < 0.4) {
-                                                            val seed = seedFor(node.seedCode)
-                                                            if (seed != null && germinationEngine.isGerminationOverdue(node, seed)) {
-                                                                germinationDialogNode = node
-                                                            } else {
-                                                                infoDialogNode = node
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            )
-                                        } else if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS && !zoomPanModeEnabled) {
-                                            // [NEW] Point-based curved path drawing: each tap adds a point;
-                                            // tapping an existing path (when not building a new one) opens edit.
-                                            detectTapGestures(
-                                                onTap = { offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-
-                                                    if (inProgressPoints.isEmpty()) {
-                                                        val tappedZone = pathZonesState.find { zone ->
-                                                            if (zone.pathType == "POLYLINE") {
-                                                                distanceToPolyline(realXM, realYM, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + 0.3f)
-                                                            } else {
-                                                                realXM in zone.xM..(zone.xM + zone.widthM) && realYM in zone.yM..(zone.yM + zone.heightM)
-                                                            }
-                                                        }
-                                                        if (tappedZone != null) {
-                                                            editingPathZone = tappedZone
-                                                            return@detectTapGestures
-                                                        }
-                                                    }
-                                                    inProgressPoints = inProgressPoints + Offset(realXM, realYM)
-                                                }
-                                            )
-                                        } else if (canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON && !zoomPanModeEnabled) {
-                                            // [NEW — FR-001] Point-based polygon area select, same interaction
-                                            // pattern as the curved no-plant path above: tap to add points, an
-                                            // explicit "Finish Area" button closes the loop once >=3 points exist.
-                                            detectTapGestures(
-                                                onTap = { offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-                                                    inProgressPoints = inProgressPoints + Offset(realXM, realYM)
-                                                }
-                                            )
-                                        } else if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.RECTANGLE && !zoomPanModeEnabled) {
-                                            detectTapGestures(
-                                                onTap = { offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-                                                    val tappedZone = pathZonesState.find { zone ->
-                                                        zone.pathType != "POLYLINE" && realXM in zone.xM..(zone.xM + zone.widthM) && realYM in zone.yM..(zone.yM + zone.heightM)
-                                                    }
-                                                    if (tappedZone != null) editingPathZone = tappedZone
-                                                }
-                                            )
-                                        }
-                                    }
-                                    .pointerInput(canvasMode, pathSubMode, areaSubMode, zoomPanModeEnabled) {
-                                        if (!zoomPanModeEnabled && ((canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.RECTANGLE) || (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.RECTANGLE))) {
-                                            detectDragGestures(
-                                                onDragStart = { offset -> dragStart = offset; dragCurrent = offset },
-                                                onDrag = { change, _ -> dragCurrent = change.position },
-                                                onDragEnd = {
-                                                    val start = dragStart
-                                                    val end = dragCurrent
-                                                    if (start != null && end != null) {
-                                                        val xMin = min(start.x, end.x) / size.width * state.lengthM
-                                                        val yMin = min(start.y, end.y) / size.height * state.widthM
-                                                        val wM = kotlin.math.abs(end.x - start.x) / size.width * state.lengthM
-                                                        val hM = kotlin.math.abs(end.y - start.y) / size.height * state.widthM
-
-                                                        if (wM > 0.05f && hM > 0.05f) {
-                                                            if (canvasMode == CanvasMode.DRAW_PATH) {
-                                                                val newZone = PathZoneEntity(plotId = plotId, xM = xMin, yM = yMin, widthM = wM, heightM = hM, pathType = "RECTANGLE")
-                                                                launchSafely {
-                                                                    withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
-                                                                    reloadPaths()
-                                                                    undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
-                                                                    redoStack.clear()
-                                                                }
-                                                            } else if (canvasMode == CanvasMode.SELECT_AREA) {
-                                                                pendingAreaSelection = androidx.compose.ui.geometry.Rect(xMin, yMin, xMin + wM, yMin + hM)
-                                                            }
-                                                        }
-                                                    }
-                                                    dragStart = null
-                                                    dragCurrent = null
-                                                }
-                                            )
-                                        }
-                                    }
-                                    // [NEW] Drag-to-reposition, active ONLY when Move Mode is explicitly
-                                    // enabled — deliberately exclusive of the tap detector above so the
-                                    // two never compete for the same touch sequence.
-                                    .pointerInput(canvasMode, moveModeEnabled, zoomPanModeEnabled) {
-                                        if (canvasMode == CanvasMode.PLACE_NODE && moveModeEnabled && !zoomPanModeEnabled) {
-                                            detectDragGestures(
-                                                onDragStart = { offset ->
-                                                    val realXM = (offset.x / size.width) * state.lengthM
-                                                    val realYM = (offset.y / size.height) * state.widthM
-                                                    val nearest = nodesState.minByOrNull {
-                                                        val dx = it.coordinateXM - realXM
-                                                        val dy = it.coordinateYM - realYM
-                                                        dx * dx + dy * dy
-                                                    }
-                                                    nearest?.let { candidate ->
-                                                        val dx = candidate.coordinateXM - realXM
-                                                        val dy = candidate.coordinateYM - realYM
-                                                        val dist = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
-                                                        if (dist < 0.4) {
-                                                            draggingNodeId = candidate.id
-                                                            dragPreviewOffset = offset
-                                                        }
-                                                    }
-                                                },
-                                                onDrag = { change, _ ->
-                                                    if (draggingNodeId != null) dragPreviewOffset = change.position
-                                                },
-                                                onDragEnd = {
-                                                    val id = draggingNodeId
-                                                    val preview = dragPreviewOffset
-                                                    if (id != null && preview != null) {
-                                                        val node = nodesState.find { it.id == id }
-                                                        val seed = node?.let { seedFor(it.seedCode) }
-                                                        if (node != null && seed != null) {
-                                                            val realXM = (preview.x / size.width) * state.lengthM
-                                                            val realYM = (preview.y / size.height) * state.widthM
-                                                            if (realXM < 0f || realXM > state.lengthM || realYM < 0f || realYM > state.widthM) {
-                                                                snackbarMessage = "Can't move there — outside the plot."
-                                                            } else if (isInsidePath(realXM, realYM, seed.exclusionRadiusM)) {
-                                                                snackbarMessage = "Can't move there — overlaps a no-plant path."
-                                                            } else {
-                                                                val candidate = node.copy(coordinateXM = realXM, coordinateYM = realYM)
-                                                                val neighbors = nodesState.filter { it.id != id }
-                                                                val result = validator.validatePlacement(candidate, seed, neighbors, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
-                                                                if (!result.isValid) {
-                                                                    snackbarMessage = "Can't move there — too close to another plant."
-                                                                } else {
-                                                                    launchSafely {
-                                                                        withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(candidate) }
-                                                                        reloadNodes()
-                                                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
-                                                                        redoStack.clear()
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    draggingNodeId = null
-                                                    dragPreviewOffset = null
-                                                },
-                                                onDragCancel = {
-                                                    draggingNodeId = null
-                                                    dragPreviewOffset = null
-                                                }
-                                            )
-                                        }
-                                    }
-                            ) {
-                                val canvasW = size.width
-                                val canvasH = size.height
-                                val scaleX = canvasW / state.lengthM
-                                val scaleY = canvasH / state.widthM
-
-                                var gridX = 0f
-                                while (gridX < canvasW) {
-                                    drawLine(color = Color(0xFF1E293B), start = Offset(gridX, 0f), end = Offset(gridX, canvasH), strokeWidth = 1f)
-                                    gridX += scaleX
-                                }
-                                var gridY = 0f
-                                while (gridY < canvasH) {
-                                    drawLine(color = Color(0xFF1E293B), start = Offset(0f, gridY), end = Offset(canvasW, gridY), strokeWidth = 1f)
-                                    gridY += scaleY
-                                }
-
-                                // No-plant path zones
-                                pathZonesState.forEach { zone ->
-                                    if (zone.pathType == "POLYLINE") {
-                                        val points = parsePoints(zone.pointsJson).map { Offset(it.x * scaleX, it.y * scaleY) }
-                                        val strokeWidthPx = zone.widthM * scaleX
-                                        for (i in 0 until points.size - 1) {
-                                            drawLine(
-                                                color = Color(0x8864748B), start = points[i], end = points[i + 1],
-                                                strokeWidth = strokeWidthPx, cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                            )
-                                        }
-                                    } else {
-                                        val rectTopLeft = Offset(zone.xM * scaleX, zone.yM * scaleY)
-                                        val rectSize = androidx.compose.ui.geometry.Size(zone.widthM * scaleX, zone.heightM * scaleY)
-                                        drawRect(color = Color(0x552D3748), topLeft = rectTopLeft, size = rectSize)
-                                        drawRect(color = Color(0xFF64748B), topLeft = rectTopLeft, size = rectSize, style = Stroke(width = 2f))
-                                    }
-                                }
-
-                                // [NEW] Weed-risk mask: everything NOT covered by a plant's spacing
-                                // radius, using the real Path.Op.DIFFERENCE geometry from
-                                // WeedMaskGeometryEngine (previously computed but never rendered).
-                                if (showWeedMask && nodesState.isNotEmpty()) {
-                                    val circles = nodesState.map { node ->
-                                        val seed = seedFor(node.seedCode)
-                                        WeedMaskGeometryEngine.ExclusionCircle(
-                                            centerXPx = node.coordinateXM * scaleX,
-                                            centerYPx = node.coordinateYM * scaleY,
-                                            radiusPx = (seed?.exclusionRadiusM ?: 0.5f) * scaleX
-                                        )
-                                    }
-                                    val weedPath = weedMaskEngine.calculateResidualWeedZone(canvasW, canvasH, circles)
-                                    drawPath(path = weedPath, color = Color(0x33EAB308))
-                                }
-
-                                // [NEW] Irrigation route: nearest-neighbor drip line connecting every
-                                // planted node, from IrrigationRouteCalculator (previously computed but
-                                // never rendered).
-                                if (showIrrigationRoute && nodesState.size >= 2) {
-                                    val route = irrigationEngine.calculateDripRoute(nodesState)
-                                    val screenRoute = route.map { Offset(it.xM * scaleX, it.yM * scaleY) }
-                                    for (i in 0 until screenRoute.size - 1) {
-                                        drawLine(
-                                            color = Color(0xFF0EA5E9), start = screenRoute[i], end = screenRoute[i + 1],
-                                            strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                        )
-                                    }
-                                    screenRoute.forEach { drawCircle(color = Color(0xFF0EA5E9), radius = 4f, center = it) }
-                                }
-
-                                // In-progress polyline path being built
-                                if (inProgressPoints.isNotEmpty()) {
-                                    val screenPoints = inProgressPoints.map { Offset(it.x * scaleX, it.y * scaleY) }
-                                    for (i in 0 until screenPoints.size - 1) {
-                                        drawLine(color = Color(0xFF10B981), start = screenPoints[i], end = screenPoints[i + 1], strokeWidth = 4f)
-                                    }
-                                    screenPoints.forEach { drawCircle(color = Color(0xFF10B981), radius = 6f, center = it) }
-                                }
-
-                                val start = dragStart
-                                val current = dragCurrent
-                                if (start != null && current != null) {
-                                    val topLeft = Offset(min(start.x, current.x), min(start.y, current.y))
-                                    val previewSize = androidx.compose.ui.geometry.Size(kotlin.math.abs(current.x - start.x), kotlin.math.abs(current.y - start.y))
-                                    val previewColor = if (canvasMode == CanvasMode.DRAW_PATH) Color(0x8064748B) else Color(0x8010B981)
-                                    drawRect(color = previewColor, topLeft = topLeft, size = previewSize, style = Stroke(width = 3f))
-                                }
-
-                                nodesState.forEach { node: PlantedNodeEntity ->
-                                    // [NEW] While this specific node is being dragged, render it at the
-                                    // live touch position instead of its stored coordinates, so the move
-                                    // is visible in real time before it's committed on release.
-                                    val isDragging = draggingNodeId == node.id
-                                    val centerOffset = if (isDragging && dragPreviewOffset != null) {
-                                        dragPreviewOffset!!
-                                    } else {
-                                        Offset(x = node.coordinateXM * scaleX, y = node.coordinateYM * scaleY)
-                                    }
-                                    val seed = seedFor(node.seedCode)
-                                    val exclusionRadiusM = seed?.exclusionRadiusM ?: 0.5f
-                                    val exclusionRadiusPx = exclusionRadiusM * scaleX
-                                    val baseColor = VegetableColorPalette.colorFor(seed)
-                                    val alpha = if (isDragging) 0.6f else 1.0f
-
-                                    drawCircle(color = VegetableColorPalette.exclusionRingColorFor(seed).copy(alpha = VegetableColorPalette.exclusionRingColorFor(seed).alpha * alpha), radius = exclusionRadiusPx, center = centerOffset)
-                                    drawCircle(color = baseColor.copy(alpha = 0.8f * alpha), radius = exclusionRadiusPx, center = centerOffset, style = Stroke(width = 2f))
-                                    drawCircle(color = baseColor.copy(alpha = alpha), radius = 10f, center = centerOffset)
-
-                                    if (!isDragging && seed != null && germinationEngine.isGerminationOverdue(node, seed)) {
-                                        drawCircle(color = Color(0xFFEF4444), radius = 16f, center = centerOffset, style = Stroke(width = 3f))
-                                    }
-                                }
-                            }
-                            } // closes the inner scrollable Box wrapping the Canvas
-
-                            Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
-                                Text(
-                                    text = when {
-                                        zoomPanModeEnabled -> "Zoom/Pan Mode: use +/- to zoom, drag to pan • tap the zoom icon to turn this off (${"%.1f".format(zoomScale)}x)"
-                                        canvasMode == CanvasMode.PLACE_NODE && moveModeEnabled -> "Move Mode: drag a plant to reposition it, or tap the lock icon to turn this off"
-                                        canvasMode == CanvasMode.PLACE_NODE -> "Double-tap to plant • Tap an existing plant for details, editing, or recovery"
-                                        canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS -> "Tap to add points • tap an existing path to edit it"
-                                        canvasMode == CanvasMode.DRAW_PATH -> "Drag to mark a no-plant path • tap an existing path to edit it"
-                                        canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON -> "Tap to add points (need at least 3) to outline a custom area"
-                                        else -> "Drag to select an area to auto-populate"
-                                    },
-                                    color = if (zoomPanModeEnabled) Color(0xFF0EA5E9) else if (moveModeEnabled) Color(0xFFEF4444) else Color.LightGray, fontSize = 11.sp
-                                )
-                                if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS && inProgressPoints.size >= 2) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Button(onClick = { pendingPolylineWidth = true }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                            Text("Finish Path", fontSize = 11.sp)
-                                        }
-                                        OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                            Text("Cancel", fontSize = 11.sp)
-                                        }
-                                    }
-                                }
-                                // [NEW — FR-001] "Finish Area" appears once >=3 points exist, matching the
-                                // pattern's own described behavior: a 3rd point doesn't auto-close by
-                                // itself (a 4th+ tap keeps adding points instead), but the button is
-                                // available from that point on to close the loop whenever the user is done.
-                                if (canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON && inProgressPoints.size >= 3) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Button(
-                                            onClick = {
-                                                pendingPolygonSelection = inProgressPoints
-                                                inProgressPoints = emptyList()
-                                            },
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                                        ) {
-                                            Text("Finish Area (${inProgressPoints.size} points)", fontSize = 11.sp)
-                                        }
-                                        OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                            Text("Cancel", fontSize = 11.sp)
-                                        }
-                                    }
-                                }
-                            }
-
-                            // [NEW] Floating zoom controls, Google Maps-style — fixed position in
-                            // the bottom-right corner of the canvas, never shifting other buttons.
-                            if (zoomPanModeEnabled) {
-                                Column(
-                                    modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    if (zoomScale != 1f) {
-                                        FilledIconButton(
-                                            onClick = { zoomScale = 1f },
-                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
-                                        ) {
-                                            Icon(Icons.Default.CenterFocusStrong, contentDescription = "Reset zoom", tint = Color.White)
-                                        }
-                                    }
-                                    Column(
-                                        modifier = Modifier
-                                            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                                    ) {
-                                        IconButton(onClick = { zoomScale = (zoomScale + settings.zoomStep).coerceIn(settings.zoomMin, settings.zoomMax) }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Zoom in", tint = Color.White)
-                                        }
-                                        Divider(modifier = Modifier.width(24.dp))
-                                        IconButton(onClick = { zoomScale = (zoomScale - settings.zoomStep).coerceIn(settings.zoomMin, settings.zoomMax) }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Zoom out", tint = Color.White)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+            }
+            val varietyButton: @Composable () -> Unit = {
                 if (canvasMode == CanvasMode.PLACE_NODE) {
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         // [FIXED] Replaced the always-visible flat scrolling list — with the catalog now
@@ -1548,6 +1070,520 @@ fun CanvasWorkspaceScreen(
                             val active = seedFor(activeSeedCode)
                             Text(if (active != null) "Change Variety (${active.commonName})" else "Choose a Variety to Place")
                         }
+                    }
+                }
+            }
+
+            val rulerGutterDp = 22.dp
+            // The plot is drawn at one scale for both axes (px per metre), so circles stay round and
+            // spacing looks the same across and down. The drawing area keeps the plot's aspect ratio
+            // and is centred in whatever space is left (portrait or landscape).
+            val canvasSection: @Composable (Modifier) -> Unit = { sectionModifier ->
+                BoxWithConstraints(modifier = sectionModifier, contentAlignment = Alignment.Center) {
+                    val plotAspect = state.lengthM.coerceAtLeast(0.01f) / state.widthM.coerceAtLeast(0.01f)
+                    val availW = (maxWidth - rulerGutterDp).coerceAtLeast(1.dp)
+                    val availH = (maxHeight - rulerGutterDp).coerceAtLeast(1.dp)
+                    val (drawW, drawH) = if (availW / availH > plotAspect) {
+                        Pair(availH * plotAspect, availH)
+                    } else {
+                        Pair(availW, availW / plotAspect)
+                    }
+                    Column(modifier = Modifier.size(drawW + rulerGutterDp, drawH + rulerGutterDp)) {
+                        Row(modifier = Modifier.fillMaxWidth().height(rulerGutterDp)) {
+                            Spacer(modifier = Modifier.width(rulerGutterDp))
+                            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    drawRuler(axisLengthM = state.lengthM, canvasLengthPx = size.width, horizontal = true, tickIntervalM = settings.rulerTickIntervalM / zoomScale, fontSizePx = settings.rulerFontSizeSp * 2f, unit = settings.distanceUnit)
+                                }
+                            }
+                        }
+                        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            Box(modifier = Modifier.width(rulerGutterDp).fillMaxHeight()) {
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    drawRuler(axisLengthM = state.widthM, canvasLengthPx = size.height, horizontal = false, tickIntervalM = settings.rulerTickIntervalM / zoomScale, fontSizePx = settings.rulerFontSizeSp * 2f, unit = settings.distanceUnit)
+                                }
+                            }
+
+                            BoxWithConstraints(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF070B14))
+                                    // [FIXED] Real bug: the scroll modifiers used to live directly on
+                                    // THIS BoxWithConstraints — the same one whose maxWidth/maxHeight
+                                    // are used to compute the zoomed canvas size. Scrollable layouts
+                                    // request relaxed/unbounded constraints in their scroll direction,
+                                    // which corrupted that exact measurement the moment Zoom/Pan mode
+                                    // turned on, producing a broken canvas size and pushing everything
+                                    // (including every planted node) outside the visible viewport —
+                                    // this is why plants appeared to "disappear" when zooming. Fix:
+                                    // this outer Box no longer scrolls at all; only the inner Box
+                                    // wrapping the Canvas below does, so this one's maxWidth/maxHeight
+                                    // stay stable regardless of zoom/pan state.
+                            ) {
+                                val baseWidth = maxWidth
+                                val baseHeight = maxHeight
+                                // [NEW] Scrollable wrapper, separate from the measuring Box above —
+                                // holds ONLY the Canvas, so panning never affects the hint text or the
+                                // floating zoom controls below, which stay fixed in the viewport
+                                // exactly like Google Maps' zoom controls do.
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .then(
+                                            if (zoomPanModeEnabled) {
+                                                Modifier
+                                                    .horizontalScroll(rememberScrollState())
+                                                    .verticalScroll(rememberScrollState())
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                ) {
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(baseWidth * zoomScale, baseHeight * zoomScale)
+                                        .pointerInput(canvasMode, pathSubMode, areaSubMode, moveModeEnabled, zoomPanModeEnabled) {
+                                            // [FIXED] Gated on !moveModeEnabled: while Move Mode is on, this
+                                            // tap detector steps aside entirely so it can't race the new drag
+                                            // detector below for the same touch — the two are deliberately
+                                            // mutually exclusive rather than both listening at once.
+                                            if (canvasMode == CanvasMode.PLACE_NODE && !moveModeEnabled && !zoomPanModeEnabled) {
+                                                detectTapGestures(
+                                                    onDoubleTap = { offset: Offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+
+                                                        val candidateSeed = seedFor(activeSeedCode)
+                                                        if (candidateSeed == null) {
+                                                            snackbarMessage = "Select a seed variety first."
+                                                            return@detectTapGestures
+                                                        }
+
+                                                        if (isInsidePath(realXM, realYM, candidateSeed.exclusionRadiusM)) {
+                                                            snackbarMessage = "That spot overlaps a no-plant path."
+                                                            return@detectTapGestures
+                                                        }
+
+                                                        val candidateNode = PlantedNodeEntity(
+                                                            plotId = plotId,
+                                                            seedCode = activeSeedCode,
+                                                            coordinateXM = realXM,
+                                                            coordinateYM = realYM
+                                                        )
+                                                        val result = validator.validatePlacement(candidateNode, candidateSeed, nodesState, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+
+                                                        if (!result.isValid) {
+                                                            val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
+                                                            val conflictNode = nodesState.find { it.id == conflictId }
+                                                            val conflictSeed = conflictNode?.let { seedFor(it.seedCode) }
+                                                            if (conflictNode != null && conflictSeed != null) {
+                                                                val dx = candidateNode.coordinateXM - conflictNode.coordinateXM
+                                                                val dy = candidateNode.coordinateYM - conflictNode.coordinateYM
+                                                                val actualDist = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
+                                                                val requiredDist = candidateSeed.exclusionRadiusM + conflictSeed.exclusionRadiusM
+                                                                snackbarMessage = if (result.antagonistViolations.contains(conflictId)) {
+                                                                    "${candidateSeed.commonName} avoids ${conflictSeed.commonName} nearby — move at least ${"%.1f".format(requiredDist * 2)}m away."
+                                                                } else {
+                                                                    "Too close to ${conflictSeed.commonName}: ${"%.2f".format(actualDist)}m apart, needs ${"%.2f".format(requiredDist)}m."
+                                                                }
+                                                            } else {
+                                                                snackbarMessage = "Spacing conflict: too close to an existing plant."
+                                                            }
+                                                        } else {
+                                                            val newNodes = nodesState + candidateNode
+                                                            launchSafely {
+                                                                withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insert(candidateNode) }
+                                                                reloadNodes()
+                                                                undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                redoStack.clear()
+                                                            }
+                                                        }
+                                                    },
+                                                    onTap = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+                                                        val tappedNode = nodesState.minByOrNull {
+                                                            val dx = it.coordinateXM - realXM
+                                                            val dy = it.coordinateYM - realYM
+                                                            dx * dx + dy * dy
+                                                        }
+                                                        tappedNode?.let { node ->
+                                                            val dx = (node.coordinateXM - realXM)
+                                                            val dy = (node.coordinateYM - realYM)
+                                                            val distM = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
+                                                            if (distM < 0.4) {
+                                                                val seed = seedFor(node.seedCode)
+                                                                if (seed != null && germinationEngine.isGerminationOverdue(node, seed)) {
+                                                                    germinationDialogNode = node
+                                                                } else {
+                                                                    infoDialogNode = node
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            } else if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS && !zoomPanModeEnabled) {
+                                                // [NEW] Point-based curved path drawing: each tap adds a point;
+                                                // tapping an existing path (when not building a new one) opens edit.
+                                                detectTapGestures(
+                                                    onTap = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+
+                                                        if (inProgressPoints.isEmpty()) {
+                                                            val tappedZone = pathZonesState.find { zone ->
+                                                                if (zone.pathType == "POLYLINE") {
+                                                                    distanceToPolyline(realXM, realYM, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + 0.3f)
+                                                                } else {
+                                                                    realXM in zone.xM..(zone.xM + zone.widthM) && realYM in zone.yM..(zone.yM + zone.heightM)
+                                                                }
+                                                            }
+                                                            if (tappedZone != null) {
+                                                                editingPathZone = tappedZone
+                                                                return@detectTapGestures
+                                                            }
+                                                        }
+                                                        inProgressPoints = inProgressPoints + Offset(realXM, realYM)
+                                                    }
+                                                )
+                                            } else if (canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON && !zoomPanModeEnabled) {
+                                                // [NEW — FR-001] Point-based polygon area select, same interaction
+                                                // pattern as the curved no-plant path above: tap to add points, an
+                                                // explicit "Finish Area" button closes the loop once >=3 points exist.
+                                                detectTapGestures(
+                                                    onTap = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+                                                        inProgressPoints = inProgressPoints + Offset(realXM, realYM)
+                                                    }
+                                                )
+                                            } else if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.RECTANGLE && !zoomPanModeEnabled) {
+                                                detectTapGestures(
+                                                    onTap = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+                                                        val tappedZone = pathZonesState.find { zone ->
+                                                            zone.pathType != "POLYLINE" && realXM in zone.xM..(zone.xM + zone.widthM) && realYM in zone.yM..(zone.yM + zone.heightM)
+                                                        }
+                                                        if (tappedZone != null) editingPathZone = tappedZone
+                                                    }
+                                                )
+                                            }
+                                        }
+                                        .pointerInput(canvasMode, pathSubMode, areaSubMode, zoomPanModeEnabled) {
+                                            if (!zoomPanModeEnabled && ((canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.RECTANGLE) || (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.RECTANGLE))) {
+                                                detectDragGestures(
+                                                    onDragStart = { offset -> dragStart = offset; dragCurrent = offset },
+                                                    onDrag = { change, _ -> dragCurrent = change.position },
+                                                    onDragEnd = {
+                                                        val start = dragStart
+                                                        val end = dragCurrent
+                                                        if (start != null && end != null) {
+                                                            val xMin = min(start.x, end.x) / size.width * state.lengthM
+                                                            val yMin = min(start.y, end.y) / size.height * state.widthM
+                                                            val wM = kotlin.math.abs(end.x - start.x) / size.width * state.lengthM
+                                                            val hM = kotlin.math.abs(end.y - start.y) / size.height * state.widthM
+
+                                                            if (wM > 0.05f && hM > 0.05f) {
+                                                                if (canvasMode == CanvasMode.DRAW_PATH) {
+                                                                    val newZone = PathZoneEntity(plotId = plotId, xM = xMin, yM = yMin, widthM = wM, heightM = hM, pathType = "RECTANGLE")
+                                                                    launchSafely {
+                                                                        withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
+                                                                        reloadPaths()
+                                                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                        redoStack.clear()
+                                                                    }
+                                                                } else if (canvasMode == CanvasMode.SELECT_AREA) {
+                                                                    pendingAreaSelection = androidx.compose.ui.geometry.Rect(xMin, yMin, xMin + wM, yMin + hM)
+                                                                }
+                                                            }
+                                                        }
+                                                        dragStart = null
+                                                        dragCurrent = null
+                                                    }
+                                                )
+                                            }
+                                        }
+                                        // [NEW] Drag-to-reposition, active ONLY when Move Mode is explicitly
+                                        // enabled — deliberately exclusive of the tap detector above so the
+                                        // two never compete for the same touch sequence.
+                                        .pointerInput(canvasMode, moveModeEnabled, zoomPanModeEnabled) {
+                                            if (canvasMode == CanvasMode.PLACE_NODE && moveModeEnabled && !zoomPanModeEnabled) {
+                                                detectDragGestures(
+                                                    onDragStart = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+                                                        val nearest = nodesState.minByOrNull {
+                                                            val dx = it.coordinateXM - realXM
+                                                            val dy = it.coordinateYM - realYM
+                                                            dx * dx + dy * dy
+                                                        }
+                                                        nearest?.let { candidate ->
+                                                            val dx = candidate.coordinateXM - realXM
+                                                            val dy = candidate.coordinateYM - realYM
+                                                            val dist = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
+                                                            if (dist < 0.4) {
+                                                                draggingNodeId = candidate.id
+                                                                dragPreviewOffset = offset
+                                                            }
+                                                        }
+                                                    },
+                                                    onDrag = { change, _ ->
+                                                        if (draggingNodeId != null) dragPreviewOffset = change.position
+                                                    },
+                                                    onDragEnd = {
+                                                        val id = draggingNodeId
+                                                        val preview = dragPreviewOffset
+                                                        if (id != null && preview != null) {
+                                                            val node = nodesState.find { it.id == id }
+                                                            val seed = node?.let { seedFor(it.seedCode) }
+                                                            if (node != null && seed != null) {
+                                                                val realXM = (preview.x / size.width) * state.lengthM
+                                                                val realYM = (preview.y / size.height) * state.widthM
+                                                                if (realXM < 0f || realXM > state.lengthM || realYM < 0f || realYM > state.widthM) {
+                                                                    snackbarMessage = "Can't move there — outside the plot."
+                                                                } else if (isInsidePath(realXM, realYM, seed.exclusionRadiusM)) {
+                                                                    snackbarMessage = "Can't move there — overlaps a no-plant path."
+                                                                } else {
+                                                                    val candidate = node.copy(coordinateXM = realXM, coordinateYM = realYM)
+                                                                    val neighbors = nodesState.filter { it.id != id }
+                                                                    val result = validator.validatePlacement(candidate, seed, neighbors, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                                                                    if (!result.isValid) {
+                                                                        snackbarMessage = "Can't move there — too close to another plant."
+                                                                    } else {
+                                                                        launchSafely {
+                                                                            withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(candidate) }
+                                                                            reloadNodes()
+                                                                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                            redoStack.clear()
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        draggingNodeId = null
+                                                        dragPreviewOffset = null
+                                                    },
+                                                    onDragCancel = {
+                                                        draggingNodeId = null
+                                                        dragPreviewOffset = null
+                                                    }
+                                                )
+                                            }
+                                        }
+                                ) {
+                                    val canvasW = size.width
+                                    val canvasH = size.height
+                                    val scaleX = canvasW / state.lengthM
+                                    val scaleY = canvasH / state.widthM
+
+                                    var gridX = 0f
+                                    while (gridX < canvasW) {
+                                        drawLine(color = Color(0xFF1E293B), start = Offset(gridX, 0f), end = Offset(gridX, canvasH), strokeWidth = 1f)
+                                        gridX += scaleX
+                                    }
+                                    var gridY = 0f
+                                    while (gridY < canvasH) {
+                                        drawLine(color = Color(0xFF1E293B), start = Offset(0f, gridY), end = Offset(canvasW, gridY), strokeWidth = 1f)
+                                        gridY += scaleY
+                                    }
+
+                                    // No-plant path zones
+                                    pathZonesState.forEach { zone ->
+                                        if (zone.pathType == "POLYLINE") {
+                                            val points = parsePoints(zone.pointsJson).map { Offset(it.x * scaleX, it.y * scaleY) }
+                                            val strokeWidthPx = zone.widthM * scaleX
+                                            for (i in 0 until points.size - 1) {
+                                                drawLine(
+                                                    color = Color(0x8864748B), start = points[i], end = points[i + 1],
+                                                    strokeWidth = strokeWidthPx, cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                                )
+                                            }
+                                        } else {
+                                            val rectTopLeft = Offset(zone.xM * scaleX, zone.yM * scaleY)
+                                            val rectSize = androidx.compose.ui.geometry.Size(zone.widthM * scaleX, zone.heightM * scaleY)
+                                            drawRect(color = Color(0x552D3748), topLeft = rectTopLeft, size = rectSize)
+                                            drawRect(color = Color(0xFF64748B), topLeft = rectTopLeft, size = rectSize, style = Stroke(width = 2f))
+                                        }
+                                    }
+
+                                    // [NEW] Weed-risk mask: everything NOT covered by a plant's spacing
+                                    // radius, using the real Path.Op.DIFFERENCE geometry from
+                                    // WeedMaskGeometryEngine (previously computed but never rendered).
+                                    if (showWeedMask && nodesState.isNotEmpty()) {
+                                        val circles = nodesState.map { node ->
+                                            val seed = seedFor(node.seedCode)
+                                            WeedMaskGeometryEngine.ExclusionCircle(
+                                                centerXPx = node.coordinateXM * scaleX,
+                                                centerYPx = node.coordinateYM * scaleY,
+                                                radiusPx = (seed?.exclusionRadiusM ?: 0.5f) * scaleX
+                                            )
+                                        }
+                                        val weedPath = weedMaskEngine.calculateResidualWeedZone(canvasW, canvasH, circles)
+                                        drawPath(path = weedPath, color = Color(0x33EAB308))
+                                    }
+
+                                    // [NEW] Irrigation route: nearest-neighbor drip line connecting every
+                                    // planted node, from IrrigationRouteCalculator (previously computed but
+                                    // never rendered).
+                                    if (showIrrigationRoute && nodesState.size >= 2) {
+                                        val route = irrigationEngine.calculateDripRoute(nodesState)
+                                        val screenRoute = route.map { Offset(it.xM * scaleX, it.yM * scaleY) }
+                                        for (i in 0 until screenRoute.size - 1) {
+                                            drawLine(
+                                                color = Color(0xFF0EA5E9), start = screenRoute[i], end = screenRoute[i + 1],
+                                                strokeWidth = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                            )
+                                        }
+                                        screenRoute.forEach { drawCircle(color = Color(0xFF0EA5E9), radius = 4f, center = it) }
+                                    }
+
+                                    // In-progress polyline path being built
+                                    if (inProgressPoints.isNotEmpty()) {
+                                        val screenPoints = inProgressPoints.map { Offset(it.x * scaleX, it.y * scaleY) }
+                                        for (i in 0 until screenPoints.size - 1) {
+                                            drawLine(color = Color(0xFF10B981), start = screenPoints[i], end = screenPoints[i + 1], strokeWidth = 4f)
+                                        }
+                                        screenPoints.forEach { drawCircle(color = Color(0xFF10B981), radius = 6f, center = it) }
+                                    }
+
+                                    val start = dragStart
+                                    val current = dragCurrent
+                                    if (start != null && current != null) {
+                                        val topLeft = Offset(min(start.x, current.x), min(start.y, current.y))
+                                        val previewSize = androidx.compose.ui.geometry.Size(kotlin.math.abs(current.x - start.x), kotlin.math.abs(current.y - start.y))
+                                        val previewColor = if (canvasMode == CanvasMode.DRAW_PATH) Color(0x8064748B) else Color(0x8010B981)
+                                        drawRect(color = previewColor, topLeft = topLeft, size = previewSize, style = Stroke(width = 3f))
+                                    }
+
+                                    nodesState.forEach { node: PlantedNodeEntity ->
+                                        // [NEW] While this specific node is being dragged, render it at the
+                                        // live touch position instead of its stored coordinates, so the move
+                                        // is visible in real time before it's committed on release.
+                                        val isDragging = draggingNodeId == node.id
+                                        val centerOffset = if (isDragging && dragPreviewOffset != null) {
+                                            dragPreviewOffset!!
+                                        } else {
+                                            Offset(x = node.coordinateXM * scaleX, y = node.coordinateYM * scaleY)
+                                        }
+                                        val seed = seedFor(node.seedCode)
+                                        val exclusionRadiusM = seed?.exclusionRadiusM ?: 0.5f
+                                        val exclusionRadiusPx = exclusionRadiusM * scaleX
+                                        val baseColor = VegetableColorPalette.colorFor(seed)
+                                        val alpha = if (isDragging) 0.6f else 1.0f
+
+                                        drawCircle(color = VegetableColorPalette.exclusionRingColorFor(seed).copy(alpha = VegetableColorPalette.exclusionRingColorFor(seed).alpha * alpha), radius = exclusionRadiusPx, center = centerOffset)
+                                        drawCircle(color = baseColor.copy(alpha = 0.8f * alpha), radius = exclusionRadiusPx, center = centerOffset, style = Stroke(width = 2f))
+                                        drawCircle(color = baseColor.copy(alpha = alpha), radius = 10f, center = centerOffset)
+
+                                        if (!isDragging && seed != null && germinationEngine.isGerminationOverdue(node, seed)) {
+                                            drawCircle(color = Color(0xFFEF4444), radius = 16f, center = centerOffset, style = Stroke(width = 3f))
+                                        }
+                                    }
+                                }
+                                } // closes the inner scrollable Box wrapping the Canvas
+
+                                Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
+                                    Text(
+                                        text = when {
+                                            zoomPanModeEnabled -> "Zoom/Pan Mode: use +/- to zoom, drag to pan • tap the zoom icon to turn this off (${"%.1f".format(zoomScale)}x)"
+                                            canvasMode == CanvasMode.PLACE_NODE && moveModeEnabled -> "Move Mode: drag a plant to reposition it, or tap the lock icon to turn this off"
+                                            canvasMode == CanvasMode.PLACE_NODE -> "Double-tap to plant • Tap an existing plant for details, editing, or recovery"
+                                            canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS -> "Tap to add points • tap an existing path to edit it"
+                                            canvasMode == CanvasMode.DRAW_PATH -> "Drag to mark a no-plant path • tap an existing path to edit it"
+                                            canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON -> "Tap to add points (need at least 3) to outline a custom area"
+                                            else -> "Drag to select an area to auto-populate"
+                                        },
+                                        color = if (zoomPanModeEnabled) Color(0xFF0EA5E9) else if (moveModeEnabled) Color(0xFFEF4444) else Color.LightGray, fontSize = 11.sp
+                                    )
+                                    if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS && inProgressPoints.size >= 2) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Button(onClick = { pendingPolylineWidth = true }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                                                Text("Finish Path", fontSize = 11.sp)
+                                            }
+                                            OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                                                Text("Cancel", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                    // [NEW — FR-001] "Finish Area" appears once >=3 points exist, matching the
+                                    // pattern's own described behavior: a 3rd point doesn't auto-close by
+                                    // itself (a 4th+ tap keeps adding points instead), but the button is
+                                    // available from that point on to close the loop whenever the user is done.
+                                    if (canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON && inProgressPoints.size >= 3) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Button(
+                                                onClick = {
+                                                    pendingPolygonSelection = inProgressPoints
+                                                    inProgressPoints = emptyList()
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                            ) {
+                                                Text("Finish Area (${inProgressPoints.size} points)", fontSize = 11.sp)
+                                            }
+                                            OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                                                Text("Cancel", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // [NEW] Floating zoom controls, Google Maps-style — fixed position in
+                                // the bottom-right corner of the canvas, never shifting other buttons.
+                                if (zoomPanModeEnabled) {
+                                    Column(
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        if (zoomScale != 1f) {
+                                            FilledIconButton(
+                                                onClick = { zoomScale = 1f },
+                                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                                            ) {
+                                                Icon(Icons.Default.CenterFocusStrong, contentDescription = "Reset zoom", tint = Color.White)
+                                            }
+                                        }
+                                        Column(
+                                            modifier = Modifier
+                                                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                                        ) {
+                                            IconButton(onClick = { zoomScale = (zoomScale + settings.zoomStep).coerceIn(settings.zoomMin, settings.zoomMax) }) {
+                                                Icon(Icons.Default.Add, contentDescription = "Zoom in", tint = Color.White)
+                                            }
+                                            Divider(modifier = Modifier.width(24.dp))
+                                            IconButton(onClick = { zoomScale = (zoomScale - settings.zoomStep).coerceIn(settings.zoomMin, settings.zoomMax) }) {
+                                                Icon(Icons.Default.Remove, contentDescription = "Zoom out", tint = Color.White)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp)) {
+                if (maxWidth > maxHeight) {
+                    // Landscape: canvas on the left, plot info and variety picker in a side panel.
+                    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        canvasSection(Modifier.weight(1f).fillMaxHeight())
+                        Column(
+                            modifier = Modifier.width(300.dp).fillMaxHeight().verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            headerSection()
+                            varietyButton()
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        headerSection()
+                        canvasSection(Modifier.weight(1f).fillMaxWidth())
+                        varietyButton()
                     }
                 }
             }
