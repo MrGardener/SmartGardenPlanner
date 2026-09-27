@@ -472,6 +472,7 @@ object Dialogs {
         modal(seed?.let { VarietyCatalogTraits.displayName(it) } ?: node.seedCode, body, listOf(
             "Cancel" to { true },
             "Delete plant" to { Store.change { p -> p.plants = p.plants.filter { it.id != node.id } }; Canvas.selection = null; App.status("Plant deleted. Undo brings it back."); App.render(); true },
+            "Plan B…" to { window.setTimeout({ planB(node) }, 0); true },
             "Save" to save@{
                 val newSeed = Catalog.byName[variety.value.trim().lowercase()] ?: Catalog.search(variety.value, null, 1).firstOrNull()
                 if (newSeed == null) { App.status("Choose a variety from the list."); return@save false }
@@ -488,6 +489,65 @@ object Dialogs {
                 App.render(); true
             }
         ))
+    }
+
+    /** FR-054: sowing and planting windows from the plot's frost dates, for what's planted (or common crops). */
+    fun plantingCalendar() {
+        val wp = Store.plot() ?: return
+        val season = Frost.season(wp.plot) ?: run { message("No frost dates", listOf("Set the plot's ZIP code to see its growing season.")); return }
+        val planted = wp.plants.mapNotNull { Catalog.get(it.seedCode) }.distinctBy { it.botanicalCode }
+        val common = listOf("Tomato - Brandywine", "Pepper - California Wonder", "Sweet Corn - Silver Queen", "Bush Bean - Provider", "Zucchini - Black Beauty",
+            "Cucumber - Marketmore 76", "Lettuce - Buttercrunch", "Pea - Sugar Snap", "Spinach - Bloomsdale", "Carrot - Danvers", "Onion - Yellow Sweet Spanish", "Garlic - Music", "Potato - Yukon Gold", "Basil - Genovese")
+            .mapNotNull { Catalog.byName[it.lowercase()] }
+        val list = planted.ifEmpty { common }
+        val rows = list.sortedBy { com.example.smartgardenplanner.core.GrowingSeason.window(it, season).let { w -> w.startIndoors?.first ?: w.plantOut?.first ?: 999 } }.map { sd ->
+            val w = com.example.smartgardenplanner.core.GrowingSeason.window(sd, season)
+            h("div", "list-item col", kids = listOf(h("b", text = sd.commonName + " (${sd.daysToHarvest} days)"), h("span", text = com.example.smartgardenplanner.core.GrowingSeason.describeWindow(w)), h("span", "hint", w.note)))
+        }
+        modal("Planting calendar for “${wp.plot.name}”", listOf(
+            para(com.example.smartgardenplanner.core.GrowingSeason.describe(season).take(3).joinToString(" "), "p"),
+            para(if (planted.isEmpty()) "Nothing planted yet, so here are common crops:" else "For what's on this plot:", "hint")
+        ) + rows + listOf(para("Dates are averages (NOAA 1991–2020): 1 year in 2 the frost comes later or earlier. Watch the forecast, and cover tender plants on cold nights. " + com.example.smartgardenplanner.core.Disclaimer.SHORT, "hint")),
+            listOf("Close" to { true }), wide = true)
+    }
+
+    /** FR-056: a plant died — suggest replacements that catch up with the survivors and beat the first frost. */
+    fun planB(node: PlantedNodeEntity) {
+        val wp = Store.plot() ?: return
+        val seed = Catalog.get(node.seedCode) ?: return
+        val season = Frost.season(wp.plot)
+        val today = com.example.smartgardenplanner.core.SunlightEngine.dayOfYear(PlatformClock.nowMillis())
+        val planted = com.example.smartgardenplanner.core.SunlightEngine.dayOfYear(node.datePlantedEpochMillis)
+        val opts = com.example.smartgardenplanner.core.BackupPlanner.options(seed, planted, today, Catalog.seeds, season)
+        val same = wp.plants.filter { it.seedCode == node.seedCode && it.datePlantedEpochMillis / 86_400_000L == node.datePlantedEpochMillis / 86_400_000L }
+        val all = (h("input", attrs = mapOf("type" to "checkbox")) as HTMLInputElement)
+        var chosen: com.example.smartgardenplanner.core.SeedEntity? = opts.firstOrNull()?.seed
+        val list = h("div", "plan-b")
+        fun draw() {
+            list.clear()
+            opts.forEach { o ->
+                val b = button("${o.seed.commonName} — ${o.reason}", if (o.seed == chosen) "btn on planb" else "btn planb", if (o.sameSpecies) "Another ${CropReference.speciesName(seed)} variety" else "A quick crop of the same family") { chosen = o.seed; draw() }
+                list.add(b)
+            }
+        }
+        draw()
+        val target = planted + seed.daysToHarvest
+        modal("Plan B for ${seed.commonName}", listOfNotNull(
+            para("The plants that survived should be ready around ${com.example.smartgardenplanner.core.GrowingSeason.date(target)}" + (season?.takeIf { !it.frostFree }?.let { " (first frost around ${com.example.smartgardenplanner.core.GrowingSeason.date(it.firstFrost)})" } ?: "") + ". Planted today, these would produce at about the same time:", "p"),
+            if (opts.isEmpty()) para("Nothing in the catalog would be ready in time this season. Consider a quick catch crop like radishes or lettuce, or leave the spot for next season.", "warn") else list,
+            if (same.size > 1) h("label", "check", kids = listOf(all, h("span", text = "Replace all ${same.size} ${seed.commonName} planted the same day"))) else null,
+            para("The new plant takes the same spot, planted today. Undo reverses it.", "hint")
+        ), listOf(
+            "Cancel" to { true },
+            "Plant Plan B" to go@{
+                val to = chosen ?: return@go true
+                val ids = if (all.checked) same.map { it.id }.toSet() else setOf(node.id)
+                val now = PlatformClock.nowMillis()
+                Store.change { p -> p.plants = p.plants.map { if (it.id in ids) it.copy(seedCode = to.botanicalCode, datePlantedEpochMillis = now, germinationFlagResolved = false) else it } }
+                App.status("Plan B: ${ids.size} × ${to.commonName} planted today in place of ${seed.commonName}, ready around ${com.example.smartgardenplanner.core.GrowingSeason.date(today + to.daysToHarvest)}. Undo reverses it.")
+                App.render(); true
+            }
+        ), wide = true)
     }
 
     /** FR-051: change every plant of one variety on this plot to another variety, in one undo step. */

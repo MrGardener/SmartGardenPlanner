@@ -113,7 +113,7 @@ object App {
             val day = Canvas.shadeDayOfYear(wp)
             val (rise, set) = com.example.smartgardenplanner.core.ShadeTools.sunriseSunset(lat, day)
             val row = h("div", "legend-row")
-            row.add(select(com.example.smartgardenplanner.core.ShadeDay.entries.map { it.name to it.label }, Store.shadeDay.name) { Store.shadeDay = com.example.smartgardenplanner.core.ShadeDay.valueOf(it); render() }.also { it.setAttribute("aria-label", "Day") })
+            row.add(select(com.example.smartgardenplanner.core.ShadeDay.entries.map { d -> d.name to (if (d == com.example.smartgardenplanner.core.ShadeDay.SEASON) "${d.label}, ${com.example.smartgardenplanner.core.GrowingSeason.date(Canvas.shadeDayOfYear(wp).let { x -> if (Store.shadeDay == d) x else com.example.smartgardenplanner.core.GrowingSeason.midSeasonDay(wp.plot.latitude ?: com.example.smartgardenplanner.core.SunlightEngine.DEFAULT_LATITUDE, Frost.season(wp.plot)) })}" else d.label) }, Store.shadeDay.name) { Store.shadeDay = com.example.smartgardenplanner.core.ShadeDay.valueOf(it); render() }.also { it.setAttribute("aria-label", "Day") })
             row.add(select(listOf("day" to "Whole day (hours of sun)", "time" to "At a time of day"), if (Store.shadeHour == null) "day" else "time") {
                 Store.shadeHour = if (it == "time") 9.0.coerceIn(rise, set) else null; render()
             }.also { it.setAttribute("aria-label", "Shade mode") })

@@ -99,7 +99,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
         try {
             withContext(SgpExecutors.dbDispatcher) {
                 val s = settingsRepository.load()
-                val snap = PlotInsightsLoader.load(database, plotId, s)
+                val snap = PlotInsightsLoader.load(database, plotId, s, com.example.smartgardenplanner.data.FrostLookup.stations(context))
                 val log = database.careLogDao().getByPlotId(plotId)
                 val nut = database.nutritionDao().getAll().associateBy { it.speciesKey }
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -280,6 +280,33 @@ private fun SiteTab(
     lookupZip: suspend (String) -> String?
 ) {
     val plot = snap.context.plot
+
+    // FR-054: frost dates and growing season from the nearest NOAA station, with a planting calendar.
+    Section("Growing season", "From NOAA 1991–2020 frost averages for the nearest weather station.") {
+        val s = snap.season
+        if (s == null) Text(if (plot.latitude == null) "Set the plot's ZIP code below to see its frost dates and growing season." else "No NOAA weather station within 250 km of this plot.", fontSize = 12.sp, color = Color.Gray)
+        else {
+            com.example.smartgardenplanner.core.GrowingSeason.describe(s).forEachIndexed { i, t -> Text(t, fontSize = if (i < 3) 13.sp else 11.sp, color = if (i < 3) Color.Unspecified else Color.Gray) }
+            var showCalendar by remember { mutableStateOf(false) }
+            OutlinedButton(onClick = { showCalendar = !showCalendar }) { Text(if (showCalendar) "Hide planting calendar" else "Planting calendar") }
+            if (showCalendar) {
+                val planted = snap.context.plantedSeeds().distinctBy { it.botanicalCode }
+                val list = planted.ifEmpty {
+                    listOf("Tomato - Brandywine", "Pepper - California Wonder", "Sweet Corn - Silver Queen", "Bush Bean - Provider", "Zucchini - Black Beauty", "Lettuce - Buttercrunch", "Pea - Sugar Snap", "Carrot - Danvers", "Onion - Yellow Sweet Spanish", "Basil - Genovese")
+                        .mapNotNull { n -> snap.catalog.firstOrNull { it.commonName == n } }
+                }
+                if (planted.isEmpty()) Text("Nothing planted yet, so here are common crops:", fontSize = 11.sp, color = Color.Gray)
+                list.forEach { sd ->
+                    val w = com.example.smartgardenplanner.core.GrowingSeason.window(sd, s)
+                    Column {
+                        Text("${sd.commonName} (${sd.daysToHarvest} days)", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(com.example.smartgardenplanner.core.GrowingSeason.describeWindow(w), fontSize = 12.sp)
+                        Text(w.note, fontSize = 11.sp, color = Color.Gray)
+                    }
+                }
+            }
+        }
+    }
 
     Section("Location and climate", "Used for winter hardiness, sun angles and weather. Nothing leaves the phone unless online features are on.") {
         var zoneMenu by remember { mutableStateOf(false) }
@@ -547,6 +574,13 @@ private fun CareTab(
 ) {
         val plot = snap.context.plot
     Text(com.example.smartgardenplanner.core.Disclaimer.SHORT, fontSize = 11.sp, color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+    // FR-056: Plan B — faster varieties to keep in mind in case plants are lost.
+    Section("Plan B: if a plant dies", "On the layout, tap a plant that died and choose Plan B: varieties that, planted today, will be ready with the plants that survived and before the first frost.") {
+        val ahead = com.example.smartgardenplanner.core.BackupPlanner.planAhead(snap.context.plantedSeeds(), snap.catalog, snap.season)
+        if (ahead.isEmpty()) Text("Nothing planted yet, or no faster varieties in the catalog.", fontSize = 12.sp, color = Color.Gray)
+        ahead.forEach { (sp, list) -> Text("$sp: " + list.joinToString(", ") { "${it.commonName.substringAfter(" - ")} (${it.daysToHarvest} days)" }, fontSize = 12.sp) }
+    }
+
     // FR-042: pests and animals seen in the yard, with how to keep them out and which plants they go for.
     Section("Pests and animals in your yard", "Tick what you see regularly; the tips below change to match.") {
         val chosen = com.example.smartgardenplanner.core.Pest.parse(plot.pests)

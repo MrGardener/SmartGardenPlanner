@@ -13,8 +13,13 @@ data class PlotContext(
     val seedLookup: (String) -> SeedEntity?,
     val guilds: List<Guild> = emptyList(),
     val enforceCompanionRules: Boolean = true,
-    val dayOfYear: Int = 172
+    val dayOfYear: Int = 172,
+    /** Days whose sun is averaged by [sunHoursAt] (FR-055: the growing season when planning); empty = [dayOfYear]. */
+    val sunDays: List<Int> = emptyList()
 ) {
+    /** This context with growing-season sun, unless days are already set (FR-055). */
+    fun forPlanning(): PlotContext = if (sunDays.isNotEmpty()) this else copy(sunDays = GrowingSeason.sunDays(latitude, null))
+
     val soil: SoilProfile get() = SoilProfile.of(plot)
     val zone: String? get() = plot.hardinessZone
     val latitude: Double get() = plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE
@@ -23,8 +28,13 @@ data class PlotContext(
 
     fun plantedSeeds(): List<SeedEntity> = nodes.mapNotNull { seedLookup(it.seedCode) }
 
-    fun sunHoursAt(x: Float, y: Float): Double? =
-        SunlightEngine.effectiveSunHours(x, y, areaFeatures, latitude, dayOfYear, plot.northBearingDeg, barriers)
+    fun sunHoursAt(x: Float, y: Float): Double? {
+        if (sunDays.isEmpty()) return SunlightEngine.effectiveSunHours(x, y, areaFeatures, latitude, dayOfYear, plot.northBearingDeg, barriers)
+        val areas = areaFeatures; val bs = barriers
+        var sum = 0.0
+        for (d in sunDays) sum += SunlightEngine.effectiveSunHours(x, y, areas, latitude, d, plot.northBearingDeg, bs) ?: return null
+        return sum / sunDays.size
+    }
 
     fun floodZoneAt(x: Float, y: Float): SiteFeatureEntity? = areaFeatures.firstOrNull {
         it.featureType == SiteFeatureType.FLOOD.name && PlotGeometry.pointInPolygon(x, y, PlotGeometry.parsePoints(it.pointsJson))

@@ -86,6 +86,7 @@ object Panels {
         )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))
 
+        growingSeason(body, wp)
         Photo.section(body, wp)
         seasons(body, wp)
         irrigation(body, wp)
@@ -158,6 +159,18 @@ object Panels {
         body.add(heading("Templates"))
         body.add(para("Duplicate this plot to try another plan or keep a clean template: the copy carries the site and, if you like, the plants and history.", "hint"))
         body.add(button("Duplicate plot…", "btn") { Dialogs.duplicatePlot() })
+    }
+
+    /** FR-054: frost dates and growing season for the plot's location (NOAA 1991–2020 normals). */
+    private fun growingSeason(body: HTMLElement, wp: WebPlot) {
+        body.add(heading("Growing season"))
+        val s = Frost.season(wp.plot)
+        if (s == null) {
+            body.add(para(if (wp.plot.latitude == null) "Set the plot's ZIP code (Edit details…) to see its frost dates and growing season." else "No NOAA weather station within 250 km of this plot, so frost dates aren't known.", "hint"))
+            return
+        }
+        com.example.smartgardenplanner.core.GrowingSeason.describe(s).forEachIndexed { i, t -> body.add(para(t, if (i < 3) "p" else "hint")) }
+        body.add(button("Planting calendar…", "btn", "When to start seeds indoors, plant out and sow a fall crop for each plant, from your frost dates") { Dialogs.plantingCalendar() })
     }
 
     /** Irrigation tools and summary (FR-039). */
@@ -253,6 +266,8 @@ object Panels {
         wildlife(body, wp)
         watering(body, wp)
         if (wp.plants.isEmpty()) { body.add(para("Plant something to see a watering schedule, feeding plan and plant pests to watch.", "hint")); return }
+        whenToPlant(body, wp)
+        planB(body, wp)
         body.add(heading("Watering schedule"))
         val days = CarePlanner.wateringIntervalDays(ctx)
         body.add(para("Deep-water about every $days day${if (days == 1) "" else "s"} (thirstiest crop, adjusted for your soil). Water at the base in the morning; skip after a good rain.", "p"))
@@ -271,6 +286,27 @@ object Panels {
                 para("Look for: ${a.scouting}", "hint"), para("Prevent: ${a.prevention}", "hint"), para("Treat: ${a.control}", "hint")
             )))
         }
+    }
+
+    /** FR-054: planting windows for what's planted, from the plot's frost dates. */
+    private fun whenToPlant(body: HTMLElement, wp: WebPlot) {
+        val s = Frost.season(wp.plot) ?: return
+        body.add(heading("When to plant (your frost dates)"))
+        body.add(para("Last frost around ${com.example.smartgardenplanner.core.GrowingSeason.date(s.lastFrost)}, first frost around ${com.example.smartgardenplanner.core.GrowingSeason.date(s.firstFrost)} (${s.frostFreeDays} days).", "hint"))
+        wp.plants.mapNotNull { Catalog.get(it.seedCode) }.distinctBy { it.botanicalCode }.forEach { sd ->
+            val w = com.example.smartgardenplanner.core.GrowingSeason.window(sd, s)
+            body.add(h("div", "list-item col", kids = listOf(h("b", text = sd.commonName), h("span", "hint", com.example.smartgardenplanner.core.GrowingSeason.describeWindow(w) + " — " + w.note))))
+        }
+    }
+
+    /** FR-056: Plan B — faster varieties to keep in mind in case plants are lost. */
+    private fun planB(body: HTMLElement, wp: WebPlot) {
+        val ahead = com.example.smartgardenplanner.core.BackupPlanner.planAhead(wp.plants.mapNotNull { Catalog.get(it.seedCode) }, Catalog.seeds, Frost.season(wp.plot))
+        body.add(heading("Plan B: if a plant dies"))
+        body.add(para("Double-click a plant that died (or select it → Edit plant…) and choose “Plan B…”: it suggests varieties that, planted today, will be ready with the plants that survived and before the first frost, so the harvest stays as planned.", "hint"))
+        if (ahead.isNotEmpty()) body.add(h("details", "pest", kids = listOf(h("summary", text = "Faster varieties to keep seed of")) + ahead.map { (sp, list) ->
+            para("$sp: " + list.joinToString(", ") { "${it.commonName.substringAfter(" - ")} (${it.daysToHarvest} days)" }, "hint")
+        }))
     }
 
     /** FR-042: pests and animals the user sees in the yard, with prevention and the plants at risk. */

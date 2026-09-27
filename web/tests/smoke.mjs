@@ -72,6 +72,17 @@ let d = await draft();
 check(d && d.plots.length === 1 && d.plots[0].name === 'Test bed', 'plot created and autosaved');
 check(d.plots[0].orientation.set === true && d.plots[0].orientation.topFacesDeg === 180, 'orientation saved');
 check(JSON.stringify(d.plots[0].pests) === '["DEER","RACCOON"]', `pests saved with the plot (${JSON.stringify(d.plots[0].pests)})`);
+// Rulers: numbers on the ticks, the unit once.
+check(await page.locator('#sgp-svg .ruler-unit').count() === 1 && (await page.locator('#sgp-svg .ruler-tick').evaluateAll(els => els.map(e => e.textContent))).every(t => /^\d+$/.test(t)), 'ruler ticks show numbers only, unit once');
+// Growing season from the ZIP's nearest NOAA station.
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+const plotTab = await page.locator('.panel-body').innerText();
+check(plotTab.includes('Growing season') && /Last spring frost: around May \d+/.test(plotTab) && plotTab.includes('frost-free days'), 'growing season and frost dates shown for the ZIP');
+await btn('Planting calendar…').click();
+await page.locator('.modal').waitFor();
+check((await page.locator('.modal').innerText()).includes('plant out'), 'planting calendar lists planting windows');
+await btn('Close').click();
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
 
 // Plant a tomato.
 await page.getByPlaceholder(/Search .* varieties/).fill('Brandywine');
@@ -267,6 +278,21 @@ check(d.plots[0].plants.some(p => p.variety === 'Sweet Corn - Golden Bantam'), '
 await page.keyboard.press('Control+z');
 d = await draft();
 check(d.plots[0].plants.every(p => p.variety !== 'Sweet Corn - Golden Bantam'), 'undo reverts the variety change');
+// Plan B: a plant died; replace it with a variety that catches up with the others.
+await clickMetres(first.x, first.y);
+await page.locator('nav.tools').getByRole('button', { name: 'Edit plant…' }).click();
+await page.locator('.modal').waitFor();
+await page.locator('.modal').getByRole('button', { name: 'Plan B…' }).click();
+await page.waitForFunction(() => document.querySelector('.modal-title')?.textContent.startsWith('Plan B for'));
+const planBText = await page.locator('.modal').innerText();
+check(planBText.includes('should be ready around') && await page.locator('.modal .planb').count() > 0, `Plan B suggests replacements (${await page.locator('.modal .planb').count()})`);
+check((await page.locator('.modal .planb').first().innerText()).includes('days:'), 'Plan B shows days to harvest and timing');
+await page.locator('.modal').getByRole('button', { name: 'Plant Plan B' }).click();
+d = await draft();
+check(d.plots[0].plants.filter(p => p.variety !== first.variety).length === 1, 'Plan B replaced the lost plant');
+await page.keyboard.press('Control+z');
+d = await draft();
+check(d.plots[0].plants.every(p => p.variety === first.variety), 'undo reverts Plan B');
 // Outline: draw, drag a corner, delete.
 await page.locator('nav.tools').getByRole('button', { name: 'Plot outline' }).click();
 for (const [x, y] of [[0.2, 0.2], [7.8, 0.2], [7.8, 4.8], [0.2, 4.8]]) await clickMetres(x, y);

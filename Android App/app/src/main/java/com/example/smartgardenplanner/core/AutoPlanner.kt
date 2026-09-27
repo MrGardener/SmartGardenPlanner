@@ -136,6 +136,8 @@ object AutoPlanner {
     ): AutoPlanResult {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return AutoPlanResult(emptyList(), emptyMap(), listOf("Nothing to plan."))
+        // FR-055: judge sun over the growing season, not on the day the plan is made.
+        @Suppress("NAME_SHADOWING") val context = context.forPlanning()
         if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear, strictRotation)
         val notes = mutableListOf<String>()
         val plot = context.plot

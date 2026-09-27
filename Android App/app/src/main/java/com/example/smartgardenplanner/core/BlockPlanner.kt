@@ -149,7 +149,9 @@ object BlockPlanner {
         // first, pollinator plants last.
         fun rank(r: PlantRequest): Int { val h = VineHabits.of(r.seed); return when { h?.climber == true -> 0; isPollinator(r.seed) -> 3; h != null -> 1; else -> 2 } }
         // FR-043: the plants marked most important go first, so they claim the sunniest spots that suit them.
-        val order = wanted.sortedWith(compareBy<PlantRequest> { if (it.priority) 0 else 1 }.thenBy { rank(it) }.thenByDescending { heights.getValue(it.seed.botanicalCode) })
+        // FR-055: within each group, full-sun crops choose before part-shade and shade-tolerant ones.
+        val order = wanted.sortedWith(compareBy<PlantRequest> { if (it.priority) 0 else 1 }.thenBy { rank(it) }
+            .thenBy { CropReference.forSeed(it.seed).sun.ordinal }.thenByDescending { heights.getValue(it.seed.botanicalCode) })
 
         val sunMemo = HashMap<Long, Double?>()
         fun sunAt(x: Float, y: Float): Double? {
@@ -247,8 +249,12 @@ object BlockPlanner {
                             score -= abs(meanDepth - target) * 4.0
                             if (sunKnown) {
                                 val need = crop.sun.minHours.toDouble()
-                                score -= pts.map { p -> sunAt(p.x, p.y)?.let { h -> max(0.0, need - h) / need } ?: 0.0 }.average() * (if (req.priority) 15.0 else 5.0)
-                                if (req.priority) score += pts.map { p -> sunAt(p.x, p.y) ?: 8.0 }.average() / 2.0
+                                // FR-055: a sun shortfall outweighs the tall-at-the-back preference, and sun lovers prefer
+                                // the sunniest of the spots that are sunny enough.
+                                score -= pts.map { p -> sunAt(p.x, p.y)?.let { h -> max(0.0, need - h) / need } ?: 0.0 }.average() * (if (req.priority) 20.0 else 10.0)
+                                if (crop.sun == SunNeed.FULL || req.priority) score += pts.map { p -> sunAt(p.x, p.y) ?: 8.0 }.average() / (if (req.priority) 2.0 else 4.0)
+                                // Part-shade and shade crops leave the sunniest ground to the sun lovers.
+                                else score -= pts.map { p -> max(0.0, (sunAt(p.x, p.y) ?: 8.0) - (need + 3.0)) }.average() / 2.0
                             }
                             if (past.isNotEmpty()) score -= pts.map { rotationPenalty(it) }.average()
                             if (isPollinator(seed) && insectCentres.isNotEmpty()) {

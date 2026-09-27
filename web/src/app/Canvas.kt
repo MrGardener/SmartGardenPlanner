@@ -203,9 +203,11 @@ object Canvas {
         s("line", "x1" to x1, "y1" to y1, "x2" to x2, "y2" to y2, "stroke" to colour, "stroke-width" to width, "vector-effect" to "non-scaling-stroke")
 
     private fun drawRulers(l: Double, w: Double, fs: Double, step: Double) {
+        // FR-057: numbers only on the ticks; the unit once, at the corner where the two rulers meet.
+        svg.add(s("text", "x" to -fs * 0.9, "y" to -fs * 0.5, "font-size" to fs * 0.9, "fill" to "currentColor", "text-anchor" to "end", "font-style" to "italic", "class" to "ruler-unit").also { it.textContent = "(m)" })
         var m = 0.0
         while (m <= l + 1e-6) {
-            svg.add(s("text", "x" to m, "y" to -fs * 0.5, "font-size" to fs, "fill" to "currentColor", "text-anchor" to "middle").also { it.textContent = "${m.toInt()} m" })
+            svg.add(s("text", "x" to m, "y" to -fs * 0.5, "font-size" to fs, "fill" to "currentColor", "text-anchor" to "middle", "class" to "ruler-tick").also { it.textContent = "${m.toInt()}" })
             m += step
         }
         m = step
@@ -244,7 +246,10 @@ object Canvas {
     fun shadeBarriers(wp: WebPlot): List<Barrier> =
         wp.features.mapNotNull { Barrier.from(it) } + (if (Store.shadePlants) com.example.smartgardenplanner.core.ShadeTools.plantBarriers(wp.plants, { Catalog.get(it) }) else emptyList())
 
-    fun shadeDayOfYear(wp: WebPlot): Int = Store.shadeDay.dayOfYear(wp.plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE, SunlightEngine.dayOfYear(PlatformClock.nowMillis()))
+    fun shadeDayOfYear(wp: WebPlot): Int {
+        val lat = wp.plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE
+        return Store.shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(PlatformClock.nowMillis()), com.example.smartgardenplanner.core.GrowingSeason.midSeasonDay(lat, Frost.season(wp.plot)))
+    }
 
     private fun drawShade(wp: WebPlot) {
         val p = wp.plot

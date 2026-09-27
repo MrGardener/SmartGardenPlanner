@@ -97,6 +97,7 @@ summary{cursor:pointer}
 .legend{flex-direction:column;align-items:flex-start;gap:4px;max-width:min(640px,calc(100% - 20px))}
 .legend-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .inp.num-small{width:80px;flex:0 0 80px}input[type=range]{flex:1}
+.btn.planb{display:block;width:100%;margin:3px 0;text-align:left}
 .plan-shape{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px 40px}.plan-shape .inp{width:auto;min-width:200px}.plan-shape .chip{font-size:12px;padding:2px 8px}
 .plan-checks{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--soft)}
 .check-line{font-size:13px;margin:3px 0;padding-left:2px}
@@ -155,6 +156,7 @@ def main() -> None:
         data_block('sgp-catalog', os.path.join(ASSETS, 'seed_catalog_pro.txt')),
         data_block('sgp-zipzones', os.path.join(ASSETS, 'zip_zones.txt')),
         data_block('sgp-ziplocs', os.path.join(ASSETS, 'zip_locations.txt')),
+        data_block('sgp-frost', os.path.join(ASSETS, 'frost_stations.txt')),
         '<script type="module">\n', js, '\n</script>\n</body>\n</html>\n',
     ]
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)

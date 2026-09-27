@@ -903,6 +903,8 @@ fun CanvasWorkspaceScreen(
     var pendingAreaSelection by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var pendingPolygonSelection by remember { mutableStateOf<List<Offset>?>(null) } // [NEW — FR-001]
     var germinationDialogNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
+    // FR-056: Plan B for a plant that died.
+    var planBNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     var infoDialogNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     var changeVarietyNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     var inProgressPoints by remember { mutableStateOf<List<Offset>>(emptyList()) } // [NEW] points-mode path being drawn
@@ -960,7 +962,9 @@ fun CanvasWorkspaceScreen(
     var photoDrag by remember { mutableStateOf(Offset.Zero) }
     var photoAddress by remember { mutableStateOf("") }
     // FR-038: shade on a chosen day, whole day (null) or at a solar hour, with plants casting shade.
-    var shadeDay by remember { mutableStateOf(ShadeDay.TODAY) }
+    var shadeDay by remember { mutableStateOf(ShadeDay.SEASON) }
+    // FR-054: frost dates for the plot's location (nearest NOAA station).
+    var growingSeason by remember { mutableStateOf<com.example.smartgardenplanner.core.Season?>(null) }
     var shadeHour by remember { mutableStateOf<Double?>(null) }
     var shadePlants by remember { mutableStateOf(true) }
     var shadowGrid by remember { mutableStateOf<Pair<Int, BooleanArray>?>(null) }
@@ -1042,6 +1046,10 @@ fun CanvasWorkspaceScreen(
     }
 
     // FR-046: the photo is loaded from the app's files; its placement lives on the plot row.
+    LaunchedEffect(activePlot?.latitude, activePlot?.longitude) {
+        val plot = activePlot
+        growingSeason = withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.FrostLookup.season(canvasContext, plot) }
+    }
     LaunchedEffect(plotId, photoVersion) {
         photoBitmap = withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.load(canvasContext.filesDir, plotId) }
     }
@@ -1123,9 +1131,11 @@ fun CanvasWorkspaceScreen(
     // Guilds apply only when switched on and the tier allows it (FR-009).
     val activeGuilds = PlotInsightsLoader.activeGuilds(settings)
 
+    // FR-055: sun is judged over the plot's growing season (its frost dates), not on today's date.
     fun plotContext(plot: PlotEntity, nodes: List<PlantedNodeEntity> = nodesState): PlotContext =
         PlotContext(plot, nodes, siteFeatures, { code -> seedFor(code) }, activeGuilds, effectiveEnforceCompanionRules,
-            SunlightEngine.dayOfYear(System.currentTimeMillis()))
+            SunlightEngine.dayOfYear(System.currentTimeMillis()),
+            com.example.smartgardenplanner.core.GrowingSeason.sunDays(plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE, growingSeason))
 
     // FR-010: grey out varieties that clash with what's planted, or won't survive the zone (Standard).
     val pickerConflict: (SeedEntity) -> String? = { candidate ->
@@ -1271,7 +1281,7 @@ fun CanvasWorkspaceScreen(
         val plot = activePlot
         if (!showShade || plot == null) { shadeGrid = null; shadowGrid = null; return@LaunchedEffect }
         val lat = plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE
-        val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()))
+        val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()), com.example.smartgardenplanner.core.GrowingSeason.midSeasonDay(lat, growingSeason))
         val cols = 30
         val rows = (cols * plot.widthM / plot.lengthM).toInt().coerceIn(4, 60)
         // FR-038: obstacles, plus planted crops at their mature height when switched on.
@@ -2539,7 +2549,7 @@ fun CanvasWorkspaceScreen(
                                 if (showShade && activePlot != null) {
                                     // Legend and controls for the shade overlay (FR-006, FR-038), same as the web planner.
                                     val lat = activePlot?.latitude ?: SunlightEngine.DEFAULT_LATITUDE
-                                    val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()))
+                                    val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()), com.example.smartgardenplanner.core.GrowingSeason.midSeasonDay(lat, growingSeason))
                                     val (rise, set) = ShadeTools.sunriseSunset(lat, day)
                                     Column(
                                         modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
@@ -3356,6 +3366,8 @@ fun CanvasWorkspaceScreen(
                         if (options.isEmpty()) {
                             Text("No fallback options are on file for this variety.", color = Color.Gray)
                         }
+                        // FR-056: varieties that catch up with the plants that survived.
+                        TextButton(onClick = { planBNode = node; germinationDialogNode = null }, modifier = Modifier.fillMaxWidth()) { Text("Plan B: varieties ready with the others…", fontSize = 12.sp) }
                         options.forEach { option ->
                             val label = when (option) {
                                 is GerminationContingencyEngine.ContingencyOption.FastTrackVariety -> "Fast-track substitute: ${option.alternateCommonName}"
@@ -3399,6 +3411,52 @@ fun CanvasWorkspaceScreen(
         }
     }
 
+    planBNode?.let { node ->
+        val seed = seedFor(node.seedCode)
+        if (seed == null) { planBNode = null } else {
+            val today = SunlightEngine.dayOfYear(System.currentTimeMillis())
+            val planted = SunlightEngine.dayOfYear(node.datePlantedEpochMillis)
+            val opts = remember(node, growingSeason) { com.example.smartgardenplanner.core.BackupPlanner.options(seed, planted, today, seedDictionary, growingSeason) }
+            val sameDay = nodesState.filter { it.seedCode == node.seedCode && it.datePlantedEpochMillis / 86_400_000L == node.datePlantedEpochMillis / 86_400_000L }
+            var replaceAll by remember(node) { mutableStateOf(false) }
+            AlertDialog(
+                onDismissRequest = { planBNode = null },
+                title = { Text("Plan B for ${seed.commonName}") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        Text("The plants that survived should be ready around ${com.example.smartgardenplanner.core.GrowingSeason.date(planted + seed.daysToHarvest)}" +
+                            (growingSeason?.takeIf { !it.frostFree }?.let { " (first frost around ${com.example.smartgardenplanner.core.GrowingSeason.date(it.firstFrost)})" } ?: "") +
+                            ". Tap one to plant it today in this spot:", fontSize = 13.sp)
+                        if (opts.isEmpty()) Text("Nothing in the catalog would be ready in time this season. A quick catch crop (radishes, lettuce) or leaving the spot for next season are the options.", fontSize = 12.sp, color = Color(0xFFB45309))
+                        if (sameDay.size > 1) Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = replaceAll, onCheckedChange = { replaceAll = it })
+                            Text("Replace all ${sameDay.size} planted the same day", fontSize = 12.sp)
+                        }
+                        opts.forEach { o ->
+                            OutlinedButton(onClick = {
+                                val ids = if (replaceAll) sameDay.map { it.id }.toSet() else setOf(node.id)
+                                val now = System.currentTimeMillis()
+                                val updated = nodesState.filter { it.id in ids }.map { it.copy(seedCode = o.seed.botanicalCode, datePlantedEpochMillis = now, germinationFlagResolved = false) }
+                                planBNode = null
+                                launchSafely {
+                                    withContext(SgpExecutors.dbDispatcher) { database.withTransaction { updated.forEach { database.plantedNodeDao().update(it) } } }
+                                    reloadNodes()
+                                    undoStack.push(snapshotNow())
+                                    redoStack.clear()
+                                    snackbarMessage = "Plan B: ${updated.size} × ${o.seed.commonName} planted today. Undo reverses it."
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Column { Text(o.seed.commonName, fontSize = 13.sp); Text(o.reason, fontSize = 11.sp, color = Color.Gray) }
+                            }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { planBNode = null }) { Text("Close") } },
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        }
+    }
+
     infoDialogNode?.let { node ->
         val seed = seedFor(node.seedCode)
         AlertDialog(
@@ -3432,6 +3490,7 @@ fun CanvasWorkspaceScreen(
             dismissButton = {
                 Row {
                     TextButton(onClick = { changeVarietyNode = node; infoDialogNode = null }) { Text("Change Variety") }
+                    TextButton(onClick = { planBNode = node; infoDialogNode = null }) { Text("Plan B") }
                     TextButton(
                         onClick = {
                             launchSafely {
@@ -3886,9 +3945,10 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRuler(
         val pos = meter * pxPerMeter
         // [UPDATED] Labels now go through DistanceFormatter, so the ruler respects the
         // Meters/Inches setting instead of always showing "Nm".
-        val label = com.example.smartgardenplanner.core.DistanceFormatter.format(
-            meter, unit, decimals = if (tickIntervalM < 1f) 2 else 0
-        )
+        // FR-057: numbers only on the ticks; the unit is written once, at the start of the ruler.
+        val shown = com.example.smartgardenplanner.core.DistanceFormatter.metersToDisplay(meter, unit)
+        val value = if (tickIntervalM < 1f) String.format(java.util.Locale.US, "%.2f", shown) else kotlin.math.round(shown).toInt().toString()
+        val label = if (meter == 0f) "$value ${unit.suffix.trim()}" else value
         if (horizontal) {
             drawLine(Color.Gray, Offset(pos, size.height * 0.4f), Offset(pos, size.height), strokeWidth = 1.5f)
             drawContext.canvas.nativeCanvas.drawText(

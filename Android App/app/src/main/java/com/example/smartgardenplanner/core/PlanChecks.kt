@@ -46,6 +46,7 @@ object PlanChecks {
     ): List<PlanCheck> {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return emptyList()
+        @Suppress("NAME_SHADOWING") val context = context.forPlanning()
         val out = mutableListOf<PlanCheck>()
         val areaM2 = PlotGeometry.polygonArea(area).toFloat()
         val step = max(0.25f, kotlin.math.sqrt(areaM2 / 400f))

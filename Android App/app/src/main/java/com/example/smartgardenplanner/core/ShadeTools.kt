@@ -2,9 +2,11 @@ package com.example.smartgardenplanner.core
 
 /** Days of the year to look at the sun on (FR-038). */
 enum class ShadeDay(val label: String) {
-    TODAY("Today"), SPRING("Spring equinox (Mar 20)"), MIDSUMMER("Midsummer (longest day)"), AUTUMN("Autumn equinox (Sep 22)"), MIDWINTER("Midwinter (shortest day)");
+    SEASON("Growing season (middle)"), TODAY("Today"), SPRING("Spring equinox (Mar 20)"), MIDSUMMER("Midsummer (longest day)"), AUTUMN("Autumn equinox (Sep 22)"), MIDWINTER("Midwinter (shortest day)");
 
-    fun dayOfYear(latitude: Double, today: Int): Int = when (this) {
+    /** [midSeason]: the middle of the plot's growing season (FR-055), from its frost dates when known. */
+    fun dayOfYear(latitude: Double, today: Int, midSeason: Int = GrowingSeason.midSeasonDay(latitude, null)): Int = when (this) {
+        SEASON -> midSeason
         TODAY -> today
         SPRING -> 79
         AUTUMN -> 265

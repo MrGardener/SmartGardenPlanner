@@ -117,7 +117,7 @@ object Store {
     var rotationSeasons = 5
     val rotationChanges = mutableMapOf<Int, MutableMap<String, String>>()
     /** Shade display (FR-038): which day, whole day (null) or a solar hour, and whether plants cast shade. */
-    var shadeDay = com.example.smartgardenplanner.core.ShadeDay.TODAY
+    var shadeDay = com.example.smartgardenplanner.core.ShadeDay.SEASON
     var shadeHour: Double? = null
     var shadePlants = true
     /** Irrigation overlay (FR-039). */
@@ -132,9 +132,11 @@ object Store {
 
     fun guildsActive() = if (Prefs.guilds) GuildCatalog.ALL else emptyList()
 
+    /** FR-055: sun is judged over the plot's growing season (from its frost dates), not on today's date. */
     fun context(p: WebPlot): PlotContext = PlotContext(
         p.plot, p.plants, p.features, { Catalog.get(it) }, guildsActive(), Prefs.enforceCompanions,
-        SunlightEngine.dayOfYear(PlatformClock.nowMillis())
+        SunlightEngine.dayOfYear(PlatformClock.nowMillis()),
+        com.example.smartgardenplanner.core.GrowingSeason.sunDays(p.plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE, Frost.season(p.plot))
     )
 
     /** Applies one change to the current plot as one undo step. */

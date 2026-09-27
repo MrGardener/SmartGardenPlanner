@@ -60,6 +60,19 @@ object Catalog {
 }
 
 /** Offline ZIP lookups from the same bundled tables as the Android app. */
+/** NOAA 1991–2020 frost dates by station (FR-054); the plot's nearest station gives its growing season. */
+object Frost {
+    private val stations: List<com.example.smartgardenplanner.core.FrostStation> by lazy { Embedded.lines("sgp-frost").mapNotNull { com.example.smartgardenplanner.core.GrowingSeason.parseStation(it) } }
+    private var cache: Triple<Double?, Double?, com.example.smartgardenplanner.core.Season?>? = null
+    fun season(plot: com.example.smartgardenplanner.core.PlotEntity): com.example.smartgardenplanner.core.Season? {
+        val c = cache
+        if (c != null && c.first == plot.latitude && c.second == plot.longitude) return c.third
+        val s = com.example.smartgardenplanner.core.GrowingSeason.seasonAt(stations, plot.latitude, plot.longitude)
+        cache = Triple(plot.latitude, plot.longitude, s)
+        return s
+    }
+}
+
 object Zips {
     private val zones: List<String> by lazy { Embedded.lines("sgp-zipzones") }
     private val locations: List<String> by lazy { Embedded.lines("sgp-ziplocs") }

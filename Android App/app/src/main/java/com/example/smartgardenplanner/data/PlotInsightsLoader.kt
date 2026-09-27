@@ -12,7 +12,8 @@ import com.example.smartgardenplanner.core.currentAppTier
 data class PlotSnapshot(
     val context: PlotContext,
     val catalog: List<SeedEntity>,
-    val history: List<com.example.smartgardenplanner.core.PlantingHistoryEntity> = emptyList() // FR-033
+    val history: List<com.example.smartgardenplanner.core.PlantingHistoryEntity> = emptyList(), // FR-033
+    val season: com.example.smartgardenplanner.core.Season? = null // FR-054: frost dates for the plot's location
 )
 
 object PlotInsightsLoader {
@@ -25,7 +26,7 @@ object PlotInsightsLoader {
     fun enforceRules(settings: AppSettings) =
         if (Feature.isEnabled(Feature.COMPANION_RULE_TOGGLE, settings.currentAppTier())) settings.enforceCompanionAntagonistRules else true
 
-    suspend fun load(database: AppDatabase, plotId: Long, settings: AppSettings): PlotSnapshot? {
+    suspend fun load(database: AppDatabase, plotId: Long, settings: AppSettings, frostStations: List<com.example.smartgardenplanner.core.FrostStation> = emptyList()): PlotSnapshot? {
         val plot = database.plotDao().getById(plotId) ?: return null
         val nodes = database.plantedNodeDao().getByPlotId(plotId)
         val features = database.siteFeatureDao().getByPlotId(plotId)
@@ -38,8 +39,12 @@ object PlotInsightsLoader {
             seedLookup = { code -> byCode[code] },
             guilds = activeGuilds(settings),
             enforceCompanionRules = enforceRules(settings),
-            dayOfYear = SunlightEngine.dayOfYear(System.currentTimeMillis())
+            dayOfYear = SunlightEngine.dayOfYear(System.currentTimeMillis()),
+            // FR-055: sun over the growing season.
+            sunDays = com.example.smartgardenplanner.core.GrowingSeason.sunDays(plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE,
+                com.example.smartgardenplanner.core.GrowingSeason.seasonAt(frostStations, plot.latitude, plot.longitude))
         )
-                return PlotSnapshot(context, catalog, database.plantingHistoryDao().getByPlotId(plotId))
+        val season = com.example.smartgardenplanner.core.GrowingSeason.seasonAt(frostStations, plot.latitude, plot.longitude)
+        return PlotSnapshot(context, catalog, database.plantingHistoryDao().getByPlotId(plotId), season)
     }
 }
