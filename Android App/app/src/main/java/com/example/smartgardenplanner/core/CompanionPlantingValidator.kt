@@ -43,15 +43,19 @@ class CompanionPlantingValidator {
         val antagonistViolations = mutableListOf<Long>()
 
         for (existing in existingNodes) {
-            if (existing.id == candidate.id) continue
+            // Only a saved plant (id != 0) can be "itself". Unsaved candidates all have id 0, e.g. the
+            // positions accepted earlier in the same auto-populate batch, and must still be compared.
+            if (candidate.id != 0L && existing.id == candidate.id) continue
             val existingSeed = seedLookup(existing.seedCode) ?: continue
 
-            val dx = candidate.coordinateXM - existing.coordinateXM
-            val dy = candidate.coordinateYM - existing.coordinateYM
-            val distance = sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+            // Double precision plus a small tolerance, so that two spacing circles that exactly touch are
+            // allowed (T2-VAL-040). In Float, 0.6f + 0.3f = 0.90000004f, which wrongly rejected a 0.90 m gap.
+            val dx = candidate.coordinateXM.toDouble() - existing.coordinateXM.toDouble()
+            val dy = candidate.coordinateYM.toDouble() - existing.coordinateYM.toDouble()
+            val distance = sqrt(dx * dx + dy * dy)
 
-            val requiredSpacing = (candidateSeed.exclusionRadiusM + existingSeed.exclusionRadiusM) * marginMultiplier
-            if (distance < requiredSpacing) {
+            val requiredSpacing = (candidateSeed.exclusionRadiusM.toDouble() + existingSeed.exclusionRadiusM.toDouble()) * marginMultiplier
+            if (distance < requiredSpacing - SPACING_TOLERANCE_M) {
                 spacingViolations.add(existing.id)
             }
 
@@ -70,8 +74,8 @@ class CompanionPlantingValidator {
                 val existingAntagonists = existingSeed.antagonistCodes.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 if (existingPrefix in candidateAntagonists || candidatePrefix in existingAntagonists) {
                     // Antagonist conflicts matter within a wider "nearby" radius, not just the spacing circle.
-                    val nearbyRadius = requiredSpacing * 2f
-                    if (distance < nearbyRadius) {
+                    val nearbyRadius = requiredSpacing * 2.0
+                    if (distance < nearbyRadius - SPACING_TOLERANCE_M) {
                         antagonistViolations.add(existing.id)
                     }
                 }
@@ -83,6 +87,11 @@ class CompanionPlantingValidator {
             spacingViolations = spacingViolations,
             antagonistViolations = antagonistViolations
         )
+    }
+
+    companion object {
+        /** Distances within 0.1 mm of the required spacing count as meeting it (TBC-20). */
+        const val SPACING_TOLERANCE_M = 0.0001
     }
 
     /** Extracts the species-level prefix from a cultivar botanicalCode, e.g. "MAR-002" -> "MAR". */

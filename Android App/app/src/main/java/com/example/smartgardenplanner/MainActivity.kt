@@ -1,9 +1,12 @@
 package com.example.smartgardenplanner
 
+import android.app.Activity
 import android.os.Bundle
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -17,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -54,14 +59,14 @@ import com.example.smartgardenplanner.core.GerminationContingencyEngine
 import com.example.smartgardenplanner.ui.VegetableColorPalette
 
 import com.example.smartgardenplanner.data.AppDatabase
-import com.example.smartgardenplanner.ui.StorageViewModel
+import com.example.smartgardenplanner.data.DataUnreadableException
+import androidx.room.withTransaction
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.nio.charset.StandardCharsets
 
 // Navigation state enum to route between the screens described in the IDD
 // [FIXED] ENCYCLOPEDIA added — this was documented as Screen Node 4 (IDD/ICD, ConOps) but had
@@ -75,56 +80,10 @@ enum class SgpScreen {
 }
 
 class MainActivity : ComponentActivity() {
-    private lateinit var keyManager: RealSecurityKeyManager
-    private lateinit var auditLogger: SecurityAuditLogger
-    private lateinit var database: AppDatabase
-    private lateinit var sensorEngine: SensorMeasurementEngine
-    private lateinit var viewModel: StorageViewModel
-    private lateinit var secureVault: SecureConfigVault
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 1. Initialize High-Integrity Cryptographic Enclave (StrongBox)
-        keyManager = RealSecurityKeyManager()
-        keyManager.initializeKeyStore()
-
-        // 2. Initialize Diagnostic logging & encrypted SQLite local database
-        auditLogger = SecurityAuditLogger(applicationContext)
-
-        // --- SECURE INJECTION FIXED ---
-        database = AppDatabase.getInstance(applicationContext, keyManager)
-        sensorEngine = SensorMeasurementEngine(applicationContext)
-        secureVault = SecureConfigVault(keyManager, applicationContext)
-
-        // 3. Pre-populate database seed + climate tables
-        // [FIXED] This previously hand-wrote SQL against a *guessed* table name ("seeds" /
-        // "SeedEntity" / "seed") that had no backing Room @Entity anywhere in the project, so
-        // every insert silently failed (caught below and merely logged). SeedEntity/SeedDao and
-        // ClimateZoneEntity/ClimateZoneDao now exist for real — this uses them directly.
-        CoroutineScope(SgpExecutors.dbDispatcher).launch {
-            try {
-                if (database.seedDao().count() == 0) {
-                    // [UPDATED] First-run seeding now loads the Basic tier (100 varieties) of the
-                    // full Basic/Standard/Pro catalog instead of the original 5-seed starter set —
-                    // see data/SeedCatalogLoader.kt. Users can switch to Standard or Pro any time
-                    // from Settings → Catalog.
-                    val basicSeeds = com.example.smartgardenplanner.data.SeedCatalogLoader(applicationContext)
-                        .loadTier(com.example.smartgardenplanner.data.CatalogTier.BASIC)
-                    database.seedDao().insertAll(basicSeeds)
-                    auditLogger.appendLog("DATABASE_INIT: Seed dictionary pre-populated (${basicSeeds.size} records, Basic tier).")
-                }
-                if (database.climateZoneDao().count() == 0) {
-                    database.climateZoneDao().insertAll(com.example.smartgardenplanner.data.SeedDataset.starterClimateZones)
-                    auditLogger.appendLog("DATABASE_INIT: Climate zone lookup pre-populated (${com.example.smartgardenplanner.data.SeedDataset.starterClimateZones.size} records).")
-                }
-            } catch (e: Exception) {
-                auditLogger.appendLog("DATABASE_INIT_ERROR: Pre-population failed. ${e.message}")
-            }
-        }
-
-        // 4. Instantiate storage View-Model passing KeyManager dependency
-        viewModel = StorageViewModel(application, keyManager)
+        // Required behaviour at targetSdk 35+; every screen uses Scaffold, which applies the insets.
+        enableEdgeToEdge()
 
         setContent {
             MaterialTheme(
@@ -138,29 +97,166 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigationContainer(viewModel, sensorEngine, database, auditLogger, secureVault)
+                    AppRoot()
                 }
             }
         }
     }
 }
 
+/** Long-lived services, created once at start-up off the main thread (DW-0606). */
+class AppServices(
+    val database: AppDatabase,
+    val auditLogger: SecurityAuditLogger,
+    val sensorEngine: SensorMeasurementEngine
+)
+
+private sealed interface StartupState {
+    data object Loading : StartupState
+    data class Ready(val services: AppServices) : StartupState
+    /** The stored data can't be decrypted on this device, e.g. after restoring a backup (T2-SEC-050). */
+    data object Unreadable : StartupState
+    data class Failed(val message: String) : StartupState
+}
+
+/**
+ * Keystore set-up, database opening and first-run seeding. These used to run on the main thread in
+ * onCreate(), which blocked the first frame (StrongBox key generation and SQLCipher key derivation are slow).
+ */
+private suspend fun startServices(context: Context): AppServices = withContext(Dispatchers.IO) {
+    val keyManager = RealSecurityKeyManager()
+    keyManager.initializeKeyStore()
+    val auditLogger = SecurityAuditLogger(context)
+    val database = AppDatabase.getInstance(context, keyManager)
+
+    if (database.seedDao().count() == 0) {
+        val basicSeeds = com.example.smartgardenplanner.data.SeedCatalogLoader(context)
+            .loadTier(com.example.smartgardenplanner.data.CatalogTier.BASIC)
+        database.seedDao().insertAll(basicSeeds)
+        auditLogger.appendLog("DATABASE_INIT: Seed dictionary pre-populated (${basicSeeds.size} records, Basic tier).")
+    }
+    if (database.climateZoneDao().count() == 0) {
+        database.climateZoneDao().insertAll(com.example.smartgardenplanner.data.SeedDataset.starterClimateZones)
+    }
+
+    AppServices(database, auditLogger, SensorMeasurementEngine(context))
+}
+
+@Composable
+fun AppRoot() {
+    val appContext = LocalContext.current.applicationContext
+    val activity = LocalContext.current as? Activity
+    var state by remember { mutableStateOf<StartupState>(StartupState.Loading) }
+    var attempt by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(attempt) {
+        state = try {
+            StartupState.Ready(startServices(appContext))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: DataUnreadableException) {
+            withContext(Dispatchers.IO) {
+                SecurityAuditLogger(appContext).appendLog("KEY_LOSS: stored data unreadable on this device (${e.message})")
+            }
+            StartupState.Unreadable
+        } catch (e: Exception) {
+            StartupState.Failed(e.javaClass.simpleName + (e.message?.let { ": $it" } ?: ""))
+        }
+    }
+
+    when (val current = state) {
+        StartupState.Loading -> Box(modifier = Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+        is StartupState.Ready -> AppNavigationContainer(
+            sensorEngine = current.services.sensorEngine,
+            database = current.services.database,
+            auditLogger = current.services.auditLogger
+        )
+        StartupState.Unreadable -> DataUnreadableScreen(
+            onStartEmpty = {
+                scope.launch {
+                    withContext(Dispatchers.IO) {
+                        AppDatabase.setAsideUnreadableData(appContext)
+                        SecurityAuditLogger(appContext).appendLog("DATA_RESET: unreadable data set aside; starting with empty data")
+                    }
+                    state = StartupState.Loading
+                    attempt++
+                }
+            },
+            onClose = { activity?.finish() }
+        )
+        is StartupState.Failed -> StartupFailedScreen(
+            message = current.message,
+            onRetry = { state = StartupState.Loading; attempt++ }
+        )
+    }
+}
+
+/** Shown instead of crashing when the stored data can't be decrypted (T2-SEC-050, HLR-PROT-040). */
+@Composable
+fun DataUnreadableScreen(onStartEmpty: () -> Unit, onClose: () -> Unit) {
+    var confirming by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
+    ) {
+        Text("Your garden data can't be read on this device", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "The saved data is encrypted with a key that isn't available on this phone. This usually " +
+                "happens after restoring a backup onto a new or reset phone.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            "You can start with empty data. The unreadable files are kept (renamed), not deleted.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Button(onClick = { confirming = true }, modifier = Modifier.fillMaxWidth()) { Text("Start with empty data") }
+        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Close app") }
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text("Start with empty data?") },
+            text = { Text("Your plots and plants won't be shown. The old files stay on the phone, renamed.") },
+            confirmButton = { TextButton(onClick = { confirming = false; onStartEmpty() }) { Text("Start empty") } },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text("Cancel") } }
+        )
+    }
+}
+
+@Composable
+fun StartupFailedScreen(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
+    ) {
+        Text("The app couldn't start", style = MaterialTheme.typography.headlineSmall)
+        Text(message, style = MaterialTheme.typography.bodyMedium)
+        Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) { Text("Try again") }
+    }
+}
+
 @Composable
 fun AppNavigationContainer(
-    viewModel: StorageViewModel,
     sensorEngine: SensorMeasurementEngine,
     database: AppDatabase,
-    auditLogger: SecurityAuditLogger,
-    secureVault: SecureConfigVault
+    auditLogger: SecurityAuditLogger
 ) {
-    var currentScreen by remember { mutableStateOf(SgpScreen.DASHBOARD) }
-    var selectedPlotId by remember { mutableStateOf(-1L) }
+    // Saved across rotation and process death (T2-ENV-010/020, partial until Phase 3).
+    var currentScreen by rememberSaveable { mutableStateOf(SgpScreen.DASHBOARD) }
+    var selectedPlotId by rememberSaveable { mutableStateOf(-1L) }
+
+    // The system Back action returns to the plot list; on the plot list it leaves the app (T2-ENV-040).
+    BackHandler(enabled = currentScreen != SgpScreen.DASHBOARD) {
+        currentScreen = SgpScreen.DASHBOARD
+    }
 
     when (currentScreen) {
         SgpScreen.DASHBOARD -> {
             DashboardScreen(
                 database = database,
-                secureVault = secureVault,
                 onNavigateToCreator = { currentScreen = SgpScreen.CREATOR },
                 onNavigateToEncyclopedia = { currentScreen = SgpScreen.ENCYCLOPEDIA },
                 onNavigateToSettings = { currentScreen = SgpScreen.SETTINGS },
@@ -189,14 +285,12 @@ fun AppNavigationContainer(
                 onNavigateBack = { currentScreen = SgpScreen.DASHBOARD }
             )
         }
-        // [NEW] Wires the previously-missing Encyclopedia screen (see ui/EncyclopediaScreen.kt).
         SgpScreen.ENCYCLOPEDIA -> {
             com.example.smartgardenplanner.ui.EncyclopediaScreen(
                 database = database,
                 onNavigateBack = { currentScreen = SgpScreen.DASHBOARD }
             )
         }
-        // [NEW] Screen Node 5 — Settings.
         SgpScreen.SETTINGS -> {
             com.example.smartgardenplanner.ui.SettingsScreen(
                 settingsRepository = com.example.smartgardenplanner.data.SettingsRepository(
@@ -210,64 +304,29 @@ fun AppNavigationContainer(
 }
 
 // =====================================================================
-// SCREEN NODE 1: DASHBOARD LANDING ROOT WITH SECURE STORAGE VAULT
+// SCREEN NODE 1: DASHBOARD LANDING ROOT
 // =====================================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     database: AppDatabase,
-    secureVault: SecureConfigVault,
     onNavigateToCreator: () -> Unit,
     onNavigateToEncyclopedia: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onSelectPlot: (Long) -> Unit
 ) {
     var plotList by remember { mutableStateOf<List<PlotEntity>>(emptyList()) }
-    var showVaultConfig by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf<String?>(null) }
 
-    // Read stored plots from encrypted SQLite in database thread context
+    // Reads through the DAO. The previous version guessed table and column names with raw SQL (DW-0704).
     LaunchedEffect(Unit) {
-        withContext(SgpExecutors.dbDispatcher) {
-            val db = database.openHelper.readableDatabase
-
-            // Query master catalog to resolve actual table name representation securely
-            val tableCursor = db.query("SELECT name FROM sqlite_master WHERE type='table'")
-            val tableNames = mutableListOf<String>()
-            while (tableCursor.moveToNext()) {
-                tableNames.add(tableCursor.getString(0))
-            }
-            tableCursor.close()
-
-            val plotTable = when {
-                tableNames.contains("plots") -> "plots"
-                tableNames.contains("PlotEntity") -> "PlotEntity"
-                tableNames.contains("plot") -> "plot"
-                else -> "plots"
-            }
-
-            val cursor = db.query("SELECT * FROM $plotTable")
-            val list = mutableListOf<PlotEntity>()
-
-            val idCol = cursor.columnNames.indexOfFirst { it.equals("id", ignoreCase = true) }
-            val nameCol = cursor.columnNames.indexOfFirst { it.equals("name", ignoreCase = true) }
-            val lengthCol = cursor.columnNames.indexOfFirst { it.equals("lengthM", ignoreCase = true) || it.equals("length_m", ignoreCase = true) }
-            val widthCol = cursor.columnNames.indexOfFirst { it.equals("widthM", ignoreCase = true) || it.equals("width_m", ignoreCase = true) }
-            val descCol = cursor.columnNames.indexOfFirst { it.equals("description", ignoreCase = true) }
-
-            while (cursor.moveToNext()) {
-                list.add(
-                    PlotEntity(
-                        id = cursor.getLong(idCol),
-                        name = cursor.getString(nameCol),
-                        lengthM = cursor.getFloat(lengthCol),
-                        widthM = cursor.getFloat(widthCol),
-                        description = if (descCol != -1) cursor.getString(descCol) else ""
-                    )
-                )
-            }
-            cursor.close()
-            plotList = list
+        try {
+            plotList = withContext(SgpExecutors.dbDispatcher) { database.plotDao().getAllPlots() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            loadError = "Couldn't read your plots (${e.javaClass.simpleName}). Try again; if it keeps happening, restart the app."
         }
     }
 
@@ -277,16 +336,11 @@ fun DashboardScreen(
                 title = { Text("Smart Garden Planner", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
-                    // [NEW] Entry point into the previously-unreachable Encyclopedia screen.
                     IconButton(onClick = onNavigateToEncyclopedia) {
                         Icon(Icons.Default.Search, contentDescription = "Botanical Encyclopedia", tint = MaterialTheme.colorScheme.primary)
                     }
-                    // [NEW] Entry point into Settings — every previously-hardcoded value now lives here.
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Tune, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
-                    }
-                    IconButton(onClick = { showVaultConfig = !showVaultConfig }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Secure Key-Value Vault Configurations", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             )
@@ -308,12 +362,9 @@ fun DashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Animated Configuration Vault interface
-            AnimatedVisibility(visible = showVaultConfig) {
-                HardwareSecureVaultCard(secureVault)
-            }
-
             Text("Active Plots", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+            loadError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
 
             if (plotList.isEmpty()) {
                 Box(
@@ -362,126 +413,6 @@ fun DashboardScreen(
 }
 
 // =====================================================================
-// INTEGRATED SUB-COMPONENT: HARDWARE VAULT COMPONENT CARD
-// =====================================================================
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HardwareSecureVaultCard(secureVault: SecureConfigVault) {
-    var inputKey by remember { mutableStateOf("garden_sync_token") }
-    var inputValue by remember { mutableStateOf("") }
-    var loadedKey by remember { mutableStateOf("") }
-    var loadedValue by remember { mutableStateOf("") }
-    var lastUpdatedTimestamp by remember { mutableStateOf("") }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "🔐 Hardware-Encrypted Storage Vault",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = inputKey,
-                onValueChange = { newValue -> inputKey = newValue },
-                label = { Text("Configuration Key") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = inputValue,
-                onValueChange = { newValue -> inputValue = newValue },
-                label = { Text("Configuration Value") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = {
-                        if (inputKey.isNotBlank() && inputValue.isNotBlank()) {
-                            secureVault.saveConfig(inputKey, inputValue)
-                            loadedKey = inputKey
-                            loadedValue = inputValue
-                            lastUpdatedTimestamp = System.currentTimeMillis().toString()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Save Securely", fontSize = 12.sp)
-                }
-
-                Button(
-                    onClick = {
-                        if (inputKey.isNotBlank()) {
-                            val result = secureVault.loadConfig(inputKey)
-                            loadedKey = inputKey
-                            if (result != null) {
-                                loadedValue = result
-                                inputValue = result
-                                lastUpdatedTimestamp = System.currentTimeMillis().toString()
-                            } else {
-                                loadedValue = "[Record Not Found]"
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("Load Key", fontSize = 12.sp)
-                }
-            }
-
-            ElevatedButton(
-                onClick = {
-                    if (inputKey.isNotBlank()) {
-                        secureVault.deleteConfig(inputKey)
-                        loadedKey = inputKey
-                        loadedValue = "[DELETED/WIPED]"
-                        inputValue = ""
-                    }
-                },
-                colors = ButtonDefaults.elevatedButtonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Wipe Config", color = MaterialTheme.colorScheme.onErrorContainer, fontSize = 12.sp)
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                    .padding(8.dp)
-            ) {
-                Text("Live Vault Context State:", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color.Gray)
-                if (loadedKey.isNotEmpty()) {
-                    Text("Key: $loadedKey", style = MaterialTheme.typography.bodyMedium)
-                    Text("Value: $loadedValue", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                    if (lastUpdatedTimestamp.isNotEmpty()) {
-                        Text("Timestamp: $lastUpdatedTimestamp", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                    }
-                } else {
-                    Text("No records loaded. Query the storage vault or insert a payload.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                }
-            }
-        }
-    }
-}
-
-// =====================================================================
 // SCREEN NODE 2: CREATOR PARAMETER WORKSPACE INGESTION LAYER
 // =====================================================================
 
@@ -519,6 +450,8 @@ fun CreatorScreen(
     val unitSuffix = settings.distanceUnit.suffix
 
     val regexValidator = remember { Regex("^[0-9]+(\\.[0-9]+)?$") }
+    val creatorScope = rememberCoroutineScope()
+    var saveError by remember { mutableStateOf<String?>(null) }
 
     val isInputValid = plotName.isNotBlank() &&
             plotLength.matches(regexValidator) &&
@@ -604,57 +537,34 @@ fun CreatorScreen(
 
             Spacer(modifier = Modifier.weight(1.0f))
 
+            saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+
             Button(
                 onClick = {
                     if (isInputValid) {
-                        CoroutineScope(SgpExecutors.dbDispatcher).launch {
-                            val db = database.openHelper.writableDatabase
-
-                            // Query actual SQL database schema dynamically to align with compiler schema
-                            val tableCursor = db.query("SELECT name FROM sqlite_master WHERE type='table'")
-                            val tableNames = mutableListOf<String>()
-                            while (tableCursor.moveToNext()) {
-                                tableNames.add(tableCursor.getString(0))
-                            }
-                            tableCursor.close()
-
-                            val plotTable = when {
-                                tableNames.contains("plots") -> "plots"
-                                tableNames.contains("PlotEntity") -> "PlotEntity"
-                                tableNames.contains("plot") -> "plot"
-                                else -> "plots"
-                            }
-
-                            val testCursor = db.query("SELECT * FROM $plotTable LIMIT 1")
-                            val lengthCol = testCursor.columnNames.firstOrNull { it.equals("lengthM", ignoreCase = true) || it.equals("length_m", ignoreCase = true) } ?: "lengthM"
-                            val widthCol = testCursor.columnNames.firstOrNull { it.equals("widthM", ignoreCase = true) || it.equals("width_m", ignoreCase = true) } ?: "widthM"
-                            testCursor.close()
-
-                            val stmt = db.compileStatement(
-                                "INSERT INTO $plotTable (name, $lengthCol, $widthCol, description, imagePath, scaleSource, locationZip, ownerRole, createdTimestamp, lastModifiedTimestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                            )
-                            stmt.bindString(1, plotName)
-                            // [FIXED] plotLength/plotWidth hold the raw typed value in whatever
-                            // display unit is currently selected — must convert back to meters
-                            // here, since that's the only unit ever stored in the database.
-                            val lengthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotLength, settings.distanceUnit) ?: plotLength.toDouble().toFloat()
-                            val widthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotWidth, settings.distanceUnit) ?: plotWidth.toDouble().toFloat()
-                            stmt.bindDouble(2, lengthMeters.toDouble())
-                            stmt.bindDouble(3, widthMeters.toDouble())
-                            stmt.bindString(4, "")
-                            stmt.bindNull(5) // imagePath: not captured yet at plot-creation time
-                            stmt.bindString(6, "MANUAL") // [FIXED] was previously omitted entirely, causing
-                            // a NOT NULL constraint crash on a freshly-created (non-migrated) database.
-                            stmt.bindNull(7) // locationZip: optional, not collected on this screen yet
-                            stmt.bindString(8, "OWNER")
-                            val now = System.currentTimeMillis()
-                            stmt.bindLong(9, now)
-                            stmt.bindLong(10, now)
-                            val plotId = stmt.executeInsert()
-                            stmt.close()
-
-                            withContext(Dispatchers.Main) {
+                        creatorScope.launch {
+                            try {
+                                // Text fields hold the typed value in the display unit; storage is always meters.
+                                val lengthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotLength, settings.distanceUnit)
+                                val widthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotWidth, settings.distanceUnit)
+                                if (lengthMeters == null || widthMeters == null) return@launch
+                                val now = System.currentTimeMillis()
+                                val plotId = withContext(SgpExecutors.dbDispatcher) {
+                                    database.plotDao().insert(
+                                        PlotEntity(
+                                            name = plotName.trim(),
+                                            lengthM = lengthMeters,
+                                            widthM = widthMeters,
+                                            createdTimestamp = now,
+                                            lastModifiedTimestamp = now
+                                        )
+                                    )
+                                }
                                 onWorkspaceInitialized(plotId)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                saveError = "Couldn't save the plot. Nothing was changed. (${e.javaClass.simpleName})"
                             }
                         }
                     }
@@ -809,6 +719,10 @@ fun CanvasWorkspaceScreen(
     var pendingPolylineWidth by remember { mutableStateOf(false) } // [NEW] show width dialog after "Finish Path"
     var editingPathZone by remember { mutableStateOf<PathZoneEntity?>(null) } // [NEW] tap-to-edit existing path
     var showVarietyPicker by remember { mutableStateOf(false) } // [NEW] 3-step Category -> Species -> Cultivar picker
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    // Back while path/area points are being drawn asks before discarding them (T2-ENV-040).
+    BackHandler(enabled = inProgressPoints.isNotEmpty()) { showDiscardDialog = true }
 
     // [NEW] Drag-to-reposition support. Locked (off) by default, as requested, so it can't cause
     // an accidental move — must be explicitly enabled via the lock/unlock button in the top bar.
@@ -840,6 +754,32 @@ fun CanvasWorkspaceScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Every database write from this screen goes through here, so a storage failure shows a message
+    // instead of crashing the app (T2-ERR-010 / DW-0705).
+    fun launchSafely(block: suspend CoroutineScope.() -> Unit) {
+        scope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                snackbarMessage = "Couldn't save the change (${e.javaClass.simpleName}). Reopen the plot to see what was saved."
+            }
+        }
+    }
+
+    // Replaces the plot's plants and paths with a snapshot in one transaction, keeping row ids (DW-0802).
+    suspend fun restoreSnapshot(snapshot: CanvasSnapshot) {
+        withContext(SgpExecutors.dbDispatcher) {
+            database.withTransaction {
+                database.plantedNodeDao().deleteAllForPlot(plotId)
+                if (snapshot.nodes.isNotEmpty()) database.plantedNodeDao().insertAll(snapshot.nodes)
+                database.pathZoneDao().deleteAllForPlot(plotId)
+                if (snapshot.paths.isNotEmpty()) database.pathZoneDao().insertAll(snapshot.paths)
+            }
+        }
+    }
     val validator = remember { CompanionPlantingValidator() }
     // [NEW — FR-012 defense-in-depth] Same tier gate as the Settings UI, applied here too: if the
     // stored setting is "off" but the current tier isn't Pro (e.g. downgraded after previously
@@ -1037,16 +977,13 @@ fun CanvasWorkspaceScreen(
                     Button(
                         onClick = {
                             if (undoStack.size() > 1) {
-                                val current = undoStack.pop()
-                                if (current != null) redoStack.push(current)
-                                val previous = undoStack.toList().lastOrNull() ?: CanvasSnapshot(emptyList(), emptyList())
-                                scope.launch {
-                                    withContext(SgpExecutors.dbDispatcher) {
-                                        database.plantedNodeDao().deleteAllForPlot(plotId)
-                                        if (previous.nodes.isNotEmpty()) database.plantedNodeDao().insertAll(previous.nodes)
-                                        database.pathZoneDao().deleteAllForPlot(plotId)
-                                        if (previous.paths.isNotEmpty()) database.pathZoneDao().insertAll(previous.paths)
-                                    }
+                                val history = undoStack.toList()
+                                val current = history[history.size - 1]
+                                val previous = history[history.size - 2]
+                                launchSafely {
+                                    restoreSnapshot(previous)
+                                    undoStack.pop()
+                                    redoStack.push(current)
                                     nodesState = previous.nodes
                                     pathZonesState = previous.paths
                                 }
@@ -1057,16 +994,12 @@ fun CanvasWorkspaceScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Button(
                         onClick = {
-                            val nextState = redoStack.pop()
+                            val nextState = redoStack.toList().lastOrNull()
                             if (nextState != null) {
-                                undoStack.push(nextState)
-                                scope.launch {
-                                    withContext(SgpExecutors.dbDispatcher) {
-                                        database.plantedNodeDao().deleteAllForPlot(plotId)
-                                        if (nextState.nodes.isNotEmpty()) database.plantedNodeDao().insertAll(nextState.nodes)
-                                        database.pathZoneDao().deleteAllForPlot(plotId)
-                                        if (nextState.paths.isNotEmpty()) database.pathZoneDao().insertAll(nextState.paths)
-                                    }
+                                launchSafely {
+                                    restoreSnapshot(nextState)
+                                    redoStack.pop()
+                                    undoStack.push(nextState)
                                     nodesState = nextState.nodes
                                     pathZonesState = nextState.paths
                                 }
@@ -1101,7 +1034,7 @@ fun CanvasWorkspaceScreen(
                                     val newUnit = if (settings.distanceUnit == DistanceUnit.METERS) DistanceUnit.INCHES else DistanceUnit.METERS
                                     val updated = settings.copy(distanceUnit = newUnit)
                                     settings = updated
-                                    scope.launch { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
+                                    launchSafely { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
                                 }
                             )
                         }
@@ -1235,10 +1168,10 @@ fun CanvasWorkspaceScreen(
                                                         }
                                                     } else {
                                                         val newNodes = nodesState + candidateNode
-                                                        scope.launch {
+                                                        launchSafely {
                                                             withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insert(candidateNode) }
                                                             reloadNodes()
-                                                            undoStack.push(CanvasSnapshot(nodesState + candidateNode, pathZonesState))
+                                                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                                                             redoStack.clear()
                                                         }
                                                     }
@@ -1331,10 +1264,10 @@ fun CanvasWorkspaceScreen(
                                                         if (wM > 0.05f && hM > 0.05f) {
                                                             if (canvasMode == CanvasMode.DRAW_PATH) {
                                                                 val newZone = PathZoneEntity(plotId = plotId, xM = xMin, yM = yMin, widthM = wM, heightM = hM, pathType = "RECTANGLE")
-                                                                scope.launch {
+                                                                launchSafely {
                                                                     withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
                                                                     reloadPaths()
-                                                                    undoStack.push(CanvasSnapshot(nodesState, pathZonesState + newZone))
+                                                                    undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                                                                     redoStack.clear()
                                                                 }
                                                             } else if (canvasMode == CanvasMode.SELECT_AREA) {
@@ -1384,7 +1317,9 @@ fun CanvasWorkspaceScreen(
                                                         if (node != null && seed != null) {
                                                             val realXM = (preview.x / size.width) * state.lengthM
                                                             val realYM = (preview.y / size.height) * state.widthM
-                                                            if (isInsidePath(realXM, realYM, seed.exclusionRadiusM)) {
+                                                            if (realXM < 0f || realXM > state.lengthM || realYM < 0f || realYM > state.widthM) {
+                                                                snackbarMessage = "Can't move there — outside the plot."
+                                                            } else if (isInsidePath(realXM, realYM, seed.exclusionRadiusM)) {
                                                                 snackbarMessage = "Can't move there — overlaps a no-plant path."
                                                             } else {
                                                                 val candidate = node.copy(coordinateXM = realXM, coordinateYM = realYM)
@@ -1393,10 +1328,10 @@ fun CanvasWorkspaceScreen(
                                                                 if (!result.isValid) {
                                                                     snackbarMessage = "Can't move there — too close to another plant."
                                                                 } else {
-                                                                    scope.launch {
+                                                                    launchSafely {
                                                                         withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(candidate) }
                                                                         reloadNodes()
-                                                                        undoStack.push(CanvasSnapshot(nodesState.map { if (it.id == id) candidate else it }, pathZonesState))
+                                                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                                                                         redoStack.clear()
                                                                     }
                                                                 }
@@ -1619,6 +1554,17 @@ fun CanvasWorkspaceScreen(
         }
     }
 
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard unfinished shape?") },
+            text = { Text("The points you've tapped for this path or area will be lost.") },
+            confirmButton = { TextButton(onClick = { inProgressPoints = emptyList(); showDiscardDialog = false }) { Text("Discard") } },
+            dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text("Keep drawing") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
     // [NEW] Width-input dialog after finishing a points-mode path.
     if (pendingPolylineWidth) {
         var widthText by remember { mutableStateOf("0.5") }
@@ -1641,10 +1587,10 @@ fun CanvasWorkspaceScreen(
                         plotId = plotId, xM = 0f, yM = 0f, widthM = width, heightM = 0f,
                         pathType = "POLYLINE", pointsJson = serializePoints(inProgressPoints)
                     )
-                    scope.launch {
+                    launchSafely {
                         withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
                         reloadPaths()
-                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState + newZone))
+                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                         redoStack.clear()
                     }
                     inProgressPoints = emptyList()
@@ -1683,10 +1629,10 @@ fun CanvasWorkspaceScreen(
                     TextButton(onClick = {
                         val newWidth = widthText.toFloatOrNull()?.takeIf { it > 0f } ?: zone.widthM
                         val updated = zone.copy(widthM = newWidth)
-                        scope.launch {
+                        launchSafely {
                             withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().update(updated) }
                             reloadPaths()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState.map { if (it.id == zone.id) updated else it }))
+                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                             redoStack.clear()
                         }
                         editingPathZone = null
@@ -1698,10 +1644,10 @@ fun CanvasWorkspaceScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        scope.launch {
+                        launchSafely {
                             withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().delete(zone) }
                             reloadPaths()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState.filter { it.id != zone.id }))
+                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                             redoStack.clear()
                         }
                         editingPathZone = null
@@ -1741,10 +1687,10 @@ fun CanvasWorkspaceScreen(
                                         is GerminationContingencyEngine.ContingencyOption.CatchCrop -> option.alternateBotanicalCode
                                     }
                                     val updated = node.copy(seedCode = newSeedCode, datePlantedEpochMillis = System.currentTimeMillis(), germinationFlagResolved = false)
-                                    scope.launch {
+                                    launchSafely {
                                         withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(updated) }
                                         reloadNodes()
-                                        undoStack.push(CanvasSnapshot(nodesState.map { if (it.id == node.id) updated else it }, pathZonesState))
+                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                                         redoStack.clear()
                                     }
                                     germinationDialogNode = null
@@ -1757,7 +1703,7 @@ fun CanvasWorkspaceScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         val updated = node.copy(germinationFlagResolved = true)
-                        scope.launch {
+                        launchSafely {
                             withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(updated) }
                             reloadNodes()
                         }
@@ -1793,10 +1739,10 @@ fun CanvasWorkspaceScreen(
                     TextButton(onClick = { changeVarietyNode = node; infoDialogNode = null }) { Text("Change Variety") }
                     TextButton(
                         onClick = {
-                            scope.launch {
+                            launchSafely {
                                 withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().delete(node) }
                                 reloadNodes()
-                                undoStack.push(CanvasSnapshot(nodesState.filter { it.id != node.id }, pathZonesState))
+                                undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                                 redoStack.clear()
                             }
                             infoDialogNode = null
@@ -1851,10 +1797,10 @@ fun CanvasWorkspaceScreen(
                     // Deliberately does NOT close the dialog or commit — user can pick a different variety.
                 } else {
                     val updated = node.copy(seedCode = seed.botanicalCode, datePlantedEpochMillis = System.currentTimeMillis(), germinationFlagResolved = false)
-                    scope.launch {
+                    launchSafely {
                         withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(updated) }
                         reloadNodes()
-                        undoStack.push(CanvasSnapshot(nodesState.map { if (it.id == node.id) updated else it }, pathZonesState))
+                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                         redoStack.clear()
                     }
                     changeVarietyNode = null
@@ -1875,7 +1821,7 @@ fun CanvasWorkspaceScreen(
         var showAutoPopVarietyPicker by remember { mutableStateOf(false) } // [NEW]
         val chosenSeed = seedFor(chosenSeedCode)
         val previewCount = chosenSeed?.let {
-            autoPopulateEngine.estimateCount(area.width, area.height, it.exclusionRadiusM * 2f, chosenPattern)
+            autoPopulateEngine.estimateCount(area.width, area.height, it.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
         } ?: 0
 
         AlertDialog(
@@ -1914,7 +1860,7 @@ fun CanvasWorkspaceScreen(
                     enabled = chosenSeed != null,
                     onClick = {
                         val seed = chosenSeed ?: return@TextButton
-                        val localPoints = autoPopulateEngine.generatePositions(area.width, area.height, seed.exclusionRadiusM * 2f, chosenPattern)
+                        val localPoints = autoPopulateEngine.generatePositions(area.width, area.height, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
                         // [FIXED] Real bug: this previously only checked generated points against
                         // no-plant paths, never against plants that already existed OUTSIDE the
                         // selected area. That let auto-populate silently create spacing violations
@@ -1936,12 +1882,12 @@ fun CanvasWorkspaceScreen(
                         if (newNodes.size < localPoints.size) {
                             snackbarMessage = "Placed ${newNodes.size} of ${localPoints.size} — the rest conflicted with existing plants or paths."
                         }
-                        scope.launch {
+                        launchSafely {
                             withContext(SgpExecutors.dbDispatcher) {
                                 if (newNodes.isNotEmpty()) database.plantedNodeDao().insertAll(newNodes)
                             }
                             reloadNodes()
-                            undoStack.push(CanvasSnapshot(nodesState + newNodes, pathZonesState))
+                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                             redoStack.clear()
                         }
                         pendingAreaSelection = null
@@ -1987,7 +1933,7 @@ fun CanvasWorkspaceScreen(
         var showAutoPopVarietyPicker2 by remember { mutableStateOf(false) }
         val chosenSeed = seedFor(chosenSeedCode)
         val previewCount = chosenSeed?.let {
-            autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, it.exclusionRadiusM * 2f, chosenPattern)
+            autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, it.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
                 .count { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
         } ?: 0
 
@@ -2024,7 +1970,7 @@ fun CanvasWorkspaceScreen(
                     enabled = chosenSeed != null,
                     onClick = {
                         val seed = chosenSeed ?: return@TextButton
-                        val localPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f, chosenPattern)
+                        val localPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
                             .filter { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
                         val newNodes = localPoints.fold(emptyList<PlantedNodeEntity>()) { accepted, point ->
                             val absX = minX + point.xM
@@ -2040,12 +1986,12 @@ fun CanvasWorkspaceScreen(
                         if (newNodes.size < localPoints.size) {
                             snackbarMessage = "Placed ${newNodes.size} of ${localPoints.size} — the rest conflicted with existing plants or paths."
                         }
-                        scope.launch {
+                        launchSafely {
                             withContext(SgpExecutors.dbDispatcher) {
                                 if (newNodes.isNotEmpty()) database.plantedNodeDao().insertAll(newNodes)
                             }
                             reloadNodes()
-                            undoStack.push(CanvasSnapshot(nodesState + newNodes, pathZonesState))
+                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
                             redoStack.clear()
                         }
                         pendingPolygonSelection = null
@@ -2225,34 +2171,5 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRuler(
             )
         }
         meter += tickIntervalM
-    }
-}
-
-// =====================================================================
-// INTEGRATED ENCRYPTION VAULT HELPER CLASS
-// =====================================================================
-class SecureConfigVault(private val keyManager: SecurityKeyManager, private val context: Context) {
-    fun saveConfig(key: String, value: String) {
-        val file = File(context.filesDir, "config_$key.enc")
-        val cipher = keyManager.getCipherEncryptMode()
-        val ciphertext = cipher.doFinal(value.toByteArray(StandardCharsets.UTF_8))
-        val iv = cipher.iv
-        file.writeBytes(iv + ciphertext)
-    }
-
-    fun loadConfig(key: String): String? {
-        val file = File(context.filesDir, "config_$key.enc")
-        if (!file.exists()) return null
-        val fileBytes = file.readBytes()
-        if (fileBytes.size < 12) return null
-        val iv = fileBytes.copyOfRange(0, 12)
-        val ciphertext = fileBytes.copyOfRange(12, fileBytes.size)
-        val cipher = keyManager.getCipherDecryptMode(iv)
-        return String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8)
-    }
-
-    fun deleteConfig(key: String): Boolean {
-        val file = File(context.filesDir, "config_$key.enc")
-        return if (file.exists()) file.delete() else false
     }
 }

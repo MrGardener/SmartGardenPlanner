@@ -371,3 +371,17 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | 2026-09-27 | DW-0506 | Implemented (awaiting verification) | Now uses sqlcipher-android 4.19.0. Remaining: emulator/device check that a database created by v20.20 still opens; 16 KB alignment check in APK Analyzer. |
 | 2026-09-27 | DW-1201, DW-1301 | Implemented (awaiting review) | Dead security file and duplicate test file removed. |
 | 2026-09-27 | NEW (test) | Fixed | AutoPopulateEngineTest asserted hex ≥ rows on 6 m × 6 m, which is false for that geometry (36 vs 33); moved to 10 m × 10 m (100 vs 105). |
+| 2026-09-27 | DW-0506 | Verified (fresh-install path) | Owner removed the v20.20 data and created a new plot on the emulator with the new SQLCipher library. Upgrade from v20.20 data is covered by the Phase 3 migration tests (LLR-MIG-*). |
+| 2026-09-27 | DW-0801 | Implemented (PR #2) | Tier switch: upsert in place, keep planted/user varieties, delete only unused, one transaction, error message instead of crash. |
+| 2026-09-27 | DW-0802 | Implemented (PR #2) | Undo/redo restore in one transaction (`withTransaction`); history updated only after success. |
+| 2026-09-27 | DW-0904 | Implemented (PR #2) | Undo snapshots taken from the reloaded (saved) state; no more duplicated plants/paths after undo → redo. |
+| 2026-09-27 | DW-0902 | Implemented (PR #2) | Dragging a plant outside the plot is refused. |
+| 2026-09-27 | DW-0602 | Implemented, stop-gap (PR #2) | Back returns to the plot list; Back with unfinished path/area points asks first. Full navigation in Phase 3. |
+| 2026-09-27 | DW-0603 | Partial (PR #2) | Current screen and plot survive rotation/process death; canvas state follows in Phase 3. |
+| 2026-09-27 | DW-0605, DW-1202 | Implemented (PR #2) | App data excluded from backup and device transfer; key loss/key mismatch shows an explanation screen with "Start with empty data" (files renamed, not deleted) instead of crashing or silently deleting. |
+| 2026-09-27 | DW-0606 | Implemented (PR #2) | Keystore, database opening and first-run seeding moved off the main thread, behind a loading indicator. |
+| 2026-09-27 | DW-0601 | Implemented, baseline (PR #2) | Edge-to-edge enabled; deprecated status-bar theme colour removed. |
+| 2026-09-27 | DW-0704, DW-0705 | Implemented (PR #2) | Raw SQL removed from the plot list and plot creation; canvas, creator and tier-switch writes show an error message instead of crashing. |
+| 2026-09-27 | DW-1001 | Implemented (PR #2) | Debug storage-vault card and its helper class removed. |
+| 2026-09-27 | DW-0812 | Implemented (PR #2) | Database key from `SecureRandom.nextBytes`; a damaged key file is reported instead of being overwritten. |
+| 2026-09-27 | NEW (T2-VAL-040) | Implemented (PR #2) | Spacing check in double precision with 0.1 mm tolerance (touching circles allowed); unsaved auto-populate candidates now compared with each other; fill spacing uses the spacing margin. Regression tests added. |

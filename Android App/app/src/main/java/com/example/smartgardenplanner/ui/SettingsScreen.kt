@@ -25,6 +25,8 @@ import com.example.smartgardenplanner.data.AppDatabase
 import com.example.smartgardenplanner.data.CatalogTier
 import com.example.smartgardenplanner.data.SeedCatalogLoader
 import com.example.smartgardenplanner.data.SettingsRepository
+import androidx.room.withTransaction
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -49,6 +51,7 @@ fun SettingsScreen(
     var loaded by remember { mutableStateOf(false) }
     var catalogSeedCount by remember { mutableStateOf(0) }
     var isSwitchingTier by remember { mutableStateOf(false) }
+    var tierMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -70,18 +73,42 @@ fun SettingsScreen(
     // [NEW] Switches the active catalog tier: deletes all non-custom (bundled) seed rows and
     // reloads the new tier's set from its bundled asset file. Anything the user personally added
     // or edited (isCustom = true) is untouched, since deleteCatalogSeeds() only targets isCustom = 0.
+    // Tier switch (DW-0801, T2-DAT-200), in one transaction:
+    //  - bundled entries of the new tier are inserted or updated in place (never delete-then-insert,
+    //    which violated the planted_nodes foreign key and crashed the app once anything was planted);
+    //  - entries the user created or edited (isCustom = 1) are never touched;
+    //  - bundled entries not in the new tier are deleted only if nothing on any plot uses them.
     fun switchTier(tier: CatalogTier) {
         isSwitchingTier = true
         scope.launch {
-            withContext(SgpExecutors.dbDispatcher) {
-                val loader = SeedCatalogLoader(context)
-                val newSeeds = loader.loadTier(tier)
-                database.seedDao().deleteCatalogSeeds()
-                database.seedDao().insertAll(newSeeds)
-                catalogSeedCount = database.seedDao().catalogSeedCount()
+            try {
+                val kept = withContext(SgpExecutors.dbDispatcher) {
+                    val newSeeds = SeedCatalogLoader(context).loadTier(tier)
+                    val seedDao = database.seedDao()
+                    database.withTransaction {
+                        val customCodes = seedDao.customCodes().toSet()
+                        val planted = seedDao.plantedCodes().toSet()
+                        val newCodes = newSeeds.map { it.botanicalCode }.toSet()
+                        seedDao.upsertAll(newSeeds.filter { it.botanicalCode !in customCodes })
+                        val notInTier = seedDao.catalogCodes().filter { it !in newCodes }
+                        notInTier.filter { it !in planted }.chunked(500).forEach { seedDao.deleteCatalogSeedsByCode(it) }
+                        catalogSeedCount = seedDao.catalogSeedCount()
+                        notInTier.count { it in planted }
+                    }
+                }
+                update(settings.copy(catalogTier = tier.name))
+                tierMessage = if (kept > 0) {
+                    "Switched to ${tier.name}. $kept varieties from the previous tier were kept because they are planted."
+                } else {
+                    "Switched to ${tier.name}."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                tierMessage = "Couldn't switch the catalog (${e.javaClass.simpleName}). Nothing was changed."
+            } finally {
+                isSwitchingTier = false
             }
-            update(settings.copy(catalogTier = tier.name))
-            isSwitchingTier = false
         }
     }
 
@@ -140,6 +167,7 @@ fun SettingsScreen(
 
             SettingsSection(title = "Catalog", note = "Basic/Standard/Pro control how many bundled seed varieties are loaded. Anything you've personally added or edited in the Encyclopedia is never affected by this.") {
                 Text("Current: ${catalogSeedCount} bundled varieties (${settings.catalogTier})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                tierMessage?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
                 CatalogTier.values().forEach { tier ->
                     val isActive = settings.catalogTier == tier.name
                     Row(

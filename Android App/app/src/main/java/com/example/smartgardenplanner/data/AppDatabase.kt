@@ -23,18 +23,9 @@ import java.io.File
  *    kept ONLY as an explicit last resort for schema versions with no defined migration path,
  *    via .fallbackToDestructiveMigrationOnDowngrade() (downgrades, e.g. a user side-loading an
  *    older build, are the one case where a forward migration cannot exist by definition).
- *  - [NEW] getInstance() now self-heals from "file is not a database" / SQLCipher key-mismatch
- *    failures. This happens whenever the on-disk encrypted DB file was created by a different
- *    passphrase than the one currently derived from the Keystore — e.g. a leftover file from an
- *    earlier build/version of the app still sitting in app-private storage from a prior install
- *    that wasn't fully uninstalled first (a very common situation during iterative dev/testing,
- *    and also a real scenario for end users after certain restore/backup situations). Previously
- *    this crashed the app on launch with no recovery path. Now: if opening the DB with the
- *    current passphrase fails, the stale DB file (+ its -wal/-shm siblings) and the stale
- *    encrypted passphrase file are deleted, a fresh passphrase is generated, and the DB is
- *    rebuilt once. This necessarily means any data in the stale file is unrecoverable — that is
- *    unavoidable once the encryption key no longer matches, but it turns a hard crash into a
- *    clean fresh start instead.
+ *  - A key/file mismatch (for example after restoring a backup onto another phone) no longer deletes
+ *    the database silently: getInstance() throws DataUnreadableException, the app explains the
+ *    situation, and only on the user's confirmation are the files renamed aside (setAsideUnreadableData).
  */
 @Database(
     entities = [
@@ -64,26 +55,27 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        /**
+         * Opens the encrypted database. Throws [DataUnreadableException] when the stored data can't be
+         * decrypted with the key available on this device (e.g. after a backup was restored onto another
+         * phone). Nothing is deleted here: the caller decides, with the user's confirmation, whether to set
+         * the unreadable files aside (T2-SEC-050, HLR-PROT-040). The previous version silently deleted the
+         * database in this situation.
+         */
         fun getInstance(context: Context, keyManager: SecurityKeyManager): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                loadSqlCipherLibrary()
-
-                val instance = try {
-                    buildAndVerify(context, keyManager)
-                } catch (e: android.database.sqlite.SQLiteException) {
-                    // [SELF-HEAL] Passphrase doesn't match the on-disk file. Wipe the stale
-                    // encrypted DB + stale encrypted key blob and start fresh, once.
-                    android.util.Log.w(
-                        "AppDatabase",
-                        "Existing encrypted DB could not be opened (stale key/file mismatch). " +
-                            "Resetting local database. Cause: ${e.message}"
-                    )
-                    deleteStaleDatabaseFiles(context)
-                    buildAndVerify(context, keyManager)
+                INSTANCE ?: run {
+                    loadSqlCipherLibrary()
+                    val instance = try {
+                        buildAndVerify(context, keyManager)
+                    } catch (e: android.database.sqlite.SQLiteException) {
+                        throw DataUnreadableException("database could not be opened with the stored key", e)
+                    } catch (e: java.security.GeneralSecurityException) {
+                        throw DataUnreadableException("database key unavailable or invalid", e)
+                    }
+                    INSTANCE = instance
+                    instance
                 }
-
-                INSTANCE = instance
-                instance
             }
         }
 
@@ -101,29 +93,41 @@ abstract class AppDatabase : RoomDatabase() {
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
 
-            // Force the DB to actually open now (Room builds lazily otherwise), so a bad
-            // passphrase/corrupt file surfaces here and can be caught by getInstance(), instead
-            // of surfacing later on a random screen's first query with no recovery path.
-            instance.openHelper.writableDatabase
-
+            // Open now (Room opens lazily), so a wrong key surfaces here rather than on a later query.
+            try {
+                instance.openHelper.writableDatabase
+            } catch (e: RuntimeException) {
+                instance.close()
+                throw e
+            }
             return instance
+        }
+
+        /**
+         * "Start with empty data": renames the unreadable database files and key file with a
+         * `.unreadable-<utc millis>` suffix, so they are kept on the device rather than deleted.
+         */
+        fun setAsideUnreadableData(context: Context) {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+                val suffix = ".unreadable-" + System.currentTimeMillis()
+                val dbFile = context.getDatabasePath(DB_NAME)
+                listOf(
+                    dbFile,
+                    File(dbFile.path + "-wal"),
+                    File(dbFile.path + "-shm"),
+                    File(dbFile.path + "-journal"),
+                    File(context.filesDir, KEY_FILE_NAME)
+                ).forEach { file ->
+                    if (file.exists()) file.renameTo(File(file.path + suffix))
+                }
+            }
         }
 
         /** SQLCipher for Android ships its native library as "sqlcipher"; it must be loaded before first use. */
         private fun loadSqlCipherLibrary() {
             System.loadLibrary("sqlcipher")
-        }
-
-        private fun deleteStaleDatabaseFiles(context: Context) {
-            val dbFile = context.getDatabasePath(DB_NAME)
-            listOf(
-                dbFile,
-                File(dbFile.path + "-wal"),
-                File(dbFile.path + "-shm"),
-                File(dbFile.path + "-journal")
-            ).forEach { if (it.exists()) it.delete() }
-
-            File(context.filesDir, KEY_FILE_NAME).let { if (it.exists()) it.delete() }
         }
 
         /** Test-only: allows instrumented tests to build a fresh in-memory instance without the singleton cache. */
@@ -138,3 +142,6 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+
+/** The stored data can't be decrypted on this device; see [AppDatabase.getInstance]. */
+class DataUnreadableException(message: String, cause: Throwable) : Exception(message, cause)

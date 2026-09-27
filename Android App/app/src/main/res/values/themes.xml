@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- [FIXED] This style was referenced by AndroidManifest.xml but never included in any
-         uploaded/reconstructed res/ content, causing "resource style/Theme.SmartGardenPlanner
-         not found" at build time. MainActivity.kt builds its own Compose MaterialTheme at
-         runtime, so this XML theme only needs to cover the system splash/window background
-         before Compose takes over. -->
+<resources>
+    <!-- Window theme shown before Compose draws. Status/navigation bar colours are not set here: the app
+         is edge-to-edge (enableEdgeToEdge in MainActivity), as Android 15+ requires. -->
     <style name="Theme.SmartGardenPlanner" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/ic_launcher_background</item>
-        <item name="android:statusBarColor">@color/ic_launcher_background</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
     </style>
 </resources>

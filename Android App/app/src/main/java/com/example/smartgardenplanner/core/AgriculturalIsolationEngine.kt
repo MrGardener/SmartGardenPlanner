@@ -127,10 +127,16 @@ class RealSecurityKeyManager : SecurityKeyManager {
         }
     }
 
+    /** A missing Keystore key is reported as a security error rather than a null-cast crash (T2-SEC-050). */
+    private fun loadAesKey(keyStore: KeyStore): SecretKey {
+        return keyStore.getKey(keyStoreAlias, null) as? SecretKey
+            ?: throw java.security.UnrecoverableKeyException("Keystore key $keyStoreAlias is missing")
+    }
+
     override fun getCipherEncryptMode(): Cipher {
         val keyStore = KeyStore.getInstance("AndroidKeyStore")
         keyStore.load(null)
-        val secretKey = keyStore.getKey(keyStoreAlias, null) as SecretKey
+        val secretKey = loadAesKey(keyStore)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, secretKey)
         return cipher
@@ -139,7 +145,7 @@ class RealSecurityKeyManager : SecurityKeyManager {
     override fun getCipherDecryptMode(iv: ByteArray): Cipher {
         val keyStore = KeyStore.getInstance("AndroidKeyStore")
         keyStore.load(null)
-        val secretKey = keyStore.getKey(keyStoreAlias, null) as SecretKey
+        val secretKey = loadAesKey(keyStore)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val spec = GCMParameterSpec(128, iv)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
@@ -166,16 +172,19 @@ class RealSecurityKeyManager : SecurityKeyManager {
         val file = File(context.filesDir, "sgp_db_key.enc")
         if (file.exists()) {
             val fileBytes = file.readBytes()
-            if (fileBytes.size >= 12) {
-                val iv = fileBytes.copyOfRange(0, 12)
-                val ciphertext = fileBytes.copyOfRange(12, fileBytes.size)
-                val cipher = getCipherDecryptMode(iv)
-                return cipher.doFinal(ciphertext)
+            // A damaged key file must not be overwritten with a new key: that would destroy the only
+            // way to read the existing database. Report it instead (T2-SEC-050).
+            if (fileBytes.size < 12 + 16 + 1) {
+                throw java.security.GeneralSecurityException("Database key file is damaged (${fileBytes.size} bytes)")
             }
+            val iv = fileBytes.copyOfRange(0, 12)
+            val ciphertext = fileBytes.copyOfRange(12, fileBytes.size)
+            val cipher = getCipherDecryptMode(iv)
+            return cipher.doFinal(ciphertext)
         }
 
-        // Generate high-entropy 32-byte physical passphrase key
-        val rawPass = SecureRandom().generateSeed(32)
+        // New 32-byte random database key (nextBytes is the key-material API; generateSeed is for seeding).
+        val rawPass = ByteArray(32).also { SecureRandom().nextBytes(it) }
         val cipher = getCipherEncryptMode()
         val ciphertext = cipher.doFinal(rawPass)
         val iv = cipher.iv

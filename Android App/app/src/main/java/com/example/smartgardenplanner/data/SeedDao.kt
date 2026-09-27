@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.example.smartgardenplanner.core.SeedEntity
 
 /**
@@ -38,6 +39,23 @@ interface SeedDao {
 
     @Query("SELECT COUNT(*) FROM seeds WHERE isCustom = 0")
     suspend fun catalogSeedCount(): Int
+
+    // --- Tier switch support (DW-0801, T2-DAT-200). Upsert updates rows in place instead of deleting
+    // them, so the ON DELETE RESTRICT foreign key from planted_nodes is never triggered.
+    @Upsert
+    suspend fun upsertAll(seeds: List<SeedEntity>)
+
+    @Query("SELECT botanicalCode FROM seeds WHERE isCustom = 0")
+    suspend fun catalogCodes(): List<String>
+
+    @Query("SELECT botanicalCode FROM seeds WHERE isCustom = 1")
+    suspend fun customCodes(): List<String>
+
+    @Query("SELECT DISTINCT seedCode FROM planted_nodes")
+    suspend fun plantedCodes(): List<String>
+
+    @Query("DELETE FROM seeds WHERE isCustom = 0 AND botanicalCode IN (:codes)")
+    suspend fun deleteCatalogSeedsByCode(codes: List<String>)
 
     @Query("SELECT * FROM seeds WHERE botanicalCode = :code LIMIT 1")
     suspend fun getByCode(code: String): SeedEntity?
