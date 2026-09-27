@@ -1,8 +1,8 @@
 name: Android build and unit tests
 
-# Runs when app code or build files change. Expected to fail until the Phase 1 toolchain upgrade
-# (SGP-DWR-001 WP-05) lands: the current build (AGP 8.3 / Kotlin 1.9 / API 34) has never been
-# compiled in CI, and a test source file duplicates a production class (DW-1301).
+# Runs when app code or build files change (SGP-SVP-001 §9: build + host tests on every PR).
+# Toolchain: AGP 9.2 / Kotlin 2.2 / Gradle 9.8; the Gradle daemon runs on JDK 21
+# (gradle/gradle-daemon-jvm.properties), the app compiles to Java 17 bytecode.
 on:
   pull_request:
     paths:
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK, run unit tests and lint
         run: |

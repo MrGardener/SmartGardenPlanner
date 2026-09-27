@@ -10,8 +10,7 @@ import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlotEntity
 import com.example.smartgardenplanner.core.SeedEntity
 import com.example.smartgardenplanner.core.SecurityKeyManager
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.io.File
 
 /**
@@ -67,7 +66,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context, keyManager: SecurityKeyManager): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                SQLiteDatabase.loadLibs(context)
+                loadSqlCipherLibrary()
 
                 val instance = try {
                     buildAndVerify(context, keyManager)
@@ -90,7 +89,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private fun buildAndVerify(context: Context, keyManager: SecurityKeyManager): AppDatabase {
             val passphrase = keyManager.getDatabasePassphrase(context)
-            val factory = SupportFactory(passphrase)
+            val factory = SupportOpenHelperFactory(passphrase)
 
             val instance = Room.databaseBuilder(
                 context.applicationContext,
@@ -110,6 +109,11 @@ abstract class AppDatabase : RoomDatabase() {
             return instance
         }
 
+        /** SQLCipher for Android ships its native library as "sqlcipher"; it must be loaded before first use. */
+        private fun loadSqlCipherLibrary() {
+            System.loadLibrary("sqlcipher")
+        }
+
         private fun deleteStaleDatabaseFiles(context: Context) {
             val dbFile = context.getDatabasePath(DB_NAME)
             listOf(
@@ -124,9 +128,9 @@ abstract class AppDatabase : RoomDatabase() {
 
         /** Test-only: allows instrumented tests to build a fresh in-memory instance without the singleton cache. */
         fun buildInMemoryForTest(context: Context, keyManager: SecurityKeyManager): AppDatabase {
-            SQLiteDatabase.loadLibs(context)
+            loadSqlCipherLibrary()
             val passphrase = keyManager.getDatabasePassphrase(context)
-            val factory = SupportFactory(passphrase)
+            val factory = SupportOpenHelperFactory(passphrase)
             return Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
                 .openHelperFactory(factory)
                 .allowMainThreadQueries()
