@@ -1162,6 +1162,91 @@ campaign, with overlays off and on. ↑ HLR-PERF-020
 
 **LLR-PERF-030** A tier switch benchmark (Basic → Pro) shall run on the target in each campaign. ↑ HLR-PERF-030
 
+### 5.9 Automatic planting, direction, obstacles and plan files (AUTOP, ORNT, OBST, PFILE) (added 2026-09-27)
+
+**LLR-AUTOP-010** `AutoPlanner.plan(context, area, requests, isBlocked, margin, orientationKnown, maxCandidates = 3000)`
+shall generate candidate positions on a square grid over the area's bounding box with step
+`max(0.5 × smallest requested radius, √(bbox area / maxCandidates))`, starting half a step in, keeping only
+positions inside the area polygon and inside the plot (`PlotShape.contains`). ↑ HLR-AUTO-010, HLR-AUTO-050
+
+**LLR-AUTOP-020** The sunward unit vector shall be `SunlightEngine.sunDirectionInPlot(az, bearing)` with
+az = 180° if latitude ≥ 0, else 0° (latitude defaults to 40°N). A position's depth is
+`(pmax − p·s) / (pmax − pmin)` over the area's corners, clamped to [0, 1] (0 = sunny edge, 1 = far edge). Each
+variety's target depth is `(h − hmin) / (hmax − hmin)` of the requested varieties' mature heights
+(`PlantHeights.heightM`), or 0.5 when they differ by less than 0.05 m. ↑ HLR-AUTO-020
+
+**LLR-AUTOP-030** Plants shall be placed one at a time: non-pollinator varieties first in decreasing height, then
+pollinator varieties (`AutoPlanner.POLLINATOR_PLANTS`), each variety's plants consecutively. For each plant, every
+candidate is scored and the candidates are tried in decreasing score; the first that is not blocked by a path
+(`isBlocked(x, y, radius)`), not a flood area for a flood-intolerant crop, and valid under
+`CompanionPlantingValidator.validatePlacement` against existing plus already-proposed plants (with the active
+guilds and margin) is taken. A plant with no such candidate is counted as unplaced. ↑ HLR-AUTO-030, HLR-AUTO-050
+
+**LLR-AUTOP-040** The score shall be the sum of:
+- −3 × |depth − target depth|
+- when sun hours are known: −4 × max(0, need − hours) / need + hours / 24
+- when plants of the same species exist: −(distance to their centroid) / (area diagonal) × 5 for block-planted
+  species (`BLOCK_PLANTED`), × 2 otherwise
+- when plants with the same watering interval exist: −(distance to their centroid) / diagonal
+- +0.5 for each companion species whose centroid is within 2 m
+- for pollinator plants: −(distance to the insect-pollinated crops' centroid) / diagonal × 2, and
+  −1.5 / (1 + distance to the nearest pollinator plant already proposed)
+
+↑ HLR-AUTO-030, HLR-AUTO-040
+
+**LLR-AUTOP-050** The result shall list placed plants, unplaced counts per species name, and notes: the far-side
+compass name with the two tallest and the shortest species; the missing-direction assumption when
+`orientationKnown` is false; whether sun data was used; block planting; pollinators spread or recommended when an
+insect-pollinated crop is listed; watering groups when more than one interval is present; what didn't fit.
+↑ HLR-AUTO-060
+
+**LLR-AUTOP-060** The layout shall run the planner off the main thread, draw the proposal as translucent circles
+at each variety's spacing radius with the area outlined, and show a card with the summary, notes and the buttons
+Plant them / Change list / Cancel. "Plant them" inserts all proposed plants with `insertAll`, reloads, pushes one
+undo snapshot and clears the redo stack; the plant list survives "Change list". ↑ HLR-AUTO-060, HLR-AUTO-010
+
+**LLR-ORNT-010** `PlotEntity` shall store `northBearingDeg` (0–360, the compass bearing of the plot's top edge)
+and `orientationSet` (schema 9, MIGRATION_8_9 adds `orientationSet INTEGER NOT NULL DEFAULT 0`). The creator
+shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° slider with 70 steps; saving sets
+`orientationSet = true`. ↑ HLR-ORNT-010
+
+**LLR-ORNT-020** The layout shall draw, 44 px from the canvas's top-right corner, an arrow from the centre toward
+bearing −northBearingDeg (red, labelled "N"), grey and labelled "N?" when `orientationSet` is false, and show the
+tappable warning text in the plot header while it is false. ↑ HLR-ORNT-020
+
+**LLR-ORNT-030** `ZipLookup.location` shall binary-search the bundled `zip_locations.txt` (lines "zip|lat|lon|state",
+sorted by ZIP, loaded once) with `ZipTable.find`. `ZipLookup.zone` shall return the starter climate table's zone,
+else call `NetworkGateway` with `OnlineData.zoneUrl(zip)` (host phzmapi.org on the allow-list) and accept only a
+zone that `HardinessZones.number` recognises. ↑ HLR-ORNT-030
+
+**LLR-OBST-010** `SiteFeatureDialog` shall show Move for existing features. After Move, the next tap in a site
+tool mode calls `moveSiteFeature`, which translates all points by (tap − anchor), with the translation clamped so
+that every point stays within [0, length] × [0, width]. ↑ HLR-OBST-010
+
+**LLR-OBST-020** `CanvasSnapshot` shall hold plants, paths, site features and the outline text. `restoreSnapshot`
+shall, in one transaction, replace the plot's plants, paths and site features with the snapshot's and set the
+outline if it differs. Insert, update, move and delete of a site feature and `saveOutline` shall push
+`snapshotNow()` after reloading. ↑ HLR-OBST-020
+
+**LLR-PFILE-010** `PlanFileCodec.encode` shall write a JSON object with `format` = "smart-garden-plan",
+`version` = 1, `exportedAt` (ISO-8601 UTC), `app`, `units` = "metres", `plots` (name, description, lengthM,
+widthM, outline, orientation {topFacesDeg, set}, location {zip, latitude, longitude, hardinessZone}, soil,
+createdAt, modifiedAt, plants, paths, siteFeatures) and `customVarieties` (custom varieties used). Numbers are
+rounded to 4 decimals; null fields are omitted. `PlanFileRepository.export` reads the plots from the database
+and `PlanFileIo.write` stores the text at the URI from the system "create document" picker. ↑ HLR-PORT-010
+
+**LLR-PFILE-020** `PlanFileCodec.decode` shall reject: text over 20 MB, invalid JSON, a wrong `format`, a missing
+or newer `version`, missing `plots`, or more than 100 plots. It shall skip, with a warning: plots with a size
+outside (0, 1000] m; outlines that are invalid or leave the plot; plants without a code or outside the plot
+(first 5000 per plot); paths and features that are malformed, outside the plot or out of range (first 2000 per
+plot); custom varieties with a spacing outside (0, 50] m. Soil percentages outside 0–100, pH outside 3–10,
+latitude outside ±90 and longitude outside ±180 are dropped. ↑ HLR-PORT-020
+
+**LLR-PFILE-030** `PlanFileRepository.import` shall, in one database transaction: insert custom varieties whose
+code is new; insert each plot as a new row (name suffixed " (imported)" if a plot of that name exists); map each
+plant's code to a known variety by code, else by variety name (case-insensitive), else skip and count it; insert
+plants, paths and site features with the new plot id. Any exception rolls back everything. ↑ HLR-PORT-020
+
 ---
 
 ## 6. Deferred LLRs
@@ -1351,14 +1436,28 @@ Generated by script from the `↑` links above.
 | HLR-PERF-030 | Active | LLR-CATI-030, LLR-PERF-030 |
 | HLR-PLTN-010 | Active | LLR-LIM-020 |
 | HLR-PLTN-020 | Active | LLR-LIM-030, LLR-DB-010 |
+| HLR-AUTO-010 | Active | LLR-AUTOP-010, LLR-AUTOP-060 |
+| HLR-AUTO-020 | Active | LLR-AUTOP-020 |
+| HLR-AUTO-030 | Active | LLR-AUTOP-030, LLR-AUTOP-040 |
+| HLR-AUTO-040 | Active | LLR-AUTOP-040 |
+| HLR-AUTO-050 | Active | LLR-AUTOP-010, LLR-AUTOP-030 |
+| HLR-AUTO-060 | Active | LLR-AUTOP-050, LLR-AUTOP-060 |
+| HLR-ORNT-010 | Active | LLR-ORNT-010 |
+| HLR-ORNT-020 | Active | LLR-ORNT-020 |
+| HLR-ORNT-030 | Active | LLR-ORNT-030 |
+| HLR-OBST-010 | Active | LLR-OBST-010 |
+| HLR-OBST-020 | Active | LLR-OBST-020 |
+| HLR-PORT-010 | Active | LLR-PFILE-010 |
+| HLR-PORT-020 | Active | LLR-PFILE-020, LLR-PFILE-030 |
+| HLR-PORT-030 | Future | deferred (§6) |
 | HLR-MEAS-010 | Suspended | deferred (§6) |
 
 ## 10. Coverage check
 
-- LLRs: **224**. Duplicate LLR IDs: **0**.
-- HLRs: 140 (132 active, 7 future, 1 suspended).
+- LLRs: **238**. Duplicate LLR IDs: **0**.
+- HLRs: 154 (145 active, 8 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
-- HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
+- HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-PORT-030, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.
 - Links to unknown HLR IDs: **0**.
 

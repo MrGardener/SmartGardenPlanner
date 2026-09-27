@@ -171,7 +171,8 @@ missing.
 Parent: ConOps §5.3 · Safety: FC-13 · Verify: Test · Status: Proposed
 **Was:** "…input a location parameter (ZIP code or geographic coordinates) associated with the planting zone."
 **Why changed:** Added the device-location option, and the behaviour when the location is absent.
-**Now:** Not implemented (NONE).
+**Now:** IMPL: ZIP → latitude/longitude offline (bundled table); zone from the offline table, a list, or online
+(T2-CON-010 switch); device location on the Site tab.
 
 ### T2-FUN-100 — No-plant paths (NEW)
 **Statement:** The system shall let the user mark areas of a plot where nothing may be planted (paths,
@@ -217,6 +218,49 @@ Parent: existing functionality · Safety: FC-01 · Verify: Test · Status: Propo
 and open a plot's layout when it is selected.
 Parent: existing functionality · Safety: — · Verify: Test · Status: Proposed
 **Now:** Implemented (units always shown in metres) (PART).
+
+### T2-FUN-160 — Plan an area for me (NEW 2026-09-27)
+**Statement:** The system shall let a user with no gardening knowledge select a plot, select an area of it
+(rectangle or polygon), and list which varieties to plant and how many of each. The system shall then decide
+where each plant goes, and shall:
+- put taller plants on the side of the area away from the midday sun (north in the northern hemisphere,
+  south in the southern), using the plot's compass direction (T2-FUN-170), and shorter plants on the sunny side;
+- give plants that need full sun the sunniest positions, using marked sun/shade areas and the estimated shade of
+  obstacles (T2-FUN-180);
+- support pollination: plant wind-pollinated crops such as sweet corn in a compact block, spread any pollinator
+  flowers or herbs in the list among the crops that need insects, and recommend pollinator plants when such crops
+  are listed without any;
+- group plants with similar watering needs, and place companions next to each other where possible;
+- apply every placement rule (T2-VAL-020/040/050, T2-INT-030) to every plant.
+
+Before anything is stored, the system shall show the proposed positions on the layout, how many of each variety
+fit, what didn't fit, and a plain-language explanation. Accepting stores the plants as one undoable step;
+cancelling stores nothing. If the plot's compass direction isn't set, the system shall say so and offer to set it.
+Parent: owner request 2026-09-27 (FEATURE_ROADMAP FR-027) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL (AutoPlanner; layout "Plan an area for me").
+
+### T2-FUN-170 — Plot compass direction (NEW 2026-09-27)
+**Statement:** The system shall let the user set which compass direction the top edge of the plot, as drawn on
+the screen, faces (any bearing, with the eight main directions offered as shortcuts), when creating the plot and
+at any time afterwards. The layout shall show a compass indicating north. Until the direction is set, the layout
+shall show that it is missing, and features that depend on it (sun, shade, T2-FUN-160) shall say they are
+assuming the top edge faces north.
+Parent: owner request 2026-09-27 (FR-028) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-180 — Obstacles that cast shade (NEW 2026-09-27)
+**Statement:** The system shall let the user place trees (trunk position, crown radius, height), and fences,
+walls and buildings (a line or outline, height) on a plot, and change, move and delete them. The system shall
+estimate, from the plot's location and compass direction, which parts of the plot these obstacles shade and for
+how long on a given day, and show this as an overlay.
+Parent: FEATURE_ROADMAP FR-006; owner request 2026-09-27 (relocation) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-190 — Undo covers every layout change (NEW 2026-09-27)
+**Statement:** Undo and redo on the layout shall cover every change made there: plants, no-plant paths,
+obstacles, sun/shade/flood/slope areas, and the plot outline.
+Parent: owner problem report 2026-09-27 (undo did not remove a placed building, tree or fence) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
 
 ---
 
@@ -312,10 +356,12 @@ Parent: ConOps §5.3; FEATURE_ROADMAP FR-014 · Safety: FC-13 · Verify: Test ·
 **Statement:** The system shall let the user export one plot or all plots, with their plants, paths, custom
 varieties used and photos, to a single file chosen by the user, and import such a file on the same or
 another device.
-Parent: ConOps §4 (sharing) · Safety: FC-15 · Verify: Test · Status: Proposed (future, Phase 8)
+Parent: ConOps §4 (sharing) · Safety: FC-15 · Verify: Test · Status: Proposed
 **Was:** "Support dataset export/import."
 **Why changed:** Scope stated.
-**Now:** NONE.
+**Now:** PART: plots, plants, paths, obstacles/areas, outline, direction, location, soil and custom varieties are
+exported to a Smart Garden plan file (.sgp.json, docs/PLAN_FILE_FORMAT.md) and imported as new plots. Photos and
+signing (T2-SEC-040) are not included yet.
 
 ### T2-DAT-120 — Ownership information
 **Statement:** The system shall record, for each plot, its owner's display name and the date/time it was
@@ -850,10 +896,10 @@ Parent: ConOps §7 · Verify: Review + Analysis · Status: Proposed
 ### T2-PLT-020 — Documented exchange format
 **Statement:** The export file format (T2-DAT-110) shall be fully documented and versioned, so that another
 client (desktop or web) could read and write it.
-Parent: ConOps §7 · Verify: Review · Status: Proposed (future)
+Parent: ConOps §7 · Verify: Review · Status: Proposed
 **Was:** "Desktop/Web clients shall use identical schemas."
 **Why changed:** No other client exists, so the verifiable part is the documented format.
-**Now:** NONE.
+**Now:** IMPL: format version 1 documented in docs/PLAN_FILE_FORMAT.md.
 
 ### T2-PLT-030 — Rules independent of the screen
 **Statement:** All planning rules and calculations (spacing, companions, dates, Plan B, auto-populate,
@@ -862,6 +908,14 @@ that calls them, and shall be testable without any user interface.
 Parent: ConOps §7 · Verify: Analysis + Test · Status: Proposed
 **Was:** "Business logic shall remain UI-independent."
 **Now:** Engines are separate; much logic still sits in screen code (PART).
+
+### T2-PLT-040 — Portable planner for computers (NEW 2026-09-27)
+**Statement:** A planning client shall run on Windows, macOS, Linux and ChromeOS computers (and Android
+devices) inside a standard web browser, without installing anything and without an account or server. It shall
+open and save the same plan files as the Android app (T2-PLT-020), so a plan made on a computer can be
+reviewed and changed on the phone and back, and it shall use the same planning rules (T2-PLT-030).
+Parent: owner request 2026-09-27 · Safety: FC-15 · Verify: Test (each platform's browser) · Status: Proposed (future)
+**Now:** NONE. Approach: docs/CROSS_PLATFORM_PLAN.md.
 
 ---
 
@@ -986,7 +1040,7 @@ Settle these whenever you're ready. Each proposal is what the requirement says u
 | Status | Count |
 |---|---|
 | Proposed (original IDs) | 77 (PRE-020 applies only once FUN-025 exists) |
-| Proposed (new) | 17 |
+| Proposed (new) | 22 (17 in Rev A; FUN-160, FUN-170, FUN-180, FUN-190, PLT-040 added 2026-09-27) |
 | Suspended (D-03) | 4 (FUN-025, VAL-012, PRE-010, PRE-030) |
 | Merged | 1 (DAT-070) |
 | Deleted | 2 (GOV-010, GOV-020) |

@@ -113,6 +113,16 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-025 | Tier feature-flag system | The mechanism this whole document leans on: a central registry (`Feature` enum + `AppTier`) of which features are active for Basic/Standard/Pro, checked at the relevant screens/actions — reuses the existing catalog-tier setting as the source of truth for "what tier is this user on," no separate subscription concept added. | Infrastructure (not user-facing) | None | **Implemented — Awaiting Your Confirmation** |
 | FR-026 | Toggleable network connection layer | **New, from your answer on FR-019/FR-007.** A user-controlled, non-permanent network capability that future live-data features (weather, sunlight history, nutrition refresh) route through. See "Toggleable Network Connection — Options" above — **not started pending your choice of Option A/B/C/D (or another design).** | Infrastructure (not user-facing) | Your decision on which option to use | **Implemented — Awaiting Your Confirmation** (option A) |
 
+### B8. Guided planting and portability (owner request 2026-09-27)
+
+| ID | Feature | Description | Proposed Tier | Depends On | Status |
+|---|---|---|---|---|---|
+| FR-027 | Plan an area for me | Pick a plot and an area, list what to plant and how many; the app places everything: tall plants away from the midday sun, sun lovers in the sunniest spots, corn in blocks, pollinator plants among the crops that need bees, similar watering needs together, companions side by side. Preview, then plant or cancel. | All | FR-028 (direction), FR-005/006 (sun) | **Implemented — Awaiting Your Confirmation** |
+| FR-028 | Plot direction and ZIP | Say which way the plot's top edge faces (creator, direction dialog, Site tab); compass on the layout; warning until set. ZIP fills latitude/longitude offline and the zone offline or online. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-029 | Portable plan files | Save one or all plots to a `.sgp.json` file and open such files as new plots, on any device. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-030 | Planner on a computer | No-install browser planner for Windows, macOS, Linux and ChromeOS, sharing the same rules and plan files (docs/CROSS_PLATFORM_PLAN.md). | All | FR-029 | Not Started — waiting on your choice (option A or B) |
+| FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
+
 ---
 
 ## Open Questions — Answered
@@ -215,6 +225,11 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (guided planting)**: Added and implemented FR-027 (Plan an area for me), FR-028 (plot direction
+  and ZIP), FR-029 (portable plan files), and the obstacle move/undo fix. Added FR-030 (computer planner) as
+  planned, pending your choice in docs/CROSS_PLATFORM_PLAN.md. New system requirements T2-FUN-160 to 190 and
+  T2-PLT-040, with HLRs and LLRs.
 
 - **2026-09-27 (all remaining items)**: On your instruction to implement every pending feature now, FR-002
   to FR-026 were implemented and moved to "Implemented — Awaiting Your Confirmation". Where to find them:
