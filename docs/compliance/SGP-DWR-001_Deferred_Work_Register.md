@@ -359,3 +359,6 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | 2026-09-27 | DW-1901 (D-01) | Closed | Keep DO-178C/ARP4754A DAL A. |
 | 2026-09-27 | DW-0301 | In progress | T2 level done: `docs/requirements/SGP-SYS-REQ-001_System_Requirements_T2.md` (Proposed). HLR and LLR levels remain. |
 | 2026-09-27 | DW-0302, DW-0303, DW-0304, DW-0306, DW-0307 | In progress | Done at T2 level (new T2 for untraced functions, conflicts RQ-01…RQ-10 resolved or proposed, measurable wording, GOV deleted, missing requirements added). HLR/LLR level remains. 31 values await confirmation (`[TBC-01…31]`, §15 of SGP-SYS-REQ-001). |
+| 2026-09-27 | DW-0301 | In progress | HLR level done: `docs/requirements/SGP-SW-HLR-001_Software_High_Level_Requirements.md` (140 HLRs, new area codes). Per Project Owner direction, the HLRs are rewritten from scratch; the v20.18 HLR/LLR IDs are retired, and traceability is kept **only** T2 → new HLR (full coverage, generated table in §21–22). 10 HLR-level values await confirmation (H-TBC-01…10). LLRs remain. |
+| 2026-09-27 | DW-0305 | Superseded | The old LLRs will not be patched. The LLRs are rewritten from scratch under the new HLRs. |
+| 2026-09-27 | DW-1306 | Changed | Trace scope per Project Owner: T2 ↔ HLR is mandatory; HLR ↔ LLR ↔ code/test is to be established for the new LLRs only (no trace to retired IDs). |

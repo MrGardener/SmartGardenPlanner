@@ -118,6 +118,8 @@ listed in SGP-DWR-001 DW-0305.
 
 ## 2. Software high-level requirements (HLR)
 
+> **Historical:** these v20.18 HLRs are retired and replaced by SGP-SW-HLR-001 (written from scratch, traced to T2). This section is kept only as a record of the code's state against the old HLRs.
+
 | ID | Requirement (abridged) | Status | Evidence / defect / DWR ref |
 |---|---|---|---|
 | HLR-SEN-010 | Interface with Android CameraX API core pipeline to establish a local preview lifecycle. | **CODE** | CameraX binding and capture callback exist; no UI. DW-1101 |
