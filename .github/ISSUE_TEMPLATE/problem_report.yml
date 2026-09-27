@@ -1,0 +1,45 @@
+name: Problem report
+description: Something is wrong (a defect in code, requirements, data, tests or documents). SGP-SCMP-001 §7.
+title: "[PR] "
+labels: ["problem-report", "status:open"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is wrong? What did you expect instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: found_by
+    attributes:
+      label: How was it found?
+      options: [Review, Test, Analysis, Use in the field, Other]
+    validations:
+      required: true
+  - type: input
+    id: items
+    attributes:
+      label: Affected items and versions
+      description: Requirement IDs, files, commit hash or app version
+      placeholder: "HLR-RULE-020, core/.../Validator.kt @ 1a2b3c4"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Functional severity, or the safety classification from SGP-SAP-001 if it relates to a failure condition
+      options: ["B — blocker (build fails / crash / data loss)", "H — high", "M — medium", "L — low"]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (if applicable)
+      description: Device (emulator or Pixel 10 Pro), Android version, exact steps
+  - type: textarea
+    id: analysis
+    attributes:
+      label: Analysis / proposed corrective action
+      description: Filled in during analysis

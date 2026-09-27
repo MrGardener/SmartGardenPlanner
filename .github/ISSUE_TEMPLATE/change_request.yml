@@ -1,0 +1,28 @@
+name: Change request
+description: Request a new feature or a change to requirements, design or process. SGP-SCMP-001 §7.
+title: "[CR] "
+labels: ["change-request", "status:open"]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: Requested change
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is it needed? Source (user need, ConOps, safety assessment, roadmap FR-xxx)
+    validations:
+      required: true
+  - type: input
+    id: requirements
+    attributes:
+      label: Affected requirements
+      placeholder: "T2-FUN-080, HLR-TIME-050"
+  - type: input
+    id: register
+    attributes:
+      label: Deferred Work Register item (if any)
+      placeholder: "DW-0808"
