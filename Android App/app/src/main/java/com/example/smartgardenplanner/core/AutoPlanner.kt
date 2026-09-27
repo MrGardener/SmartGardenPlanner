@@ -213,7 +213,7 @@ object AutoPlanner {
                 if (result.isValid) { chosen = c; placedNodes += node; break }
             }
             if (chosen == null) {
-                unplaced.merge(CropReference.speciesName(seed), 1, Int::plus)
+                unplaced[CropReference.speciesName(seed)] = (unplaced[CropReference.speciesName(seed)] ?: 0) + 1
                 continue
             }
             placed += PlannedPlant(seed, chosen.x, chosen.y)

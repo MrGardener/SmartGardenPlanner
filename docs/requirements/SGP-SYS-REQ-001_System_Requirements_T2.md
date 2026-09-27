@@ -915,8 +915,9 @@ Parent: ConOps §7 · Verify: Analysis + Test · Status: Proposed
 devices) inside a standard web browser, without installing anything and without an account or server. It shall
 open and save the same plan files as the Android app (T2-PLT-020), so a plan made on a computer can be
 reviewed and changed on the phone and back, and it shall use the same planning rules (T2-PLT-030).
-Parent: owner request 2026-09-27 · Safety: FC-15 · Verify: Test (each platform's browser) · Status: Proposed (future)
-**Now:** NONE. Approach: docs/CROSS_PLATFORM_PLAN.md.
+Parent: owner request 2026-09-27 · Safety: FC-15 · Verify: Test (each platform's browser) · Status: Proposed
+**Now:** PART (2026-09-27): single-file planner `web/dist/smart-garden-planner.html` (option A), built from the
+same `core/` source; tested in Chromium on Linux. Other browsers/platforms not yet tested (docs/CROSS_PLATFORM_PLAN.md W4).
 
 ---
 

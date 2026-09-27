@@ -41,7 +41,7 @@ data class PlantedNodeEntity(
     val coordinateXM: Float,
     val coordinateYM: Float,
     @ColumnInfo(defaultValue = "0")
-    val datePlantedEpochMillis: Long = System.currentTimeMillis(), // [NEW] LLR-DAT-170
+    val datePlantedEpochMillis: Long = PlatformClock.nowMillis(), // [NEW] LLR-DAT-170
     @ColumnInfo(defaultValue = "0")
     val germinationFlagResolved: Boolean = false                   // [NEW] tracks whether a Plan-B was already resolved
 )

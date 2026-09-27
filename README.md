@@ -8,6 +8,7 @@ germination tracking), developed under a DO-178C / ARP4754A DAL A process.
 | Folder | Contents |
 |---|---|
 | `Android App/` | **The Android Studio project.** Open *this* folder in Android Studio (File → Open → `Android App`), not the repository root. |
+| `web/` | **Portable planner for computers**: `web/dist/smart-garden-planner.html` is the whole app in one file. Double-click it; no install. See `web/README.md`. |
 | `docs/requirements/` | System requirements (T2), software high-level (HLR) and low-level (LLR) requirements |
 | `docs/compliance/` | Plans, standards, deferred work register (start with `README.md` there) |
 | `docs/cm/` | GitHub / configuration-management setup |

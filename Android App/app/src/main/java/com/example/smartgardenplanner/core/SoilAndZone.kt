@@ -31,7 +31,7 @@ object SoilAnalyzer {
     fun validateTexture(sand: Float, silt: Float, clay: Float): String? {
         if (sand < 0f || silt < 0f || clay < 0f) return "Percentages can't be negative."
         val total = sand + silt + clay
-        if (total < 97f || total > 103f) return "Sand, silt and clay should add up to 100 % (now ${"%.0f".format(total)} %)."
+        if (total < 97f || total > 103f) return "Sand, silt and clay should add up to 100 % (now ${(total).fmt(0)} %)."
         return null
     }
 
@@ -88,18 +88,18 @@ object SoilAnalyzer {
         }
         soil.organicPct?.let { om ->
             tips += when {
-                om < 2f -> "Organic matter is low (${"%.1f".format(om)} %). Aim for 4–6 %: add compost every season, grow cover crops (clover, vetch, rye) over winter, and keep the soil mulched."
-                om < 4f -> "Organic matter is moderate (${"%.1f".format(om)} %). A yearly layer of compost and a winter cover crop will raise it."
-                else -> "Organic matter is good (${"%.1f".format(om)} %)."
+                om < 2f -> "Organic matter is low (${(om).fmt(1)} %). Aim for 4–6 %: add compost every season, grow cover crops (clover, vetch, rye) over winter, and keep the soil mulched."
+                om < 4f -> "Organic matter is moderate (${(om).fmt(1)} %). A yearly layer of compost and a winter cover crop will raise it."
+                else -> "Organic matter is good (${(om).fmt(1)} %)."
             }
         }
         soil.ph?.let { ph ->
             tips += when {
-                ph < 5.5f -> "Soil is strongly acidic (pH ${"%.1f".format(ph)}). Most vegetables prefer 6.0–7.0: apply garden lime (roughly 250 g/m² raises pH about 0.5 in loam; less in sand, more in clay) and re-test after 3–6 months. Blueberries and azaleas like it as it is."
-                ph < 6.0f -> "Soil is slightly acidic (pH ${"%.1f".format(ph)}). A light liming (about 100–150 g/m²) suits most vegetables."
-                ph <= 7.2f -> "pH ${"%.1f".format(ph)} suits most vegetables."
-                ph <= 7.8f -> "Soil is slightly alkaline (pH ${"%.1f".format(ph)}). Add compost and consider elemental sulfur (about 50 g/m² lowers pH roughly 0.5 in loam) for acid-loving plants."
-                else -> "Soil is strongly alkaline (pH ${"%.1f".format(ph)}). Lowering it takes time: use elemental sulfur in small yearly doses, lots of organic matter, and choose tolerant crops (asparagus, beets, cabbage family)."
+                ph < 5.5f -> "Soil is strongly acidic (pH ${(ph).fmt(1)}). Most vegetables prefer 6.0–7.0: apply garden lime (roughly 250 g/m² raises pH about 0.5 in loam; less in sand, more in clay) and re-test after 3–6 months. Blueberries and azaleas like it as it is."
+                ph < 6.0f -> "Soil is slightly acidic (pH ${(ph).fmt(1)}). A light liming (about 100–150 g/m²) suits most vegetables."
+                ph <= 7.2f -> "pH ${(ph).fmt(1)} suits most vegetables."
+                ph <= 7.8f -> "Soil is slightly alkaline (pH ${(ph).fmt(1)}). Add compost and consider elemental sulfur (about 50 g/m² lowers pH roughly 0.5 in loam) for acid-loving plants."
+                else -> "Soil is strongly alkaline (pH ${(ph).fmt(1)}). Lowering it takes time: use elemental sulfur in small yearly doses, lots of organic matter, and choose tolerant crops (asparagus, beets, cabbage family)."
             }
         }
         return tips

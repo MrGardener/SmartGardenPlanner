@@ -32,9 +32,9 @@ data class PlotEntity(
     @ColumnInfo(defaultValue = "OWNER")
     val ownerRole: String = "OWNER",             // [NEW] T2-DAT-140: OWNER | CONTRIBUTOR | VIEWER
     @ColumnInfo(defaultValue = "0")
-    val createdTimestamp: Long = System.currentTimeMillis(),
+    val createdTimestamp: Long = PlatformClock.nowMillis(),
     @ColumnInfo(defaultValue = "0")
-    val lastModifiedTimestamp: Long = System.currentTimeMillis(),
+    val lastModifiedTimestamp: Long = PlatformClock.nowMillis(),
     // --- Schema 8 (MIGRATION_7_8): roadmap features ---
     val boundaryJson: String? = null,            // FR-002: custom outline "x1,y1;x2,y2;..." inside the length x width box
     val hardinessZone: String? = null,           // FR-014: USDA zone, e.g. "7a"

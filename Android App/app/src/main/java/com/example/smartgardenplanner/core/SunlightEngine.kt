@@ -203,9 +203,7 @@ object SunlightEngine {
 
     /** Day of year (1–366) for a timestamp in the device's time zone. */
     fun dayOfYear(epochMillis: Long): Int {
-        val cal = java.util.Calendar.getInstance()
-        cal.timeInMillis = epochMillis
-        return cal.get(java.util.Calendar.DAY_OF_YEAR)
+        return CivilDate.dayOfYear(epochMillis)
     }
 
     /** Mid-summer day for the hemisphere (21 June north, 21 December south). */

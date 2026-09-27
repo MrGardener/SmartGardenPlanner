@@ -16,7 +16,7 @@ object OnlineData {
         return host in ALLOWED_HOSTS
     }
 
-    private fun coord(v: Double) = "%.4f".format(java.util.Locale.US, v)
+    private fun coord(v: Double) = v.fmt(4)
 
     /** FR-019: rain yesterday and today (mm) from Open-Meteo. */
     fun rainUrl(lat: Double, lon: Double): String =
@@ -30,8 +30,8 @@ object OnlineData {
 
     /** FR-020: USDA FoodData Central search for a raw food. */
     fun fdcSearchUrl(foodName: String, apiKey: String): String {
-        val q = java.net.URLEncoder.encode("$foodName raw", "UTF-8")
-        val key = java.net.URLEncoder.encode(apiKey.ifBlank { "DEMO_KEY" }, "UTF-8")
+        val q = urlEncode("$foodName raw")
+        val key = urlEncode(apiKey.ifBlank { "DEMO_KEY" })
         return "https://api.nal.usda.gov/fdc/v1/foods/search?query=$q&dataType=Foundation,SR%20Legacy&pageSize=1&api_key=$key"
     }
 
@@ -85,7 +85,7 @@ object OnlineData {
             val m = n as? Map<*, *> ?: continue
             val number = m["nutrientNumber"]?.toString() ?: continue
             val value = (m["value"] as? Number)?.toFloat() ?: continue
-            values.putIfAbsent(number, value)
+            if (number !in values) values[number] = value
         }
         val energy = values["208"] ?: return null
         return FdcResult(

@@ -32,7 +32,7 @@ object VendorRegistry {
     /** A purchase link for a variety, or null while vendors are placeholders. */
     fun purchaseLink(seed: SeedEntity, vendor: Vendor): PurchaseLink? {
         val template = vendor.searchUrlTemplate ?: return null
-        val query = java.net.URLEncoder.encode(seed.commonName, "UTF-8")
+        val query = urlEncode(seed.commonName)
         return PurchaseLink(vendor, template.replace("{query}", query))
     }
 }

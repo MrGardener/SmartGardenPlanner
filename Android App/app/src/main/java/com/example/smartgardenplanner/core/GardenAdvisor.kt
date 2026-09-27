@@ -129,7 +129,7 @@ object RecommendationEngine {
                     score -= 3
                 } else {
                     score += 1
-                    reasons += "Suits pH ${"%.1f".format(soil.ph)}"
+                    reasons += "Suits pH ${(soil.ph).fmt(1)}"
                 }
             }
             if (context.zone != null) {
@@ -141,7 +141,7 @@ object RecommendationEngine {
                 }
             }
             if (sunHours != null) {
-                reasons += "Gets ~${"%.1f".format(sunHours)} h sun (needs ${crop.sun.minHours.toInt()}+)"
+                reasons += "Gets ~${(sunHours).fmt(1)} h sun (needs ${crop.sun.minHours.toInt()}+)"
                 score += 1
             }
             if (flood != null) reasons += "Tolerates wet ground"
@@ -236,7 +236,7 @@ object HarmonyAnalyzer {
                 issues += HarmonyIssue(if (seed.lifecycle == "PERENNIAL") Severity.HIGH else Severity.LOW, it)
             }
             if (SoilAnalyzer.phMismatch(soil, crop)) {
-                issues += HarmonyIssue(Severity.MEDIUM, "$name prefers pH ${crop.phMin}–${crop.phMax}; this plot is ${"%.1f".format(soil.ph)}.")
+                issues += HarmonyIssue(Severity.MEDIUM, "$name prefers pH ${crop.phMin}–${crop.phMax}; this plot is ${soil.ph?.fmt(1)}.")
             }
         }
 
@@ -247,10 +247,10 @@ object HarmonyAnalyzer {
         for ((node, seed) in planted) {
             val name = CropReference.speciesName(seed)
             val crop = CropReference.forSeed(seed)
-            if (!PlotShape.contains(context.plot, node.coordinateXM, node.coordinateYM)) outside.merge(name, 1, Int::plus)
-            if (context.floodZoneAt(node.coordinateXM, node.coordinateYM) != null && !crop.floodTolerant) flooded.merge(name, 1, Int::plus)
+            if (!PlotShape.contains(context.plot, node.coordinateXM, node.coordinateYM)) outside[name] = (outside[name] ?: 0) + 1
+            if (context.floodZoneAt(node.coordinateXM, node.coordinateYM) != null && !crop.floodTolerant) flooded[name] = (flooded[name] ?: 0) + 1
             val sun = context.sunHoursAt(node.coordinateXM, node.coordinateYM)
-            if (sun != null && sun < crop.sun.minHours - 0.5) shaded.merge(name, 1, Int::plus)
+            if (sun != null && sun < crop.sun.minHours - 0.5) shaded[name] = (shaded[name] ?: 0) + 1
         }
         outside.forEach { (n, c) -> issues += HarmonyIssue(Severity.HIGH, "$c $n plant${if (c == 1) " is" else "s are"} outside the plot outline.") }
         flooded.forEach { (n, c) -> issues += HarmonyIssue(Severity.MEDIUM, "$c $n plant${if (c == 1) " is" else "s are"} in an area that floods; $n doesn't like wet feet. Move it or plant in a raised bed.") }

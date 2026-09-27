@@ -82,6 +82,11 @@ duplicate. The rules are what must not be duplicated, and they are shared in bot
 
 ## 3. Work plan
 
+**Status 2026-09-27 (owner chose option A):** W1 done (core has no Java-only calls; `PlatformClock` per platform;
+Room annotations stubbed for JS; compiled with the Kotlin JS CLI compiler instead of converting to a Gradle KMP
+module). W2 done (`web/src/app`). W3 partly (web-saved file decoded on the JVM). W4 partly (single file,
+Chromium smoke test in CI). W5, W6 open.
+
 | Step | Work | Result |
 |---|---|---|
 | W1 | Turn `core/` into a Kotlin Multiplatform module (`commonMain`): replace the few Java-only calls (dates, `String.format`, `Math`) with multiplatform equivalents; keep the Room entities as plain data classes with Android-only annotations in `androidMain`. | The same core builds for Android and JS; every existing host test also runs on JS. |

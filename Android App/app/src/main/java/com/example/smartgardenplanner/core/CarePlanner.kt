@@ -49,8 +49,8 @@ object CarePlanner {
         val prep = mutableListOf<String>()
         prep += if ((soil.organicPct ?: 0f) >= 5f) "Top up with a thin layer of compost" else "Work 2–3 cm of compost into the beds"
         soil.ph?.let { ph ->
-            if (ph < 6.0f) prep += "apply garden lime (soil pH ${"%.1f".format(ph)})"
-            if (ph > 7.5f) prep += "work in elemental sulfur for acid-loving crops (soil pH ${"%.1f".format(ph)})"
+            if (ph < 6.0f) prep += "apply garden lime (soil pH ${(ph).fmt(1)})"
+            if (ph > 7.5f) prep += "work in elemental sulfur for acid-loving crops (soil pH ${(ph).fmt(1)})"
         }
         events += FertilizeEvent(earliestPlanting, listOf("All beds"), prep.joinToString("; ") + ".")
 
@@ -95,13 +95,10 @@ object CarePlanner {
     }
 
     private fun nextSpring(from: Long): Long {
-        val cal = java.util.Calendar.getInstance()
-        cal.timeInMillis = from
-        val year = cal.get(java.util.Calendar.YEAR)
-        cal.clear()
-        cal.set(year, java.util.Calendar.MARCH, 15)
-        if (cal.timeInMillis < from) cal.set(year + 1, java.util.Calendar.MARCH, 15)
-        return cal.timeInMillis
+        val offset = PlatformClock.localOffsetMillis(from)
+        val year = CivilDate.year(from, offset)
+        val thisYear = CivilDate.localMidnight(year, 3, 15, offset)
+        return if (thisYear < from) CivilDate.localMidnight(year + 1, 3, 15, offset) else thisYear
     }
 
     // ---------------------------------------------------------------- FR-018 pest-management plan
@@ -211,7 +208,7 @@ object CarePlanner {
         tasks += CareTask(
             type = CareTaskType.WATER,
             title = if (rainSkip) "Skip watering — rain" else "Water ${context.plot.name}",
-            detail = if (rainSkip) "About ${"%.0f".format(rainMm)} mm of rain in the last day and next day. That covers watering."
+            detail = if (rainSkip) "About ${rainMm?.fmt(0)} mm of rain in the last day and next day. That covers watering."
             else "Deep watering every $interval day${if (interval == 1) "" else "s"} for these crops and this soil. Water at the base in the morning.",
             dueEpochMillis = waterDue,
             isDue = waterDue <= nowEpochMillis && !rainSkip,

@@ -120,7 +120,7 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-027 | Plan an area for me | Pick a plot and an area, list what to plant and how many; the app places everything: tall plants away from the midday sun, sun lovers in the sunniest spots, corn in blocks, pollinator plants among the crops that need bees, similar watering needs together, companions side by side. Preview, then plant or cancel. | All | FR-028 (direction), FR-005/006 (sun) | **Implemented — Awaiting Your Confirmation** |
 | FR-028 | Plot direction and ZIP | Say which way the plot's top edge faces (creator, direction dialog, Site tab); compass on the layout; warning until set. ZIP fills latitude/longitude offline and the zone offline or online. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-029 | Portable plan files | Save one or all plots to a `.sgp.json` file and open such files as new plots, on any device. | All | — | **Implemented — Awaiting Your Confirmation** |
-| FR-030 | Planner on a computer | No-install browser planner for Windows, macOS, Linux and ChromeOS, sharing the same rules and plan files (docs/CROSS_PLATFORM_PLAN.md). | All | FR-029 | Not Started — waiting on your choice (option A or B) |
+| FR-030 | Planner on a computer | No-install browser planner for Windows, macOS, Linux and ChromeOS, sharing the same rules and plan files (docs/CROSS_PLATFORM_PLAN.md, option A). One file: `web/dist/smart-garden-planner.html`. | All | FR-029 | **Implemented — Awaiting Your Confirmation** (tested in Chromium/Linux; other browsers to test) |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
 ---
@@ -225,6 +225,11 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (computer planner)**: FR-030 built as option A: one portable HTML file (`web/dist/smart-garden-planner.html`)
+  that runs in any modern browser, offline, with no install. It uses the same planning code as the phone (compiled
+  to JavaScript) and opens/saves the same `.sgp.json` files. Includes plots, planting, paths, obstacles and areas
+  with move/undo, shade, Plan an area for me, Harmony, Suggestions, Care and Food.
 
 - **2026-09-27 (guided planting)**: Added and implemented FR-027 (Plan an area for me), FR-028 (plot direction
   and ZIP), FR-029 (portable plan files), and the obstacle move/undo fix. Added FR-030 (computer planner) as

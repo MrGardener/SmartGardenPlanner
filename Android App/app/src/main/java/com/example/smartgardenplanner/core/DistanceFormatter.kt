@@ -33,7 +33,7 @@ object DistanceFormatter {
     /** Formats a meters value for display, e.g. "3.25m" or "128.0in", respecting the chosen unit. */
     fun format(meters: Float, unit: DistanceUnit, decimals: Int = 2): String {
         val value = metersToDisplay(meters, unit)
-        return "%.${decimals}f${unit.suffix}".format(value)
+        return value.fmt(decimals) + unit.suffix
     }
 
     /** Parses user-entered text (already in the given display unit) back to meters, or null if invalid. */

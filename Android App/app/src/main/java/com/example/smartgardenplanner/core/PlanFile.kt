@@ -45,25 +45,27 @@ object PlanFileCodec {
                 c == '\n' -> sb.append("\\n")
                 c == '\r' -> sb.append("\\r")
                 c == '\t' -> sb.append("\\t")
-                c < ' ' -> sb.append("\\u%04x".format(c.code))
+                c < ' ' -> sb.append("\\u" + c.code.toString(16).padStart(4, '0'))
                 else -> sb.append(c)
             }
             sb.append('"')
         }
         fun num(v: Double) {
             if (!v.isFinite()) { sb.append("null"); return }
-            val r = Math.round(v * 10000.0) / 10000.0
-            if (r == Math.floor(r) && kotlin.math.abs(r) < 1e15) sb.append(r.toLong()) else sb.append(r)
+            val r = kotlin.math.floor(v * 10000.0 + 0.5) / 10000.0
+            if (r == kotlin.math.floor(r) && kotlin.math.abs(r) < 1e15) sb.append(r.toLong()) else sb.append(r.toString())
         }
         fun value(v: Any?) {
             when (v) {
                 null -> sb.append("null")
                 is String -> str(v)
                 is Boolean -> sb.append(v)
-                is Int -> sb.append(v)
-                is Long -> sb.append(v)
+                // Float/Double before Int: on Kotlin/JS every number passes `is Int`, so this order keeps
+                // the 4-decimal rounding on both platforms (integers still print without a decimal point).
                 is Float -> num(v.toDouble())
                 is Double -> num(v)
+                is Int -> sb.append(v)
+                is Long -> sb.append(v)
                 is Map<*, *> -> {
                     sb.append('{')
                     var first = true
@@ -85,18 +87,9 @@ object PlanFileCodec {
         }
     }
 
-    private fun iso(millis: Long): String {
-        val f = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-        f.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        return f.format(java.util.Date(millis))
-    }
+    private fun iso(millis: Long): String = CivilDate.isoUtc(millis)
 
-    private fun parseIso(s: String?): Long? {
-        if (s == null) return null
-        val f = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-        f.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        return try { f.parse(s)?.time } catch (e: java.text.ParseException) { null }
-    }
+    private fun parseIso(s: String?): Long? = CivilDate.parseIsoUtc(s)
 
     private fun points(json: String?): List<List<Float>> = PlotGeometry.parsePoints(json).map { listOf(it.x, it.y) }
 
@@ -154,7 +147,7 @@ object PlanFileCodec {
         val root = linkedMapOf<String, Any?>(
             "format" to FORMAT,
             "version" to VERSION,
-            "exportedAt" to iso(if (bundle.exportedAtMillis > 0) bundle.exportedAtMillis else System.currentTimeMillis()),
+            "exportedAt" to iso(if (bundle.exportedAtMillis > 0) bundle.exportedAtMillis else PlatformClock.nowMillis()),
             "app" to "Smart Garden Planner $appVersion".trim(),
             "units" to "metres",
             "plots" to plots,
@@ -259,8 +252,8 @@ object PlanFileCodec {
                 soilSandPct = pct("sandPct"), soilSiltPct = pct("siltPct"), soilClayPct = pct("clayPct"),
                 soilOrganicPct = pct("organicPct"),
                 soilPh = soil?.num("ph")?.toFloat()?.takeIf { it in 3f..10f },
-                createdTimestamp = parseIso(m.text("createdAt", 30)) ?: System.currentTimeMillis(),
-                lastModifiedTimestamp = parseIso(m.text("modifiedAt", 30)) ?: System.currentTimeMillis()
+                createdTimestamp = parseIso(m.text("createdAt", 30)) ?: PlatformClock.nowMillis(),
+                lastModifiedTimestamp = parseIso(m.text("modifiedAt", 30)) ?: PlatformClock.nowMillis()
             )
 
             val plantsJson = (m["plants"] as? List<*>).orEmpty()
@@ -274,7 +267,7 @@ object PlanFileCodec {
                 pm.text("variety", 100)?.let { names[code] = it }
                 PlantedNodeEntity(
                     plotId = 0, seedCode = code, coordinateXM = x, coordinateYM = y,
-                    datePlantedEpochMillis = parseIso(pm.text("plantedAt", 30)) ?: System.currentTimeMillis(),
+                    datePlantedEpochMillis = parseIso(pm.text("plantedAt", 30)) ?: PlatformClock.nowMillis(),
                     germinationFlagResolved = pm["germinationResolved"] == true
                 )
             }
