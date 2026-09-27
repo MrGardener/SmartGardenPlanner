@@ -100,7 +100,8 @@ object BlockPlanner {
         // Order: climbers (back edge), sprawling vines (they claim the sunny edge and its runway), then the rest tallest
         // first, pollinator plants last.
         fun rank(r: PlantRequest): Int { val h = VineHabits.of(r.seed); return when { h?.climber == true -> 0; isPollinator(r.seed) -> 3; h != null -> 1; else -> 2 } }
-        val order = wanted.sortedWith(compareBy<PlantRequest> { rank(it) }.thenByDescending { heights.getValue(it.seed.botanicalCode) })
+        // FR-043: the plants marked most important go first, so they claim the sunniest spots that suit them.
+        val order = wanted.sortedWith(compareBy<PlantRequest> { if (it.priority) 0 else 1 }.thenBy { rank(it) }.thenByDescending { heights.getValue(it.seed.botanicalCode) })
 
         val sunMemo = HashMap<Long, Double?>()
         fun sunAt(x: Float, y: Float): Double? {
@@ -195,7 +196,8 @@ object BlockPlanner {
                             score -= abs(meanDepth - target) * 4.0
                             if (sunKnown) {
                                 val need = crop.sun.minHours.toDouble()
-                                score -= pts.map { p -> sunAt(p.x, p.y)?.let { h -> max(0.0, need - h) / need } ?: 0.0 }.average() * 5.0
+                                score -= pts.map { p -> sunAt(p.x, p.y)?.let { h -> max(0.0, need - h) / need } ?: 0.0 }.average() * (if (req.priority) 15.0 else 5.0)
+                                if (req.priority) score += pts.map { p -> sunAt(p.x, p.y) ?: 8.0 }.average() / 2.0
                             }
                             if (past.isNotEmpty()) score -= pts.map { rotationPenalty(it) }.average()
                             if (isPollinator(seed) && insectCentres.isNotEmpty()) {
@@ -279,6 +281,13 @@ object BlockPlanner {
         if (rotationAvoided > 0 || rotationStuck > 0) {
             notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
             else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."
+        }
+        val important = wanted.filter { it.priority }.map { CropReference.speciesKey(it.seed) }.toSet()
+        if (important.isNotEmpty()) {
+            val mine = result.filter { CropReference.speciesKey(it.seed) in important }
+            val names = mine.map { CropReference.speciesName(it.seed) }.distinct().joinToString(", ")
+            if (mine.isNotEmpty()) notes += if (sunKnown) "Most important first: $names went in first, in the sunniest spots that suit them (about ${mine.map { sunAt(it.x, it.y) ?: 8.0 }.average().fmt(1)} hours of sun on average)."
+            else "Most important first: $names went in first."
         }
         if (!orientationKnown) notes += "The plot's compass direction isn't set, so the top edge is assumed to face north. Set it for accurate sun placement."
         notes += if (sunKnown) "Full-sun crops got the sunniest spots, using your sun/shade areas and the shade from obstacles." else "No obstacles or sun/shade areas are marked, so the whole area is treated as full sun."

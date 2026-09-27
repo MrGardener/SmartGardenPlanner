@@ -18,7 +18,9 @@ data class PlanPlot(
     val paths: List<PathZoneEntity>,
     val features: List<SiteFeatureEntity>,
     /** Plants of finished seasons (FR-033). Optional in the file; older readers ignore it. */
-    val history: List<PlantingHistoryEntity> = emptyList()
+    val history: List<PlantingHistoryEntity> = emptyList(),
+    /** Satellite photo under the plot (FR-046), as a data URL; placement is in [PlotEntity.backdropJson]. */
+    val backdropImage: String? = null
 )
 
 data class PlanBundle(val plots: List<PlanPlot>, val customVarieties: List<SeedEntity>, val exportedAtMillis: Long = 0L)
@@ -109,6 +111,10 @@ object PlanFileCodec {
                 "orientation" to mapOf("topFacesDeg" to p.northBearingDeg, "set" to p.orientationSet),
                 "location" to mapOf("zip" to p.locationZip, "latitude" to p.latitude, "longitude" to p.longitude, "hardinessZone" to p.hardinessZone),
                 "soil" to mapOf("sandPct" to p.soilSandPct, "siltPct" to p.soilSiltPct, "clayPct" to p.soilClayPct, "organicPct" to p.soilOrganicPct, "ph" to p.soilPh),
+                "pests" to Pest.parse(p.pests).map { it.name }.takeIf { it.isNotEmpty() },
+                "backdrop" to Backdrop.parse(p.backdropJson)?.takeIf { Backdrop.isImageDataUrl(pp.backdropImage) }?.let { b ->
+                    mapOf("image" to pp.backdropImage, "x" to b.xM, "y" to b.yM, "widthM" to b.widthM, "rotationDeg" to b.rotationDeg, "opacity" to b.opacity, "aspect" to b.aspect, "visible" to b.visible)
+                },
                 "createdAt" to iso(p.createdTimestamp),
                 "modifiedAt" to iso(p.lastModifiedTimestamp),
                 "plants" to pp.plants.map { n ->
@@ -249,6 +255,12 @@ object PlanFileCodec {
             val soil = m["soil"] as? Map<*, *>
             val lat = location?.num("latitude")?.takeIf { it in -90.0..90.0 }
             val lon = location?.num("longitude")?.takeIf { it in -180.0..180.0 }
+            val backdrop = (m["backdrop"] as? Map<*, *>)?.let { bm ->
+                val image = bm["image"] as? String
+                if (!Backdrop.isImageDataUrl(image)) { warnings += "Plot '$name': its satellite photo was missing, too large or not an image, and was dropped."; return@let null }
+                val b = Backdrop.parse(listOf("x", "y", "widthM", "rotationDeg", "opacity", "aspect").joinToString(";") { k -> bm.num(k)?.toString() ?: "x" } + if (bm["visible"] == false) ";h" else "")
+                if (b == null) { warnings += "Plot '$name': its satellite photo placement was invalid, and the photo was dropped."; null } else b to image!!
+            }
             fun pct(key: String) = soil?.num(key)?.toFloat()?.takeIf { it in 0f..100f }
             val plot = PlotEntity(
                 name = name,
@@ -265,6 +277,8 @@ object PlanFileCodec {
                 soilSandPct = pct("sandPct"), soilSiltPct = pct("siltPct"), soilClayPct = pct("clayPct"),
                 soilOrganicPct = pct("organicPct"),
                 soilPh = soil?.num("ph")?.toFloat()?.takeIf { it in 3f..10f },
+                pests = Pest.encode((m["pests"] as? List<*>).orEmpty().mapNotNull { Pest.of(it as? String) }),
+                backdropJson = backdrop?.first?.encode(),
                 createdTimestamp = parseIso(m.text("createdAt", 30)) ?: PlatformClock.nowMillis(),
                 lastModifiedTimestamp = parseIso(m.text("modifiedAt", 30)) ?: PlatformClock.nowMillis()
             )
@@ -339,7 +353,7 @@ object PlanFileCodec {
                 )
             }
             if (badHistory > 0) warnings += "Plot '$name': $badHistory past planting(s) skipped (invalid season, variety or position)."
-            plots += PlanPlot(plot, plants, paths, features, history)
+            plots += PlanPlot(plot, plants, paths, features, history, backdrop?.second)
         }
         if (plots.isEmpty()) return PlanDecodeResult(null, names, listOf("No usable plots in the file.") + warnings, warnings)
         return PlanDecodeResult(PlanBundle(plots, custom, parseIso(root["exportedAt"] as? String) ?: 0L), names, emptyList(), warnings)

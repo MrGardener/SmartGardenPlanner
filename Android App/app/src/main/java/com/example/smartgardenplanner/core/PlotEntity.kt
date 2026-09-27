@@ -49,5 +49,8 @@ data class PlotEntity(
     val soilPh: Float? = null,
     // --- Schema 9 (MIGRATION_8_9) ---
     @ColumnInfo(defaultValue = "0")
-    val orientationSet: Boolean = false          // FR-028: true once the user has said which way the plot faces
+    val orientationSet: Boolean = false,         // FR-028: true once the user has said which way the plot faces
+    // --- Schema 11 (MIGRATION_10_11) ---
+    val pests: String? = null,                   // FR-042: pests seen in the yard, "DEER,RABBIT,…" (see Pest)
+    val backdropJson: String? = null             // FR-046: satellite photo placement (see Backdrop)
 )

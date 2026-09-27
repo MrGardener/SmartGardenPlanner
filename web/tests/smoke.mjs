@@ -44,7 +44,12 @@ const btn = name => page.getByRole('button', { name, exact: true });
 
 await page.goto('file://' + file);
 await page.waitForSelector('.modal');
+check((await page.locator('.modal-title').innerText()).includes('not a guarantee'), 'disclaimer shown before first use');
+check((await page.locator('.modal').innerText()).includes('does not guarantee'), 'disclaimer says results are not guaranteed');
+await btn('I understand').click();
+await page.waitForSelector('.modal');
 check(await page.locator('.modal-title').innerText() === 'How to use Smart Garden Planner', 'help opens on first visit');
+check((await page.locator('.modal').innerText()).includes('Disclaimer'), 'help repeats the disclaimer');
 await btn('Close').click();
 
 // New plot with ZIP -> zone lookup and orientation.
@@ -59,10 +64,14 @@ const zone = await modal.locator('select').inputValue();
 check(zone === '6a' || zone === '6b', `ZIP 48104 fills zone (${zone})`);
 check((await modal.innerText()).includes('latitude 42.'), 'ZIP fills latitude');
 await modal.getByRole('button', { name: 'S', exact: true }).click();
+check((await modal.innerText()).includes('What pests or animals do you see'), 'new plot asks which pests visit the yard');
+await modal.locator('label.chip-check', { hasText: 'Deer' }).locator('input').check();
+await modal.locator('label.chip-check', { hasText: 'Raccoons' }).locator('input').check();
 await btn('Create plot').click();
 let d = await draft();
 check(d && d.plots.length === 1 && d.plots[0].name === 'Test bed', 'plot created and autosaved');
 check(d.plots[0].orientation.set === true && d.plots[0].orientation.topFacesDeg === 180, 'orientation saved');
+check(JSON.stringify(d.plots[0].pests) === '["DEER","RACCOON"]', `pests saved with the plot (${JSON.stringify(d.plots[0].pests)})`);
 
 // Plant a tomato.
 await page.getByPlaceholder(/Search .* varieties/).fill('Brandywine');
@@ -199,9 +208,16 @@ await page.locator('.plan-row .grow input').first().fill('Sweet Corn - Silver Qu
 await page.locator('.plan-row .grow input').first().dispatchEvent('change');
 await page.locator('.plan-row input.count').first().fill('20');
 await page.locator('.plan-row input.count').first().dispatchEvent('input');
+await page.locator('.plan-row .star').first().click();
+const checksText = await page.locator('.plan-checks').innerText();
+check(checksText.includes('Checks before planning') && checksText.includes('Space:'), 'checks shown before planning');
+check(checksText.includes('Most important: Sweet Corn'), 'starred plant listed as most important');
+check(checksText.includes('raccoons go for Sweet Corn'), 'checks warn about the yard\'s pests');
+await page.screenshot({ path: path.join(shots, 'sgp-web-checks.png') });
 await btn('Plan it').click();
 await page.locator('#sgp-preview:not(.hidden)').waitFor();
 const proposal = await page.locator('#sgp-preview').innerText();
+check(proposal.includes('Most important first: Sweet Corn'), 'proposal says the most important plants went first');
 check(proposal.includes('4 rows of 5'), 'organised clump: 20 corn in 4 rows of 5');
 check(proposal.includes('walkway'), 'proposal mentions walkways for watering');
 await btn('Keep this plan').click();
@@ -317,6 +333,44 @@ await page.screenshot({ path: path.join(shots, 'sgp-web-water.png') });
 await page.getByRole('button', { name: 'Water: on' }).click();
 await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
 
+// Care: pests in the yard and watering advice.
+await page.locator('.tabs .tab', { hasText: /^Care$/ }).click();
+const care = await page.locator('.panel-body').innerText();
+check(care.includes('Pests and animals in your yard') && care.includes('2.4 m (8 ft)'), 'Care shows deer fencing advice');
+check(care.includes('Raccoons — goes for your Sweet Corn'), 'Care names the plants raccoons go for');
+check(care.includes('Watering and irrigation') && care.includes('Water map'), 'Care shows watering with the irrigation tools');
+check(care.includes('A planning aid only'), 'Care repeats the short disclaimer');
+await page.locator('.panel-body').getByRole('button', { name: 'Rabbits' }).click();
+d = await draft();
+check(d.plots[0].pests.includes('RABBIT'), 'pests can be changed on the Care tab');
+await page.screenshot({ path: path.join(shots, 'sgp-web-care.png'), fullPage: true });
+
+// Satellite photo: add a picture, set its scale from two points, move it.
+const png = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 400; c.height = 300; const g = c.getContext('2d'); g.fillStyle = '#4d7c0f'; g.fillRect(0, 0, 400, 300); g.fillStyle = '#78716c'; g.fillRect(40, 40, 120, 60); return c.toDataURL('image/png').split(',')[1]; });
+const pngPath = path.join(shots, 'sgp-yard.png');
+fs.writeFileSync(pngPath, Buffer.from(png, 'base64'));
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+check((await page.locator('.panel-body').innerText()).includes('Satellite photo'), 'Plot tab has a satellite photo section');
+check(await btn('Open Google Maps (satellite)').isVisible(), 'button to open Google Maps in satellite view');
+const [photoChooser] = await Promise.all([page.waitForEvent('filechooser'), btn('Add photo…').click()]);
+await photoChooser.setFiles(pngPath);
+await page.waitForFunction(() => (JSON.parse(localStorage.getItem('sgp.draft') || '{}').plots || [])[0]?.backdrop);
+d = await draft();
+check(d.plots[0].backdrop.image.startsWith('data:image/jpeg;base64,') && Math.abs(d.plots[0].backdrop.widthM - 8) < 0.01, 'photo added across the plot width');
+check(await page.locator('#sgp-svg image.backdrop-photo').count() === 1, 'photo drawn under the plot');
+await clickMetres(1, 1);
+await clickMetres(3, 1);
+await page.locator('.modal').waitFor();
+await page.locator('.modal input').fill('4');
+await btn('Set scale').click();
+d = await draft();
+check(Math.abs(d.plots[0].backdrop.widthM - 16) < 0.01 && Math.abs(d.plots[0].backdrop.x + 1) < 0.01, `scale set from two points (${d.plots[0].backdrop.widthM} m wide)`);
+await drag(2, 2, 3, 2.5);
+d = await draft();
+check(Math.abs(d.plots[0].backdrop.x - 0) < 0.05 && Math.abs(d.plots[0].backdrop.y + 0.5) < 0.05, `photo moved by dragging (${d.plots[0].backdrop.x}, ${d.plots[0].backdrop.y})`);
+await page.screenshot({ path: path.join(shots, 'sgp-web-photo.png') });
+await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+
 // Duplicate the plot (with its history), then delete the copy.
 await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
 check(await btn('Duplicate…').isVisible(), 'Duplicate… button at the top of the Plot tab');
@@ -325,6 +379,7 @@ await page.locator('.modal').waitFor();
 await btn('Duplicate').click();
 d = await draft();
 check(d.plots.length === 2 && d.plots[1].history.length === historyCount && d.plots[1].name.endsWith('(copy)'), 'duplicate carries the site and history');
+check(d.plots[1].backdrop && d.plots[1].pests.includes('DEER'), 'duplicate carries the photo and pests');
 await btn('Delete plot').click();
 await page.locator('.modal').getByRole('button', { name: 'Delete', exact: true }).click();
 d = await draft();
@@ -344,6 +399,7 @@ await download.saveAs(saved);
 const json = JSON.parse(fs.readFileSync(saved, 'utf8'));
 check(json.format === 'smart-garden-plan' && json.version === 1, 'saved file has the plan-file header');
 check(json.plots.length === 1 && json.plots[0].history.length === historyCount, 'saved file has the season history');
+check(json.plots[0].backdrop?.image?.startsWith('data:image/') && json.plots[0].pests.length === 3, 'saved file has the satellite photo and pests');
 
 // Reload: draft restored.
 await page.reload();

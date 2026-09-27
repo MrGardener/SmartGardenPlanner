@@ -22,7 +22,7 @@ const val WEB_VERSION = "1.0"
 
 enum class PreviewMode { NORMAL, NEXT_SEASON, ROTATION }
 
-data class Snap(val plot: PlotEntity, val plants: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>, val features: List<SiteFeatureEntity>, val history: List<PlantingHistoryEntity>)
+data class Snap(val plot: PlotEntity, val plants: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>, val features: List<SiteFeatureEntity>, val history: List<PlantingHistoryEntity>, val backdropImage: String?)
 
 /** One plot being edited, with its own undo/redo history (every change is one step, as on the phone). */
 class WebPlot(var plot: PlotEntity, plants: List<PlantedNodeEntity>, paths: List<PathZoneEntity>, features: List<SiteFeatureEntity>, history: List<PlantingHistoryEntity> = emptyList()) {
@@ -31,10 +31,12 @@ class WebPlot(var plot: PlotEntity, plants: List<PlantedNodeEntity>, paths: List
     var features = features
     /** Plants of finished seasons (FR-033). */
     var history = history
+    /** Satellite photo under the plot (FR-046), a data URL; its placement is plot.backdropJson. */
+    var backdropImage: String? = null
     val undo = ArrayDeque<Snap>()
     val redo = ArrayDeque<Snap>()
-    fun snap() = Snap(plot, plants, paths, features, history)
-    fun restore(s: Snap) { plot = s.plot; plants = s.plants; paths = s.paths; features = s.features; history = s.history }
+    fun snap() = Snap(plot, plants, paths, features, history, backdropImage)
+    fun restore(s: Snap) { plot = s.plot; plants = s.plants; paths = s.paths; features = s.features; history = s.history; backdropImage = s.backdropImage }
     /** The season being planned (FR-033). */
     fun season(): Int = Seasons.currentSeason(plants, history)
 }
@@ -70,6 +72,10 @@ object Prefs {
     var showLabels: Boolean
         get() = get("labels") != "0"
         set(v) = set("labels", if (v) "1" else "0")
+    /** The disclaimer was read and accepted in this browser (FR-044). */
+    var disclaimerAccepted: Boolean
+        get() = get("disclaimer") == "1"
+        set(v) = set("disclaimer", if (v) "1" else "0")
     var organic: Boolean
         get() = get("care") != "CONVENTIONAL"
         set(v) = set("care", if (v) "ORGANIC" else "CONVENTIONAL")
@@ -86,6 +92,10 @@ object Store {
     var previewArea: List<PlotPoint>? = null
     /** The rows of the plan being edited (variety code, count); kept when a proposal is discarded (FR-034). */
     val planRows = mutableListOf<Pair<String, Int>>()
+    /** Varieties marked "most important" in that list (FR-043). */
+    val planPriority = mutableSetOf<String>()
+    /** True when the browser draft had to be kept without the satellite photos (not enough browser storage). */
+    var draftWithoutPhotos = false
         /** Past season shown faintly under this season's plants (null = none). */
     var historyYear: Int? = null
     /** Past season shown instead of this season, read-only (FR-037); null = the season being planned. */
@@ -154,8 +164,8 @@ object Store {
         touched()
     }
 
-    fun encode(): String = PlanFileCodec.encode(
-        PlanBundle(plots.map { PlanPlot(it.plot, it.plants, it.paths, it.features, it.history) }, emptyList(), PlatformClock.nowMillis()),
+    fun encode(withPhotos: Boolean = true): String = PlanFileCodec.encode(
+        PlanBundle(plots.map { PlanPlot(it.plot, it.plants, it.paths, it.features, it.history, if (withPhotos) it.backdropImage else null) }, emptyList(), PlatformClock.nowMillis()),
         { Catalog.get(it) }, "web $WEB_VERSION"
     )
 
@@ -177,7 +187,7 @@ object Store {
                 pp.plot.copy(id = newId()), plants,
                 pp.paths.map { it.copy(id = newId()) }, pp.features.map { it.copy(id = newId()) },
                 pp.history.map { it.copy(id = newId()) }
-            )
+            ).also { it.backdropImage = pp.backdropImage }
         }
         if (unknown > 0) messages += "$unknown plant(s) use varieties this planner doesn't know and were skipped."
         current = if (plots.isEmpty()) -1 else 0
@@ -190,7 +200,14 @@ object Store {
     }
 
     fun autosave() {
-        try { window.localStorage.setItem("sgp.draft", encode()); window.localStorage.setItem("sgp.draftName", fileName) } catch (e: Throwable) {}
+        try {
+            window.localStorage.setItem("sgp.draftName", fileName)
+            try { window.localStorage.setItem("sgp.draft", encode()); draftWithoutPhotos = false }
+            catch (e: Throwable) {
+                // Photos can be bigger than the browser allows; keep everything else, and the file keeps the photos.
+                window.localStorage.setItem("sgp.draft", encode(withPhotos = false)); draftWithoutPhotos = plots.any { it.backdropImage != null }
+            }
+        } catch (e: Throwable) {}
     }
 
     fun draft(): Pair<String, String>? = try {

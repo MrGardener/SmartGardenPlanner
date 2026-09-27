@@ -44,7 +44,7 @@ import java.io.File
         NutritionEntity::class,
         PlantingHistoryEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

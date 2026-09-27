@@ -59,7 +59,7 @@ object App {
         }
         if (Store.plots.isEmpty()) status("Welcome! Create a plot or open a .sgp.json plan file. Press ? for help.")
         render()
-        if (Store.plots.isEmpty()) Dialogs.help()
+        if (!Prefs.disclaimerAccepted) Dialogs.disclaimer { if (Store.plots.isEmpty()) Dialogs.help() } else if (Store.plots.isEmpty()) Dialogs.help()
     }
 
     fun render() {
@@ -209,6 +209,8 @@ object App {
         Tool.entries.forEach { t ->
             tools.add(button(t.label, if (Canvas.tool == t) "tool on" else "tool", t.hint) {
                 if (t == Tool.PLANT && Canvas.activeSeed == null) Panels.tab = Tab.PLANTS
+                if (t == Tool.PHOTO || t == Tool.WATER) Panels.tab = Tab.PLOT
+                if (t == Tool.PHOTO) Photo.calibrating = false
                 Canvas.setTool(t)
             })
         }

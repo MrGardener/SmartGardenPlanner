@@ -224,4 +224,12 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+/** Schema 11: pests seen in the yard (FR-042) and the satellite photo placement (FR-046) on plots. */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN pests TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN backdropJson TEXT")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)

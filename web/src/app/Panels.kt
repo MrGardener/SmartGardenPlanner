@@ -82,7 +82,8 @@ object Panels {
         )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))
 
-                seasons(body, wp)
+        Photo.section(body, wp)
+        seasons(body, wp)
         irrigation(body, wp)
 
         body.add(heading("Draw what's on the site"))
@@ -244,10 +245,11 @@ object Panels {
     private fun care(body: HTMLElement, wp: WebPlot) {
         val ctx = Store.context(wp)
         val pref = if (Prefs.organic) CarePreference.ORGANIC else CarePreference.CONVENTIONAL
-        if (wp.plants.isEmpty()) { body.add(para("Plant something to see watering, feeding and pest advice.", "hint")); return }
-                body.add(heading("How each plant gets water"))
-        com.example.smartgardenplanner.core.Irrigation.report(wp.plot, wp.plants, wp.features, { Catalog.get(it) }).forEach { body.add(para(it, if (it.startsWith("⚠")) "warn" else "hint")) }
-        body.add(heading("Watering"))
+        body.add(para(com.example.smartgardenplanner.core.Disclaimer.SHORT, "hint disclaimer"))
+        wildlife(body, wp)
+        watering(body, wp)
+        if (wp.plants.isEmpty()) { body.add(para("Plant something to see a watering schedule, feeding plan and plant pests to watch.", "hint")); return }
+        body.add(heading("Watering schedule"))
         val days = CarePlanner.wateringIntervalDays(ctx)
         body.add(para("Deep-water about every $days day${if (days == 1) "" else "s"} (thirstiest crop, adjusted for your soil). Water at the base in the morning; skip after a good rain.", "p"))
         CarePlanner.dueTasks(ctx, emptyList(), pref, PlatformClock.nowMillis(), null, 10.0).forEach { t ->
@@ -265,6 +267,57 @@ object Panels {
                 para("Look for: ${a.scouting}", "hint"), para("Prevent: ${a.prevention}", "hint"), para("Treat: ${a.control}", "hint")
             )))
         }
+    }
+
+    /** FR-042: pests and animals the user sees in the yard, with prevention and the plants at risk. */
+    private fun wildlife(body: HTMLElement, wp: WebPlot) {
+        val chosen = com.example.smartgardenplanner.core.Pest.parse(wp.plot.pests)
+        body.add(heading("Pests and animals in your yard"))
+        body.add(para("Tick what you see regularly; the tips below change to match.", "hint"))
+        body.add(h("div", "chips", kids = com.example.smartgardenplanner.core.Pest.entries.map { p ->
+            val on = p in chosen
+            button(p.label, if (on) "chip on" else "chip", if (on) "Seen in my yard (click to remove)" else "Click if you see this in your yard") {
+                val next = if (on) chosen - p else chosen + p
+                Store.change { it.plot = it.plot.copy(pests = com.example.smartgardenplanner.core.Pest.encode(next)) }
+                App.render()
+            }
+        }))
+        val seeds = wp.plants.mapNotNull { Catalog.get(it.seedCode) }
+        val risks = com.example.smartgardenplanner.core.PestAdvisor.risks(chosen, seeds)
+        chosen.forEach { p ->
+            val atRisk = risks.first { it.pest == p }.atRisk
+            val summary = p.label + when {
+                atRisk.isNotEmpty() -> " — goes for your ${atRisk.take(5).joinToString(", ")}"
+                p.targets.isEmpty() -> " — can damage most plants"
+                else -> ""
+            }
+            body.add(h("details", "pest", attrs = mapOf("open" to ""), kids = listOf(
+                h("summary", text = summary),
+                para("Signs: ${p.signs}", "hint")
+            ) + p.tips.map { para("• $it", "hint") }))
+        }
+        if (chosen.isEmpty()) body.add(para("None ticked yet. Deer, rabbits, groundhogs, raccoons and squirrels are the most common garden visitors in North America.", "hint"))
+        body.add(h("details", "pest", kids = listOf(h("summary", text = "Keeping animals out: general tips")) + com.example.smartgardenplanner.core.Pest.GENERAL_TIPS.map { para("• $it", "hint") }))
+    }
+
+    /** FR-045: watering recommendations, irrigation coverage and the tools to draw sprinklers, drip lines and hoses. */
+    private fun watering(body: HTMLElement, wp: WebPlot) {
+        body.add(heading("Watering and irrigation"))
+        body.add(para("Draw your sprinklers, drip lines or soaker hoses and hose taps, then turn on the water map to see which areas get wet and which need watering by hand.", "hint"))
+        body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).map { t ->
+            button("+ " + t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.waterType = t; Canvas.setTool(Tool.WATER) }
+        } + button(if (Store.showWater) "Water map: on" else "Water map: off", if (Store.showWater) "btn on" else "btn") { Store.showWater = !Store.showWater; App.render() }))
+        val lookup = { c: String -> Catalog.get(c) }
+        val specific = com.example.smartgardenplanner.core.WateringAdvice.forPlot(wp.plot, wp.plants, wp.features, lookup)
+        if (wp.features.any { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) {
+            com.example.smartgardenplanner.core.Irrigation.report(wp.plot, wp.plants, wp.features, lookup).forEach { body.add(para(it, if (it.startsWith("⚠")) "warn" else "hint")) }
+        }
+        specific.forEach { body.add(para("→ $it", "p")) }
+        val seeds = wp.plants.mapNotNull { Catalog.get(it.seedCode) }.distinctBy { CropReference.speciesKey(it) }
+        if (seeds.isNotEmpty()) body.add(h("details", "pest", kids = listOf(h("summary", text = "How much water your plants need")) +
+            seeds.sortedBy { CropReference.forSeed(it).waterIntervalDays }.map { s -> para("${CropReference.speciesName(s)}: ${com.example.smartgardenplanner.core.WateringAdvice.needLabel(s)}", "hint") }))
+        body.add(h("details", "pest", kids = listOf(h("summary", text = "Watering tips")) + com.example.smartgardenplanner.core.WateringAdvice.GENERAL.map { para("• $it", "hint") }))
+        body.add(h("details", "pest", kids = listOf(h("summary", text = "Choosing sprinklers, drip or hose")) + com.example.smartgardenplanner.core.WateringAdvice.SYSTEMS.map { para("• $it", "hint") }))
     }
 
     // ------------------------------------------------------------------ Food

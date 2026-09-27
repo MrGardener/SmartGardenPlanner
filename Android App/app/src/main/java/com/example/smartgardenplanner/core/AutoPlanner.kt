@@ -52,8 +52,11 @@ enum class PlantingLayout(val label: String, val description: String) {
     ROWS("Long rows", "Crops are lined up in long rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.")
 }
 
-/** Plants the user asked for (FR-027): a variety and how many. */
-data class PlantRequest(val seed: SeedEntity, val count: Int)
+/**
+ * Plants the user asked for (FR-027): a variety and how many. [priority] marks the plants the user cares about most
+ * (FR-043): they are placed first and get the sunniest spots that suit them.
+ */
+data class PlantRequest(val seed: SeedEntity, val count: Int, val priority: Boolean = false)
 
 data class PlannedPlant(val seed: SeedEntity, val x: Float, val y: Float)
 
@@ -178,7 +181,8 @@ object AutoPlanner {
         val isPollinator = { s: SeedEntity -> CropReference.speciesKey(s) in POLLINATOR_PLANTS }
         val crops = wanted.filterNot { isPollinator(it.seed) }.sortedByDescending { heights.getValue(it.seed.botanicalCode) }
         val helpers = wanted.filter { isPollinator(it.seed) }
-        val order = (crops + helpers).flatMap { r -> List(r.count) { r.seed } }
+        val order = (crops + helpers).sortedBy { if (it.priority) 0 else 1 }.flatMap { r -> List(r.count) { r.seed } }
+        val prioritySpecies = wanted.filter { it.priority }.map { CropReference.speciesKey(it.seed) }.toSet()
 
         val validator = CompanionPlantingValidator()
         val placedNodes = mutableListOf<PlantedNodeEntity>()
@@ -230,8 +234,9 @@ object AutoPlanner {
                 otherClumps.forEach { g -> score -= 1.0 / (1.0 + g.dist(c.x, c.y)) }
                 if (c.sunHours != null) {
                     val need = crop.sun.minHours.toDouble()
-                    score -= (max(0.0, need - c.sunHours) / need) * 4.0
-                    score += c.sunHours / 24.0
+                    val sunWeight = if (key in prioritySpecies) 3.0 else 1.0
+                    score -= (max(0.0, need - c.sunHours) / need) * 4.0 * sunWeight
+                    score += c.sunHours / 24.0 * sunWeight
                 }
                 if (speciesGroup != null && speciesGroup.n > 0) score -= speciesGroup.dist(c.x, c.y) / diag * (if (clumps) (if (block) 9.0 else 7.0) else (if (block) 5.0 else 2.0))
                 if (waterGroup != null && waterGroup.n > 0) score -= waterGroup.dist(c.x, c.y) / diag

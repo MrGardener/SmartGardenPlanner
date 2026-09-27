@@ -96,6 +96,12 @@ summary{cursor:pointer}
 .legend b{margin-right:2px}
 .legend{flex-direction:column;align-items:flex-start;gap:4px;max-width:min(640px,calc(100% - 20px))}
 .legend-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.plan-checks{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--soft)}
+.check-line{font-size:13px;margin:3px 0;padding-left:2px}
+.check-line.sev-high{color:var(--danger-text);font-weight:600}.check-line.sev-medium{color:var(--warn)}.check-line.sev-low{color:var(--muted)}
+.btn.star{font-size:18px;line-height:1;color:var(--muted)}.btn.star.on{color:#d97706;background:var(--card);box-shadow:none;border-color:#d97706}
+.pests .chips{gap:6px}.chip-check{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:13px}
+.disclaimer{font-style:italic}
 .legend .inp{padding:2px 4px;font-size:12px;background:#fff;color:#292524;border-color:#d6d3d1}
 .legend input[type=range]{width:220px}
 .legend .hint{color:#57534e}

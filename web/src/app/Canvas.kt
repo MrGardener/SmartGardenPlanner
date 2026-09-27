@@ -39,7 +39,8 @@ enum class Tool(val label: String, val hint: String) {
     AREA("Sun / shade / flood / slope area", "Click the corners (3+), then press Enter or click Finish."),
         OUTLINE("Plot outline", "Drag a white corner to move it; double-click an edge to add a corner. Or click new corners in order (3+) and press Enter to redraw. “Delete outline” removes it."),
         PLAN("Plan an area for me", "Drag over the area you want planted; then list what to plant."),
-    WATER("Irrigation", "Sprinkler or hose tap: click where it is. Drip line: click points along it, then Enter. Choose the kind on the Plot tab.")
+    WATER("Irrigation", "Sprinkler or hose tap: click where it is. Drip line: click points along it, then Enter. Choose the kind on the Plot tab."),
+    PHOTO("Satellite photo", "Drag the photo to line it up with the plot. Add a photo, set its scale, turn it or hide it on the Plot tab → Satellite photo.")
 }
 
 /** What is currently selected on the layout. */
@@ -91,6 +92,7 @@ object Canvas {
 
         fun setTool(t: Tool) {
         if (Store.viewSeason != null && t != Tool.SELECT) { App.status("You are looking at season ${Store.viewSeason} (read only). Choose the planning season on the Plot tab first."); return }
+        if (t != Tool.PHOTO) Photo.calibrating = false
         tool = t; points.clear(); dragStart = null; App.status(t.hint); App.render()
     }
 
@@ -136,6 +138,7 @@ object Canvas {
         val outline = PlotShape.outline(p)
 
         svg.add(s("rect", "x" to 0, "y" to 0, "width" to p.lengthM, "height" to p.widthM, "fill" to col(LayoutPalette.PAPER), "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
+        drawPhoto(wp)
         // Grid every metre (every 5 m on big plots).
         val step = if (max(p.lengthM, p.widthM) > 40) 5.0 else 1.0
         var g = step
@@ -403,6 +406,19 @@ object Canvas {
         svg.add(g)
     }
 
+    /** FR-046: the satellite photo, drawn over the paper so the grid and everything else stays on top. */
+    private fun drawPhoto(wp: WebPlot) {
+        val img = wp.backdropImage ?: return
+        var b = Photo.backdrop(wp) ?: return
+        if (!b.visible) return
+        val a = dragStart; val n = dragNow
+        if (tool == Tool.PHOTO && !Photo.calibrating && a != null && n != null) b = b.moved(n.x - a.x, n.y - a.y)
+        val el = s("image", "x" to b.xM, "y" to b.yM, "width" to b.widthM, "height" to b.heightM, "preserveAspectRatio" to "none",
+            "opacity" to b.opacity, "transform" to "rotate(${b.rotationDeg} ${b.xM} ${b.yM})", "class" to "backdrop-photo")
+        el.setAttribute("href", img)
+        svg.add(el)
+    }
+
     private fun drawInProgress() {
         if (points.isNotEmpty()) {
             svg.add(s("polyline", "points" to points.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to "#10b981", "stroke-width" to 3, "vector-effect" to "non-scaling-stroke"))
@@ -489,6 +505,7 @@ object Canvas {
                 App.render()
             }
                         Tool.PATH, Tool.PLAN -> { dragStart = pt; dragNow = pt }
+            Tool.PHOTO -> if (!Photo.calibrating) { dragStart = pt; dragNow = pt }
             Tool.OUTLINE -> if (points.isEmpty()) {
                 val outline = PlotShape.outline(wp.plot)
                 val i = outline.indices.minByOrNull { dist(outline[it].x, outline[it].y, pt) }
@@ -511,7 +528,7 @@ object Canvas {
             vb[1] = o[3] - (e.clientY - o[1]) * scale
             render(); return
         }
-                if (tool == Tool.SELECT && dragMoved) renderMovePreview(start, pt) else if (tool == Tool.PATH || tool == Tool.PLAN) render()
+                if (tool == Tool.SELECT && dragMoved) renderMovePreview(start, pt) else if (tool == Tool.PATH || tool == Tool.PLAN || tool == Tool.PHOTO) render()
         else if (tool == Tool.OUTLINE && dragVertex != null) {
             render()
             val wp = Store.plot() ?: return
@@ -570,6 +587,21 @@ object Canvas {
                 } else { points += pt; App.render() }
             }
             Tool.LINE_OBSTACLE, Tool.AREA -> { points += pt; App.render() }
+            Tool.PHOTO -> when {
+                Photo.backdrop(wp) == null -> { Panels.tab = Tab.PLOT; App.status("Add a satellite photo first: Plot tab → Satellite photo → Add photo…"); App.render() }
+                Photo.calibrating -> {
+                    points += pt
+                    if (points.size >= 2) Photo.askDistance(wp, points[0], points[1])
+                    else App.status("Now click the second point.")
+                    App.render()
+                }
+                dragMoved && start != null -> {
+                    val b = Photo.backdrop(wp)!!
+                    Store.change { it.plot = it.plot.copy(backdropJson = b.moved(pt.x - start.x, pt.y - start.y).encode()) }
+                    App.render()
+                }
+                else -> App.render()
+            }
         }
     }
 
