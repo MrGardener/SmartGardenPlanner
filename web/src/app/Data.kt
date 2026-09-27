@@ -14,7 +14,7 @@ object Embedded {
 }
 
 /**
- * The seed catalog: the Android app's Pro catalog (a superset of Basic and Standard, 2,936 varieties), same line
+ * The seed catalog: the Android app's Pro catalog (a superset of Basic and Standard, 2,939 varieties), same line
  * format as data/SeedCatalogLoader.kt, plus custom varieties loaded from plan files.
  */
 object Catalog {
@@ -34,6 +34,13 @@ object Catalog {
         )
     }
 
+    /** Everyday words match too (FR-031): "sweet pepper", "hot", "cherry tomato", "spring onion", "yellow". */
+    private fun matchesKind(seed: SeedEntity, q: String): Boolean {
+        val t = com.example.smartgardenplanner.core.VarietyCatalogTraits.of(seed) ?: return false
+        val text = (t.details + " " + t.tag + " " + (t.heat?.name ?: "")).lowercase()
+        return q.split(' ').filter { it.isNotBlank() }.all { w -> text.contains(w) || seed.commonName.lowercase().contains(w) }
+    }
+
     fun addCustom(seed: SeedEntity) {
         if (seed.botanicalCode !in byCode) { seeds += seed; byCode[seed.botanicalCode] = seed }
     }
@@ -46,7 +53,7 @@ object Catalog {
         val q = query.trim().lowercase()
         return seeds.asSequence()
             .filter { type == null || it.plantType == type }
-            .filter { q.isEmpty() || it.commonName.lowercase().contains(q) || it.botanicalFamily.lowercase().contains(q) }
+            .filter { q.isEmpty() || it.commonName.lowercase().contains(q) || it.botanicalFamily.lowercase().contains(q) || matchesKind(it, q) }
             .sortedBy { it.commonName }
             .take(limit).toList()
     }

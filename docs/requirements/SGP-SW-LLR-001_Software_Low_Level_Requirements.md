@@ -406,7 +406,7 @@ shall appear in `species.txt`. ↑ HLR-ENC-060, HLR-ENC-100
 
 **LLR-CATP-040** A build task shall validate the three tier files, `species.txt` and `families.txt`, and fail
 the build on any violation. It shall also check that:
-- the tier counts are 250, 600 and 2,936
+- the tier counts are 253, 603 and 2,939
 - Basic ⊆ Standard ⊆ Pro, by code
 - every entry's content is identical across the tiers containing it
 
@@ -1183,16 +1183,20 @@ candidate is scored and the candidates are tried in decreasing score; the first 
 guilds and margin) is taken. A plant with no such candidate is counted as unplaced. ↑ HLR-AUTO-030, HLR-AUTO-050
 
 **LLR-AUTOP-040** The score shall be the sum of:
-- −3 × |depth − target depth|
+- −w × |depth − target depth|, w = 1.5 for CLUMPS and 3 for ROWS
+- the rotation penalty: the largest 6 × (1 − (yearsAgo − 1) / waitYears) over past plantings of the same rotation
+  group within 1..waitYears seasons whose `CropRotation.reach` (max(1.5 × radius, 0.6 m)) plus half the new plant's
+  radius covers the position
+- CLUMPS, first plant of a species: −1 / (1 + distance) to each other species' centroid
 - when sun hours are known: −4 × max(0, need − hours) / need + hours / 24
-- when plants of the same species exist: −(distance to their centroid) / (area diagonal) × 5 for block-planted
-  species (`BLOCK_PLANTED`), × 2 otherwise
+- when plants of the same species exist: −(distance to their centroid) / (area diagonal) × k, with k = 9 (block
+  species, `BLOCK_PLANTED`) or 7 for CLUMPS, and 5 or 2 for ROWS
 - when plants with the same watering interval exist: −(distance to their centroid) / diagonal
 - +0.5 for each companion species whose centroid is within 2 m
 - for pollinator plants: −(distance to the insect-pollinated crops' centroid) / diagonal × 2, and
   −1.5 / (1 + distance to the nearest pollinator plant already proposed)
 
-↑ HLR-AUTO-030, HLR-AUTO-040
+↑ HLR-AUTO-030, HLR-AUTO-040, HLR-ROT-020
 
 **LLR-AUTOP-050** The result shall list placed plants, unplaced counts per species name, and notes: the far-side
 compass name with the two tallest and the shortest species; the missing-direction assumption when
@@ -1201,9 +1205,69 @@ insect-pollinated crop is listed; watering groups when more than one interval is
 ↑ HLR-AUTO-060
 
 **LLR-AUTOP-060** The layout shall run the planner off the main thread, draw the proposal as translucent circles
-at each variety's spacing radius with the area outlined, and show a card with the summary, notes and the buttons
-Plant them / Change list / Cancel. "Plant them" inserts all proposed plants with `insertAll`, reloads, pushes one
-undo snapshot and clears the redo stack; the plant list survives "Change list". ↑ HLR-AUTO-060, HLR-AUTO-010
+at each variety's spacing radius with the area outlined, and show a card with the summary (each variety's `VarietyCatalogTraits.displayName`), notes and the buttons
+Plant them / Change selections / Discard. "Plant them" inserts all proposed plants with `insertAll`, reloads, pushes one
+undo snapshot and clears the redo stack. "Change selections" clears only the proposal, so the list dialog reopens for
+the same area with the same rows. "Discard" clears the proposal and the area and writes nothing; the rows stay in
+memory and in settings. ↑ HLR-AUTO-060, HLR-AUTO-010
+
+**LLR-VAR-010** `VarietyCatalogTraits.of(seed)` shall return, by species key and cultivar name: for "pepper" a
+shape (bell, horn, banana, mild chile, chile, hot chile, super-hot), a `Heat` (SWEET … EXTREME) and a `FruitColour`
+from a table covering all 46 catalog peppers (else keywords "bell", "sweet", "hot"/"chil" in the name or care notes);
+"shishito type pepper" mild green; for "tomato" a size (cherry, salad, slicing, beefsteak, paste) and colour from a
+table covering all catalog tomatoes (else "cherry/grape/currant/pear", "paste/roma/plum/marzano", "beefsteak"
+keywords); "paste tomato" paste; "onion" bulb with a colour; "spring onion" spring; "egyptian walking onion" walking;
+null otherwise. `details` joins kind, heat (not for sweet), colour and size note; `tag` is kind and colour for the
+layout; `displayName` appends the details in brackets; `dotArgb` is the colour. ↑ HLR-VAR-010, HLR-VAR-020
+
+**LLR-VAR-020** ONI-101..103 (Spring Onion - Evergreen Hardy White, Tokyo Long White, Red Beard) shall be in all three
+tier files (253 / 603 / 2,939). At start-up, when the seed table holds fewer rows than the active tier's count, the
+tier file shall be inserted with `OnConflictStrategy.IGNORE`. Android draws the tag 34 px below the plant centre in
+24 px bold ink over a 6 px paper-coloured halo, and the centre dot in `dotArgb` with an ink outline; the web draws the
+same with SVG text sized to the layout. `settings.showPlantLabels` (default true) and the web preference control the
+names. ↑ HLR-VAR-020
+
+**LLR-ROT-010** `RotationGroup.forSeed` shall map botanical families (Fabaceae/Leguminosae → LEGUMES 2 y,
+Brassicaceae → BRASSICAS 3 y, Solanaceae → NIGHTSHADES 3 y, Cucurbitaceae → CUCURBITS 2 y, Poaceae → GRAINS 2 y,
+Amaryllidaceae/Alliaceae → ALLIUMS 3 y, Apiaceae → ROOTS 3 y, Amaranthaceae/Chenopodiaceae → BEETS 2 y,
+Asteraceae → LETTUCE 1 y) for ANNUAL VEGETABLE or FRUIT varieties, else null. `CropRotation.conflict(x, y, seed,
+history, seasonYear)` returns the most recent past planting of the same group, 1..waitYears seasons earlier, within
+`reach` + half the seed's radius. `successor` follows legumes → brassicas → nightshades → alliums → legumes by role.
+Placing (tap) and moving (drag) a plant on Android and the web shall show `CropRotation.warning` after a successful
+change. ↑ HLR-ROT-010
+
+**LLR-ROT-020** `CropRotation.advice(plot, history, current, lookup, seasonYear)` shall return: a no-history hint;
+else "YEAR: group (species) in the SPOT; …" for the last season, where SPOT comes from `describeSpot` (plot centre
+offset projected on north and east unit vectors from `sunDirectionInPlot(0|90, bearing)`, thirds of the half-size →
+"north-west corner", "east side", "middle" …); one line per group naming the successor and the wait; a row note when
+`isRow` (long side ≥ 60 % of the plot side and short side ≤ 25 % of the long side, ≥ 4 plants); one ⚠ line per
+species of current plants in conflict, else "✓ … respect the rotation"; and the list of seasons when more than one.
+Shown on Android in Plot insights → Harmony (not tier-gated) and on the web Plot tab. ↑ HLR-ROT-030
+
+**LLR-SEAS-010** `PlantingHistoryEntity` (table `planting_history`, schema 10, MIGRATION_9_10) shall hold plotId
+(cascade delete), seasonYear, seedCode, varietyName, family, rotationGroup (nullable), coordinates, radiusM and the
+planting date. `Seasons.archive` copies the plot's plants with name, family, group and radius from the catalog.
+`Seasons.currentSeason(nodes, history)` = max(year most nodes were planted, or this year if none; last history
+year + 1). ↑ HLR-SEAS-010
+
+**LLR-SEAS-020** "Start a new season" (Android menu, web Plot tab; enabled when the plot has plants) shall, after the
+user confirms a year in 1900..3000, insert the archived rows and delete the plot's plants in one transaction (web: one
+`Store.change`), select that year for the layout, and push one undo snapshot. `CanvasSnapshot` (Android) and `Snap`
+(web) include the history, and restoring a snapshot replaces the plot's history rows. ↑ HLR-SEAS-010
+
+**LLR-SEAS-030** The plan file shall write, per plot with history, `history`: [{season, code, variety, family,
+rotationGroup, x, y, radiusM, plantedAt}] and omit it when empty. Reading keeps up to 20,000 entries per plot, skips
+entries without a code, with a season outside 1900..3000 or outside the plot (counted in a warning), and defaults a
+missing radius to 0.3 m. Import stores history rows for the new plot regardless of the catalog. The web draws the
+selected year as dashed circles with italic species names; Android as dashed circles (8/8 px) with 22 px italic
+names. ↑ HLR-SEAS-020
+
+**LLR-MEM-010** `AppSettings` shall add `planLayout` ("CLUMPS" default), `lastPlanList` ("CODE:count,…") and
+`showPlantLabels`; the web keeps the same in `localStorage`. Opening "Plan an area for me" with no rows loads
+`lastPlanRows` (known codes only), else the top 4 of `Seasons.usualVarieties` with count 3; "Plan it" saves the rows
+to `lastPlanList`. `usualVarieties(current, history, lookup, limit = 8)` groups all codes by species key, picks each
+species' most used code, and sorts by count then name. The dialog shows them as "+ Species" buttons that add 3 or
+increase an existing row by 1. ↑ HLR-MEM-010
 
 **LLR-ORNT-010** `PlotEntity` shall store `northBearingDeg` (0–360, the compass bearing of the plot's top edge)
 and `orientationSet` (schema 9, MIGRATION_8_9 adds `orientationSet INTEGER NOT NULL DEFAULT 0`). The creator
@@ -1477,6 +1541,14 @@ Generated by script from the `↑` links above.
 | HLR-AUTO-040 | Active | LLR-AUTOP-040 |
 | HLR-AUTO-050 | Active | LLR-AUTOP-010, LLR-AUTOP-030 |
 | HLR-AUTO-060 | Active | LLR-AUTOP-050, LLR-AUTOP-060 |
+| HLR-VAR-010 | Active | LLR-VAR-010 |
+| HLR-VAR-020 | Active | LLR-VAR-010, LLR-VAR-020 |
+| HLR-ROT-010 | Active | LLR-ROT-010 |
+| HLR-ROT-020 | Active | LLR-AUTOP-040 |
+| HLR-ROT-030 | Active | LLR-ROT-020 |
+| HLR-SEAS-010 | Active | LLR-SEAS-010, LLR-SEAS-020 |
+| HLR-SEAS-020 | Active | LLR-SEAS-030 |
+| HLR-MEM-010 | Active | LLR-MEM-010 |
 | HLR-ORNT-010 | Active | LLR-ORNT-010 |
 | HLR-ORNT-020 | Active | LLR-ORNT-020 |
 | HLR-ORNT-030 | Active | LLR-ORNT-030 |
@@ -1491,8 +1563,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **243**. Duplicate LLR IDs: **0**.
-- HLRs: 156 (148 active, 7 future, 1 suspended).
+- LLRs: **251**. Duplicate LLR IDs: **0**.
+- HLRs: 164 (156 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

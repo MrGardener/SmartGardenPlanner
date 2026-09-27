@@ -16,7 +16,9 @@ data class PlanPlot(
     val plot: PlotEntity,
     val plants: List<PlantedNodeEntity>,
     val paths: List<PathZoneEntity>,
-    val features: List<SiteFeatureEntity>
+    val features: List<SiteFeatureEntity>,
+    /** Plants of finished seasons (FR-033). Optional in the file; older readers ignore it. */
+    val history: List<PlantingHistoryEntity> = emptyList()
 )
 
 data class PlanBundle(val plots: List<PlanPlot>, val customVarieties: List<SeedEntity>, val exportedAtMillis: Long = 0L)
@@ -31,6 +33,7 @@ object PlanFileCodec {
     const val MAX_PLOTS = 100
     const val MAX_PLANTS_PER_PLOT = 5000
     const val MAX_ITEMS_PER_PLOT = 2000
+    const val MAX_HISTORY_PER_PLOT = 20000
     const val MAX_DIMENSION_M = 1000f
 
     // ------------------------------------------------------------------ writing
@@ -128,6 +131,14 @@ object PlanFileCodec {
                         "slopeDirectionDeg" to f.slopeDirectionDeg.takeIf { f.featureType == SiteFeatureType.SLOPE.name },
                         "slopeGradePct" to f.slopeGradePct.takeIf { f.featureType == SiteFeatureType.SLOPE.name },
                         "floodMonths" to f.floodMonths.split(",").mapNotNull { it.trim().toIntOrNull() }.takeIf { it.isNotEmpty() }
+                    )
+                },
+                "history" to pp.history.takeIf { it.isNotEmpty() }?.map { h ->
+                    mapOf(
+                        "season" to h.seasonYear, "code" to h.seedCode, "variety" to h.varietyName,
+                        "family" to h.family.ifBlank { null }, "rotationGroup" to h.rotationGroup,
+                        "x" to h.coordinateXM, "y" to h.coordinateYM, "radiusM" to h.radiusM,
+                        "plantedAt" to iso(h.datePlantedEpochMillis)
                     )
                 }
             )
@@ -306,7 +317,26 @@ object PlanFileCodec {
                     floodMonths = (fm["floodMonths"] as? List<*>).orEmpty().mapNotNull { (it as? Number)?.toInt()?.takeIf { mo -> mo in 1..12 } }.joinToString(",")
                 )
             }
-            plots += PlanPlot(plot, plants, paths, features)
+            val historyJson = (m["history"] as? List<*>).orEmpty()
+            if (historyJson.size > MAX_HISTORY_PER_PLOT) warnings += "Plot '$name': only the first $MAX_HISTORY_PER_PLOT of ${historyJson.size} past plantings were read."
+            var badHistory = 0
+            val history = historyJson.take(MAX_HISTORY_PER_PLOT).mapNotNull { hv ->
+                val hm = hv as? Map<*, *> ?: return@mapNotNull null.also { badHistory++ }
+                val code = hm.text("code", 40)?.takeIf { it.isNotBlank() } ?: return@mapNotNull null.also { badHistory++ }
+                val season = hm.num("season")?.toInt()?.takeIf { it in 1900..3000 } ?: return@mapNotNull null.also { badHistory++ }
+                val x = hm.num("x")?.toFloat(); val y = hm.num("y")?.toFloat()
+                if (x == null || y == null || !inside(PlotPoint(x, y))) { badHistory++; return@mapNotNull null }
+                PlantingHistoryEntity(
+                    plotId = 0, seasonYear = season, seedCode = code,
+                    varietyName = hm.text("variety", 100) ?: code, family = hm.text("family", 60) ?: "",
+                    rotationGroup = hm.text("rotationGroup", 20)?.takeIf { RotationGroup.of(it) != null },
+                    coordinateXM = x, coordinateYM = y,
+                    radiusM = hm.num("radiusM")?.toFloat()?.takeIf { it > 0f && it <= 50f } ?: 0.3f,
+                    datePlantedEpochMillis = parseIso(hm.text("plantedAt", 30)) ?: 0L
+                )
+            }
+            if (badHistory > 0) warnings += "Plot '$name': $badHistory past planting(s) skipped (invalid season, variety or position)."
+            plots += PlanPlot(plot, plants, paths, features, history)
         }
         if (plots.isEmpty()) return PlanDecodeResult(null, names, listOf("No usable plots in the file.") + warnings, warnings)
         return PlanDecodeResult(PlanBundle(plots, custom, parseIso(root["exportedAt"] as? String) ?: 0L), names, emptyList(), warnings)

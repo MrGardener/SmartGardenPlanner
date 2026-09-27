@@ -206,4 +206,22 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+/**
+ * Schema 10: season history (FR-033). Adds planting_history; the SQL matches what Room generates for
+ * PlantingHistoryEntity (no defaults, one nullable column, cascade on plot delete, index on plotId).
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `planting_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `seasonYear` INTEGER NOT NULL, `seedCode` TEXT NOT NULL, " +
+                "`varietyName` TEXT NOT NULL, `family` TEXT NOT NULL, `rotationGroup` TEXT, " +
+                "`coordinateXM` REAL NOT NULL, `coordinateYM` REAL NOT NULL, `radiusM` REAL NOT NULL, " +
+                "`datePlantedEpochMillis` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_planting_history_plotId` ON `planting_history` (`plotId`)")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)

@@ -35,6 +35,9 @@ class SettingsRepository(private val repository: SecurityRepository) {
         const val ONLINE = "settings.onlineFeaturesEnabled"
         const val USDA_KEY = "settings.usdaApiKey"
         const val VENDOR = "settings.preferredVendorId"
+        const val PLAN_LAYOUT = "settings.planLayout"
+        const val LAST_PLAN = "settings.lastPlanList"
+        const val PLANT_LABELS = "settings.showPlantLabels"
     }
 
     suspend fun load(): AppSettings {
@@ -63,7 +66,10 @@ class SettingsRepository(private val repository: SecurityRepository) {
             rainSkipThresholdMm = floatOrDefault(Keys.RAIN_MM, defaults.rainSkipThresholdMm),
             onlineFeaturesEnabled = boolOrDefault(Keys.ONLINE, defaults.onlineFeaturesEnabled),
             usdaApiKey = repository.fetchConfig(Keys.USDA_KEY)?.configValue ?: defaults.usdaApiKey,
-            preferredVendorId = repository.fetchConfig(Keys.VENDOR)?.configValue ?: defaults.preferredVendorId
+            preferredVendorId = repository.fetchConfig(Keys.VENDOR)?.configValue ?: defaults.preferredVendorId,
+            planLayout = repository.fetchConfig(Keys.PLAN_LAYOUT)?.configValue ?: defaults.planLayout,
+            lastPlanList = repository.fetchConfig(Keys.LAST_PLAN)?.configValue ?: defaults.lastPlanList,
+            showPlantLabels = boolOrDefault(Keys.PLANT_LABELS, defaults.showPlantLabels)
         )
     }
 
@@ -92,6 +98,9 @@ class SettingsRepository(private val repository: SecurityRepository) {
         repository.saveConfig(Keys.ONLINE, settings.onlineFeaturesEnabled.toString())
         repository.saveConfig(Keys.USDA_KEY, settings.usdaApiKey)
         repository.saveConfig(Keys.VENDOR, settings.preferredVendorId)
+        repository.saveConfig(Keys.PLAN_LAYOUT, settings.planLayout)
+        repository.saveConfig(Keys.LAST_PLAN, settings.lastPlanList)
+        repository.saveConfig(Keys.PLANT_LABELS, settings.showPlantLabels.toString())
     }
 
     suspend fun resetToDefaults() {

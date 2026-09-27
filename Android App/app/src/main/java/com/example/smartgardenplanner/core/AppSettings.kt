@@ -51,12 +51,24 @@ data class AppSettings(
     val rainSkipThresholdMm: Float = 5f,         // FR-019: this much rain counts as a watering
     val onlineFeaturesEnabled: Boolean = false,  // FR-026: master switch for network access, off by default
     val usdaApiKey: String = "DEMO_KEY",         // FR-020: FoodData Central key (DEMO_KEY is rate-limited)
-    val preferredVendorId: String = ""           // FR-024 (Pro)
+    val preferredVendorId: String = "",          // FR-024 (Pro)
+    val planLayout: String = "CLUMPS",           // FR-032: "CLUMPS" | "ROWS" for Plan an area for me
+    val lastPlanList: String = "",               // FR-034: last Plan-an-area list, "CODE:count,CODE:count"
+    val showPlantLabels: Boolean = true          // FR-031: short names (e.g. "Bell red", "Cherry") on the layout
 ) {
     val carePreferenceEnum: CarePreference
         get() = if (carePreference == CarePreference.CONVENTIONAL.name) CarePreference.CONVENTIONAL else CarePreference.ORGANIC
 
+    val planLayoutEnum: PlantingLayout
+        get() = PlantingLayout.entries.firstOrNull { it.name == planLayout } ?: PlantingLayout.CLUMPS
+
+    /** The remembered plan list as (variety code, count) pairs. */
+    val lastPlanRows: List<Pair<String, Int>>
+        get() = lastPlanList.split(",").mapNotNull { e -> e.split(":").takeIf { it.size == 2 }?.let { (c, n) -> n.toIntOrNull()?.let { c to it } } }
+
     companion object {
         val DEFAULT = AppSettings()
+
+        fun encodePlanRows(rows: List<Pair<String, Int>>): String = rows.joinToString(",") { "${it.first}:${it.second}" }
     }
 }

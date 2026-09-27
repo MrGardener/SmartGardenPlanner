@@ -21,7 +21,7 @@ object PlantHeights {
         "swiss chard" to 0.6f, "potato" to 0.7f, "sweet potato" to 0.4f, "zucchini" to 0.7f,
         "summer squash mix" to 0.7f, "winter squash" to 0.5f, "pumpkin" to 0.5f, "melon" to 0.35f,
         "watermelon" to 0.35f, "bush bean" to 0.5f, "edamame" to 0.7f, "lima bean" to 0.6f, "fava bean" to 1.0f,
-        "celery" to 0.6f, "leek" to 0.6f, "garlic" to 0.5f, "onion" to 0.45f, "shallot" to 0.35f, "chives" to 0.3f,
+        "celery" to 0.6f, "leek" to 0.6f, "garlic" to 0.5f, "onion" to 0.45f, "spring onion" to 0.35f, "shallot" to 0.35f, "chives" to 0.3f,
         "lettuce" to 0.25f, "spinach" to 0.25f, "arugula" to 0.3f, "radish" to 0.2f, "carrot" to 0.35f,
         "beet" to 0.35f, "turnip" to 0.35f, "parsnip" to 0.5f, "strawberry" to 0.2f, "alpine strawberry" to 0.2f,
         "basil" to 0.5f, "parsley" to 0.35f, "cilantro" to 0.5f, "thyme" to 0.25f, "oregano" to 0.4f,
@@ -41,6 +41,15 @@ object PlantHeights {
             else -> fromSpacing.coerceIn(0.15f, 1.5f)
         }
     }
+}
+
+/**
+ * How "Plan an area for me" arranges each crop (FR-032). CLUMPS (default) keeps each crop in a compact group, which
+ * is easy to move to another part of the plot next year (crop rotation). ROWS lines crops up by height.
+ */
+enum class PlantingLayout(val label: String, val description: String) {
+    CLUMPS("Clumps (recommended)", "Each crop grows as a compact group. Next year the groups can swap places for crop rotation, and tall groups still sit behind short ones."),
+    ROWS("Rows", "Crops are lined up in rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.")
 }
 
 /** Plants the user asked for (FR-027): a variety and how many. */
@@ -113,7 +122,10 @@ object AutoPlanner {
         isBlocked: (x: Float, y: Float, radiusM: Float) -> Boolean = { _, _, _ -> false },
         marginMultiplier: Float = 1f,
         orientationKnown: Boolean = true,
-        maxCandidates: Int = 3000
+        maxCandidates: Int = 3000,
+        layout: PlantingLayout = PlantingLayout.CLUMPS,
+        history: List<PlantingHistoryEntity> = emptyList(),
+        seasonYear: Int = Seasons.thisYear()
     ): AutoPlanResult {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return AutoPlanResult(emptyList(), emptyMap(), listOf("Nothing to plan."))
@@ -173,6 +185,12 @@ object AutoPlanner {
         val pollinatorSpots = mutableListOf<Pair<Float, Float>>()
         val unplaced = linkedMapOf<String, Int>()
         val existing = context.nodes
+        val clumps = layout == PlantingLayout.CLUMPS
+        val depthWeight = if (clumps) 1.5 else 3.0
+        var rotationAvoided = 0
+        var rotationStuck = 0
+        // Past plantings by rotation group, for the rotation penalty (FR-032).
+        val pastByGroup = history.filter { it.group != null && seasonYear - it.seasonYear in 1..it.group!!.waitYears }.groupBy { it.group!! }
 
         for (seed in order) {
             val key = CropReference.speciesKey(seed)
@@ -186,14 +204,32 @@ object AutoPlanner {
                 .filter { (k, _) -> placed.firstOrNull { CropReference.speciesKey(it.seed) == k }?.let { Relationships.areCompanions(seed, it.seed) } == true }
                 .values.toList()
 
+            val rotGroup = RotationGroup.forSeed(seed)
+            val past = rotGroup?.let { pastByGroup[it] }.orEmpty()
+            fun rotationPenalty(c: Candidate): Double {
+                var worst = 0.0
+                for (h in past) {
+                    val dx = c.x - h.coordinateXM; val dy = c.y - h.coordinateYM
+                    if (sqrt((dx * dx + dy * dy).toDouble()) < CropRotation.reach(h) + seed.exclusionRadiusM * 0.5) {
+                        val ago = seasonYear - h.seasonYear
+                        worst = max(worst, 6.0 * (1.0 - (ago - 1).toDouble() / rotGroup!!.waitYears))
+                    }
+                }
+                return worst
+            }
+            val otherClumps = if (clumps && (speciesGroup == null || speciesGroup.n == 0)) bySpecies.filterKeys { it != key }.values.toList() else emptyList()
+
             val scored = candidates.map { c ->
-                var score = -abs(c.depth - target) * 3.0
+                var score = -abs(c.depth - target) * depthWeight
+                if (past.isNotEmpty()) score -= rotationPenalty(c)
+                // A new clump starts a little away from the other clumps, so each crop stays a distinct group.
+                otherClumps.forEach { g -> score -= 1.0 / (1.0 + g.dist(c.x, c.y)) }
                 if (c.sunHours != null) {
                     val need = crop.sun.minHours.toDouble()
                     score -= (max(0.0, need - c.sunHours) / need) * 4.0
                     score += c.sunHours / 24.0
                 }
-                if (speciesGroup != null && speciesGroup.n > 0) score -= speciesGroup.dist(c.x, c.y) / diag * (if (block) 5.0 else 2.0)
+                if (speciesGroup != null && speciesGroup.n > 0) score -= speciesGroup.dist(c.x, c.y) / diag * (if (clumps) (if (block) 9.0 else 7.0) else (if (block) 5.0 else 2.0))
                 if (waterGroup != null && waterGroup.n > 0) score -= waterGroup.dist(c.x, c.y) / diag
                 companionCentres.forEach { g -> if (g.dist(c.x, c.y) < 2.0) score += 0.5 }
                 if (helper) {
@@ -217,6 +253,7 @@ object AutoPlanner {
                 continue
             }
             placed += PlannedPlant(seed, chosen.x, chosen.y)
+            if (past.isNotEmpty()) { if (rotationPenalty(chosen) > 0.0) rotationStuck++ else rotationAvoided++ }
             bySpecies.getOrPut(key) { Group() }.add(chosen.x, chosen.y)
             byWater.getOrPut(crop.waterIntervalDays) { Group() }.add(chosen.x, chosen.y)
             if (key in INSECT_POLLINATED) insectCrops.add(chosen.x, chosen.y)
@@ -229,6 +266,12 @@ object AutoPlanner {
         val speciesByHeight = wanted.map { it.seed }.distinctBy { CropReference.speciesKey(it) }.sortedByDescending { heights.getValue(it.botanicalCode) }
         if (speciesByHeight.size > 1) {
             notes += "Tallest plants (${speciesByHeight.take(2).joinToString(", ") { CropReference.speciesName(it) }}) are on the $backName side and the shortest (${CropReference.speciesName(speciesByHeight.last())}) on the sunny side, so tall plants don't shade short ones."
+        }
+        notes += if (clumps) "Each crop is planted as a clump, not a long row. Next year the clumps can swap places (crop rotation) without tall plants ending up in front of short ones."
+        else "Crops are in rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Clumps make rotation easier."
+        if (rotationAvoided > 0 || rotationStuck > 0) {
+            notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
+            else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."
         }
         if (!orientationKnown) notes += "The plot's compass direction isn't set, so the top edge is assumed to face north. Set it for accurate sun placement."
         notes += if (sunKnown) "Full-sun crops got the sunniest spots, using your sun/shade areas and the shade from obstacles." else "No obstacles or sun/shade areas are marked, so the whole area is treated as full sun."

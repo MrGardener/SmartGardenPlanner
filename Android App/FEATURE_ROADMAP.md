@@ -121,6 +121,10 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-028 | Plot direction and ZIP | Say which way the plot's top edge faces (creator, direction dialog, Site tab); compass on the layout; warning until set. ZIP fills latitude/longitude offline and the zone offline or online. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-029 | Portable plan files | Save one or all plots to a `.sgp.json` file and open such files as new plots, on any device. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-030 | Planner on a computer | No-install browser planner for Windows, macOS, Linux and ChromeOS, sharing the same rules and plan files (docs/CROSS_PLATFORM_PLAN.md, option A). One file: `web/dist/smart-garden-planner.html`. | All | FR-029 | **Implemented — Awaiting Your Confirmation** (tested in Chromium/Linux; other browsers to test) |
+| FR-031 | Say what each variety is | Sweet or spicy pepper (heat level), bell or other shape and colour; cherry, salad, slicing, beefsteak or paste tomato; bulb or spring onion. Shown in lists, the plan list and proposal, and as short names on the layout (menu → Show plant names); the centre dot shows the fruit colour. Spring onions added to the catalog. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-032 | Crop rotation and clumps | Rotation families and waiting periods; a note (not a block) when a plant goes where its family grew recently; Plan an area for me avoids those spots and plants clumps by default (rows on request) with the rotation reason explained; per-plot rotation advice (Plot insights → Harmony; web Plot tab). | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
+| FR-033 | Seasons and plot history | "Start a new season": plants move to the plot's history; fences, buildings, trees, paths, areas and outline stay. History per season, drawn dashed on request, used for rotation, saved in plan files, undoable. | All | FR-029 | **Implemented — Awaiting Your Confirmation** |
+| FR-034 | Keep my choices | Discarding a proposal leaves the plot and the list alone; "Change selections" returns to the list for the same area; the last list is remembered; "What you usually plant" one-tap additions. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
 ---
@@ -225,6 +229,13 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (seasons, rotation, variety details)**: From your notes on discarding plans, peppers, tomatoes, onions
+  and crop rotation: FR-031 to FR-034. Discard no longer loses anything and "Change selections" goes back to your list;
+  your last list and the plants you usually grow are remembered; peppers say sweet or spicy and their colour, tomatoes
+  say cherry or large, onions say bulb or spring (spring onions added); "Start a new season" keeps the plot's fixed
+  features and keeps last season as history for crop rotation; Plan an area for me plants clumps by default and keeps
+  crops away from where their family grew last year. Database schema 10 (season history).
 
 - **2026-09-27 (shade visibility)**: From your report that shade couldn't be seen: the plot layout is now drawn on a
   light "paper" background in light and dark mode on both the phone and the computer, and the shade display colours

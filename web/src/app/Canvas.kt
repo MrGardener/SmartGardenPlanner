@@ -3,6 +3,8 @@ package sgp.web
 import com.example.smartgardenplanner.core.Barrier
 import com.example.smartgardenplanner.core.CompanionPlantingValidator
 import com.example.smartgardenplanner.core.CropReference
+import com.example.smartgardenplanner.core.CropRotation
+import com.example.smartgardenplanner.core.VarietyCatalogTraits
 import com.example.smartgardenplanner.core.HardinessZones
 import com.example.smartgardenplanner.core.LayoutPalette
 import com.example.smartgardenplanner.core.PathZoneEntity
@@ -132,7 +134,8 @@ object Canvas {
                 "fill" to col(LayoutPalette.OUTSIDE_OUTLINE), "fill-opacity" to LayoutPalette.alpha(LayoutPalette.OUTSIDE_OUTLINE), "fill-rule" to "evenodd"))
             svg.add(s("polygon", "points" to poly, "fill" to "none", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
         }
-        wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id) }
+        Store.historyYear?.let { y -> drawHistory(wp, y, fs) }
+        wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id, fs = fs) }
         Store.preview?.placed?.forEach { pl ->
             val c = Colors.of(pl.seed)
             svg.add(s("circle", "cx" to pl.x, "cy" to pl.y, "r" to pl.seed.exclusionRadiusM, "fill" to c, "fill-opacity" to 0.25, "stroke" to c, "stroke-dasharray" to "4 3", "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
@@ -242,12 +245,31 @@ object Canvas {
         }
     }
 
-    private fun drawPlant(n: PlantedNodeEntity, selected: Boolean) {
+    /** Short label under a plant: the variety's everyday kind ("Bell red", "Cherry red", "Spring") or its species. */
+    fun shortLabel(seed: SeedEntity?): String = seed?.let { VarietyCatalogTraits.of(it)?.tag ?: CropReference.speciesName(it) } ?: "?"
+
+    private fun drawPlant(n: PlantedNodeEntity, selected: Boolean, fs: Double) {
         val seed = Catalog.get(n.seedCode)
         val c = Colors.of(seed)
         val r = seed?.exclusionRadiusM ?: 0.3f
-        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r, "fill" to c, "fill-opacity" to 0.16, "stroke" to if (selected) "#f97316" else c, "stroke-width" to if (selected) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
-        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to min(r * 0.25f, 0.08f), "fill" to c, "stroke" to col(LayoutPalette.INK), "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+        val dot = seed?.let { VarietyCatalogTraits.dotArgb(it) }?.let { LayoutPalette.hex(it) } ?: c
+        val g = s("g", "class" to "plant", "data-code" to n.seedCode)
+        g.add(s("title").also { it.textContent = seed?.let { sd -> VarietyCatalogTraits.displayName(sd) } ?: n.seedCode })
+        g.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r, "fill" to c, "fill-opacity" to 0.16, "stroke" to if (selected) "#f97316" else c, "stroke-width" to if (selected) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+        g.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to max(min(r * 0.3f, 0.12f), 0.05f), "fill" to dot, "stroke" to col(LayoutPalette.INK), "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+        if (Prefs.showLabels) g.add(s("text", "x" to n.coordinateXM, "y" to n.coordinateYM + max(r * 0.3f, 0.05f) + fs * 0.62, "font-size" to fs * 0.5, "fill" to col(LayoutPalette.INK), "text-anchor" to "middle", "class" to "plant-label",
+            "stroke" to col(LayoutPalette.PAPER), "stroke-width" to fs * 0.12, "paint-order" to "stroke", "stroke-linejoin" to "round").also { it.textContent = shortLabel(seed) })
+        svg.add(g)
+    }
+
+    /** A past season (FR-033): faded dashed circles with a label, under this season's plants. */
+    private fun drawHistory(wp: WebPlot, year: Int, fs: Double) {
+        val g = s("g", "class" to "history", "opacity" to 0.75)
+        wp.history.filter { it.seasonYear == year }.forEach { h ->
+            g.add(s("circle", "cx" to h.coordinateXM, "cy" to h.coordinateYM, "r" to h.radiusM, "fill" to "none", "stroke" to "#57534e", "stroke-dasharray" to "3 3", "stroke-width" to 1.2, "vector-effect" to "non-scaling-stroke"))
+            if (Prefs.showLabels) g.add(s("text", "x" to h.coordinateXM, "y" to h.coordinateYM + fs * 0.2, "font-size" to fs * 0.45, "fill" to "#57534e", "text-anchor" to "middle", "font-style" to "italic").also { it.textContent = h.speciesName })
+        }
+        svg.add(g)
     }
 
     private fun drawInProgress() {
@@ -414,7 +436,8 @@ object Canvas {
             return
         }
         Store.change { it.plants = it.plants + node.copy(id = Store.newId()) }
-        App.status("Planted ${seed.commonName}.")
+        val hit = CropRotation.conflict(pt.x, pt.y, seed, wp.history, wp.season())
+        App.status(if (hit != null) "Planted ${seed.commonName}. Rotation note: " + CropRotation.warning(hit, CropReference.speciesName(seed)) else "Planted ${VarietyCatalogTraits.displayName(seed)}.")
         App.render()
     }
 
@@ -440,7 +463,11 @@ object Canvas {
                     blockedByPath(wp, x, y, seed.exclusionRadiusM) -> App.status("Can't move there: it overlaps a no-plant path.")
                     !CompanionPlantingValidator().validatePlacement(moved, seed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive()).isValid ->
                         App.status("Can't move there: too close to another plant or a plant it dislikes.")
-                    else -> { Store.change { it.plants = others + moved }; App.status("Moved.") }
+                    else -> {
+                        Store.change { it.plants = others + moved }
+                        val hit = CropRotation.conflict(x, y, seed, wp.history, wp.season())
+                        App.status(if (hit != null) "Moved. Rotation note: " + CropRotation.warning(hit, CropReference.speciesName(seed)) else "Moved.")
+                    }
                 }
             }
             is Selection.Feature -> {

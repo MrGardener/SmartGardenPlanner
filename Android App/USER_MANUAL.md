@@ -145,7 +145,7 @@ Three tiers, chosen in **Settings → Catalog**:
   vegetables, herbs, and flowers.
 - **Standard — 600 varieties.** Basic's set plus a broader spread of less-common vegetables,
   fruit, and ornamentals.
-- **Pro — 2,936 varieties.** The full catalog: 322 species spanning vegetables, fruit, herbs,
+- **Pro — 2,939 varieties.** The full catalog: 322 species spanning vegetables, fruit, herbs,
   flowers, and ornamentals, with deep cultivar lists for high-diversity crops (tomatoes, peppers,
   lettuce, apples, roses, dahlias, tulips, etc.), plus microgreens/sprouting seed, wildflower/
   native species, succulents/houseplants, ornamental grasses, and flowering shrubs/trees.
@@ -173,7 +173,7 @@ be a fixed constant in the app now lives here, organized into sections. Changes 
 — there's no separate "Save" button. A reset icon (top bar) resets everything to defaults.
 
 ### Catalog
-See §3 above for full detail. Pick Basic (250), Standard (600), or Pro (2,936) varieties. Shows
+See §3 above for full detail. Pick Basic (253), Standard (603), or Pro (2,939) varieties. Shows
 the current count of bundled varieties loaded. Your own custom varieties are never affected.
 
 ### Units

@@ -164,6 +164,9 @@ ONI-006|Onion - Candy|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.05|9|97|CAR,BEE,TOM
 ONI-007|Onion - Patterson|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.12|12|98|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
 ONI-008|Onion - Cippolini|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.1|8|104|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
 ONI-009|Onion - Early Season|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.09|11|99|CAR,BEE,TOM|BEA,PEA|Onion maggot, thrips|Long day/short day types differ by latitude.
+ONI-101|Spring Onion - Evergreen Hardy White|Amaryllidaceae|VEGETABLE|ANNUAL|3|10|0.04|8|60|CAR,BEE,TOM,LET|BEA,PEA|Onion maggot, thrips|Spring (green) onion: sow thickly, pull when pencil-thick for the green stems. Hardy; can overwinter.
+ONI-102|Spring Onion - Tokyo Long White|Amaryllidaceae|VEGETABLE|ANNUAL|4|10|0.04|8|65|CAR,BEE,TOM,LET|BEA,PEA|Onion maggot, thrips|Spring (green) onion with long white shanks; mound soil to blanch. Pull young.
+ONI-103|Spring Onion - Red Beard|Amaryllidaceae|VEGETABLE|ANNUAL|4|10|0.04|8|55|CAR,BEE,TOM,LET|BEA,PEA|Onion maggot, thrips|Spring (green) onion with red-purple stems; pull young for salads.
 BEA-001|Bush Bean - Blue Lake|Fabaceae|VEGETABLE|ANNUAL|3|11|0.19|9|47|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
 BEA-002|Bush Bean - Provider|Fabaceae|VEGETABLE|ANNUAL|3|11|0.12|10|56|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.
 BEA-003|Bush Bean - Contender|Fabaceae|VEGETABLE|ANNUAL|3|11|0.17|9|53|COR,CUC,POT|ONI,FEN|Bean beetles, aphids|Fixes nitrogen; avoid overhead watering late.

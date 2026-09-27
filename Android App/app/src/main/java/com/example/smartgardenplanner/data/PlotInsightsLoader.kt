@@ -9,7 +9,11 @@ import com.example.smartgardenplanner.core.SunlightEngine
 import com.example.smartgardenplanner.core.currentAppTier
 
 /** Everything the plot insights screen and the reminder worker need, read in one go. */
-data class PlotSnapshot(val context: PlotContext, val catalog: List<SeedEntity>)
+data class PlotSnapshot(
+    val context: PlotContext,
+    val catalog: List<SeedEntity>,
+    val history: List<com.example.smartgardenplanner.core.PlantingHistoryEntity> = emptyList() // FR-033
+)
 
 object PlotInsightsLoader {
 
@@ -36,6 +40,6 @@ object PlotInsightsLoader {
             enforceCompanionRules = enforceRules(settings),
             dayOfYear = SunlightEngine.dayOfYear(System.currentTimeMillis())
         )
-        return PlotSnapshot(context, catalog)
+                return PlotSnapshot(context, catalog, database.plantingHistoryDao().getByPlotId(plotId))
     }
 }

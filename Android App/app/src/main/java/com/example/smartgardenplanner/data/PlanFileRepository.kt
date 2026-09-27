@@ -23,7 +23,8 @@ class PlanFileRepository(private val database: AppDatabase) {
                 plot,
                 database.plantedNodeDao().getByPlotId(id),
                 database.pathZoneDao().getByPlotId(id),
-                database.siteFeatureDao().getByPlotId(id)
+                database.siteFeatureDao().getByPlotId(id),
+                database.plantingHistoryDao().getByPlotId(id)
             )
         }
         return PlanFileCodec.encode(PlanBundle(plots, emptyList(), System.currentTimeMillis()), { seeds[it] }, appVersion)
@@ -63,6 +64,8 @@ class PlanFileRepository(private val database: AppDatabase) {
                 plants += nodes.size
                 if (pp.paths.isNotEmpty()) database.pathZoneDao().insertAll(pp.paths.map { it.copy(id = 0, plotId = plotId) })
                 pp.features.forEach { database.siteFeatureDao().insert(it.copy(id = 0, plotId = plotId)) }
+                // Season history keeps its own variety names, so it is stored even for varieties not in this catalog.
+                if (pp.history.isNotEmpty()) database.plantingHistoryDao().insertAll(pp.history.map { it.copy(id = 0, plotId = plotId) })
             }
             if (unknown > 0) messages += "$unknown plant(s) use varieties that aren't in this device's catalog and were skipped. Switch to a larger catalog tier (Settings → Catalog) and import again to include them."
         }

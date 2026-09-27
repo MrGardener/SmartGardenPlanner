@@ -127,6 +127,69 @@ d = await draft();
 check(d.plots[0].plants.length === 1, 'one undo removes the whole plan');
 await page.keyboard.press('Control+y');
 
+// Plan again: the list comes back (remembered), "Change selections" returns to it, "Discard" changes nothing.
+d = await draft();
+const plantsBefore = d.plots[0].plants.length;
+await page.locator('nav.tools').getByRole('button', { name: 'Plan an area for me' }).click();
+await drag(4.3, 0.3, 7.7, 1.9);
+await page.locator('.modal').waitFor();
+check(await page.locator('.plan-row').count() === rows, `plan list remembered (${await page.locator('.plan-row').count()} rows)`);
+check(await page.locator('.modal').getByRole('button', { name: 'Clumps (recommended)' }).count() === 1, 'clumps / rows choice offered');
+await page.screenshot({ path: path.join(shots, 'sgp-web-plan-dialog.png') });
+await page.locator('.plan-row input.count').first().fill('2');
+await btn('Plan it').click();
+await page.locator('#sgp-preview:not(.hidden)').waitFor();
+check((await page.locator('#sgp-preview').innerText()).includes('clump'), 'proposal explains clumps');
+await page.screenshot({ path: path.join(shots, 'sgp-web-proposal.png') });
+await btn('Change selections').click();
+await page.locator('.modal').waitFor();
+check(await page.locator('.plan-row input.count').first().inputValue() === '2', 'change selections keeps the edited list');
+await btn('Plan it').click();
+await page.locator('#sgp-preview:not(.hidden)').waitFor();
+await btn('Discard').click();
+d = await draft();
+check(d.plots[0].plants.length === plantsBefore, 'discard leaves the plot unchanged');
+check((await page.locator('.status').innerText()).includes('Nothing on the plot changed'), 'discard says nothing changed');
+
+// Variety details: search by everyday words, names on the layout.
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
+await page.getByPlaceholder(/Search .* varieties/).fill('sweet bell');
+check((await page.locator('.panel-body').innerText()).includes('California Wonder'), 'search "sweet bell" finds bell peppers');
+await page.getByPlaceholder(/Search .* varieties/).fill('spring onion');
+check(await page.locator('button.seed').count() === 3, 'three spring onions in the catalog');
+await page.getByPlaceholder(/Search .* varieties/).fill('cherry tomato');
+check((await page.locator('.panel-body').innerText()).includes('Sweet 100'), 'search "cherry tomato" finds cherry tomatoes');
+check((await page.locator('button.seed .kind').allInnerTexts()).some(t => t.includes('Cherry tomato')), 'variety kind shown in the list');
+check(await page.locator('#sgp-svg .plant-label').count() > 0, 'plant names shown on the layout');
+await page.getByPlaceholder(/Search .* varieties/).fill('');
+
+// Seasons: close this season, history kept and shown, undo works, rotation note when planting in the same spot.
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+await btn('Start a new season…').click();
+await page.locator('.modal').waitFor();
+const closing = await page.locator('.modal input').inputValue();
+await btn('Start new season').click();
+d = await draft();
+check(d.plots[0].plants.length === 0 && d.plots[0].history.length === plantsBefore, `season ${closing} closed: ${d.plots[0].history.length} plants in history`);
+check(d.plots[0].siteFeatures.length === 1, 'tree kept for next season');
+check(await page.locator('#sgp-svg g.history circle').count() === plantsBefore, 'past season shown faded on the layout');
+await page.screenshot({ path: path.join(shots, 'sgp-web-seasons.png') });
+check((await page.locator('.panel-body').innerText()).includes('Planning season'), 'seasons section shown');
+check((await page.locator('.panel-body').innerText()).includes('nightshades'), 'rotation advice names last year\'s families');
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
+await page.getByPlaceholder(/Search .* varieties/).fill('Brandywine');
+await page.locator('button.seed').first().click();
+await clickMetres(4, 4);
+check((await page.locator('.status').innerText()).includes('Rotation note'), 'rotation note when a tomato goes where tomatoes grew');
+await page.keyboard.press('Control+z');
+await page.keyboard.press('Control+z');
+d = await draft();
+check(d.plots[0].plants.length === plantsBefore && (d.plots[0].history || []).length === 0, 'undo reopens the closed season');
+await page.keyboard.press('Control+y');
+d = await draft();
+check(d.plots[0].history.length === plantsBefore, 'redo closes it again');
+const historyCount = d.plots[0].history.length;
+
 // Tabs render without errors.
 for (const t of ['Plot', 'Harmony', 'Care', 'Food', 'Plants']) {
   await page.locator('.tabs .tab', { hasText: new RegExp('^' + t + '$') }).click();
@@ -140,7 +203,7 @@ const saved = path.join(shots, 'sgp-smoke.sgp.json');
 await download.saveAs(saved);
 const json = JSON.parse(fs.readFileSync(saved, 'utf8'));
 check(json.format === 'smart-garden-plan' && json.version === 1, 'saved file has the plan-file header');
-check(json.plots.length === 1 && json.plots[0].plants.length === planted, 'saved file has all plants');
+check(json.plots.length === 1 && json.plots[0].history.length === historyCount, 'saved file has the season history');
 
 // Reload: draft restored.
 await page.reload();
@@ -156,7 +219,7 @@ const [chooser] = await Promise.all([page.waitForEvent('filechooser'), (async ()
 await chooser.setFiles(saved);
 await page.waitForFunction(() => document.querySelector('.status').textContent.startsWith('Opened'));
 d = await draft();
-check(d.plots[0].plants.length === planted, 're-opened file has the same plants');
+check(d.plots[0].history.length === historyCount, 're-opened file has the same history');
 
 // Phone-size layout.
 await page.setViewportSize({ width: 412, height: 915 });

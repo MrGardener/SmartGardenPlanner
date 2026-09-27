@@ -4,6 +4,9 @@ import com.example.smartgardenplanner.core.AutoPlanner
 import com.example.smartgardenplanner.core.HardinessZones
 import com.example.smartgardenplanner.core.PlantHeights
 import com.example.smartgardenplanner.core.PlantRequest
+import com.example.smartgardenplanner.core.PlantingLayout
+import com.example.smartgardenplanner.core.CropReference
+import com.example.smartgardenplanner.core.VarietyCatalogTraits
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlatformClock
 import com.example.smartgardenplanner.core.PlotEntity
@@ -189,54 +192,93 @@ object Dialogs {
 
     private data class Row(var seed: SeedEntity?, var count: Int)
 
-    /** "Plan an area for me" (FR-027): list what to plant; the shared AutoPlanner places it. */
+    /**
+     * "Plan an area for me" (FR-027): list what to plant; the shared AutoPlanner places it. The list starts from the
+     * rows being edited (after "Change selections"), else the last list used, else the usual plants, else suggestions
+     * (FR-034). Clumps or rows is chosen here (FR-032).
+     */
     fun planForMe(area: List<PlotPoint>) {
         val wp = Store.plot() ?: return
-        val rows = mutableListOf<Row>()
         val ctx = Store.context(wp)
-        RecommendationEngine.recommend(Catalog.seeds, ctx, area, limit = 3, foodOnly = true).forEach { rows += Row(it.seed, 3) }
+        val rows = mutableListOf<Row>()
+        val start = Store.planRows.ifEmpty { Prefs.lastPlan }
+        start.forEach { (code, n) -> Catalog.get(code)?.let { rows += Row(it, n) } }
+        if (rows.isEmpty()) Store.usual(4).forEach { rows += Row(it.first, 3) }
+        if (rows.isEmpty()) RecommendationEngine.recommend(Catalog.seeds, ctx, area, limit = 3, foodOnly = true).forEach { rows += Row(it.seed, 3) }
         if (rows.isEmpty()) rows += Row(null, 3)
+        fun remember() { Store.planRows.clear(); Store.planRows += rows.mapNotNull { r -> r.seed?.let { it.botanicalCode to r.count } } }
+        Store.previewArea = area
         val list = h("div", "plan-rows")
         val areaM2 = com.example.smartgardenplanner.core.PlotGeometry.polygonArea(area)
         fun draw() {
             list.clear()
             rows.forEachIndexed { i, row ->
-                val search = input(row.seed?.commonName ?: "", placeholder = "Type a plant, e.g. tomato")
+                val search = input(row.seed?.commonName ?: "", placeholder = "Type a plant, e.g. cherry tomato, sweet pepper, spring onion")
                 search.setAttribute("list", "sgp-seed-names")
                 search.on("change") {
                     val s = Catalog.byName[search.value.trim().lowercase()] ?: Catalog.search(search.value, null, 1).firstOrNull()
                     row.seed = s; if (s != null) search.value = s.commonName
-                    draw()
+                    remember(); draw()
                 }
                 val count = input(row.count.toString(), "number").also { it.setAttribute("min", "1"); it.setAttribute("max", "200"); it.classList.add("count") }
-                count.on("input") { row.count = count.value.toIntOrNull()?.coerceIn(0, 200) ?: 0 }
+                count.on("input") { row.count = count.value.toIntOrNull()?.coerceIn(0, 200) ?: 0; remember() }
                 val info = row.seed?.let { s ->
-                    val parts = mutableListOf("${PlantHeights.heightM(s).fmt(1)} m tall", "spacing ${(s.exclusionRadiusM * 2).fmt(2)} m")
+                    val parts = mutableListOf<String>()
+                    VarietyCatalogTraits.of(s)?.let { parts += it.details }
+                    parts += "${PlantHeights.heightM(s).fmt(1)} m tall"
+                    parts += "spacing ${(s.exclusionRadiusM * 2).fmt(2)} m"
                     RecommendationEngine.conflictReason(s, ctx)?.let { parts += "⚠ $it" }
                     parts.joinToString(" · ")
                 } ?: "Not in the catalog yet"
                 list.add(h("div", "plan-row", kids = listOf(
                     h("div", "grow", kids = listOf(search, h("div", "hint", info))), count,
-                    button("✕", "btn icon", "Remove") { rows.removeAt(i); draw() }
+                    button("✕", "btn icon", "Remove") { rows.removeAt(i); remember(); draw() }
                 )))
             }
             list.add(button("+ Add a plant", "btn") { rows += Row(null, 3); draw() })
         }
         draw()
+        val usual = Store.usual()
+        val usualBox = if (usual.isEmpty()) null else h("div", "field", kids = listOf(
+            h("span", "lbl", "What you usually plant (tap to add)"),
+            h("div", "chips", kids = usual.map { (s, n) ->
+                button("+ ${CropReference.speciesName(s)}", "chip", "${VarietyCatalogTraits.displayName(s)} — planted $n time${if (n == 1) "" else "s"}") {
+                    val i = rows.indexOfFirst { it.seed?.botanicalCode == s.botanicalCode }
+                    if (i >= 0) rows[i].count += 1 else { rows.removeAll { it.seed == null }; rows += Row(s, 3) }
+                    remember(); draw()
+                }
+            })
+        ))
+        var layout = Prefs.layout
+        val layoutBox = h("div", "field")
+        fun drawLayout() {
+            layoutBox.clear()
+            layoutBox.add(h("span", "lbl", "How should each crop be arranged?"))
+            layoutBox.add(h("div", "chips", kids = PlantingLayout.entries.map { l ->
+                button(l.label, if (l == layout) "chip on" else "chip") { layout = l; Prefs.layout = l; drawLayout() }
+            }))
+            layoutBox.add(para(layout.description, "hint"))
+        }
+        drawLayout()
         val warn = mutableListOf<HTMLElement>()
         if (!wp.plot.orientationSet) warn += para("The plot's direction isn't set, so the planner assumes the top edge faces north. Set it in Plot details for accurate shade and tall-plants-at-the-back.", "warn")
         if (wp.plot.latitude == null) warn += para("No ZIP/latitude: sun angles use 40° N.", "hint")
-        modal("Plan this area for me", listOf(
-            para("Area: ${areaM2.fmt(1)} m². List what you want and how many; the planner places them for sun, pollination and watering, with tall plants at the back.", "hint")
-        ) + warn + list, listOf(
-            "Cancel" to { Store.previewArea = null; App.render(); true },
+        if (wp.history.isNotEmpty()) warn += para("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently.", "hint")
+        modal("Plan this area for me", listOfNotNull(
+            para("Area: ${areaM2.fmt(1)} m². List what you want and how many; the planner places them for sun, pollination and watering, with tall plants at the back.", "hint"),
+            usualBox
+        ) + warn + list + layoutBox, listOf(
+            "Cancel" to { remember(); Store.previewArea = null; App.status("Plan cancelled. Your list is kept for next time."); App.render(); true },
             "Plan it" to plan@{
                 val requests = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count) } }.filter { it.count > 0 }
                 if (requests.isEmpty()) { App.status("Add at least one plant with a count."); return@plan false }
+                remember()
+                Prefs.lastPlan = Store.planRows.toList()
                 val result = AutoPlanner.plan(
                     ctx, area, requests,
                     isBlocked = { x, y, r -> Canvas.blockedByPath(wp, x, y, r) },
-                    marginMultiplier = Prefs.margin, orientationKnown = wp.plot.orientationSet
+                    marginMultiplier = Prefs.margin, orientationKnown = wp.plot.orientationSet,
+                    layout = layout, history = wp.history, seasonYear = wp.season()
                 )
                 Store.preview = result; Store.previewArea = area
                 previewCard()
@@ -245,32 +287,72 @@ object Dialogs {
         ), wide = true)
     }
 
-    /** Shows the proposal: dashed plants on the layout plus a card to keep or discard it. */
+    /**
+     * Shows the proposal: dashed plants on the layout plus a card to keep it, change the selections (back to the list,
+     * same area) or discard it. Nothing on the plot changes until "Keep this plan".
+     */
     fun previewCard() {
         val r = Store.preview ?: return
+        val area = Store.previewArea
         val body = mutableListOf<HTMLElement>()
-        val counts = r.placed.groupBy { it.seed.commonName }.map { "${it.value.size} × ${it.key}" }
+        val counts = r.placed.groupBy { it.seed.botanicalCode }.map { (_, l) -> "${l.size} × ${VarietyCatalogTraits.displayName(l.first().seed)}" }
         body += para(if (r.placed.isEmpty()) "Nothing fitted in that area." else "Placed: " + counts.joinToString(", ") + ".")
         if (r.unplaced.isNotEmpty()) body += para("Didn't fit: " + r.unplaced.entries.joinToString(", ") { "${it.value} × ${it.key}" } + ". Try a bigger area or fewer plants.", "warn")
         r.notes.forEach { body += para("• $it", "hint") }
         val card = byId("sgp-preview")
+        fun hide() { card.clear(); card.classList.add("hidden") }
         card.clear()
-        card.add(h("h3", "h", "Proposed planting"))
+        card.add(h("h3", "h", "Proposed planting (not planted yet)"))
         body.forEach { card.add(it) }
-        card.add(h("div", "row", kids = listOf(
-            button("Discard", "btn") { Store.preview = null; Store.previewArea = null; card.clear(); card.classList.add("hidden"); App.render() },
+        card.add(h("div", "row wrap", kids = listOf(
             button("Keep this plan", "btn primary") {
                 val now = PlatformClock.nowMillis()
                 Store.change { wp ->
                     wp.plants = wp.plants + r.placed.map { PlantedNodeEntity(id = Store.newId(), plotId = wp.plot.id, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y, datePlantedEpochMillis = now) }
                 }
                 Store.preview = null; Store.previewArea = null
-                card.clear(); card.classList.add("hidden")
+                hide()
                 App.status("Added ${r.placed.size} plants. Undo removes them all in one step.")
+                App.render()
+            },
+            button("Change selections", "btn", "Back to your list for the same area") {
+                Store.preview = null; hide()
+                if (area != null) planForMe(area)
+                App.render()
+            },
+            button("Discard", "btn", "Drop this proposal. Your plants and your list stay as they are.") {
+                Store.preview = null; Store.previewArea = null; hide()
+                App.status("Proposal discarded. Nothing on the plot changed, and your list is kept for next time.")
                 App.render()
             }
         )))
         card.classList.remove("hidden")
+    }
+
+    // ------------------------------------------------------------------ seasons (FR-033)
+
+    /** Closes the current season: plants move to history, everything else on the plot stays. One undo step. */
+    fun newSeason() {
+        val wp = Store.plot() ?: return
+        val season = wp.season()
+        val yearIn = input(season.toString(), "number").also { it.setAttribute("min", "1900"); it.setAttribute("max", "3000") }
+        val body = listOf(
+            para("This keeps the plot's fences, walls, buildings, trees, paths, sun/shade areas and outline, and moves this season's ${wp.plants.size} plant(s) into the plot's history."),
+            para("History stays visible (Plot tab → Seasons, and “Show past season” on the layout) and is used for crop-rotation advice and by “Plan an area for me”. It is saved in the plan file.", "hint"),
+            label("Season being closed", yearIn)
+        )
+        modal("Start a new season on “${wp.plot.name}”", body, listOf(
+            "Cancel" to { true },
+            "Start new season" to go@{
+                val year = yearIn.value.toIntOrNull()?.takeIf { it in 1900..3000 } ?: run { App.status("Enter a year between 1900 and 3000."); return@go false }
+                val archived = com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, year, { Catalog.get(it) }).map { it.copy(id = Store.newId()) }
+                Store.change { p -> p.history = p.history + archived; p.plants = emptyList() }
+                Store.historyYear = year
+                Canvas.selection = null
+                App.status("Season $year closed: ${archived.size} plant(s) kept in history (shown faded). Plan ${year + 1} with crop rotation in mind. Undo reverses this.")
+                App.render(); true
+            }
+        ))
     }
 
     // ------------------------------------------------------------------ help
@@ -282,6 +364,7 @@ object Dialogs {
         para("2. Draw what's there: trees, fences, walls, buildings (with a rough height), and paths."),
         para("3. Plant: choose a variety on the Plants tab and click the layout. Or drag an area with “Plan an area for me” and list what you want."),
         para("4. Save: saves a .sgp.json file. Open it on the Android app (Plots → Import) or in this page on any computer."),
+        para("5. When the season ends: Plot tab → Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. “Names” shows what each plant is (sweet or hot pepper, cherry or large tomato…)."),
         heading("Moving plans between computer and phone"),
         para("Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive…). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here."),
         heading("Keyboard"),

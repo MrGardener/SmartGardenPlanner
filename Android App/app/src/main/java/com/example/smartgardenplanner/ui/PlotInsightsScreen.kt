@@ -476,6 +476,18 @@ private fun HarmonyTab(snap: PlotSnapshot, settings: AppSettings) {
         if (report.plantCounts.isEmpty()) Text("Nothing planted yet.", fontSize = 12.sp, color = Color.Gray)
         else Text("Planted: " + report.plantCounts.joinToString(", ") { "${it.first} ×${it.second}" }, fontSize = 12.sp)
     }
+    // FR-032/033: what grew where in past seasons and where each family should go next.
+    Section("Seasons & crop rotation", "Past seasons stay with the plot. Use Start a new season (layout menu) when a season ends.") {
+        val season = com.example.smartgardenplanner.core.Seasons.currentSeason(snap.context.nodes, snap.history)
+        Text("Planning season: $season", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        com.example.smartgardenplanner.core.Seasons.years(snap.history).forEach { y ->
+            val list = snap.history.filter { it.seasonYear == y }
+            Text("$y: " + list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }, fontSize = 12.sp)
+        }
+        com.example.smartgardenplanner.core.CropRotation.advice(snap.context.plot, snap.history, snap.context.nodes, snap.context.seedLookup, season).forEach {
+            Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+        }
+    }
     val report = remember(snap) { HarmonyAnalyzer.analyze(snap.context, snap.catalog, settings.spacingMarginMultiplier) }
     if (!Feature.isEnabled(Feature.HARMONY_REPORT, settings.currentAppTier())) return
     Section("Issues") {
@@ -491,7 +503,7 @@ private fun HarmonyTab(snap: PlotSnapshot, settings: AppSettings) {
     if (report.goodPairs.isNotEmpty()) {
         Section("Working well together") { report.goodPairs.forEach { Text("✓ $it", fontSize = 12.sp, color = Color(0xFF10B981)) } }
     }
-    Section("Recommendations") {
+        Section("Recommendations") {
         if (report.recommendations.isEmpty()) Text("Nothing to add.", fontSize = 12.sp, color = Color.Gray)
         report.recommendations.forEach { Text("• $it", fontSize = 12.sp) }
     }

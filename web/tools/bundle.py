@@ -71,6 +71,7 @@ select.inp{width:auto;max-width:100%}
 .seed.on{border-color:var(--accent);background:var(--on-bg)}
 .seed.dim{opacity:.55}
 .seed .name{font-weight:600}
+.kind{display:block;font-size:12px;color:var(--accent);font-weight:600}
 .dot{width:12px;height:12px;border-radius:50%;flex:none;margin-top:4px}
 .badge{display:inline-block;background:var(--badge-bg);color:var(--badge-text);border-radius:10px;padding:0 8px;font-size:11px;margin-top:2px;width:max-content}
 .active{display:flex;gap:8px;background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:8px}

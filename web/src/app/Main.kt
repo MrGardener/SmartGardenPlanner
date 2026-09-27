@@ -122,6 +122,7 @@ object App {
             tools.add(button("Cancel (Esc)", "tool") { Canvas.cancelPoints() })
         }
         tools.add(h("span", "sep"))
+        tools.add(button(if (Prefs.showLabels) "Names: on" else "Names: off", if (Prefs.showLabels) "tool on" else "tool", "Show what each plant is (sweet or hot pepper, cherry or large tomato, spring or bulb onion…)") { Prefs.showLabels = !Prefs.showLabels; render() })
         tools.add(button("＋", "tool icon", "Zoom in") { Canvas.zoom(1 / 1.3) })
         tools.add(button("－", "tool icon", "Zoom out") { Canvas.zoom(1.3) })
         tools.add(button("Fit", "tool", "Fit the plot to the window") { Canvas.fit(); Canvas.render() })

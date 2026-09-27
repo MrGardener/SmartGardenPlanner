@@ -53,6 +53,7 @@ device: the Android app today, and the browser planner for computers later (see 
 | `plants` | array of Plant | no | Up to 5000. |
 | `paths` | array of Path | no | No-plant paths, up to 2000. |
 | `siteFeatures` | array of SiteFeature | no | Obstacles and marked areas, up to 2000. |
+| `history` | array of PastPlanting | no | Plants of finished seasons (FR-033), up to 20,000. Omitted when empty; readers that don't know it ignore it. |
 
 ## 4. Plant
 
@@ -88,6 +89,22 @@ or a line through 2 or more points with a width:
 | `TREE` | 1 (trunk) | `heightM` (0–100), `radiusM` (crown, 0–30) |
 | `FENCE`, `WALL` | 2+ (line) | `heightM` (0–100) |
 | `BUILDING` | 2+ (outline; closed when 3+) | `heightM` (0–100) |
+
+## 6b. PastPlanting (history) — added 2026-09-27, still format version 1
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `season` | integer | yes | Season year, 1900–3000. |
+| `code` | string | yes | Catalog code of the variety at the time. |
+| `variety` | string | no | Variety name (kept so the record reads even if the code is unknown). |
+| `family` | string | no | Botanical family, e.g. "Solanaceae". |
+| `rotationGroup` | string | no | LEGUMES, BRASSICAS, NIGHTSHADES, CUCURBITS, GRAINS, ALLIUMS, ROOTS, BEETS or LETTUCE. |
+| `x`, `y` | number | yes | Position in metres; must be inside the plot. |
+| `radiusM` | number | no | Spacing radius, (0, 50] m; default 0.3. |
+| `plantedAt` | string | no | ISO-8601 UTC. |
+
+The field is optional and additive, so the format version stays 1: an older reader opens the file and simply
+doesn't see the history.
 
 ## 7. Variety (customVarieties)
 
@@ -130,7 +147,8 @@ or a line through 2 or more points with a width:
       { "code": "LET-001", "variety": "Lettuce - Buttercrunch", "x": 1.0, "y": 3.4 }
     ],
     "paths": [{ "type": "RECTANGLE", "x": 0, "y": 2, "widthM": 6, "heightM": 0.4 }],
-    "siteFeatures": [{ "type": "TREE", "points": [[5.5, 0.5]], "heightM": 6, "radiusM": 2 }]
+    "siteFeatures": [{ "type": "TREE", "points": [[5.5, 0.5]], "heightM": 6, "radiusM": 2 }],
+    "history": [{ "season": 2025, "code": "TOM-001", "variety": "Tomato - Brandywine", "family": "Solanaceae", "rotationGroup": "NIGHTSHADES", "x": 1.0, "y": 0.8, "radiusM": 0.61 }]
   }],
   "customVarieties": []
 }

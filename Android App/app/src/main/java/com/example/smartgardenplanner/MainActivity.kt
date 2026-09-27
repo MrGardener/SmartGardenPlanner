@@ -43,6 +43,11 @@ import kotlin.math.roundToInt
 // --- EXPLICIT COMPLIANCE IMPORTS: PREVENT COUPLING RESOLUTION FAILURES ---
 import com.example.smartgardenplanner.core.PlotEntity
 import com.example.smartgardenplanner.core.LayoutPalette
+import com.example.smartgardenplanner.core.PlantingHistoryEntity
+import com.example.smartgardenplanner.core.PlantingLayout
+import com.example.smartgardenplanner.core.Seasons
+import com.example.smartgardenplanner.core.CropRotation
+import com.example.smartgardenplanner.core.VarietyCatalogTraits
 import com.example.smartgardenplanner.core.SunBand
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PathZoneEntity
@@ -158,6 +163,22 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
             .loadTier(com.example.smartgardenplanner.data.CatalogTier.BASIC)
         database.seedDao().insertAll(basicSeeds)
         auditLogger.appendLog("DATABASE_INIT: Seed dictionary pre-populated (${basicSeeds.size} records, Basic tier).")
+    }
+    // New bundled varieties (e.g. the spring onions added 2026-09-27) reach existing installs: insert any
+    // entries of the active tier that are missing. IGNORE keeps every existing row, custom or not, unchanged.
+    try {
+        val tierName = com.example.smartgardenplanner.data.SettingsRepository(
+            com.example.smartgardenplanner.data.SecurityRepositoryImpl(database.configDao())
+        ).load().catalogTier
+        val tier = com.example.smartgardenplanner.data.CatalogTier.entries.firstOrNull { it.name == tierName }
+            ?: com.example.smartgardenplanner.data.CatalogTier.BASIC
+        if (database.seedDao().count() < tier.varietyCount) {
+            database.seedDao().insertAll(com.example.smartgardenplanner.data.SeedCatalogLoader(context).loadTier(tier))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        auditLogger.appendLog("CATALOG: top-up skipped (${e.javaClass.simpleName}).")
     }
     if (database.climateZoneDao().count() == 0) {
         database.climateZoneDao().insertAll(com.example.smartgardenplanner.data.SeedDataset.starterClimateZones)
@@ -767,7 +788,8 @@ data class CanvasSnapshot(
     val nodes: List<PlantedNodeEntity>,
     val paths: List<PathZoneEntity>,
     val features: List<SiteFeatureEntity>, // trees, fences, walls, buildings, sun/flood/slope areas
-    val boundaryJson: String?              // plot outline (FR-002)
+        val boundaryJson: String?,             // plot outline (FR-002)
+    val history: List<PlantingHistoryEntity> // finished seasons (FR-033), so "Start a new season" can be undone
 )
 
 /** [NEW] "x1,y1;x2,y2;..." <-> List<Offset> (meters) for POLYLINE path zones. */
@@ -866,7 +888,12 @@ fun CanvasWorkspaceScreen(
     var autoPlanArea by remember { mutableStateOf<List<PlotPoint>?>(null) }
     var planPreview by remember { mutableStateOf<AutoPlanResult?>(null) }
     var planRunning by remember { mutableStateOf(false) }
-    val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
+        val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
+    // FR-033 season history of this plot; FR-034 variety codes planted on any plot or season ("what you usually plant").
+    var historyState by remember { mutableStateOf<List<PlantingHistoryEntity>>(emptyList()) }
+    var historyYear by remember { mutableStateOf<Int?>(null) }
+    var allPlantedCodes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showNewSeasonDialog by remember { mutableStateOf(false) }
     // FR-029: save this plot as a portable plan file (.sgp.json).
     val canvasContext = LocalContext.current
     val exportScope = rememberCoroutineScope()
@@ -950,14 +977,17 @@ fun CanvasWorkspaceScreen(
                 database.pathZoneDao().deleteAllForPlot(plotId)
                 if (snapshot.paths.isNotEmpty()) database.pathZoneDao().insertAll(snapshot.paths)
                 database.siteFeatureDao().deleteAllForPlot(plotId)
-                if (snapshot.features.isNotEmpty()) database.siteFeatureDao().insertAll(snapshot.features)
+                                if (snapshot.features.isNotEmpty()) database.siteFeatureDao().insertAll(snapshot.features)
+                database.plantingHistoryDao().deleteAllForPlot(plotId)
+                if (snapshot.history.isNotEmpty()) database.plantingHistoryDao().insertAll(snapshot.history)
                 val plot = database.plotDao().getById(plotId)
                 if (plot != null && plot.boundaryJson != snapshot.boundaryJson) {
                     plot.copy(boundaryJson = snapshot.boundaryJson).also { database.plotDao().update(it) }
                 } else plot
             }
         }
-        siteFeatures = snapshot.features
+                siteFeatures = snapshot.features
+        historyState = snapshot.history
         if (restoredPlot != null) activePlot = restoredPlot
     }
     val validator = remember { CompanionPlantingValidator() }
@@ -972,7 +1002,7 @@ fun CanvasWorkspaceScreen(
     val germinationEngine = remember { GerminationContingencyEngine() }
     val autoPopulateEngine = remember { AutoPopulateEngine() }
 
-    fun snapshotNow() = CanvasSnapshot(nodesState, pathZonesState, siteFeatures, activePlot?.boundaryJson)
+    fun snapshotNow() = CanvasSnapshot(nodesState, pathZonesState, siteFeatures, activePlot?.boundaryJson, historyState)
     val seedMap = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
     fun seedFor(code: String): SeedEntity? = seedMap[code]
 
@@ -1081,7 +1111,9 @@ fun CanvasWorkspaceScreen(
             activePlot = database.plotDao().getById(plotId)
             val list = database.plantedNodeDao().getByPlotId(plotId)
             val paths = database.pathZoneDao().getByPlotId(plotId)
-            val features = database.siteFeatureDao().getByPlotId(plotId)
+                        val features = database.siteFeatureDao().getByPlotId(plotId)
+            val history = database.plantingHistoryDao().getByPlotId(plotId)
+            val codesEverywhere = database.plantedNodeDao().getAllNodes().map { it.seedCode } + database.plantingHistoryDao().allCodes()
             seedDictionary = database.seedDao().getAllSeeds()
             val loadedSettings = settingsRepository.load() // [NEW]
 
@@ -1091,10 +1123,12 @@ fun CanvasWorkspaceScreen(
                 redoStack.updateLimit(loadedSettings.undoHistoryDepth) // [NEW]
                 nodesState = list
                 pathZonesState = paths
-                siteFeatures = features
+                                siteFeatures = features
+                historyState = history
+                allPlantedCodes = codesEverywhere
                 undoStack.clear()
                 redoStack.clear()
-                undoStack.push(CanvasSnapshot(list, paths, features, activePlot?.boundaryJson))
+                undoStack.push(CanvasSnapshot(list, paths, features, activePlot?.boundaryJson, history))
             }
         }
     }
@@ -1286,6 +1320,12 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                             DropdownMenuItem(text = { Text("Plot insights (site, harmony, care, food)…") }, onClick = { showOptionsMenu = false; onOpenInsights() })
+                            // FR-033: close this season; plants become history, the fence, buildings, trees, paths and areas stay.
+                            DropdownMenuItem(
+                                text = { Text("Start a new season…") },
+                                enabled = nodesState.isNotEmpty(),
+                                onClick = { showOptionsMenu = false; showNewSeasonDialog = true }
+                            )
                             Divider()
                             // [NEW] Wires WeedMaskGeometryEngine and IrrigationRouteCalculator into the
                             // UI for the first time — both existed as tested engines with nothing calling them.
@@ -1302,6 +1342,26 @@ fun CanvasWorkspaceScreen(
                                     showOptionsMenu = false
                                 }
                             )
+                                                        DropdownMenuItem(
+                                text = { Text((if (settings.showPlantLabels) "✓ " else "") + "Show plant names (sweet/hot, cherry/large…)") },
+                                onClick = {
+                                    val updated = settings.copy(showPlantLabels = !settings.showPlantLabels)
+                                    settings = updated
+                                    launchSafely { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
+                                    showOptionsMenu = false
+                                }
+                            )
+                            val seasonYears = Seasons.years(historyState)
+                            if (seasonYears.isNotEmpty()) {
+                                // FR-033: tap to cycle through past seasons (shown dashed under this season's plants).
+                                DropdownMenuItem(
+                                    text = { Text("Past season on layout: " + (historyYear?.toString() ?: "none") + "  (tap to change)") },
+                                    onClick = {
+                                        val options = listOf<Int?>(null) + seasonYears
+                                        historyYear = options[(options.indexOf(historyYear) + 1) % options.size]
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(if (showWeedMask) "✓ Show weed-risk mask" else "Show weed-risk mask") },
                                 onClick = { showWeedMask = !showWeedMask; showOptionsMenu = false }
@@ -1469,7 +1529,13 @@ fun CanvasWorkspaceScreen(
                         // FR-027: the app decides where everything goes.
                         Button(
                             onClick = {
-                                planForMe = true
+                                                                planForMe = true
+                                // FR-034: start from the last list used, else the varieties this gardener usually plants.
+                                if (planRows.isEmpty()) {
+                                    val remembered = settings.lastPlanRows.filter { seedFor(it.first) != null }
+                                    if (remembered.isNotEmpty()) planRows.addAll(remembered)
+                                    else Seasons.usualVarieties(allPlantedCodes, emptyList(), { seedFor(it) }, 4).forEach { planRows.add(it.first.botanicalCode to 3) }
+                                }
                                 canvasMode = CanvasMode.SELECT_AREA
                                 inProgressPoints = emptyList()
                                 snackbarMessage = "Drag over the area you want planted (or tap its corners in Custom shape mode)."
@@ -1609,12 +1675,16 @@ fun CanvasWorkspaceScreen(
                                                                 snackbarMessage = "Spacing conflict: too close to an existing plant."
                                                             }
                                                         } else {
-                                                            val newNodes = nodesState + candidateNode
+                                                                                                                        val newNodes = nodesState + candidateNode
+                                                            // FR-032: planting is never blocked for rotation, but the gardener is told.
+                                                            val rotationHit = CropRotation.conflict(realXM, realYM, candidateSeed, historyState, Seasons.currentSeason(nodesState, historyState))
                                                             launchSafely {
                                                                 withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insert(candidateNode) }
                                                                 reloadNodes()
                                                                 undoStack.push(snapshotNow())
                                                                 redoStack.clear()
+                                                                allPlantedCodes = allPlantedCodes + candidateNode.seedCode
+                                                                rotationHit?.let { snackbarMessage = "Rotation note: " + CropRotation.warning(it, CropReference.speciesName(candidateSeed)) }
                                                             }
                                                         }
                                                     },
@@ -1800,11 +1870,13 @@ fun CanvasWorkspaceScreen(
                                                                     if (!result.isValid) {
                                                                         snackbarMessage = "Can't move there — too close to another plant."
                                                                     } else {
+                                                                                                                                                val rotationHit = CropRotation.conflict(realXM, realYM, seed, historyState, Seasons.currentSeason(nodesState, historyState))
                                                                         launchSafely {
                                                                             withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(candidate) }
                                                                             reloadNodes()
                                                                             undoStack.push(snapshotNow())
                                                                             redoStack.clear()
+                                                                            rotationHit?.let { snackbarMessage = "Moved. Rotation note: " + CropRotation.warning(it, CropReference.speciesName(seed)) }
                                                                         }
                                                                     }
                                                                 }
@@ -2026,6 +2098,18 @@ fun CanvasWorkspaceScreen(
                                         drawRect(color = previewColor, topLeft = topLeft, size = previewSize, style = Stroke(width = 3f))
                                     }
 
+                                                                        // FR-033: a past season, dashed and faded, under this season's plants.
+                                    historyYear?.let { year ->
+                                        val ghostPaint = android.graphics.Paint().apply { color = android.graphics.Color.rgb(87, 83, 78); textSize = 22f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; textSkewX = -0.2f }
+                                        historyState.filter { it.seasonYear == year }.forEach { h ->
+                                            val c = Offset(h.coordinateXM * scaleX, h.coordinateYM * scaleY)
+                                            drawCircle(Color(0xFF57534E), radius = h.radiusM * scaleX, center = c, style = Stroke(width = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f))))
+                                            if (settings.showPlantLabels) drawContext.canvas.nativeCanvas.drawText(h.speciesName, c.x, c.y + 8f, ghostPaint)
+                                        }
+                                    }
+                                    // FR-031: short names under plants ("Bell red", "Cherry red", "Spring"), with a halo so they read over shade.
+                                    val labelHalo = android.graphics.Paint().apply { color = android.graphics.Color.rgb(245, 241, 230); textSize = 24f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; style = android.graphics.Paint.Style.STROKE; strokeWidth = 6f }
+                                    val labelPaint = android.graphics.Paint().apply { color = android.graphics.Color.rgb(41, 37, 36); textSize = 24f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; isFakeBoldText = true }
                                     nodesState.forEach { node: PlantedNodeEntity ->
                                         // [NEW] While this specific node is being dragged, render it at the
                                         // live touch position instead of its stored coordinates, so the move
@@ -2044,7 +2128,15 @@ fun CanvasWorkspaceScreen(
 
                                         drawCircle(color = VegetableColorPalette.exclusionRingColorFor(seed).copy(alpha = VegetableColorPalette.exclusionRingColorFor(seed).alpha * alpha), radius = exclusionRadiusPx, center = centerOffset)
                                         drawCircle(color = baseColor.copy(alpha = 0.8f * alpha), radius = exclusionRadiusPx, center = centerOffset, style = Stroke(width = 2f))
-                                        drawCircle(color = baseColor.copy(alpha = alpha), radius = 10f, center = centerOffset)
+                                                                                // Centre dot in the ripe fruit colour when known (red vs yellow bell pepper), FR-031.
+                                        val dotColor = seed?.let { VarietyCatalogTraits.dotArgb(it) }?.let { Color(it) } ?: baseColor
+                                        drawCircle(color = dotColor.copy(alpha = alpha), radius = 10f, center = centerOffset)
+                                        drawCircle(color = Color(LayoutPalette.INK).copy(alpha = alpha), radius = 10f, center = centerOffset, style = Stroke(width = 1.5f))
+                                        if (settings.showPlantLabels && seed != null && !isDragging) {
+                                            val tag = VarietyCatalogTraits.of(seed)?.tag ?: CropReference.speciesName(seed)
+                                            drawContext.canvas.nativeCanvas.drawText(tag, centerOffset.x, centerOffset.y + 34f, labelHalo)
+                                            drawContext.canvas.nativeCanvas.drawText(tag, centerOffset.x, centerOffset.y + 34f, labelPaint)
+                                        }
 
                                         if (!isDragging && seed != null && germinationEngine.isGerminationOverdue(node, seed)) {
                                             drawCircle(color = Color(0xFFEF4444), radius = 16f, center = centerOffset, style = Stroke(width = 3f))
@@ -2073,9 +2165,10 @@ fun CanvasWorkspaceScreen(
                                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
                                             Column(modifier = Modifier.padding(10.dp).heightIn(max = 220.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 Text("Planting plan: ${preview.placed.size} plants", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                preview.placed.groupBy { CropReference.speciesName(it.seed) }.forEach { (name, list) ->
-                                                    Text("• $name × ${list.size}", fontSize = 11.sp)
+                                                                                                preview.placed.groupBy { it.seed.botanicalCode }.forEach { (_, list) ->
+                                                    Text("• ${VarietyCatalogTraits.displayName(list.first().seed)} × ${list.size}", fontSize = 11.sp)
                                                 }
+                                                Text("Nothing is planted until you tap Plant them.", fontSize = 11.sp, color = Color.Gray)
                                                 preview.notes.forEach { Text(it, fontSize = 11.sp, color = Color.LightGray) }
                                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                                     Button(enabled = preview.placed.isNotEmpty(), onClick = {
@@ -2085,12 +2178,18 @@ fun CanvasWorkspaceScreen(
                                                             reloadNodes()
                                                             undoStack.push(snapshotNow())
                                                             redoStack.clear()
-                                                            snackbarMessage = "Planted ${nodes.size} plants. Undo removes them all."
+                                                                                                                        snackbarMessage = "Planted ${nodes.size} plants. Undo removes them all."
+                                                            allPlantedCodes = allPlantedCodes + nodes.map { it.seedCode }
                                                         }
                                                         planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
                                                     }) { Text("Plant them", fontSize = 12.sp) }
-                                                    OutlinedButton(onClick = { planPreview = null }) { Text("Change list", fontSize = 12.sp) }
-                                                    TextButton(onClick = { planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE }) { Text("Cancel", fontSize = 12.sp) }
+                                                                                                        // Back to the list for the same area, with everything as it was chosen.
+                                                    OutlinedButton(onClick = { planPreview = null }) { Text("Change selections", fontSize = 12.sp) }
+                                                    // Drops only the proposal: the plot and the list stay as they are (the list is remembered).
+                                                    TextButton(onClick = {
+                                                        planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                                        snackbarMessage = "Proposal discarded. Nothing on the plot changed; your list is kept for next time."
+                                                    }) { Text("Discard", fontSize = 12.sp) }
                                                 }
                                             }
                                         }
@@ -2250,14 +2349,26 @@ fun CanvasWorkspaceScreen(
         if (planPreview == null && !showDirectionDialog) {
             AutoPlanRequestDialog(
                 seedDictionary = seedDictionary,
-                rows = planRows,
+                                rows = planRows,
+                usual = Seasons.usualVarieties(allPlantedCodes, emptyList(), { seedFor(it) }),
+                layout = settings.planLayoutEnum,
+                onLayoutChange = { l ->
+                    val updated = settings.copy(planLayout = l.name)
+                    settings = updated
+                    launchSafely { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
+                },
+                hasHistory = historyState.isNotEmpty(),
                 conflictFor = pickerConflict,
                 orientationSet = activePlot?.orientationSet == true,
                 running = planRunning,
                 onSetDirection = { showDirectionDialog = true },
                 onPlan = { requests ->
-                    val plot = activePlot ?: return@AutoPlanRequestDialog
+                                        val plot = activePlot ?: return@AutoPlanRequestDialog
                     planRunning = true
+                    val remembered = settings.copy(lastPlanList = com.example.smartgardenplanner.core.AppSettings.encodePlanRows(planRows.toList()))
+                    settings = remembered
+                    val history = historyState
+                    val season = Seasons.currentSeason(nodesState, historyState)
                     launchSafely {
                         val context = plotContext(plot)
                         val paths = pathZonesState
@@ -2270,16 +2381,66 @@ fun CanvasWorkspaceScreen(
                                         else circleIntersectsRect(x, y, r, zone.xM, zone.yM, zone.widthM, zone.heightM)
                                     }
                                 },
-                                marginMultiplier = settings.spacingMarginMultiplier,
-                                orientationKnown = plot.orientationSet
+                                                                marginMultiplier = settings.spacingMarginMultiplier,
+                                orientationKnown = plot.orientationSet,
+                                layout = remembered.planLayoutEnum,
+                                history = history,
+                                seasonYear = season
                             )
                         } } finally { planRunning = false }
-                        planPreview = result
+                                                planPreview = result
+                        withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(remembered) }
                     }
                 },
-                onDismiss = { autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE }
+                onDismiss = {
+                    autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                    if (planRows.isNotEmpty()) snackbarMessage = "Plan cancelled. Your list is kept for next time."
+                }
             )
         }
+    }
+
+        // FR-033: close the season. Plants move to history; fence, walls, buildings, trees, paths, areas and outline stay.
+    if (showNewSeasonDialog) {
+        val season = Seasons.currentSeason(nodesState, historyState)
+        var yearText by remember(season) { mutableStateOf(season.toString()) }
+        AlertDialog(
+            onDismissRequest = { showNewSeasonDialog = false },
+            title = { Text("Start a new season") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("The fence, walls, buildings, trees, paths, sun/shade areas and outline stay. This season's ${nodesState.size} plant(s) move into the plot's history.", fontSize = 13.sp)
+                    Text("History stays visible (menu → Past season on layout, and Plot insights → Harmony) and is used for crop-rotation advice and by Plan an area for me. It travels in plan files. Undo reverses this.", fontSize = 12.sp, color = Color.Gray)
+                    OutlinedTextField(value = yearText, onValueChange = { yearText = it.filter(Char::isDigit).take(4) }, label = { Text("Season being closed") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = nodesState.isNotEmpty() && (yearText.toIntOrNull() ?: 0) in 1900..3000,
+                    onClick = {
+                        val year = yearText.toInt()
+                        val archived = Seasons.archive(plotId, nodesState, year) { seedFor(it) }
+                        showNewSeasonDialog = false
+                        launchSafely {
+                            withContext(SgpExecutors.dbDispatcher) {
+                                database.withTransaction {
+                                    database.plantingHistoryDao().insertAll(archived)
+                                    database.plantedNodeDao().deleteAllForPlot(plotId)
+                                }
+                            }
+                            historyState = withContext(SgpExecutors.dbDispatcher) { database.plantingHistoryDao().getByPlotId(plotId) }
+                            reloadNodes()
+                            historyYear = year
+                            undoStack.push(snapshotNow())
+                            redoStack.clear()
+                            snackbarMessage = "Season $year closed: ${archived.size} plants kept as history (dashed). Plan ${year + 1} with rotation in mind."
+                        }
+                    }
+                ) { Text("Start new season") }
+            },
+            dismissButton = { TextButton(onClick = { showNewSeasonDialog = false }) { Text("Cancel") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 
     if (showDirectionDialog) {
@@ -2960,7 +3121,8 @@ private fun VarietyPickerDialog(
                                 Box(modifier = Modifier.size(12.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                    Text(cultivarNameOf(seed), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                                        Text(cultivarNameOf(seed), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    VarietyCatalogTraits.of(seed)?.let { Text(it.details, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary) }
                                     conflict?.let { Text(it, fontSize = 10.sp, color = Color(0xFFEF4444)) }
                                     Text(
                                         "spacing ${seed.exclusionRadiusM}m • germinates ~${seed.germinationDays}d • harvest ~${seed.daysToHarvest}d",
@@ -3136,7 +3298,11 @@ private fun SiteFeatureDialog(
 @Composable
 private fun AutoPlanRequestDialog(
     seedDictionary: List<SeedEntity>,
-    rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
+        rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
+    usual: List<Pair<SeedEntity, Int>>,
+    layout: PlantingLayout,
+    onLayoutChange: (PlantingLayout) -> Unit,
+    hasHistory: Boolean,
     conflictFor: (SeedEntity) -> String?,
     orientationSet: Boolean,
     running: Boolean,
@@ -3158,14 +3324,33 @@ private fun AutoPlanRequestDialog(
                         TextButton(onClick = onSetDirection) { Text("Set it") }
                     }
                 }
-                Column(modifier = Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
+                                if (hasHistory) Text("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently.", fontSize = 11.sp, color = Color.Gray)
+                // FR-034: what this gardener usually plants, one tap to add.
+                if (usual.isNotEmpty()) {
+                    Text("What you usually plant", fontSize = 11.sp, color = Color.Gray)
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        usual.forEach { (s, _) ->
+                            OutlinedButton(
+                                onClick = {
+                                    val i = rows.indexOfFirst { it.first == s.botanicalCode }
+                                    if (i >= 0) rows[i] = s.botanicalCode to rows[i].second + 1 else rows.add(s.botanicalCode to 3)
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                            ) { Text("+ ${CropReference.speciesName(s)}", fontSize = 11.sp) }
+                        }
+                    }
+                }
+                Column(modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState())) {
                     if (rows.isEmpty()) Text("No plants yet. Tap Add a plant.", fontSize = 12.sp, color = Color.Gray)
                     rows.forEachIndexed { i, (code, count) ->
                         val seed = byCode[code]
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(10.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
                             Spacer(Modifier.width(6.dp))
-                            Text(seed?.commonName ?: code, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                Text(seed?.commonName ?: code, fontSize = 12.sp)
+                                seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(it.details, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
+                            }
                             TextButton(onClick = { if (count > 1) rows[i] = code to count - 1 else rows.removeAt(i) }, contentPadding = PaddingValues(0.dp)) { Text("−", fontSize = 16.sp) }
                             Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = { rows[i] = code to (count + 1).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+", fontSize = 16.sp) }
@@ -3173,7 +3358,16 @@ private fun AutoPlanRequestDialog(
                         }
                     }
                 }
-                TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+                                TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+                // FR-032: clumps (default) or rows.
+                Text("How should each crop be arranged?", fontSize = 11.sp, color = Color.Gray)
+                PlantingLayout.entries.forEach { l ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLayoutChange(l) }) {
+                        RadioButton(selected = layout == l, onClick = { onLayoutChange(l) })
+                        Text(l.label, fontSize = 13.sp)
+                    }
+                }
+                Text(layout.description, fontSize = 11.sp, color = Color.Gray)
             }
         },
         confirmButton = {

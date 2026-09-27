@@ -10,24 +10,31 @@ import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlatformClock
 import com.example.smartgardenplanner.core.PlotContext
 import com.example.smartgardenplanner.core.PlotEntity
+import com.example.smartgardenplanner.core.PlantingHistoryEntity
+import com.example.smartgardenplanner.core.PlantingLayout
 import com.example.smartgardenplanner.core.PlotPoint
+import com.example.smartgardenplanner.core.Seasons
 import com.example.smartgardenplanner.core.SiteFeatureEntity
 import com.example.smartgardenplanner.core.SunlightEngine
 import kotlinx.browser.window
 
 const val WEB_VERSION = "1.0"
 
-data class Snap(val plot: PlotEntity, val plants: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>, val features: List<SiteFeatureEntity>)
+data class Snap(val plot: PlotEntity, val plants: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>, val features: List<SiteFeatureEntity>, val history: List<PlantingHistoryEntity>)
 
 /** One plot being edited, with its own undo/redo history (every change is one step, as on the phone). */
-class WebPlot(var plot: PlotEntity, plants: List<PlantedNodeEntity>, paths: List<PathZoneEntity>, features: List<SiteFeatureEntity>) {
+class WebPlot(var plot: PlotEntity, plants: List<PlantedNodeEntity>, paths: List<PathZoneEntity>, features: List<SiteFeatureEntity>, history: List<PlantingHistoryEntity> = emptyList()) {
     var plants = plants
     var paths = paths
     var features = features
+    /** Plants of finished seasons (FR-033). */
+    var history = history
     val undo = ArrayDeque<Snap>()
     val redo = ArrayDeque<Snap>()
-    fun snap() = Snap(plot, plants, paths, features)
-    fun restore(s: Snap) { plot = s.plot; plants = s.plants; paths = s.paths; features = s.features }
+    fun snap() = Snap(plot, plants, paths, features, history)
+    fun restore(s: Snap) { plot = s.plot; plants = s.plants; paths = s.paths; features = s.features; history = s.history }
+    /** The season being planned (FR-033). */
+    fun season(): Int = Seasons.currentSeason(plants, history)
 }
 
 /** User preferences kept in this browser only. */
@@ -50,6 +57,17 @@ object Prefs {
     var theme: String
         get() = get("theme")?.takeIf { it == "light" || it == "dark" } ?: "auto"
         set(v) = set("theme", v)
+    /** Clumps or rows for "Plan an area for me" (FR-032). */
+    var layout: PlantingLayout
+        get() = PlantingLayout.entries.firstOrNull { it.name == get("layout") } ?: PlantingLayout.CLUMPS
+        set(v) = set("layout", v.name)
+    /** The last "Plan an area for me" list, "CODE:count,CODE:count" (FR-034). */
+    var lastPlan: List<Pair<String, Int>>
+        get() = get("lastPlan").orEmpty().split(",").mapNotNull { e -> e.split(":").takeIf { it.size == 2 }?.let { (c, n) -> n.toIntOrNull()?.let { c to it } } }
+        set(v) = set("lastPlan", v.joinToString(",") { "${it.first}:${it.second}" })
+    var showLabels: Boolean
+        get() = get("labels") != "0"
+        set(v) = set("labels", if (v) "1" else "0")
     var organic: Boolean
         get() = get("care") != "CONVENTIONAL"
         set(v) = set("care", if (v) "ORGANIC" else "CONVENTIONAL")
@@ -64,10 +82,17 @@ object Store {
     var dirty = false
     var preview: AutoPlanResult? = null
     var previewArea: List<PlotPoint>? = null
+    /** The rows of the plan being edited (variety code, count); kept when a proposal is discarded (FR-034). */
+    val planRows = mutableListOf<Pair<String, Int>>()
+    /** Past season shown on the layout (null = none). */
+    var historyYear: Int? = null
     private var nextId = 1L
 
     fun newId(): Long = nextId++
     fun plot(): WebPlot? = plots.getOrNull(current)
+
+    /** Varieties this gardener plants most, from every open plot and its history (FR-034). */
+    fun usual(limit: Int = 8) = Seasons.usualVarieties(plots.flatMap { p -> p.plants.map { it.seedCode } }, plots.flatMap { p -> p.history.map { it.seedCode } }, { Catalog.get(it) }, limit)
 
     fun guildsActive() = if (Prefs.guilds) GuildCatalog.ALL else emptyList()
 
@@ -115,7 +140,7 @@ object Store {
     }
 
     fun encode(): String = PlanFileCodec.encode(
-        PlanBundle(plots.map { PlanPlot(it.plot, it.plants, it.paths, it.features) }, emptyList(), PlatformClock.nowMillis()),
+        PlanBundle(plots.map { PlanPlot(it.plot, it.plants, it.paths, it.features, it.history) }, emptyList(), PlatformClock.nowMillis()),
         { Catalog.get(it) }, "web $WEB_VERSION"
     )
 
@@ -135,7 +160,8 @@ object Store {
             }
             plots += WebPlot(
                 pp.plot.copy(id = newId()), plants,
-                pp.paths.map { it.copy(id = newId()) }, pp.features.map { it.copy(id = newId()) }
+                pp.paths.map { it.copy(id = newId()) }, pp.features.map { it.copy(id = newId()) },
+                pp.history.map { it.copy(id = newId()) }
             )
         }
         if (unknown > 0) messages += "$unknown plant(s) use varieties this planner doesn't know and were skipped."

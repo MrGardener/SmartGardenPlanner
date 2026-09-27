@@ -30,7 +30,7 @@ what's open, so save first.
 - **Same rules as the phone.** The planning rules come from the Android app's `core/` folder, compiled to
   JavaScript: spacing, companions, guilds, hardiness, sun and shade, Plan an area for me, harmony, suggestions, care
   and food. There is no second copy of the rules that could drift.
-- **Same data.** The page embeds the Pro seed catalog (2,936 varieties) and the offline ZIP tables:
+- **Same data.** The page embeds the Pro seed catalog (2,939 varieties) and the offline ZIP tables:
   - ZIP → USDA 2023 hardiness zone, from the PRISM Group.
   - ZIP → latitude.
 
@@ -39,7 +39,7 @@ what's open, so save first.
 | `src/app/` | Browser UI (Kotlin/JS): `Main.kt` (shell, open/save), `Canvas.kt` (SVG layout and tools), `Panels.kt` (side tabs), `Dialogs.kt`, `Model.kt` (plots, undo, draft), `Data.kt` (embedded catalog and ZIP tables), `Dom.kt` |
 | `src/platform/` | Browser versions of `PlatformClock`, and no-op stand-ins for the Room annotations used by the core entities |
 | `tools/bundle.py` | Inlines the styles, compiled script and data into the single HTML file |
-| `tests/smoke.mjs` | Drives the real page in headless Chromium: create, plant, obstacle move/undo, plan an area, save, reload, open |
+| `tests/smoke.mjs` | Drives the real page in headless Chromium: create, plant, obstacle move/undo, shade, plan an area (change selections, discard, remembered list), variety search, seasons and rotation, save, reload, open |
 
 ## Build
 
@@ -49,7 +49,7 @@ Central into `~/.cache/sgp-kotlin` (set `KOTLIN_JARS` to use another folder).
 ```sh
 sh web/build.sh                  # writes web/dist/smart-garden-planner.html (reproducible)
 cd web && npm install --no-save playwright@1 && npx playwright install chromium
-node tests/smoke.mjs             # 29 checks
+node tests/smoke.mjs             # 51 checks
 ```
 
 On every pull request that touches `web/`, `core/` or the assets, CI (`.github/workflows/web-planner.yml`) does

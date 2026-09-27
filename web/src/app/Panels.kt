@@ -3,6 +3,8 @@ package sgp.web
 import com.example.smartgardenplanner.core.CarePlanner
 import com.example.smartgardenplanner.core.CarePreference
 import com.example.smartgardenplanner.core.CropReference
+import com.example.smartgardenplanner.core.CropRotation
+import com.example.smartgardenplanner.core.VarietyCatalogTraits
 import com.example.smartgardenplanner.core.FoodPlanner
 import com.example.smartgardenplanner.core.GuildCatalog
 import com.example.smartgardenplanner.core.HardinessZones
@@ -71,6 +73,8 @@ object Panels {
         )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))
 
+        seasons(body, wp)
+
         body.add(heading("Draw what's on the site"))
         body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.FENCE, SiteFeatureType.WALL, SiteFeatureType.BUILDING).map { t ->
             button(t.label, if (Canvas.tool == Tool.LINE_OBSTACLE && Canvas.obstacleType == t) "btn on" else "btn") { Canvas.obstacleType = t; Canvas.setTool(Tool.LINE_OBSTACLE) }
@@ -102,6 +106,31 @@ object Panels {
         body.add(check("Organic care advice", Prefs.organic) { Prefs.organic = it })
     }
 
+    /** Seasons and crop rotation (FR-032, FR-033). */
+    private fun seasons(body: HTMLElement, wp: WebPlot) {
+        val season = wp.season()
+        body.add(heading("Seasons & crop rotation"))
+        body.add(kv("Planning season", season.toString()))
+        body.add(para("Fences, buildings, trees, paths and areas carry over from year to year. When this season ends, start a new one: the plants move to history and next year's plan uses them for rotation.", "hint"))
+        body.add(h("div", "row wrap", kids = listOf(
+            button("Start a new season…", "btn") { Dialogs.newSeason() }.also { if (wp.plants.isEmpty()) it.setAttribute("disabled", "") }
+        )))
+        val years = com.example.smartgardenplanner.core.Seasons.years(wp.history)
+        if (years.isNotEmpty()) {
+            body.add(label("Show a past season on the layout", select(listOf("" to "None") + years.map { it.toString() to "$it (${wp.history.count { h -> h.seasonYear == it }} plants)" }, Store.historyYear?.toString() ?: "") {
+                Store.historyYear = it.toIntOrNull(); App.render()
+            }))
+            years.forEach { y ->
+                val list = wp.history.filter { it.seasonYear == y }
+                body.add(h("details", "pest", kids = listOf(
+                    h("summary", text = "$y — ${list.size} plants"),
+                    para(list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }, "hint")
+                )))
+            }
+        }
+        CropRotation.advice(wp.plot, wp.history, wp.plants, { Catalog.get(it) }, season).forEach { body.add(para(it, if (it.startsWith("⚠")) "warn" else "hint")) }
+    }
+
     private fun check(text: String, value: Boolean, onChange: (Boolean) -> Unit): HTMLElement {
         val cb = h("input", attrs = mapOf("type" to "checkbox")) as HTMLInputElement
         cb.checked = value
@@ -116,7 +145,7 @@ object Panels {
         Canvas.activeSeed?.let { s ->
             body.add(h("div", "active", kids = listOf(
                 h("span", "dot", attrs = mapOf("style" to "background:${Colors.of(s)}")),
-                h("div", "grow", kids = listOf(h("b", text = s.commonName), h("div", "hint", seedLine(s)))),
+                h("div", "grow", kids = listOfNotNull(h("b", text = s.commonName), VarietyCatalogTraits.of(s)?.let { h("div", "kind", it.details) }, h("div", "hint", seedLine(s)))),
             )))
             HardinessZones.describe(s, wp.plot.hardinessZone)?.let { body.add(para(it, "warn")) }
             if (s.careNotes.isNotBlank()) body.add(para(s.careNotes, "hint"))
@@ -153,6 +182,7 @@ object Panels {
             h("span", "dot", attrs = mapOf("style" to "background:${Colors.of(s)}")),
             h("span", "grow", kids = listOfNotNull(
                 h("span", "name", s.commonName),
+                VarietyCatalogTraits.of(s)?.let { h("span", "kind", it.details) },
                 h("span", "hint", conflict ?: why ?: seedLine(s)),
                 guild?.let { h("span", "badge", it) }
             ))

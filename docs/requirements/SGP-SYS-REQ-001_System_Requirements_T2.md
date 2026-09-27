@@ -263,6 +263,42 @@ obstacles, sun/shade/flood/slope areas, and the plot outline.
 Parent: owner problem report 2026-09-27 (undo did not remove a placed building, tree or fence) · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
+### T2-FUN-200 — Say what each variety is (NEW 2026-09-27)
+**Statement:** Wherever a variety is chosen or shown (lists, the plan-for-me list and proposal, and the layout),
+the system shall say in everyday words what it is where the species name alone doesn't: for peppers, sweet or spicy
+(with a heat level), bell or other shape, and ripe colour; for tomatoes, cherry, salad, slicing, beefsteak or paste
+size and colour; for onions, bulb or spring (green) onion. The layout shall be able to show a short name under each
+plant, and plants whose fruit colour is known shall be told apart by it (e.g. red and yellow bell peppers). The
+catalog shall include spring onions.
+Parent: owner request 2026-09-27 (FR-031) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-210 — Crop rotation and clumps (NEW 2026-09-27)
+**Statement:** The system shall group vegetables into crop-rotation families and, using the plot's past seasons
+(T2-FUN-220), shall (a) warn, without blocking, when a plant is placed where its family grew within that family's
+waiting period, (b) make "Plan an area for me" avoid such spots, and (c) advise, per plot, what grew where last
+season and which family should go there next. "Plan an area for me" shall arrange each crop as a compact clump by
+default, explaining that clumps can swap places next year, and shall let the user choose rows instead.
+Parent: owner request 2026-09-27 (FR-032) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-220 — Seasons and plot history (NEW 2026-09-27)
+**Statement:** The user shall be able to start a new season on a plot. Doing so shall keep the plot and everything
+fixed on it (fences, walls, buildings, trees, paths, sun/shade/flood/slope areas, outline) and move the season's
+plants into the plot's history, labelled with the season year. History shall never be discarded by later seasons:
+it shall stay viewable (per season, and drawn faintly on the layout on request), be used for crop rotation
+(T2-FUN-210), travel in plan files (T2-PLT-020), and starting a season shall be undoable.
+Parent: owner request 2026-09-27 (FR-033) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-230 — Keep the gardener's choices (NEW 2026-09-27)
+**Statement:** Discarding a "Plan an area for me" proposal shall not change the plot or lose the list of plants;
+the user shall be able to go back from the proposal to the list, with the same area and choices, change it and plan
+again. The system shall remember the last list for next time and shall offer the varieties the user plants most
+often (from all plots and past seasons) as one-tap choices.
+Parent: owner request 2026-09-27 (FR-034) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
 ---
 
 ## 3. Plant knowledge and data (DAT)
@@ -406,9 +442,9 @@ Parent: review finding (GAP §4.5) · Safety: FC-04, FC-05 · Verify: Test · St
 ### T2-DAT-190 — Tiered catalog
 **Statement:** The system shall include a catalog of plant varieties covering vegetables, fruit, herbs,
 flowers and ornamentals, selectable in three sizes:
-- Basic: 250 varieties
-- Standard: 600 varieties, including all of Basic
-- Pro: 2,936 varieties, including all of Standard
+- Basic: 253 varieties
+- Standard: 603 varieties, including all of Basic
+- Pro: 2,939 varieties, including all of Standard
 
 Parent: KB Part 11 · Verify: Test · Status: Proposed
 **Was:** "…bundled reference catalog of seed varieties… at three selectable size tiers."
