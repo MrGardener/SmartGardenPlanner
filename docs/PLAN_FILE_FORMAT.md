@@ -90,6 +90,12 @@ or a line through 2 or more points with a width:
 | `FENCE`, `WALL` | 2+ (line) | `heightM` (0–100) |
 | `BUILDING` | 2+ (outline; closed when 3+) | `heightM` (0–100) |
 
+### Irrigation site features (added 2026-09-27, still format version 1)
+
+`type` may also be `SPRINKLER` (1 point; `radiusM` = throw radius; `arcWidthDeg` 10–360, default 360; `arcCentreDeg`
+= compass bearing of the arc's middle), `DRIP_LINE` (2+ points; `radiusM` = wetted half-width) or `HOSE_BIB` (1 point;
+`radiusM` = hose length). `radiusM` is read in 0–60 m. Readers that don't know these types skip them.
+
 ## 6b. PastPlanting (history) — added 2026-09-27, still format version 1
 
 | Field | Type | Required | Meaning |

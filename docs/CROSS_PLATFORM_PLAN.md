@@ -84,8 +84,12 @@ duplicate. The rules are what must not be duplicated, and they are shared in bot
 
 **Status 2026-09-27 (owner chose option A):** W1 done (core has no Java-only calls; `PlatformClock` per platform;
 Room annotations stubbed for JS; compiled with the Kotlin JS CLI compiler instead of converting to a Gradle KMP
-module). W2 done (`web/src/app`). W3 partly (web-saved file decoded on the JVM). W4 partly (single file,
-Chromium smoke test in CI). W5, W6 open.
+module). W2 done (`web/src/app`), and every feature since has been added to both clients from the same core: seasons and
+rotation plans, organised clumps, variety details, find and plant editing, outline editing, shade by time and day,
+irrigation, fill the plot and duplicate. W3 partly (web-saved file decoded on the JVM, `WebPlanFileCompatTest`; shared
+JVM/JS test vectors still open). W4 partly (single file, Chromium smoke test with 83 checks in CI; other browsers and a
+hosted copy open). W5 open. W6 partly (user manual covers both clients; Kotlin/JS compiler and browsers assessed in
+SGP-TQP-001 under DEV-01/DEV-02; web HLR/LLR written).
 
 | Step | Work | Result |
 |---|---|---|

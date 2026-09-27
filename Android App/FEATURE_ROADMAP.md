@@ -127,6 +127,11 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-034 | Keep my choices | Discarding a proposal leaves the plot and the list alone; "Change selections" returns to the list for the same area; the last list is remembered; "What you usually plant" one-tap additions. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-035 | Organised clumps and room for vines | Plan an area for me lays each crop out in rows × columns (20 corn = 4 × 5; 7 tomatoes = 4 + 3) with 45 cm walkways for hose watering; climbers at the back for a trellis; sprawling vines at the sunny side with their runway kept free and shown by an arrow. | All | FR-032 | **Implemented — Awaiting Your Confirmation** |
 | FR-036 | Find, edit and outline | Legend with counts; tap a variety (or a harvest/harmony line on the computer) to circle its plants; edit a planted plant's variety/date or delete it; move/add outline corners and delete the outline; compass with N/E/S/W arrowheads. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-037 | Plan season after season | Choose the season shown (past seasons read only); Plan next season (rotate); Rotation plan for 2–10 seasons; strict rule: no crop where its family grew last season unless there's no room (then said). | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
+| FR-038 | Sun and shade through the day and year | Whole-day sun hours or shade at a chosen time (slider), on today, equinoxes, midsummer, midwinter; tall plants cast shade at mature height; point at a spot for its sun times (computer). | All (Pro on the phone) | FR-006 | **Implemented — Awaiting Your Confirmation** |
+| FR-039 | Irrigation | Sprinklers (radius, full/part circle, direction), drip lines / soaker hoses, hose taps (hose length); water map; plants needing a watering can ringed; leaf-wetting advice; in plan files. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-040 | Fill the plot | Fill the whole plot and "How many fit?" keeping the list's proportions. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
+| FR-041 | Plot templates | Duplicate a plot with its site and, optionally, plants and history. | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
 ---
@@ -231,6 +236,13 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (seasons, shade, water, templates)**: From your questions: you can now look back at any season,
+  re-plan next season with rotation in one step, and preview a rotation plan for up to 10 seasons (FR-037); shade can be
+  shown for any time of day and for the equinoxes, midsummer and midwinter, with tall plants casting shade (FR-038);
+  sprinklers, drip lines and hose taps with a water map (FR-039); Fill the whole plot and How many fit? (FR-040);
+  Duplicate plot as a template (FR-041). The user manual was rewritten for the phone and the computer, and two
+  subagents were added: requirements-auditor and manual-tester.
 
 - **2026-09-27 (find, edit, organised clumps)**: From your report: outline corners can be moved and the outline
   deleted; planted plants can be edited (variety, date on the computer) or deleted; a legend with counts finds plants

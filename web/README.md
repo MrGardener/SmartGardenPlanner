@@ -39,7 +39,7 @@ what's open, so save first.
 | `src/app/` | Browser UI (Kotlin/JS): `Main.kt` (shell, open/save), `Canvas.kt` (SVG layout and tools), `Panels.kt` (side tabs), `Dialogs.kt`, `Model.kt` (plots, undo, draft), `Data.kt` (embedded catalog and ZIP tables), `Dom.kt` |
 | `src/platform/` | Browser versions of `PlatformClock`, and no-op stand-ins for the Room annotations used by the core entities |
 | `tools/bundle.py` | Inlines the styles, compiled script and data into the single HTML file |
-| `tests/smoke.mjs` | Drives the real page in headless Chromium: create, plant, obstacle move/undo, shade, plan an area (change selections, discard, remembered list), variety search, seasons and rotation, save, reload, open |
+| `tests/smoke.mjs` | Drives the real page in headless Chromium: create, plant, obstacle move/undo, shade (whole day and time of day), plan an area (change selections, discard, remembered list, organised clumps), variety search, find/legend, plant editing, outline editing, seasons (look back, plan next season, rotation plan), fill the plot, irrigation water map, duplicate, save, reload, open |
 
 ## Build
 
@@ -49,7 +49,7 @@ Central into `~/.cache/sgp-kotlin` (set `KOTLIN_JARS` to use another folder).
 ```sh
 sh web/build.sh                  # writes web/dist/smart-garden-planner.html (reproducible)
 cd web && npm install --no-save playwright@1 && npx playwright install chromium
-node tests/smoke.mjs             # 66 checks
+node tests/smoke.mjs             # 83 checks
 ```
 
 On every pull request that touches `web/`, `core/` or the assets, CI (`.github/workflows/web-planner.yml`) does

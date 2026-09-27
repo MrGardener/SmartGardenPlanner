@@ -1,4 +1,11 @@
 # Interface Design Document (IDD)
+
+> **Status note (2026-09-27):** this document describes the interfaces as of v20.19 (July 2026) and is kept as a
+> historical record. The current interfaces are specified in the requirements set: plan file format
+> `docs/PLAN_FILE_FORMAT.md` (T2-PLT-020, HLR-PORT-*, LLR-PFILE-*, LLR-SEAS-030, LLR-WATER-010), the database schema
+> (schema 10: LLR-SEAS-010 and the entity LLRs in SGP-SW-LLR-001) and the user interface (HLR/LLR sections). Where this
+> document and those disagree, the requirements set applies.
+
 **Document Identifier:** SGP-IDD-v20.19  
 **System Baseline:** Smart Garden Planner (v20.19)  
 **Regulatory Standards Baseline:** DO-178C Data Interface Protection  

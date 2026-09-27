@@ -1309,8 +1309,81 @@ white half arrowhead from 0.6 r to 1.02 r (half-width 0.2 r at 0.52 r) and the l
 (#DC2626) when set, grey otherwise with "N?". Web r = 3.8 × (longer side / 38) placed right of the plot (the fitted view
 includes it); Android r = 62 px at the top-right of the canvas on a white disc. ↑ HLR-CMP-010
 
+**LLR-SEAS-040** `Seasons.currentSeason` defines the planning season. Web: the Plot tab's "Season shown on the layout"
+select sets `Store.viewSeason`; while set, `Canvas` draws that year's history entries as plants (`drawPlant`), hides
+current plants, allows only panning, and `setTool` / clicks report "read only"; the legend shows "Back to <season>".
+Android: the menu item "Season shown: …" cycles `viewSeasonYear` over [planning] + `Seasons.years`; while set, the
+canvas draws that season's history, skips the plant loop, the placement and site tap handlers show a read-only message,
+and a bottom button returns. ↑ HLR-SEAS-030
+
+**LLR-SEAS-050** Plan next season: rows = `RotationPlanner.lastList(nodes, history)`; area =
+`PlotShape.effectiveOutline(plot)`; context without nodes; history = history + `Seasons.archive(nodes, season)` when
+there are plants; seasonYear = season + 1 when there are plants, else season. The proposal hides current plants. Keep
+(web `Store.change`; Android one `withTransaction`) archives the current plants with `Seasons.currentSeason`, deletes
+them and inserts the proposal; one undo snapshot. ↑ HLR-SEAS-040
+
+**LLR-SEAS-060** `RotationPlanner.planSeasons(context, area, requests, history, firstYear, seasons ∈ 1..10)` shall call
+`AutoPlanner.plan` (CLUMPS, strict) for each year with the context's nodes cleared and the history accumulated with each
+planned year (`Seasons.archive` of the placed plants), and return `SeasonPlan(year, result, summary)` where `summary`
+gives each rotation family (or species) with its species and `CropRotation.describeSpot` of its centroid. It is
+deterministic. Web: count 2–10 (default 5), preview card with "◀ Year", "Year ▶", "Use <first year> now", "Close";
+Android: 3/5/7/10 chips, ◀ ▶, "Use <year> now", "Discard". ↑ HLR-SEAS-050
+
+**LLR-ROT-030** `BlockPlanner.plan(strictRotation = true)` shall add to the cheap cell check: reject a cell within
+`CropRotation.reach(h)` + half the seed's radius of any history entry h from seasonYear − 1 with the same rotation group
+(or the same species name when the seed has no group). If no anchor is found while strict and such entries exist, strict
+is switched off for the remaining plants of that request, and the note "Not enough room to keep <species> off last
+season's spots…" is added. `AutoPlanner.plan` passes `strictRotation` (default true). ↑ HLR-ROT-040
+
+**LLR-SHD-010** `ShadeDay.dayOfYear(lat, today)`: TODAY → today, SPRING → 79, AUTUMN → 265, MIDSUMMER → 172 (north) /
+355 (south), MIDWINTER → 355 / 172. `ShadeTools.sunriseSunset` = 12 ∓ dayLength / 2. `ShadeTools.shadowGridAt` marks a
+cell shaded when `SunlightEngine.isShaded` at that solar hour (true below the horizon). Web: legend selects for day and
+mode, a range input (sunrise..sunset, step 0.25 h) with the time, the sun's compass direction and elevation; shaded
+cells drawn #312E81 at 55 %. Android: legend words cycle day / mode / plants' shade, a `Slider` (0.25 h steps),
+shaded cells 0x8C312E81; the shade grid is recomputed off the main thread when day, time, plants or features change.
+↑ HLR-SHD-010
+
+**LLR-SHD-020** `ShadeTools.plantBarriers(nodes, lookup, minHeightM = 0.5)` returns a TREE-type `Barrier` per plant
+with `PlantHeights.heightM(seed)` ≥ 0.5 m, height = that value, radius = max(0.8 × spacing radius, 0.1 m). Both clients
+add these to the obstacle barriers when "plants cast shade" is on (default on). ↑ HLR-SHD-020
+
+**LLR-SHD-030** Web: on pointer move without a drag (moved ≥ 0.15 m since the last report), with shade on, the status
+line shows `ShadeTools.describeWindows(sunWindows(x, y, …))` (15-minute steps, "Sun 7:15–11:30 and …" or "No direct
+sun") for the chosen day; with the water map on, the water source there. ↑ HLR-SHD-030
+
+**LLR-WATER-010** `SiteFeatureType` shall add SPRINKLER, DRIP_LINE and HOSE_BIB (`isIrrigation`). Columns: SPRINKLER one
+point, `radiusM` = throw, `slopeDirectionDeg` = compass bearing of the arc's middle, `slopeGradePct` = arc width (360 =
+full; default 360); DRIP_LINE a polyline, `radiusM` = wetted half-width (default 0.3); HOSE_BIB one point, `radiusM` =
+hose length (default 15). The plan file writes `arcCentreDeg` / `arcWidthDeg` for sprinklers and reads them back (arc
+10–360, default 360), radius limit 0–60 m, and requires 1 point for SPRINKLER / HOSE_BIB and 2 for DRIP_LINE. Placement:
+web tool "Irrigation" with the kind chosen on the Plot tab; Android menu → Irrigation → Place …, using the barrier mode
+(SPRINKLER / HOSE_BIB single tap, DRIP_LINE points + Finish); the feature dialogs validate the ranges of HLR-IRR-010.
+↑ HLR-IRR-010
+
+**LLR-WATER-020** `Irrigation.sprinklerCovers` = within the throw and, for arcs, |compass bearing from the head − arc middle|
+≤ arc / 2, where the bearing uses north / east unit vectors from `sunDirectionInPlot(0|90, plot bearing)`;
+`dripCovers` = distance to the polyline ≤ half-width; `hoseReaches` = straight distance ≤ hose length. `sourceAt` returns
+the best of DRIP, SPRINKLER, HOSE, else MANUAL. `grid(plot, features, cols, rows)` evaluates cell centres (web 40 cols,
+Android 40 cols, rows from the aspect ratio) and both clients fill non-MANUAL cells with `WaterSource.argb`; plants whose
+source is MANUAL get a red (#DC2626) dashed ring. ↑ HLR-IRR-020
+
+**LLR-WATER-030** `Irrigation.report` shall return: a hint when no irrigation exists; per source "Label: n plants (k
+Species, …)."; "✓ Every plant is reached…" or "⚠ n plant(s) can only be watered by hand…"; and "Sprinklers wet the
+leaves of …" for sprinkler-covered species in `LEAF_DISEASE_PRONE`. Shown on the web Care tab and in Android Plot
+insights → Care ("How each plant gets water"). ↑ HLR-IRR-030
+
+**LLR-FILLP-010** "Fill the whole plot…" (web Plants tab; Android button under "Plan an area for me") opens the plan
+dialog with the plot outline. `RotationPlanner.howManyFit(context, area, requests, isBlocked, margin)` estimates k =
+0.9 × area / Σ(share × (pitch + walkway / 3)²), asks for ⌈k × share⌉ of each crop, plans them (CLUMPS, not strict) with
+the context's current plants in place, and returns the placed counts, which replace the rows' counts. ↑ HLR-FILL-010
+
+**LLR-TPL-010** Duplicate (web Plot tab → "Duplicate plot…"; Android menu → "Duplicate this plot…") shall ask for a name
+(default "<name> (copy)") and two options (plants, history; both on); it copies the plot with new ids and timestamps and
+copies paths, site features and, as chosen, plants and history to the new plot (Android: one transaction). ↑ HLR-TPL-010
+
 **LLR-ORNT-010** `PlotEntity` shall store `northBearingDeg` (0–360, the compass bearing of the plot's top edge)
-and `orientationSet` (schema 9, MIGRATION_8_9 adds `orientationSet INTEGER NOT NULL DEFAULT 0`). The creator
+and `orientationSet` (added in schema 9 by MIGRATION_8_9 as `orientationSet INTEGER NOT NULL DEFAULT 0`; the current
+schema is 10). The creator
 shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° slider with 70 steps; saving sets
 `orientationSet = true`. ↑ HLR-ORNT-010
 
@@ -1595,6 +1668,18 @@ Generated by script from the `↑` links above.
 | HLR-FIND-020 | Active | LLR-FIND-020 |
 | HLR-OUTL-010 | Active | LLR-OUTL-010 |
 | HLR-CMP-010 | Active | LLR-CMP-010 |
+| HLR-SEAS-030 | Active | LLR-SEAS-040 |
+| HLR-SEAS-040 | Active | LLR-SEAS-050 |
+| HLR-SEAS-050 | Active | LLR-SEAS-060 |
+| HLR-ROT-040 | Active | LLR-ROT-030 |
+| HLR-SHD-010 | Active | LLR-SHD-010 |
+| HLR-SHD-020 | Active | LLR-SHD-020 |
+| HLR-SHD-030 | Active | LLR-SHD-030 |
+| HLR-IRR-010 | Active | LLR-WATER-010 |
+| HLR-IRR-020 | Active | LLR-WATER-020 |
+| HLR-IRR-030 | Active | LLR-WATER-030 |
+| HLR-FILL-010 | Active | LLR-FILLP-010 |
+| HLR-TPL-010 | Active | LLR-TPL-010 |
 | HLR-ORNT-010 | Active | LLR-ORNT-010 |
 | HLR-ORNT-020 | Active | LLR-ORNT-020 |
 | HLR-ORNT-030 | Active | LLR-ORNT-030 |
@@ -1609,8 +1694,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **257**. Duplicate LLR IDs: **0**.
-- HLRs: 170 (162 active, 7 future, 1 suspended).
+- LLRs: **269**. Duplicate LLR IDs: **0**.
+- HLRs: 182 (174 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

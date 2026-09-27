@@ -544,7 +544,13 @@ private fun CareTab(
     markDone: (CareTaskType) -> Unit,
     scope: kotlinx.coroutines.CoroutineScope
 ) {
-    val plot = snap.context.plot
+        val plot = snap.context.plot
+    // FR-039: which plants each sprinkler, drip line or hose reaches.
+    Section("How each plant gets water", "Draw sprinklers, drip lines and hose taps from the layout menu → Irrigation.") {
+        com.example.smartgardenplanner.core.Irrigation.report(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
+            Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+        }
+    }
     Section("Today's care", "FR-019: watering and fertilizing due now. Daily notifications can be switched on in Settings → Household & care.") {
         if (gate(Feature.CARE_REMINDERS, settings, "Care reminders")) {
             var rainMm by remember(plot.id) { mutableStateOf<Double?>(null) }

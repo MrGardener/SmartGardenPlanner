@@ -279,7 +279,7 @@ Parent: owner request 2026-09-27 (FR-031) · Safety: FC-01 · Verify: Test · St
 waiting period, (b) make "Plan an area for me" avoid such spots, and (c) advise, per plot, what grew where last
 season and which family should go there next. "Plan an area for me" shall arrange each crop as a compact clump by
 default, explaining that clumps can swap places next year, and shall let the user choose rows instead.
-Parent: owner request 2026-09-27 (FR-032) · Safety: FC-01 · Verify: Test · Status: Proposed
+Parent: owner request 2026-09-27 (FR-032) · Safety: FC-17 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
 ### T2-FUN-220 — Seasons and plot history (NEW 2026-09-27)
@@ -298,7 +298,7 @@ between blocks so every plant can be reached and watered with a hose, keep climb
 midday sun (for a trellis), and put sprawling vines (e.g. watermelon, squash, pumpkin, cucumber) at the sunny side
 with free, sunny ground reserved toward the sun for their runners, shown on the proposal, so they don't grow into
 other crops looking for light.
-Parent: owner request 2026-09-27 (FR-035) · Safety: FC-01 · Verify: Test · Status: Proposed
+Parent: owner request 2026-09-27 (FR-035) · Safety: FC-18 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
 ### T2-FUN-250 — Find, edit and outline (NEW 2026-09-27)
@@ -308,6 +308,43 @@ plant's variety (and, on the computer, its planting date) or delete it; (c) move
 corners, and delete the outline. The layout's compass shall show four arrowheads labelled N, E, S and W turned to the
 plot's direction, with north stressed.
 Parent: owner problem report 2026-09-27 (FR-036) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-260 — Plan season after season (NEW 2026-09-27)
+**Statement:** The user shall be able to choose which season of a plot is shown (past seasons read-only), to re-plan
+the whole plot for the next season from the current (or last) season's plant list with crop rotation, and to see a
+rotation plan for several seasons in a row (2 to 10) before committing to the first. When the system places plants
+(T2-FUN-160), no plant shall go where its rotation family grew in the previous season unless there is no other room,
+in which case the user shall be told.
+Parent: owner request 2026-09-27 (FR-037) · Safety: FC-17 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-270 — Sun and shade through the day and year (NEW 2026-09-27)
+**Statement:** The shade display (T2-FUN-180) shall offer the hours of direct sun over a whole day and the shade at a
+chosen time of day, for today, the equinoxes, midsummer and midwinter, shall let the user find when a given spot gets
+sun, and shall be able to include the shade cast by planted crops at their mature height.
+Parent: owner request 2026-09-27 (FR-038) · Safety: FC-19 · Verify: Test · Status: Proposed
+**Now:** IMPL (phone: no per-spot sun times).
+
+### T2-FUN-280 — Irrigation coverage (NEW 2026-09-27)
+**Statement:** The user shall be able to place sprinklers (throw radius, full or part circle and its direction), drip
+lines or soaker hoses (wetted width) and hose taps (hose length) on a plot, move, edit and delete them, and see which
+areas and which plants each reaches, which plants need hand watering, and where overhead watering wets crops prone to
+leaf disease. Irrigation shall travel in plan files.
+Parent: owner request 2026-09-27 (FR-039) · Safety: FC-20 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-290 — Fill the plot (NEW 2026-09-27)
+**Statement:** The user shall be able to plan the whole plot at once from a list of crops and have the system estimate,
+keeping the list's proportions, how many of each fit.
+Parent: owner request 2026-09-27 (FR-040) · Safety: FC-18 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-300 — Plot templates (NEW 2026-09-27)
+**Statement:** The user shall be able to duplicate a plot, keeping its site (size, direction, location, soil, outline,
+obstacles, areas, paths, irrigation) and optionally its current plants and its history, so the copy can be planned
+independently of the original.
+Parent: owner request 2026-09-27 (FR-041) · Safety: FC-21 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
 ### T2-FUN-230 — Keep the gardener's choices (NEW 2026-09-27)

@@ -49,6 +49,12 @@ import com.example.smartgardenplanner.core.PlantingLayout
 import com.example.smartgardenplanner.core.Seasons
 import com.example.smartgardenplanner.core.CropRotation
 import com.example.smartgardenplanner.core.VarietyCatalogTraits
+import com.example.smartgardenplanner.core.RotationPlanner
+import com.example.smartgardenplanner.core.SeasonPlan
+import com.example.smartgardenplanner.core.ShadeDay
+import com.example.smartgardenplanner.core.ShadeTools
+import com.example.smartgardenplanner.core.Irrigation
+import com.example.smartgardenplanner.core.WaterSource
 import com.example.smartgardenplanner.core.SunBand
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PathZoneEntity
@@ -896,7 +902,23 @@ fun CanvasWorkspaceScreen(
     var allPlantedCodes by remember { mutableStateOf<List<String>>(emptyList()) }
         var showNewSeasonDialog by remember { mutableStateOf(false) }
     // FR-036: variety pointed out on the layout from the legend, and the outline corner being moved (FR-002).
-    var findCode by remember { mutableStateOf<String?>(null) }
+        var findCode by remember { mutableStateOf<String?>(null) }
+    // FR-037: season shown read-only, next-season planning, multi-season rotation plan.
+    var viewSeasonYear by remember { mutableStateOf<Int?>(null) }
+    var nextSeasonMode by remember { mutableStateOf(false) }
+    var rotationPlans by remember { mutableStateOf<List<SeasonPlan>>(emptyList()) }
+    var rotationIndex by remember { mutableStateOf(0) }
+    var showRotationDialog by remember { mutableStateOf(false) }
+    // FR-041: duplicate the plot as a template.
+    var showDuplicateDialog by remember { mutableStateOf(false) }
+    // FR-038: shade on a chosen day, whole day (null) or at a solar hour, with plants casting shade.
+    var shadeDay by remember { mutableStateOf(ShadeDay.TODAY) }
+    var shadeHour by remember { mutableStateOf<Double?>(null) }
+    var shadePlants by remember { mutableStateOf(true) }
+    var shadowGrid by remember { mutableStateOf<Pair<Int, BooleanArray>?>(null) }
+    // FR-039: irrigation water map.
+    var showWater by remember { mutableStateOf(false) }
+    var waterGrid by remember { mutableStateOf<Pair<Int, Array<WaterSource>>?>(null) }
     var movingOutlineCorner by remember { mutableStateOf<Int?>(null) }
     // FR-029: save this plot as a portable plan file (.sgp.json).
     val canvasContext = LocalContext.current
@@ -1138,18 +1160,33 @@ fun CanvasWorkspaceScreen(
     }
 
     // Estimated direct sun today across the plot (FR-006), computed off the main thread.
-    LaunchedEffect(showShade, siteFeatures, activePlot) {
+        LaunchedEffect(showShade, siteFeatures, activePlot, shadeDay, shadeHour, shadePlants, nodesState) {
         val plot = activePlot
-        shadeGrid = if (showShade && plot != null) {
-            withContext(Dispatchers.Default) {
-                val cols = 30
-                val rows = (cols * plot.widthM / plot.lengthM).toInt().coerceIn(4, 60)
-                val barriers = siteFeatures.mapNotNull { com.example.smartgardenplanner.core.Barrier.from(it) }
-                cols to SunlightEngine.sunHoursGrid(
-                    plot.lengthM, plot.widthM, cols, rows, plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE,
-                    SunlightEngine.dayOfYear(System.currentTimeMillis()), plot.northBearingDeg, barriers
-                )
+        if (!showShade || plot == null) { shadeGrid = null; shadowGrid = null; return@LaunchedEffect }
+        val lat = plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE
+        val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()))
+        val cols = 30
+        val rows = (cols * plot.widthM / plot.lengthM).toInt().coerceIn(4, 60)
+        // FR-038: obstacles, plus planted crops at their mature height when switched on.
+        val barriers = siteFeatures.mapNotNull { com.example.smartgardenplanner.core.Barrier.from(it) } +
+            (if (shadePlants) ShadeTools.plantBarriers(nodesState, { seedFor(it) }) else emptyList())
+        val hour = shadeHour
+        withContext(Dispatchers.Default) {
+            if (hour != null) {
+                val g = ShadeTools.shadowGridAt(plot.lengthM, plot.widthM, cols, rows, lat, day, plot.northBearingDeg, barriers, hour)
+                withContext(Dispatchers.Main) { shadowGrid = cols to g; shadeGrid = null }
+            } else {
+                val g = SunlightEngine.sunHoursGrid(plot.lengthM, plot.widthM, cols, rows, lat, day, plot.northBearingDeg, barriers)
+                withContext(Dispatchers.Main) { shadeGrid = cols to g; shadowGrid = null }
             }
+        }
+    }
+    LaunchedEffect(showWater, siteFeatures, activePlot) {
+        val plot = activePlot
+        waterGrid = if (showWater && plot != null) withContext(Dispatchers.Default) {
+            val cols = 40
+            val rows = (cols * plot.widthM / plot.lengthM).toInt().coerceIn(4, 80)
+            cols to Irrigation.grid(plot, siteFeatures.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }, cols, rows)
         } else null
     }
 
@@ -1325,10 +1362,55 @@ fun CanvasWorkspaceScreen(
                             )
                             DropdownMenuItem(text = { Text("Plot insights (site, harmony, care, food)…") }, onClick = { showOptionsMenu = false; onOpenInsights() })
                             // FR-033: close this season; plants become history, the fence, buildings, trees, paths and areas stay.
-                            DropdownMenuItem(
-                                text = { Text("Start a new season…") },
+                                                        DropdownMenuItem(
+                                text = { Text("Start a new season (empty)…") },
                                 enabled = nodesState.isNotEmpty(),
                                 onClick = { showOptionsMenu = false; showNewSeasonDialog = true }
+                            )
+                            // FR-037: re-plan the whole plot for next year with the same crops, rotated.
+                            DropdownMenuItem(
+                                text = { Text("Plan next season (rotate)…") },
+                                enabled = nodesState.isNotEmpty() || historyState.isNotEmpty(),
+                                onClick = {
+                                    showOptionsMenu = false
+                                    activePlot?.let { plot ->
+                                        nextSeasonMode = true
+                                        planRows.clear()
+                                        RotationPlanner.lastList(nodesState, historyState) { seedFor(it) }.forEach { planRows.add(it.seed.botanicalCode to it.count) }
+                                        planForMe = true
+                                        autoPlanArea = PlotShape.effectiveOutline(plot)
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Rotation plan for several seasons…") },
+                                enabled = nodesState.isNotEmpty() || historyState.isNotEmpty(),
+                                onClick = { showOptionsMenu = false; showRotationDialog = true }
+                            )
+                            val viewYears = Seasons.years(historyState)
+                            if (viewYears.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Season shown: " + (viewSeasonYear?.let { "$it (read only)" } ?: "${Seasons.currentSeason(nodesState, historyState)} (planning)") + "  (tap to change)") },
+                                    onClick = {
+                                        val options = listOf<Int?>(null) + viewYears
+                                        viewSeasonYear = options[(options.indexOf(viewSeasonYear) + 1) % options.size]
+                                        planPreview = null
+                                    }
+                                )
+                            }
+                            // FR-041: copy this plot as a template.
+                            DropdownMenuItem(text = { Text("Duplicate this plot…") }, onClick = { showOptionsMenu = false; showDuplicateDialog = true })
+                            // FR-039: irrigation.
+                            Text("Irrigation", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text((if (canvasMode == CanvasMode.BARRIER && barrierType == type) "✓ " else "") + "Place " + type.label.lowercase(), fontSize = 13.sp) },
+                                    onClick = { canvasMode = CanvasMode.BARRIER; barrierType = type; inProgressPoints = emptyList(); showOptionsMenu = false }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text((if (showWater) "✓ " else "") + "Show water map (what gets watered)") },
+                                onClick = { showWater = !showWater; showOptionsMenu = false }
                             )
                             Divider()
                             // [NEW] Wires WeedMaskGeometryEngine and IrrigationRouteCalculator into the
@@ -1339,7 +1421,7 @@ fun CanvasWorkspaceScreen(
                                 onClick = { showSiteFeatures = !showSiteFeatures; showOptionsMenu = false }
                             )
                             DropdownMenuItem(
-                                text = { Text((if (showShade) "✓ " else "") + "Show estimated shade (today)" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
+                                                                text = { Text((if (showShade) "✓ " else "") + "Show sun and shade" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
                                 onClick = {
                                     if (Feature.isEnabled(Feature.SUNLIGHT_BARRIERS, tierNow)) showShade = !showShade
                                     else snackbarMessage = "Shade estimates need the Pro catalog tier (Settings → Catalog)."
@@ -1554,7 +1636,22 @@ fun CanvasWorkspaceScreen(
                                 snackbarMessage = "Drag over the area you want planted (or tap its corners in Custom shape mode)."
                             },
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text("✨ Plan an area for me") }
+                                                ) { Text("✨ Plan an area for me") }
+                        // FR-040: fill the whole plot this year.
+                        OutlinedButton(
+                            onClick = {
+                                activePlot?.let { plot ->
+                                    if (planRows.isEmpty()) {
+                                        val remembered = settings.lastPlanRows.filter { seedFor(it.first) != null }
+                                        if (remembered.isNotEmpty()) planRows.addAll(remembered)
+                                        else Seasons.usualVarieties(allPlantedCodes, emptyList(), { seedFor(it) }, 4).forEach { planRows.add(it.first.botanicalCode to 3) }
+                                    }
+                                    planForMe = true
+                                    autoPlanArea = PlotShape.effectiveOutline(plot)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Fill the whole plot…") }
                     }
                 }
             }
@@ -1640,6 +1737,7 @@ fun CanvasWorkspaceScreen(
                                                         val realXM = (offset.x / size.width) * state.lengthM
                                                         val realYM = (offset.y / size.height) * state.widthM
 
+                                                                                                                if (viewSeasonYear != null) { snackbarMessage = "You are looking at season $viewSeasonYear (read only). Switch back to the planning season in the menu."; return@detectTapGestures }
                                                         val candidateSeed = seedFor(activeSeedCode)
                                                         if (candidateSeed == null) {
                                                             snackbarMessage = "Select a seed variety first."
@@ -1763,9 +1861,10 @@ fun CanvasWorkspaceScreen(
                                                 // FR-002 to FR-006: tap corners/points. Tapping an existing area or barrier (before starting a new one) edits it.
                                                 detectTapGestures(
                                                     onTap = { offset ->
-                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                                                                                val realXM = (offset.x / size.width) * state.lengthM
                                                         val realYM = (offset.y / size.height) * state.widthM
-                                                                                                                movingSiteFeature?.let { moving ->
+                                                        if (viewSeasonYear != null) { snackbarMessage = "You are looking at season $viewSeasonYear (read only)."; return@detectTapGestures }
+                                                        movingSiteFeature?.let { moving ->
                                                             moveSiteFeature(moving, realXM, realYM)
                                                             movingSiteFeature = null
                                                             return@detectTapGestures
@@ -1790,13 +1889,13 @@ fun CanvasWorkspaceScreen(
                                                         }
                                                         if (inProgressPoints.isEmpty() && canvasMode != CanvasMode.OUTLINE) {
                                                             val wantBarrier = canvasMode == CanvasMode.BARRIER
-                                                            val hit = siteFeatures.firstOrNull { f -> SiteFeatureType.of(f.featureType)?.isBarrier == wantBarrier && featureHit(f, realXM, realYM) }
+                                                                                                                        val hit = siteFeatures.firstOrNull { f -> SiteFeatureType.of(f.featureType)?.let { it.isBarrier || it.isIrrigation } == wantBarrier && featureHit(f, realXM, realYM) }
                                                             if (hit != null) {
                                                                 editingSiteFeature = hit
                                                                 return@detectTapGestures
                                                             }
                                                         }
-                                                        if (canvasMode == CanvasMode.BARRIER && barrierType == SiteFeatureType.TREE) {
+                                                                                                                if (canvasMode == CanvasMode.BARRIER && (barrierType == SiteFeatureType.TREE || barrierType == SiteFeatureType.SPRINKLER || barrierType == SiteFeatureType.HOSE_BIB)) {
                                                             pendingSiteShape = listOf(Offset(realXM, realYM))
                                                         } else {
                                                             inProgressPoints = inProgressPoints + Offset(realXM, realYM)
@@ -1966,8 +2065,28 @@ fun CanvasWorkspaceScreen(
                                         val cellW = canvasW / cols
                                         val cellH = canvasH / rows
                                         for (r in 0 until rows) for (c in 0 until cols) {
-                                            val band = SunBand.of(grid[r * cols + c])
+                                                                                        val band = SunBand.of(grid[r * cols + c])
                                             drawRect(Color(band.overlayArgb), topLeft = Offset(c * cellW, r * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
+                                        }
+                                    }
+                                    // FR-038: shade at the chosen time of day.
+                                    shadowGrid?.let { (cols, grid) ->
+                                        val rows = grid.size / cols
+                                        val cellW = canvasW / cols
+                                        val cellH = canvasH / rows
+                                        for (r in 0 until rows) for (c in 0 until cols) if (grid[r * cols + c]) {
+                                            drawRect(Color(0x8C312E81), topLeft = Offset(c * cellW, r * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
+                                        }
+                                    }
+                                    // FR-039: where sprinklers, drip lines and hoses reach.
+                                    waterGrid?.let { (cols, grid) ->
+                                        val rows = grid.size / cols
+                                        val cellW = canvasW / cols
+                                        val cellH = canvasH / rows
+                                        for (i in grid.indices) {
+                                            val src = grid[i]
+                                            if (src == WaterSource.MANUAL) continue
+                                            drawRect(Color(src.argb), topLeft = Offset((i % cols) * cellW, (i / cols) * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
                                         }
                                     }
 
@@ -1995,6 +2114,30 @@ fun CanvasWorkspaceScreen(
                                                     val tip = Offset(cx + (kotlin.math.sin(rel) * len).toFloat(), cy - (kotlin.math.cos(rel) * len).toFloat())
                                                     drawLine(edge, Offset(cx, cy), tip, strokeWidth = 4f)
                                                     drawCircle(edge, radius = 6f, center = tip)
+                                                }
+                                                                                        } else if (type.isIrrigation) {
+                                                val dash = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+                                                when (type) {
+                                                    SiteFeatureType.SPRINKLER -> {
+                                                        val r = (if (f.radiusM > 0f) f.radiusM else Irrigation.DEFAULT_THROW_M) * scaleX
+                                                        val arc = if (f.slopeGradePct <= 0f || f.slopeGradePct >= 360f) 360f else f.slopeGradePct
+                                                        if (arc >= 360f) drawCircle(Color(0xFF2563EB), radius = r, center = pts[0], style = Stroke(width = 2f, pathEffect = dash))
+                                                        else {
+                                                            // Compass bearing → canvas angle (0° = +x, clockwise): bearing − plot bearing − 90.
+                                                            val start = f.slopeDirectionDeg - (activePlot?.northBearingDeg ?: 0f) - 90f - arc / 2f
+                                                            drawArc(Color(0x183B82F6), start, arc, true, topLeft = Offset(pts[0].x - r, pts[0].y - r), size = androidx.compose.ui.geometry.Size(2 * r, 2 * r))
+                                                            drawArc(Color(0xFF2563EB), start, arc, true, topLeft = Offset(pts[0].x - r, pts[0].y - r), size = androidx.compose.ui.geometry.Size(2 * r, 2 * r), style = Stroke(width = 2f, pathEffect = dash))
+                                                        }
+                                                        drawCircle(Color(0xFF2563EB), radius = 9f, center = pts[0])
+                                                    }
+                                                    SiteFeatureType.DRIP_LINE -> for (i in 0 until pts.size - 1) {
+                                                        drawLine(Color(0xFF0369A1), pts[i], pts[i + 1], strokeWidth = 5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(2f, 10f)), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                    }
+                                                    else -> {
+                                                        val len = (if (f.radiusM > 0f) f.radiusM else Irrigation.DEFAULT_HOSE_M) * scaleX
+                                                        drawCircle(Color(0x996366F1), radius = len, center = pts[0], style = Stroke(width = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 12f))))
+                                                        drawRect(Color(0xFF6366F1), topLeft = Offset(pts[0].x - 9f, pts[0].y - 9f), size = androidx.compose.ui.geometry.Size(18f, 18f))
+                                                    }
                                                 }
                                             } else if (type == SiteFeatureType.TREE) {
                                                 if (shadeGrid == null) drawCircle(Color(LayoutPalette.TREE_FILL), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0])
@@ -2073,6 +2216,17 @@ fun CanvasWorkspaceScreen(
                                             letterPaint.color = ink.toArgb()
                                             letterPaint.textSize = if (north) 30f else 24f
                                             drawContext.canvas.nativeCanvas.drawText(if (north && !plot.orientationSet) "N?" else letter, lp.x, lp.y + letterPaint.textSize * 0.36f, letterPaint)
+                                        }
+                                    }
+
+                                                                        // FR-039: plants no sprinkler, drip line or hose reaches get a red dashed ring.
+                                    if (showWater && viewSeasonYear == null) {
+                                        val irrigation = siteFeatures.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }
+                                        if (irrigation.isNotEmpty()) activePlot?.let { plot ->
+                                            Irrigation.plants(plot, nodesState, irrigation) { seedFor(it) }.filter { it.source == WaterSource.MANUAL }.forEach { pw ->
+                                                drawCircle(Color(0xFFDC2626), radius = (pw.seed?.exclusionRadiusM ?: 0.3f) * scaleX + 8f, center = Offset(pw.node.coordinateXM * scaleX, pw.node.coordinateYM * scaleY),
+                                                    style = Stroke(width = 4f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f))))
+                                            }
                                         }
                                     }
 
@@ -2170,7 +2324,22 @@ fun CanvasWorkspaceScreen(
                                     // FR-031: short names under plants ("Bell red", "Cherry red", "Spring"), with a halo so they read over shade.
                                     val labelHalo = android.graphics.Paint().apply { color = android.graphics.Color.rgb(245, 241, 230); textSize = 24f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; style = android.graphics.Paint.Style.STROKE; strokeWidth = 6f }
                                     val labelPaint = android.graphics.Paint().apply { color = android.graphics.Color.rgb(41, 37, 36); textSize = 24f; isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; isFakeBoldText = true }
-                                    nodesState.forEach { node: PlantedNodeEntity ->
+                                                                        // FR-037: a past season shown read-only, drawn like plants.
+                                    viewSeasonYear?.let { year ->
+                                        historyState.filter { it.seasonYear == year }.forEach { h ->
+                                            val c = Offset(h.coordinateXM * scaleX, h.coordinateYM * scaleY)
+                                            val sd = seedFor(h.seedCode)
+                                            val col = VegetableColorPalette.colorFor(sd)
+                                            drawCircle(col.copy(alpha = 0.22f), radius = h.radiusM * scaleX, center = c)
+                                            drawCircle(col, radius = h.radiusM * scaleX, center = c, style = Stroke(width = 2f))
+                                            drawCircle(sd?.let { VarietyCatalogTraits.dotArgb(it) }?.let { Color(it) } ?: col, radius = 10f, center = c)
+                                            val tag = sd?.let { VarietyCatalogTraits.of(it)?.tag ?: CropReference.speciesName(it) } ?: h.speciesName
+                                            drawContext.canvas.nativeCanvas.drawText(tag, c.x, c.y + 34f, labelHalo)
+                                            drawContext.canvas.nativeCanvas.drawText(tag, c.x, c.y + 34f, labelPaint)
+                                        }
+                                    }
+                                    val replacingSeason = viewSeasonYear != null || (planPreview != null && (nextSeasonMode || rotationPlans.isNotEmpty()))
+                                    if (!replacingSeason) nodesState.forEach { node: PlantedNodeEntity ->
                                         // [NEW] While this specific node is being dragged, render it at the
                                         // live touch position instead of its stored coordinates, so the move
                                         // is visible in real time before it's committed on release.
@@ -2207,22 +2376,53 @@ fun CanvasWorkspaceScreen(
                                 }
                                 } // closes the inner scrollable Box wrapping the Canvas
 
-                                if (shadeGrid != null) {
-                                    // Legend for the shade overlay (FR-006), same bands as the web planner.
-                                    Row(
+                                if (showShade && activePlot != null) {
+                                    // Legend and controls for the shade overlay (FR-006, FR-038), same as the web planner.
+                                    val lat = activePlot?.latitude ?: SunlightEngine.DEFAULT_LATITUDE
+                                    val day = shadeDay.dayOfYear(lat, SunlightEngine.dayOfYear(System.currentTimeMillis()))
+                                    val (rise, set) = ShadeTools.sunriseSunset(lat, day)
+                                    Column(
                                         modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
                                             .background(Color(0xE6FFFFFF), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
-                                        Text("Sun today:", fontSize = 11.sp, color = Color(LayoutPalette.INK), fontWeight = FontWeight.Bold)
-                                        SunBand.entries.forEach { band ->
-                                            Box(Modifier.size(12.dp).background(Color(LayoutPalette.PAPER)).background(Color(band.overlayArgb)).border(1.dp, Color(LayoutPalette.BORDER)))
-                                            Text(band.label, fontSize = 11.sp, color = Color(LayoutPalette.INK))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(shadeDay.label, fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.clickable { shadeDay = ShadeDay.entries[(shadeDay.ordinal + 1) % ShadeDay.entries.size] })
+                                            Text(if (shadeHour == null) "Whole day" else "At ${ShadeTools.clock(shadeHour!!)}", fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.clickable { shadeHour = if (shadeHour == null) 9.0.coerceIn(rise, set) else null })
+                                            Text((if (shadePlants) "☑" else "☐") + " plants' shade", fontSize = 11.sp, color = Color(0xFF1D4ED8),
+                                                modifier = Modifier.clickable { shadePlants = !shadePlants })
                                         }
+                                        val hour = shadeHour
+                                        if (hour != null) {
+                                            val sp = SunlightEngine.position(lat, day, hour)
+                                            Slider(value = hour.toFloat(), onValueChange = { shadeHour = (kotlin.math.round(it * 4f) / 4f).toDouble() }, valueRange = rise.toFloat()..set.toFloat(), modifier = Modifier.width(240.dp))
+                                            Text("${ShadeTools.clock(hour)} solar time • sun ${com.example.smartgardenplanner.ui.compassName(sp.azimuthDeg.toFloat())}, ${sp.elevationDeg.toInt()}° up • dark = shade now", fontSize = 10.sp, color = Color(LayoutPalette.INK))
+                                        } else {
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Sun over the day:", fontSize = 11.sp, color = Color(LayoutPalette.INK), fontWeight = FontWeight.Bold)
+                                                SunBand.entries.forEach { band ->
+                                                    Box(Modifier.size(12.dp).background(Color(LayoutPalette.PAPER)).background(Color(band.overlayArgb)).border(1.dp, Color(LayoutPalette.BORDER)))
+                                                    Text(band.label, fontSize = 10.sp, color = Color(LayoutPalette.INK))
+                                                }
+                                            }
+                                        }
+                                        Text("Tap the blue words to change the day, the time or plants' shade.", fontSize = 9.sp, color = Color.Gray)
                                     }
                                 }
                                                                 Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
+                                    viewSeasonYear?.let { y ->
+                                        Button(onClick = { viewSeasonYear = null }, modifier = Modifier.padding(bottom = 4.dp)) {
+                                            Text("Looking back at $y (read only) — tap to return to planning", fontSize = 12.sp)
+                                        }
+                                    }
+                                    if (showWater) {
+                                        val manual = activePlot?.let { plot -> Irrigation.plants(plot, nodesState, siteFeatures.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) { seedFor(it) }.count { it.source == WaterSource.MANUAL } } ?: 0
+                                        Text(if (siteFeatures.none { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) "Water map: no sprinklers, drip lines or taps drawn yet (menu → Irrigation)."
+                                            else if (manual == 0) "Water map: every plant is reached." else "Water map: $manual plant(s) circled in red need a watering can.",
+                                            fontSize = 11.sp, color = Color(0xFF1D4ED8), modifier = Modifier.background(Color(0xE6FFFFFF), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 2.dp))
+                                    }
                                     findCode?.let { code ->
                                         val name = seedFor(code)?.commonName ?: code
                                         Button(onClick = { findCode = null }, modifier = Modifier.padding(bottom = 4.dp)) {
@@ -2232,30 +2432,54 @@ fun CanvasWorkspaceScreen(
                                     planPreview?.let { preview ->
                                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
                                             Column(modifier = Modifier.padding(10.dp).heightIn(max = 220.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text("Planting plan: ${preview.placed.size} plants", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                                                                Text(when {
+                                                    rotationPlans.isNotEmpty() -> "Rotation plan: ${rotationPlans.getOrNull(rotationIndex)?.year} (${rotationIndex + 1} of ${rotationPlans.size})"
+                                                    nextSeasonMode -> "Next season's plan: ${preview.placed.size} plants"
+                                                    else -> "Planting plan: ${preview.placed.size} plants"
+                                                }, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                rotationPlans.getOrNull(rotationIndex)?.summary?.forEach { Text("• $it", fontSize = 11.sp) }
                                                                                                 preview.placed.groupBy { it.seed.botanicalCode }.forEach { (_, list) ->
                                                     Text("• ${VarietyCatalogTraits.displayName(list.first().seed)} × ${list.size}", fontSize = 11.sp)
                                                 }
                                                 Text("Nothing is planted until you tap Plant them.", fontSize = 11.sp, color = Color.Gray)
                                                 preview.notes.forEach { Text(it, fontSize = 11.sp, color = Color.LightGray) }
                                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    Button(enabled = preview.placed.isNotEmpty(), onClick = {
-                                                        val nodes = preview.placed.map { PlantedNodeEntity(plotId = plotId, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y) }
+                                                                                                        Button(enabled = preview.placed.isNotEmpty(), onClick = {
+                                                        val chosen = rotationPlans.firstOrNull()?.result ?: preview
+                                                        val nodes = chosen.placed.map { PlantedNodeEntity(plotId = plotId, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y) }
+                                                        // FR-037: next season / rotation: close this season (plants → history) and plant the new one.
+                                                        val newSeason = nextSeasonMode || rotationPlans.isNotEmpty()
+                                                        val archived = if (newSeason && nodesState.isNotEmpty()) Seasons.archive(plotId, nodesState, Seasons.currentSeason(nodesState, historyState)) { seedFor(it) } else emptyList()
                                                         launchSafely {
-                                                            withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insertAll(nodes) }
+                                                            withContext(SgpExecutors.dbDispatcher) {
+                                                                database.withTransaction {
+                                                                    if (newSeason) {
+                                                                        if (archived.isNotEmpty()) database.plantingHistoryDao().insertAll(archived)
+                                                                        database.plantedNodeDao().deleteAllForPlot(plotId)
+                                                                    }
+                                                                    database.plantedNodeDao().insertAll(nodes)
+                                                                }
+                                                            }
+                                                            if (newSeason) historyState = withContext(SgpExecutors.dbDispatcher) { database.plantingHistoryDao().getByPlotId(plotId) }
                                                             reloadNodes()
                                                             undoStack.push(snapshotNow())
                                                             redoStack.clear()
                                                                                                                         snackbarMessage = "Planted ${nodes.size} plants. Undo removes them all."
                                                             allPlantedCodes = allPlantedCodes + nodes.map { it.seedCode }
                                                         }
-                                                        planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
-                                                    }) { Text("Plant them", fontSize = 12.sp) }
+                                                                                                                planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                                        nextSeasonMode = false; rotationPlans = emptyList()
+                                                    }) { Text(when { rotationPlans.isNotEmpty() -> "Use ${rotationPlans.first().year} now"; nextSeasonMode -> "Start next season"; else -> "Plant them" }, fontSize = 12.sp) }
+                                                    if (rotationPlans.isNotEmpty()) {
+                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex - 1).coerceAtLeast(0); planPreview = rotationPlans[rotationIndex].result }) { Text("◀", fontSize = 12.sp) }
+                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex + 1).coerceAtMost(rotationPlans.lastIndex); planPreview = rotationPlans[rotationIndex].result }) { Text("▶", fontSize = 12.sp) }
+                                                    }
                                                                                                         // Back to the list for the same area, with everything as it was chosen.
-                                                    OutlinedButton(onClick = { planPreview = null }) { Text("Change selections", fontSize = 12.sp) }
+                                                                                                        if (rotationPlans.isEmpty()) OutlinedButton(onClick = { planPreview = null }) { Text("Change selections", fontSize = 12.sp) }
                                                     // Drops only the proposal: the plot and the list stay as they are (the list is remembered).
                                                     TextButton(onClick = {
-                                                        planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                                                                                                planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                                        nextSeasonMode = false; rotationPlans = emptyList()
                                                         snackbarMessage = "Proposal discarded. Nothing on the plot changed; your list is kept for next time."
                                                     }) { Text("Discard", fontSize = 12.sp) }
                                                 }
@@ -2297,7 +2521,7 @@ fun CanvasWorkspaceScreen(
                                     // available from that point on to close the loop whenever the user is done.
                                     val siteFinishReady = when (canvasMode) {
                                         CanvasMode.OUTLINE, CanvasMode.SITE_AREA -> inProgressPoints.size >= 3
-                                        CanvasMode.BARRIER -> barrierType != SiteFeatureType.TREE && inProgressPoints.size >= 2
+                                                                                CanvasMode.BARRIER -> barrierType != SiteFeatureType.TREE && barrierType != SiteFeatureType.SPRINKLER && barrierType != SiteFeatureType.HOSE_BIB && inProgressPoints.size >= 2
                                         else -> false
                                     }
                                     if (siteFinishReady) {
@@ -2425,7 +2649,22 @@ fun CanvasWorkspaceScreen(
                     settings = updated
                     launchSafely { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
                 },
-                hasHistory = historyState.isNotEmpty(),
+                                hasHistory = historyState.isNotEmpty(),
+                title = if (nextSeasonMode) "Plan next season with crop rotation" else if (area == activePlot?.let { PlotShape.effectiveOutline(it) }) "Fill the whole plot" else "What do you want to plant here?",
+                onHowManyFit = { reqs ->
+                    val plot = activePlot
+                    if (plot != null) launchSafely {
+                        val ctx = plotContext(plot, if (nextSeasonMode) emptyList() else nodesState)
+                        val paths = pathZonesState
+                        val fit = withContext(Dispatchers.Default) {
+                            RotationPlanner.howManyFit(ctx, area, reqs, { x, y, r ->
+                                paths.any { zone -> if (zone.pathType == "POLYLINE") distanceToPolyline(x, y, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + r) else circleIntersectsRect(x, y, r, zone.xM, zone.yM, zone.widthM, zone.heightM) }
+                            }, settings.spacingMarginMultiplier)
+                        }
+                        fit.forEach { f -> val i = planRows.indexOfFirst { it.first == f.seed.botanicalCode }; if (i >= 0) planRows[i] = f.seed.botanicalCode to f.count }
+                        snackbarMessage = "About ${fit.sumOf { it.count }} plants fit: " + fit.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" }
+                    }
+                },
                 conflictFor = pickerConflict,
                 orientationSet = activePlot?.orientationSet == true,
                 running = planRunning,
@@ -2435,10 +2674,13 @@ fun CanvasWorkspaceScreen(
                     planRunning = true
                     val remembered = settings.copy(lastPlanList = com.example.smartgardenplanner.core.AppSettings.encodePlanRows(planRows.toList()))
                     settings = remembered
-                    val history = historyState
-                    val season = Seasons.currentSeason(nodesState, historyState)
+                                        // FR-037: planning next season plans an empty plot, with this season's plants counted as history.
+                    val nowSeason = Seasons.currentSeason(nodesState, historyState)
+                    val history = if (nextSeasonMode && nodesState.isNotEmpty()) historyState + Seasons.archive(plotId, nodesState, nowSeason) { seedFor(it) } else historyState
+                    val season = if (nextSeasonMode && nodesState.isNotEmpty()) nowSeason + 1 else nowSeason
+                    val planNodes = if (nextSeasonMode) emptyList() else nodesState
                     launchSafely {
-                        val context = plotContext(plot)
+                                                val context = plotContext(plot, planNodes)
                         val paths = pathZonesState
                         val result = try { withContext(Dispatchers.Default) {
                             AutoPlanner.plan(
@@ -2460,15 +2702,100 @@ fun CanvasWorkspaceScreen(
                         withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(remembered) }
                     }
                 },
-                onDismiss = {
-                    autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                onDismiss = {
+                    autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE; nextSeasonMode = false
                     if (planRows.isNotEmpty()) snackbarMessage = "Plan cancelled. Your list is kept for next time."
                 }
             )
         }
     }
 
-        // FR-033: close the season. Plants move to history; fence, walls, buildings, trees, paths, areas and outline stay.
+            // FR-037: plan several seasons in a row and look at them one year at a time.
+    if (showRotationDialog) {
+        var seasonsCount by remember { mutableStateOf(5) }
+        val base = RotationPlanner.lastList(nodesState, historyState) { seedFor(it) }
+        AlertDialog(
+            onDismissRequest = { showRotationDialog = false },
+            title = { Text("Rotation plan") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before.", fontSize = 13.sp)
+                    Text("How many seasons", fontSize = 12.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf(3, 5, 7, 10).forEach { n -> FilterChip(selected = seasonsCount == n, onClick = { seasonsCount = n }, label = { Text("$n") }) }
+                    }
+                    Text("Nothing changes until you choose to use the first year.", fontSize = 11.sp, color = Color.Gray)
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = base.isNotEmpty() && !planRunning, onClick = {
+                    val plot = activePlot ?: return@TextButton
+                    showRotationDialog = false
+                    planRunning = true
+                    launchSafely {
+                        val now = Seasons.currentSeason(nodesState, historyState)
+                        val history = historyState + (if (nodesState.isNotEmpty()) Seasons.archive(plotId, nodesState, now) { seedFor(it) } else emptyList())
+                        val first = if (nodesState.isNotEmpty()) now + 1 else now
+                        val ctx = plotContext(plot, emptyList())
+                        val count = seasonsCount
+                        val plans = try { withContext(Dispatchers.Default) {
+                            RotationPlanner.planSeasons(ctx, PlotShape.effectiveOutline(plot), base, history, first, count, marginMultiplier = settings.spacingMarginMultiplier, orientationKnown = plot.orientationSet)
+                        } } finally { planRunning = false }
+                        rotationPlans = plans
+                        rotationIndex = 0
+                        autoPlanArea = PlotShape.effectiveOutline(plot)
+                        planPreview = plans.firstOrNull()?.result
+                    }
+                }) { Text(if (planRunning) "Planning…" else "Make the plan") }
+            },
+            dismissButton = { TextButton(onClick = { showRotationDialog = false }) { Text("Cancel") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
+    // FR-041: duplicate this plot (site, and optionally plants and history), like duplicating a browser tab.
+    if (showDuplicateDialog) {
+        var copyName by remember { mutableStateOf((activePlot?.name ?: "Plot") + " (copy)") }
+        var copyPlants by remember { mutableStateOf(true) }
+        var copyHistory by remember { mutableStateOf(true) }
+        AlertDialog(
+            onDismissRequest = { showDuplicateDialog = false },
+            title = { Text("Duplicate this plot") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("The copy keeps the size, direction, ZIP, soil, outline, fences, buildings, trees, paths, areas and irrigation.", fontSize = 13.sp)
+                    OutlinedTextField(value = copyName, onValueChange = { copyName = it.take(80) }, label = { Text("Name of the copy") }, singleLine = true)
+                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyPlants, onCheckedChange = { copyPlants = it }); Text("Copy this season's ${nodesState.size} plants", fontSize = 13.sp) }
+                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyHistory, onCheckedChange = { copyHistory = it }); Text("Copy the history (${Seasons.years(historyState).size} seasons)", fontSize = 13.sp) }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = copyName.isNotBlank(), onClick = {
+                    val plot = activePlot ?: return@TextButton
+                    val name = copyName.trim(); val withPlants = copyPlants; val withHistory = copyHistory
+                    val plants = nodesState; val paths = pathZonesState; val features = siteFeatures; val history = historyState
+                    showDuplicateDialog = false
+                    launchSafely {
+                        withContext(SgpExecutors.dbDispatcher) {
+                            database.withTransaction {
+                                val now = System.currentTimeMillis()
+                                val id = database.plotDao().insert(plot.copy(id = 0, name = name, createdTimestamp = now, lastModifiedTimestamp = now))
+                                if (withPlants && plants.isNotEmpty()) database.plantedNodeDao().insertAll(plants.map { it.copy(id = 0, plotId = id) })
+                                if (paths.isNotEmpty()) database.pathZoneDao().insertAll(paths.map { it.copy(id = 0, plotId = id) })
+                                if (features.isNotEmpty()) database.siteFeatureDao().insertAll(features.map { it.copy(id = 0, plotId = id) })
+                                if (withHistory && history.isNotEmpty()) database.plantingHistoryDao().insertAll(history.map { it.copy(id = 0, plotId = id) })
+                            }
+                        }
+                        snackbarMessage = "Made “$name”. The original is unchanged; open the copy from the plot list."
+                    }
+                }) { Text("Duplicate") }
+            },
+            dismissButton = { TextButton(onClick = { showDuplicateDialog = false }) { Text("Cancel") } },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
+    // FR-033: close the season. Plants move to history; fence, walls, buildings, trees, paths, areas and outline stay.
     if (showNewSeasonDialog) {
         val season = Seasons.currentSeason(nodesState, historyState)
         var yearText by remember(season) { mutableStateOf(season.toString()) }
@@ -2538,8 +2865,15 @@ fun CanvasWorkspaceScreen(
                 plotId = plotId,
                 featureType = type.name,
                 pointsJson = PlotGeometry.serializePoints(toPlotPoints(shape)),
-                heightM = if (type == SiteFeatureType.TREE) 6f else if (type.isBarrier) 1.8f else 0f,
-                radiusM = if (type == SiteFeatureType.TREE) 2f else 0f
+                                heightM = if (type == SiteFeatureType.TREE) 6f else if (type.isBarrier) 1.8f else 0f,
+                radiusM = when (type) {
+                    SiteFeatureType.TREE -> 2f
+                    SiteFeatureType.SPRINKLER -> Irrigation.DEFAULT_THROW_M
+                    SiteFeatureType.DRIP_LINE -> Irrigation.DEFAULT_DRIP_HALF_WIDTH_M
+                    SiteFeatureType.HOSE_BIB -> Irrigation.DEFAULT_HOSE_M
+                    else -> 0f
+                },
+                slopeGradePct = if (type == SiteFeatureType.SPRINKLER) 360f else 0f
             ),
             isNew = true,
             onSave = { feature ->
@@ -3311,8 +3645,28 @@ private fun SiteFeatureDialog(
                         }
                     }
                 }
-                if (type == SiteFeatureType.FLOOD) {
+                                if (type == SiteFeatureType.FLOOD) {
                     OutlinedTextField(value = months, onValueChange = { months = it }, label = { Text("Months it floods, e.g. 3,4,5") }, singleLine = true)
+                }
+                // FR-039: irrigation settings.
+                if (type.isIrrigation) {
+                    OutlinedTextField(value = radius, onValueChange = { radius = it }, singleLine = true,
+                        label = { Text(when (type) { SiteFeatureType.SPRINKLER -> "How far it throws water (m)"; SiteFeatureType.DRIP_LINE -> "Wetted strip each side (m)"; else -> "Hose length (m)" }) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
+                if (type == SiteFeatureType.SPRINKLER) {
+                    Text("Pattern", fontSize = 12.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        listOf("Full" to 360f, "¾" to 270f, "½" to 180f, "¼" to 90f).forEach { (name, arc) ->
+                            FilterChip(selected = (grade.toFloatOrNull() ?: 360f) == arc, onClick = { grade = arc.toInt().toString() }, label = { Text(name, fontSize = 11.sp) })
+                        }
+                    }
+                    Text("For a part circle, which way the middle of the spray points", fontSize = 12.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        directions.forEach { (name, deg) ->
+                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(name, fontSize = 10.sp) })
+                        }
+                    }
                 }
                 if (type == SiteFeatureType.FULL_SUN || type == SiteFeatureType.PART_SHADE || type == SiteFeatureType.FULL_SHADE) {
                     Text("Plants that need more sun than this area gets are flagged in the harmony report and left out of suggestions for it.", fontSize = 11.sp, color = Color.Gray)
@@ -3329,7 +3683,10 @@ private fun SiteFeatureDialog(
                 error = when {
                     type.isBarrier && (h == null || h <= 0f || h > 100f) -> "Enter a height between 0 and 100 m."
                     type == SiteFeatureType.TREE && (r == null || r <= 0f || r > 30f) -> "Enter a crown radius between 0 and 30 m."
-                    type == SiteFeatureType.SLOPE && (g == null || g < 0f || g > 100f) -> "Enter a grade between 0 and 100 %."
+                                        type == SiteFeatureType.SLOPE && (g == null || g < 0f || g > 100f) -> "Enter a grade between 0 and 100 %."
+                    type == SiteFeatureType.SPRINKLER && (r == null || r < 0.5f || r > 30f) -> "Enter a throw radius between 0.5 and 30 m."
+                    type == SiteFeatureType.DRIP_LINE && (r == null || r < 0.05f || r > 2f) -> "Enter a wetted width between 0.05 and 2 m."
+                    type == SiteFeatureType.HOSE_BIB && (r == null || r < 1f || r > 60f) -> "Enter a hose length between 1 and 60 m."
                     type == SiteFeatureType.FLOOD && monthList.any { it.toIntOrNull() == null || it.toInt() !in 1..12 } -> "Months are numbers 1–12, separated by commas."
                     else -> null
                 }
@@ -3339,7 +3696,7 @@ private fun SiteFeatureDialog(
                             label = label.trim(),
                             heightM = h ?: 0f,
                             radiusM = r ?: 0f,
-                            slopeGradePct = g ?: 0f,
+                                                        slopeGradePct = if (type == SiteFeatureType.SPRINKLER) (g ?: 360f) else (g ?: 0f),
                             slopeDirectionDeg = direction,
                             floodMonths = monthList.joinToString(",")
                         )
@@ -3371,7 +3728,9 @@ private fun AutoPlanRequestDialog(
     usual: List<Pair<SeedEntity, Int>>,
     layout: PlantingLayout,
     onLayoutChange: (PlantingLayout) -> Unit,
-    hasHistory: Boolean,
+        hasHistory: Boolean,
+    title: String,
+    onHowManyFit: (List<PlantRequest>) -> Unit,
     conflictFor: (SeedEntity) -> String?,
     orientationSet: Boolean,
     running: Boolean,
@@ -3383,7 +3742,7 @@ private fun AutoPlanRequestDialog(
     val byCode = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("What do you want to plant here?") },
+                title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together.", fontSize = 12.sp)
@@ -3427,7 +3786,11 @@ private fun AutoPlanRequestDialog(
                         }
                     }
                 }
-                                TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+                                                Row {
+                    TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+                    // FR-040: keep the list's proportions and scale to what the area holds.
+                    TextButton(enabled = rows.isNotEmpty(), onClick = { onHowManyFit(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n.coerceAtLeast(1)) } }) }) { Text("How many fit?") }
+                }
                 // FR-032: clumps (default) or rows.
                 Text("How should each crop be arranged?", fontSize = 11.sp, color = Color.Gray)
                 PlantingLayout.entries.forEach { l ->

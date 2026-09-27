@@ -52,7 +52,9 @@ on the **user, their property and their data**. The mapping is recorded here so 
 F1 Plot definition · F2 Plant placement & spacing/companion validation · F3 Scheduling (harvest,
 germination alert) · F4 Plan B recovery options · F5 Weed-risk overlay · F6 Irrigation route · F7 Catalog &
 Encyclopedia information (pests, care) · F8 Persistence & encryption · F9 Plot photo · F10 Climate/location
-lookup · F11 Measurement (pending D-03) · F12 Export/import (future)
+lookup · F11 Measurement (pending D-03) · F12 Export/import (plan files) · F13 Automatic planting and crop-rotation
+planning (Plan an area for me, next season, rotation plans) · F14 Shade estimation (whole day, time of day, plant
+shade) · F15 Irrigation coverage · F16 Plot duplication / templates · F17 Computer planner (web client)
 
 ## 6. Preliminary FHA
 
@@ -74,6 +76,12 @@ lookup · F11 Measurement (pending D-03) · F12 Export/import (future)
 | FC-14 | F11 | Erroneous measured dimensions | Whole layout mis-scaled | Partly | MIN | D-03; show uncertainty (T2-PRE-020) |
 | FC-15 | F12 | Tampered import accepted | Corrupted plans | Partly | MIN | Signature + schema validation (DW-1203) |
 | FC-16 | All | App crash / hang | Inconvenience, possible loss of the last edit | Yes | MIN | Robustness tests; transactional writes |
+| FC-17 | F13 | Rotation plan puts a crop where its family grew the previous season, or advises the wrong family | Soil-borne disease and pest build-up; lower yield | No | MIN | Strict rule with explicit note when relaxed (HLR-ROT-040); advice text shows the season and family used; tests RotationPlannerTest |
+| FC-18 | F13 | Planner places a vine with no free runway, or a tall crop in front of short ones | Crowding and shading of neighbours | Yes (proposal shown before planting) | MIN | Proposal is a preview with explanation (HLR-AUTO-060); guides drawn; tests BlockPlannerTest |
+| FC-19 | F14 | Shade underestimated (sun shown where there is shade) | Sun-loving crops planted in shade; lower yield | No | MIN | Clear-sky and solar-time assumptions stated in the legend and manual (SP-01); plant heights approximate |
+| FC-20 | F15 | Water map shows a plant as reached when it is not | Plants left unwatered | Partly (the gardener sees the plants) | MIN | Straight-line hose reach and no pressure model stated (SP-01, SP-03); plants out of reach ringed |
+| FC-21 | F16 | Duplicate changes or loses the original plot, or copies incomplete data | Loss of planning data | Yes | MIN | Copy in one transaction with new ids; original untouched (HLR-TPL-010) |
+| FC-22 | F17 | Computer planner and phone give different results for the same plot, or unsaved browser work is lost | Inconsistent plans; re-entry of work | Partly | MIN | Same source compiled twice (DEV-02 extended); file round-trip test; draft kept in the browser plus explicit Save |
 
 **Preliminary conclusion:** the worst classification is **MIN**, with FC-11 possibly **MAJ** depending on
 the FHA review. The minimum required level would therefore be D (or C for the privacy aspect). **Level A

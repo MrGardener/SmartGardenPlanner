@@ -13,6 +13,8 @@ germination tracking), developed under a DO-178C / ARP4754A DAL A process.
 | `docs/compliance/` | Plans, standards, deferred work register (start with `README.md` there) |
 | `docs/cm/` | GitHub / configuration-management setup |
 | `tools/` | `req_trace.py` — requirements trace generator and checker |
+| `.claude/agents/` | Project subagents: `requirements-auditor` (finds requirements left behind or contradicted by changes, for the owner to keep / improve / delete) and `manual-tester` (tests the interface against the user manual). Ask Claude Code to "use the requirements-auditor" or "use the manual-tester". |
+| `Android App/USER_MANUAL.md` | User manual for the phone app and the computer planner |
 | `REVAMP_PLAN_Pixel10Pro.md` | Revamp plan for the Pixel 10 Pro |
 
 ## Build requirements

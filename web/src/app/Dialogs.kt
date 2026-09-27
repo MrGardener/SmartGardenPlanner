@@ -535,6 +535,8 @@ object Dialogs {
         para("5. When the season ends: Plot tab → Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. “Names” shows what each plant is (sweet or hot pepper, cherry or large tomato…)."),
         heading("Moving plans between computer and phone"),
         para("Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive…). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here."),
+        heading("Seasons, shade and water"),
+        para("Plot tab → Seasons: look back at any past season (read only), Plan next season (rotate) to re-plan the plot with the same crops rotated, or a Rotation plan for up to 10 seasons. Shade: choose the day and “Whole day” or “At a time of day” in the legend; tall plants can cast shade. Water: draw sprinklers, drip lines and hose taps (Plot tab → Irrigation) and turn on Water to see what gets watered. Plants tab → Fill the whole plot… with How many fit?; Plot tab → Duplicate plot… for templates."),
         heading("Finding and changing things"),
         para("“On this plot” (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant…) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline."),
         heading("Keyboard"),
