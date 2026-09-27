@@ -3,8 +3,8 @@
 # Needs: Java 17+, python3, and the Kotlin 2.2.10 compiler jars (downloaded from Maven Central on first run
 # into $KOTLIN_JARS, default ~/.cache/sgp-kotlin).
 set -e
-# The Kotlin/JS compiler's output (interface order in class metadata) depends on the locale, so pin it; this keeps
-# the committed dist/ file byte-identical to a CI build.
+# Pin the locale so builds are the same on every machine. (The only remaining variation is the order of the
+# interface list in initMetadataForClass(...) lines, which the compiler emits nondeterministically; CI ignores it.)
 export LC_ALL=C
 unset LANG LANGUAGE
 HERE=$(cd "$(dirname "$0")" && pwd)

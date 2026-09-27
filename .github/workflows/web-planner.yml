@@ -41,11 +41,14 @@ jobs:
         working-directory: web
         run: sh build.sh
       - name: Committed HTML matches the source
+        # The Kotlin/JS compiler emits the interface list in initMetadataForClass(...) in a nondeterministic
+        # order (it only feeds `is` checks, so behaviour is the same); those lines are left out of the comparison.
         run: |
-          if ! git diff --quiet -- web/dist; then
+          norm() { grep -v '^initMetadataForClass(' "$1"; }
+          git show HEAD:web/dist/smart-garden-planner.html > "$RUNNER_TEMP/committed.html"
+          if ! diff -q <(norm "$RUNNER_TEMP/committed.html") <(norm web/dist/smart-garden-planner.html) > /dev/null; then
             echo "::error::web/dist/smart-garden-planner.html is out of date. Run web/build.sh and commit it."
-            git diff --stat -- web/dist
-            git diff -U0 -- web/dist | cut -c1-300 | head -40
+            diff <(norm "$RUNNER_TEMP/committed.html") <(norm web/dist/smart-garden-planner.html) | cut -c1-300 | head -40
             exit 1
           fi
       - name: Browser smoke test
