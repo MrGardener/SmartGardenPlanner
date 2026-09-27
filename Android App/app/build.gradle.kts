@@ -8,7 +8,9 @@ plugins {
 
 android {
     namespace = "com.example.smartgardenplanner"
-    compileSdk = 36
+    // 37 is required by androidx.core 1.19, lifecycle 2.11 and sqlcipher-android 4.19 (AAR metadata).
+    // Runtime behaviour follows targetSdk, which stays at 36.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.smartgardenplanner"
