@@ -367,3 +367,7 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | 2026-09-27 | DW-1501 | In progress | Issue templates (problem report, change request) committed; labels to be created by the owner (`docs/cm/GITHUB_SETUP.md` §3). Converting register items to Issues remains. |
 | 2026-09-27 | DW-1502 | In progress | PR template with review checklist and CI workflows (requirements trace; Android build/test/lint) committed. Branch ruleset must be enabled by the owner (`docs/cm/GITHUB_SETUP.md` §1). |
 | 2026-09-27 | DW-1306 | Implemented (awaiting review) | `tools/req_trace.py` generates and checks T2 → HLR → LLR trace; runs in CI. |
+| 2026-09-27 | DW-0501 … DW-0505 | Implemented (awaiting review) | Toolchain upgraded (AGP 9.2.1, Kotlin 2.2.10, KSP 2.3.12, Gradle 9.8.0, compileSdk 37 / targetSdk 36, Room 2.8.0, CameraX 1.4.2). CI build, 25 unit tests and lint pass on PR #1. |
+| 2026-09-27 | DW-0506 | Implemented (awaiting verification) | Now uses sqlcipher-android 4.19.0. Remaining: emulator/device check that a database created by v20.20 still opens; 16 KB alignment check in APK Analyzer. |
+| 2026-09-27 | DW-1201, DW-1301 | Implemented (awaiting review) | Dead security file and duplicate test file removed. |
+| 2026-09-27 | NEW (test) | Fixed | AutoPopulateEngineTest asserted hex ≥ rows on 6 m × 6 m, which is false for that geometry (36 vs 33); moved to 10 m × 10 m (100 vs 105). |
