@@ -5,7 +5,8 @@ import kotlin.math.sqrt
 /**
  * A satellite or aerial photo shown under the plot (FR-046), for example a screenshot of Google Maps in satellite view,
  * so trees, fences and buildings can be traced in the right place. The photo's top-left corner sits at ([xM], [yM])
- * in plot metres, it is [widthM] wide (height = width × [aspect]) and turned [rotationDeg] clockwise about that corner.
+ * in plot metres (before turning), it is [widthM] wide (height = width × [aspect]) and turned [rotationDeg] about its
+ * centre: positive = clockwise, negative = counter-clockwise, −180…180 (FR-046, FR-049).
  * Stored on the plot as "x;y;width;rotation;opacity;aspect" ([PlotEntity.backdropJson]); the image itself is kept
  * next to the plot (a file on the phone, a data URL in the computer planner and the plan file).
  */
@@ -20,6 +21,11 @@ data class Backdrop(
     val visible: Boolean = true
 ) {
     val heightM: Float get() = widthM * aspect
+    val centreX: Float get() = xM + widthM / 2f
+    val centreY: Float get() = yM + heightM / 2f
+
+    /** Turned to [deg], limited to 180° either way (FR-049). */
+    fun turned(deg: Float) = copy(rotationDeg = normalizeDeg(deg))
 
     fun encode(): String = listOf(xM, yM, widthM, rotationDeg, opacity, aspect).joinToString(";") { it.fmt(4) } + if (visible) "" else ";h"
 
@@ -34,7 +40,10 @@ data class Backdrop(
         val k = distanceM / current
         val w = widthM * k
         if (w !in MIN_WIDTH_M..MAX_WIDTH_M) return null
-        return copy(xM = a.x + (xM - a.x) * k, yM = a.y + (yM - a.y) * k, widthM = w)
+        // Scale about a: the centre moves away from (or toward) a, the size grows by k, the turn stays.
+        val cx = a.x + (centreX - a.x) * k
+        val cy = a.y + (centreY - a.y) * k
+        return copy(xM = cx - w / 2f, yM = cy - w * aspect / 2f, widthM = w)
     }
 
     fun moved(dx: Float, dy: Float) = copy(xM = xM + dx, yM = yM + dy)
@@ -47,6 +56,22 @@ data class Backdrop(
         /** Longest side an imported photo is scaled down to. */
         const val MAX_IMAGE_PX = 1600
 
+        /** Any angle as −180…180 (190 → −170, −200 → 160). */
+        fun normalizeDeg(deg: Float): Float {
+            if (deg.isNaN()) return 0f
+            var d = deg % 360f
+            if (d > 180f) d -= 360f
+            if (d < -180f) d += 360f
+            return d
+        }
+
+        /** "30° clockwise", "45° counter-clockwise", "not turned". */
+        fun describeTurn(deg: Float): String = when {
+            kotlin.math.abs(deg) < 0.05f -> "not turned"
+            deg > 0f -> "${deg.fmt(0)}° clockwise"
+            else -> "${(-deg).fmt(0)}° counter-clockwise"
+        }
+
         /** A new backdrop covering the plot's width, top-left at the plot's corner. */
         fun fresh(plot: PlotEntity, imageWidthPx: Int, imageHeightPx: Int): Backdrop =
             Backdrop(widthM = plot.lengthM.coerceIn(MIN_WIDTH_M, MAX_WIDTH_M), aspect = (imageHeightPx.toFloat() / imageWidthPx.coerceAtLeast(1)).coerceIn(0.05f, 20f))
@@ -58,7 +83,7 @@ data class Backdrop(
             val n = f.take(6).map { it.trim().toFloatOrNull() ?: return null }
             if (n[2] !in MIN_WIDTH_M..MAX_WIDTH_M || n[5] !in 0.05f..20f || n.any { it.isNaN() }) return null
             if (kotlin.math.abs(n[0]) > 10_000f || kotlin.math.abs(n[1]) > 10_000f) return null
-            return Backdrop(n[0], n[1], n[2], ((n[3] % 360f) + 360f) % 360f, n[4].coerceIn(0.1f, 1f), n[5], f.getOrNull(6) != "h")
+            return Backdrop(n[0], n[1], n[2], normalizeDeg(n[3]), n[4].coerceIn(0.1f, 1f), n[5], f.getOrNull(6) != "h")
         }
 
         /** True for a data URL of a JPEG, PNG or WebP image within the size limit. */

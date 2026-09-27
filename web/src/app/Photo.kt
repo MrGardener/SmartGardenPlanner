@@ -29,7 +29,7 @@ object Photo {
         val b = backdrop(wp)
         if (b == null) {
             body.add(para("See your real trees, fences and buildings under the plot: open Google Maps in satellite view, take a screenshot of your yard (Windows: Win+Shift+S · Mac: Cmd+Shift+4), save it, then add it here.", "hint"))
-            val addr = input(address.ifBlank { wp.plot.locationZip.orEmpty() }, placeholder = "Your address, e.g. 123 Main St, Ann Arbor MI")
+            val addr = input(address.ifBlank { wp.plot.address ?: wp.plot.locationZip.orEmpty() }, placeholder = "Your address, e.g. 123 Main St, Ann Arbor MI")
             addr.on("input") { address = addr.value }
             body.add(label("Address to look up", addr))
             body.add(h("div", "row wrap", kids = listOf(
@@ -45,17 +45,25 @@ object Photo {
             button(if (b.visible) "Hide" else "Show", "btn") { update(wp) { it.copy(visible = !it.visible) } },
             button("Remove photo", "btn danger") { Store.change { it.backdropImage = null; it.plot = it.plot.copy(backdropJson = null) }; calibrating = false; App.render() }
         )))
-        body.add(slider("See-through", (b.opacity * 100).toInt(), 10, 100) { v -> update(wp) { it.copy(opacity = v / 100f) } })
-        body.add(slider("Turn (degrees)", b.rotationDeg.toInt().let { if (it > 180) it - 360 else it }, -180, 180) { v -> update(wp) { it.copy(rotationDeg = ((v % 360) + 360) % 360f) } })
+        body.add(slider("See-through (%)", (b.opacity * 100).toInt(), 10, 100, "Lower = more see-through, so your drawing stays easy to see") { v -> update(wp) { it.copy(opacity = v / 100f) } })
+        // FR-049: slider and number box move together; + turns clockwise, − counter-clockwise, 180° at most either way.
+        body.add(slider("Turn (degrees: + clockwise, − counter-clockwise)", kotlin.math.round(b.rotationDeg).toInt(), -180, 180,
+            "Turn the photo about its centre to line it up with your plot. Type a number or drag; 0 = not turned") { v -> update(wp) { it.turned(v.toFloat()) } })
+        body.add(para("Now: " + Backdrop.describeTurn(b.rotationDeg) + ".", "hint"))
         if (Store.draftWithoutPhotos) body.add(para("The photo is too big to keep in this browser's draft; it's kept while the page is open and in your saved file. Save to keep it.", "warn"))
     }
 
-    private fun slider(text: String, value: Int, min: Int, max: Int, onSet: (Int) -> Unit): HTMLElement {
-        val r = input(value.toString(), "range").also { it.setAttribute("min", "$min"); it.setAttribute("max", "$max"); it.setAttribute("step", "1") }
-        val out = h("span", "hint", "$value")
-        r.on("input") { out.textContent = r.value }
-        r.on("change") { r.value.toIntOrNull()?.let(onSet) }
-        return h("label", "field", kids = listOf(h("span", "lbl", text), h("div", "row", kids = listOf(r, out))))
+    /** A range slider and a number box kept in step; the value is applied when either is released or confirmed. */
+    private fun slider(text: String, value: Int, min: Int, max: Int, tip: String, onSet: (Int) -> Unit): HTMLElement {
+        // min/max first: a range input clamps its value to 0–100 until they are set.
+        val r = input(type = "range").also { it.setAttribute("min", "$min"); it.setAttribute("max", "$max"); it.setAttribute("step", "1"); it.value = value.toString(); it.title = tip }
+        val box = input(type = "number").also { it.setAttribute("min", "$min"); it.setAttribute("max", "$max"); it.setAttribute("step", "1"); it.value = value.toString(); it.classList.add("num-small"); it.title = tip }
+        fun clamp(t: String) = t.toIntOrNull()?.coerceIn(min, max)
+        r.on("input") { box.value = r.value }
+        r.on("change") { clamp(r.value)?.let(onSet) }
+        box.on("input") { clamp(box.value)?.let { r.value = it.toString() } }
+        box.on("change") { val v = clamp(box.value); if (v == null) box.value = r.value else { box.value = v.toString(); onSet(v) } }
+        return h("label", "field", kids = listOf(h("span", "lbl", text), h("div", "row", kids = listOf(r, box))))
     }
 
     private fun update(wp: WebPlot, f: (Backdrop) -> Backdrop) {
@@ -65,8 +73,11 @@ object Photo {
     }
 
     fun openMaps(wp: WebPlot, query: String) {
-        val url = Backdrop.googleMapsUrl(wp.plot.latitude, wp.plot.longitude, query.ifBlank { null })
-        if (url == null) { App.status("Type your address (or set the plot's ZIP code) first."); return }
+        val q = query.trim()
+        val url = Backdrop.googleMapsUrl(wp.plot.latitude, wp.plot.longitude, q.ifBlank { null })
+        if (url == null) { App.status("Add the plot's address (Edit details…) or ZIP code first."); return }
+        // FR-050: an address typed here is kept with the plot for next time (only digits = a ZIP, not kept).
+        if (q.isNotEmpty() && q != wp.plot.address && !q.all { it.isDigit() }) { Store.change { it.plot = it.plot.copy(address = q.take(200)) } }
         window.open(url, "_blank", "noopener")
         App.status("Google Maps opened in a new tab. Switch to Satellite, zoom in on your yard, take a screenshot, then click Add photo….")
     }

@@ -2127,7 +2127,7 @@ fun CanvasWorkspaceScreen(
                                         nc.save()
                                         nc.scale(scaleX, scaleY)
                                         nc.translate(placement.xM + photoDrag.x, placement.yM + photoDrag.y)
-                                        nc.rotate(placement.rotationDeg)
+                                        nc.rotate(placement.rotationDeg, placement.widthM / 2f, placement.heightM / 2f)
                                         nc.drawBitmap(photo, null, android.graphics.RectF(0f, 0f, placement.widthM, placement.heightM),
                                             android.graphics.Paint().apply { alpha = (placement.opacity * 255).toInt(); isFilterBitmap = true })
                                         nc.restore()
@@ -2962,9 +2962,19 @@ fun CanvasWorkspaceScreen(
                         var opacity by remember(placement.opacity) { mutableFloatStateOf(placement.opacity) }
                         Text("See-through: ${(opacity * 100).toInt()}%", fontSize = 12.sp)
                         Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f, onValueChangeFinished = { val o = opacity; savePhotoPlacement { it.copy(opacity = o) } })
-                        var turn by remember(placement.rotationDeg) { mutableFloatStateOf(placement.rotationDeg.let { if (it > 180f) it - 360f else it }) }
-                        Text("Turn: ${turn.toInt()}°", fontSize = 12.sp)
-                        Slider(value = turn, onValueChange = { turn = it }, valueRange = -180f..180f, onValueChangeFinished = { val t = turn; savePhotoPlacement { it.copy(rotationDeg = ((t % 360f) + 360f) % 360f) } })
+                        // FR-049: slider and number box in step; + clockwise, − counter-clockwise, 180° at most either way.
+                        var turn by remember(placement.rotationDeg) { mutableFloatStateOf(placement.rotationDeg) }
+                        var turnText by remember(placement.rotationDeg) { mutableStateOf(kotlin.math.round(placement.rotationDeg).toInt().toString()) }
+                        Text("Turn: ${com.example.smartgardenplanner.core.Backdrop.describeTurn(turn)} (+ clockwise, − counter-clockwise)", fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Slider(value = turn, onValueChange = { turn = kotlin.math.round(it); turnText = turn.toInt().toString() }, valueRange = -180f..180f,
+                                onValueChangeFinished = { val t = turn; savePhotoPlacement { it.turned(t) } }, modifier = Modifier.weight(1f))
+                            OutlinedTextField(value = turnText, onValueChange = { v ->
+                                turnText = v.filter { c -> c.isDigit() || c == '-' }.take(4)
+                                turnText.toIntOrNull()?.takeIf { it in -180..180 }?.let { turn = it.toFloat() }
+                            }, singleLine = true, modifier = Modifier.width(80.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                            TextButton(onClick = { val t = turn; savePhotoPlacement { it.turned(t) } }) { Text("Set") }
+                        }
                     }
                 }
             },

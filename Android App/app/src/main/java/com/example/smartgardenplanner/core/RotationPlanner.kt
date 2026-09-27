@@ -26,6 +26,21 @@ object RotationPlanner {
             .sortedByDescending { it.count }
     }
 
+    /** Longest rotation plan offered (FR-048). */
+    const val MAX_SEASONS = 30
+
+    /**
+     * The list for [year] after the user's variety changes (FR-048): each change (year it starts → from code → to seed)
+     * applies from that year on; later changes win. Counts, priority and shape are kept.
+     */
+    fun requestsFor(requests: List<PlantRequest>, changes: Map<Int, Map<String, SeedEntity>>, year: Int): List<PlantRequest> {
+        var list = requests
+        changes.entries.filter { it.key <= year }.sortedBy { it.key }.map { it.value }.forEach { swap: Map<String, SeedEntity> ->
+            list = list.map { r -> swap[r.seed.botanicalCode]?.let { r.copy(seed = it, shape = null) } ?: r }
+        }
+        return list.groupBy { it.seed.botanicalCode }.map { (_, rs) -> rs.first().copy(count = rs.sumOf { it.count }, priority = rs.any { it.priority }, shape = if (rs.size == 1) rs.first().shape else null) }
+    }
+
     fun planSeasons(
         context: PlotContext,
         area: List<PlotPoint>,
@@ -35,15 +50,16 @@ object RotationPlanner {
         seasons: Int,
         isBlocked: (Float, Float, Float) -> Boolean = { _, _, _ -> false },
         marginMultiplier: Float = 1f,
-        orientationKnown: Boolean = true
+        orientationKnown: Boolean = true,
+        changes: Map<Int, Map<String, SeedEntity>> = emptyMap()
     ): List<SeasonPlan> {
         val out = mutableListOf<SeasonPlan>()
         var simulated = history
         val fresh = context.copy(nodes = emptyList())
-        for (i in 0 until seasons.coerceIn(1, 10)) {
+        for (i in 0 until seasons.coerceIn(1, MAX_SEASONS)) {
             val year = firstYear + i
             val result = AutoPlanner.plan(
-                fresh, area, requests, isBlocked, marginMultiplier, orientationKnown,
+                fresh, area, requestsFor(requests, changes, year), isBlocked, marginMultiplier, orientationKnown,
                 layout = PlantingLayout.CLUMPS, history = simulated, seasonYear = year, strictRotation = true
             )
             val nodes = result.placed.map { PlantedNodeEntity(plotId = context.plot.id, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y) }

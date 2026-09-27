@@ -69,6 +69,7 @@ object App {
         renderPlantLegend()
         Panels.render(panel)
         Canvas.render()
+        Tips.apply(kotlinx.browser.document.body!!)
     }
 
     private fun renderHeader() {
@@ -174,12 +175,17 @@ object App {
         val wp = Store.plot()
         if (wp == null || wp.plants.isEmpty()) { plantLegend.classList.add("hidden"); return }
         plantLegend.classList.remove("hidden")
-        plantLegend.add(h("div", "pl-head", kids = listOf(
-            h("b", text = "On this plot (${wp.plants.size})"),
-            button(if (legendOpen) "−" else "+", "btn small", if (legendOpen) "Hide the list" else "Show the list") { legendOpen = !legendOpen; render() }
-        )))
+        // FR-052: drag the header to move the box anywhere on the layout; double-click it to put it back.
+        val head = h("div", "pl-head", attrs = mapOf("title" to "Drag to move this box out of the way. Double-click to put it back in the corner."), kids = listOf(
+            h("span", "grip", "⠿"),
+            h("b", "grow", "On this plot (${wp.plants.size})"),
+            button(if (legendOpen) "−" else "+", "btn small", if (legendOpen) "Hide the list (the box stays where it is)" else "Show the list") { legendOpen = !legendOpen; render() }
+        ))
+        makeDraggable(head)
+        plantLegend.add(head)
+        placeLegend()
         if (!legendOpen) return
-        plantLegend.add(para("Click a line to find those plants.", "hint"))
+        plantLegend.add(para("Click a name to find those plants. “Replace…” swaps them all for another variety.", "hint"))
         wp.plants.groupBy { it.seedCode }.entries.sortedByDescending { it.value.size }.forEach { (code, list) ->
             val seed = Catalog.get(code)
             val ring = Colors.of(seed)
@@ -187,17 +193,53 @@ object App {
             val name = seed?.commonName ?: code
             val kind = seed?.let { com.example.smartgardenplanner.core.VarietyCatalogTraits.of(it)?.details }
             val active = Canvas.find != null && Canvas.find!!(list.first()) && legendFindCode == code
-            val row = h("button", if (active) "pl-row on" else "pl-row", attrs = mapOf("type" to "button", "title" to "Find ${list.size} × $name"), kids = listOfNotNull(
+            val row = h("button", if (active) "pl-row on" else "pl-row", attrs = mapOf("type" to "button", "title" to "Find the ${list.size} × $name on the layout (circled in orange)"), kids = listOfNotNull(
                 h("span", "sw2", attrs = mapOf("style" to "border-color:$ring;background:radial-gradient(circle,$dot 0 38%,transparent 40%)")),
                 h("span", "grow", kids = listOfNotNull(h("span", "name", "${list.size} × $name"), kind?.let { h("span", "hint", it) }))
             ))
             row.on("click") {
                 if (active) { legendFindCode = null; find(null, null) } else { legendFindCode = code; find("$name", { it.seedCode == code }) }
             }
-            plantLegend.add(row)
+            val replace = button("Replace…", "btn small", "Change all ${list.size} × $name to another variety at once (one undo step)") { Dialogs.replaceAll(code) }
+            plantLegend.add(h("div", "pl-line", kids = listOf(row, replace)))
         }
     }
     private var legendFindCode: String? = null
+
+    /** Puts the "On this plot" box where the user left it (kept in this browser), or back in the corner. */
+    private fun placeLegend() {
+        val pos = Prefs.legendPos
+        val st = plantLegend.style
+        if (pos == null) { st.left = "10px"; st.top = ""; st.bottom = "10px" }
+        else {
+            // Keep it inside the layout even if the window got smaller since it was moved.
+            val stage = plantLegend.parentElement as? HTMLElement
+            val maxX = ((stage?.clientWidth ?: 800) - 160).coerceAtLeast(0)
+            val maxY = ((stage?.clientHeight ?: 600) - 40).coerceAtLeast(0)
+            st.left = "${pos.first.coerceIn(0, maxX)}px"; st.top = "${pos.second.coerceIn(0, maxY)}px"; st.bottom = "auto"
+        }
+    }
+
+    private fun makeDraggable(handle: HTMLElement) {
+        var start: DoubleArray? = null
+        handle.on("pointerdown") { e ->
+            val me = e as org.w3c.dom.events.MouseEvent
+            if ((me.target as? org.w3c.dom.Element)?.closest("button") != null) return@on
+            start = doubleArrayOf(me.clientX.toDouble(), me.clientY.toDouble(), plantLegend.offsetLeft.toDouble(), plantLegend.offsetTop.toDouble())
+            handle.asDynamic().setPointerCapture(me.asDynamic().pointerId)
+            me.preventDefault()
+        }
+        handle.on("pointermove") { e ->
+            val s0 = start ?: return@on
+            val me = e as org.w3c.dom.events.MouseEvent
+            val stage = plantLegend.parentElement as HTMLElement
+            val x = (s0[2] + me.clientX - s0[0]).coerceIn(0.0, (stage.clientWidth - plantLegend.offsetWidth).toDouble().coerceAtLeast(0.0))
+            val y = (s0[3] + me.clientY - s0[1]).coerceIn(0.0, (stage.clientHeight - 40).toDouble().coerceAtLeast(0.0))
+            plantLegend.style.left = "${x.toInt()}px"; plantLegend.style.top = "${y.toInt()}px"; plantLegend.style.bottom = "auto"
+        }
+        handle.on("pointerup") { if (start != null) { start = null; Prefs.legendPos = plantLegend.offsetLeft to plantLegend.offsetTop } }
+        handle.on("dblclick") { Prefs.legendPos = null; placeLegend() }
+    }
 
     private fun cssRgba(argb: Long): String {
         val r = (argb shr 16) and 0xFF; val g = (argb shr 8) and 0xFF; val b = argb and 0xFF
@@ -211,10 +253,13 @@ object App {
                 if (t == Tool.PLANT && Canvas.activeSeed == null) Panels.tab = Tab.PLANTS
                 if (t == Tool.PHOTO || t == Tool.WATER) Panels.tab = Tab.PLOT
                 if (t == Tool.PHOTO) Photo.calibrating = false
-                Canvas.setTool(t)
+                // Clicking the tool that's already on turns it off (back to Select / move).
+                Canvas.setTool(if (Canvas.tool == t && t != Tool.SELECT && t != Tool.PLAN) Tool.SELECT else t)
             })
         }
-        if (Canvas.tool in setOf(Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE) && Canvas.points.isNotEmpty()) {
+        // FR-053: a drip line being drawn gets Finish and Cancel too.
+        val drawingDrip = Canvas.tool == Tool.WATER && Canvas.waterType == com.example.smartgardenplanner.core.SiteFeatureType.DRIP_LINE
+        if ((Canvas.tool in setOf(Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE) || drawingDrip) && Canvas.points.isNotEmpty()) {
             tools.add(button("Finish (Enter)", "tool primary") { Canvas.finishPoints() })
             tools.add(button("Cancel (Esc)", "tool") { Canvas.cancelPoints() })
         }

@@ -109,7 +109,7 @@ object PlanFileCodec {
                 "widthM" to p.widthM,
                 "outline" to PlotGeometry.parsePoints(p.boundaryJson).takeIf { it.size >= 3 }?.map { listOf(it.x, it.y) },
                 "orientation" to mapOf("topFacesDeg" to p.northBearingDeg, "set" to p.orientationSet),
-                "location" to mapOf("zip" to p.locationZip, "latitude" to p.latitude, "longitude" to p.longitude, "hardinessZone" to p.hardinessZone),
+                "location" to mapOf("zip" to p.locationZip, "latitude" to p.latitude, "longitude" to p.longitude, "hardinessZone" to p.hardinessZone, "address" to p.address?.ifBlank { null }),
                 "soil" to mapOf("sandPct" to p.soilSandPct, "siltPct" to p.soilSiltPct, "clayPct" to p.soilClayPct, "organicPct" to p.soilOrganicPct, "ph" to p.soilPh),
                 "pests" to Pest.parse(p.pests).map { it.name }.takeIf { it.isNotEmpty() },
                 "backdrop" to Backdrop.parse(p.backdropJson)?.takeIf { Backdrop.isImageDataUrl(pp.backdropImage) }?.let { b ->
@@ -277,6 +277,7 @@ object PlanFileCodec {
                 soilSandPct = pct("sandPct"), soilSiltPct = pct("siltPct"), soilClayPct = pct("clayPct"),
                 soilOrganicPct = pct("organicPct"),
                 soilPh = soil?.num("ph")?.toFloat()?.takeIf { it in 3f..10f },
+                address = location?.text("address", 200)?.trim()?.ifBlank { null },
                 pests = Pest.encode((m["pests"] as? List<*>).orEmpty().mapNotNull { Pest.of(it as? String) }),
                 backdropJson = backdrop?.first?.encode(),
                 createdTimestamp = parseIso(m.text("createdAt", 30)) ?: PlatformClock.nowMillis(),

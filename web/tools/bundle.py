@@ -26,7 +26,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .main{flex:1;display:grid;grid-template-columns:150px 1fr 360px;min-height:0}
 .tools{display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--panel);border-right:1px solid var(--line);overflow:auto}
 .tools .sep{height:8px}
-.stage{position:relative;min-width:0;min-height:0;background:var(--stage)}
+.stage{position:relative;min-width:0;min-height:0;background:var(--stage);overflow:hidden}
 .canvas{position:absolute;inset:0}
 #sgp-svg{width:100%;height:100%;display:block;color:var(--muted);touch-action:none;user-select:none;cursor:crosshair}
 .panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
@@ -81,8 +81,8 @@ details.pest,details.soil{background:var(--soft);border:1px solid var(--line);bo
 summary{cursor:pointer}
 .preview{position:absolute;right:12px;bottom:12px;max-width:420px;max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .hidden{display:none}
-.plant-legend{position:absolute;left:10px;bottom:10px;max-width:300px;max-height:45%;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:12px}
-.pl-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.plant-legend{position:absolute;left:10px;bottom:10px;max-width:min(300px, calc(100% - 20px));max-height:45%;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:12px}
+.pl-head{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:move;user-select:none;touch-action:none}.pl-head .grip{color:var(--muted);font-size:14px}.pl-line{display:flex;gap:4px;align-items:center}.pl-line .btn.small{padding:2px 6px;font-size:11px;white-space:nowrap}
 .pl-row{display:flex;gap:8px;align-items:flex-start;width:100%;background:none;border:1px solid transparent;border-radius:6px;padding:3px 4px;color:var(--text);cursor:pointer;font:inherit;text-align:left}
 .pl-row:hover{background:var(--card)}
 .pl-row.on{border-color:#f97316;background:var(--on-bg)}
@@ -96,6 +96,8 @@ summary{cursor:pointer}
 .legend b{margin-right:2px}
 .legend{flex-direction:column;align-items:flex-start;gap:4px;max-width:min(640px,calc(100% - 20px))}
 .legend-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inp.num-small{width:80px;flex:0 0 80px}input[type=range]{flex:1}
+.plan-shape{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px 40px}.plan-shape .inp{width:auto;min-width:200px}.plan-shape .chip{font-size:12px;padding:2px 8px}
 .plan-checks{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--soft)}
 .check-line{font-size:13px;margin:3px 0;padding-left:2px}
 .check-line.sev-high{color:var(--danger-text);font-weight:600}.check-line.sev-medium{color:var(--warn)}.check-line.sev-low{color:var(--muted)}

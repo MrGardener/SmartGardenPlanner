@@ -47,6 +47,7 @@ object Dialogs {
         back.on("mousedown") { if (it.target == back) close() }
         back.on("keydown") { if (it.asDynamic().key == "Escape") { it.stopPropagation(); close() } }
         document.body!!.appendChild(back)
+        Tips.apply(back)
         open = back
         (box.querySelector("input, select, textarea") as? HTMLElement ?: box.querySelector("button") as? HTMLElement)?.focus()
     }
@@ -87,6 +88,8 @@ object Dialogs {
         val length = numberField(existing?.lengthM ?: 6f)
         val width = numberField(existing?.widthM ?: 4f)
         val zip = input(existing?.locationZip ?: "", placeholder = "e.g. 48104")
+        val address = input(existing?.address ?: "", placeholder = "e.g. 123 Main St, Ann Arbor, MI (optional)")
+        address.title = "Used by “Open in Google Maps” to find your yard for a satellite screenshot. Stays in your plan file only."
         val zoneInfo = para("", "hint")
         val zone = select(listOf("" to "Unknown") + HardinessZones.LABELS.map { it to "Zone $it" }, existing?.hardinessZone) {}
         var bearing: Float? = existing?.takeIf { it.orientationSet }?.northBearingDeg
@@ -127,6 +130,7 @@ object Dialogs {
             label("Name", name),
             h("div", "grid2", kids = listOf(label("Length (left–right), m", length), label("Width (top–bottom), m", width))),
             label("ZIP code (fills in zone and latitude, offline)", zip), zoneInfo,
+            label("Address (optional, to open your yard in Google Maps)", address),
             label("USDA hardiness zone", zone),
             h("div", "field", kids = listOf(h("span", "lbl", "Which way does the TOP edge of the plot face?"),
                 compassPicker(bearing) { bearing = it },
@@ -151,7 +155,8 @@ object Dialogs {
                     northBearingDeg = bearing ?: base.northBearingDeg, orientationSet = bearing != null || base.orientationSet,
                     soilSandPct = s, soilSiltPct = si, soilClayPct = c,
                     soilOrganicPct = organic.value.toFloatOrNull(), soilPh = ph.value.toFloatOrNull(),
-                    pests = com.example.smartgardenplanner.core.Pest.encode(chosenPests)
+                    pests = com.example.smartgardenplanner.core.Pest.encode(chosenPests),
+                    address = address.value.trim().take(200).ifBlank { null }
                 )
                 if (existing == null) Store.addPlot(updated) else Store.change { it.plot = updated }
                 Canvas.selection = null
@@ -225,7 +230,7 @@ object Dialogs {
 
     // ------------------------------------------------------------------ plan for me
 
-    private data class Row(var seed: SeedEntity?, var count: Int, var priority: Boolean = false)
+    private data class Row(var seed: SeedEntity?, var count: Int, var priority: Boolean = false, var shape: List<Int>? = null)
 
     /**
      * "Plan an area for me" (FR-027): list what to plant; the shared AutoPlanner places it. The list starts from the
@@ -243,7 +248,7 @@ object Dialogs {
         val rows = mutableListOf<Row>()
         val start = if (nextSeason) com.example.smartgardenplanner.core.RotationPlanner.lastList(wp.plants, wp.history, { Catalog.get(it) }).map { it.seed.botanicalCode to it.count }
             else Store.planRows.ifEmpty { Prefs.lastPlan }
-        start.forEach { (code, n) -> Catalog.get(code)?.let { rows += Row(it, n, code in Store.planPriority) } }
+        start.forEach { (code, n) -> Catalog.get(code)?.let { rows += Row(it, n, code in Store.planPriority, Store.planShapes[code]?.takeIf { sh -> sh.sum() == n }) } }
         if (rows.isEmpty()) Store.usual(4).forEach { rows += Row(it.first, 3) }
         if (rows.isEmpty()) RecommendationEngine.recommend(Catalog.seeds, ctx, area, limit = 3, foodOnly = true).forEach { rows += Row(it.seed, 3) }
         if (rows.isEmpty()) rows += Row(null, 3)
@@ -251,6 +256,7 @@ object Dialogs {
             if (nextSeason) return
             Store.planRows.clear(); Store.planRows += rows.mapNotNull { r -> r.seed?.let { it.botanicalCode to r.count } }
             Store.planPriority.clear(); Store.planPriority += rows.filter { it.priority }.mapNotNull { it.seed?.botanicalCode }
+            Store.planShapes.clear(); rows.forEach { r -> val sd = r.seed; val sh = r.shape; if (sd != null && sh != null) Store.planShapes[sd.botanicalCode] = sh }
         }
         // FR-043: checks shown before anything is placed, updated as the list changes.
         val checksBox = h("div", "plan-checks")
@@ -279,6 +285,27 @@ object Dialogs {
                 }
                 val count = input(row.count.toString(), "number").also { it.setAttribute("min", "1"); it.setAttribute("max", "200"); it.classList.add("count") }
                 count.on("input") { row.count = count.value.toIntOrNull()?.coerceIn(0, 200) ?: 0; remember(); checksSoon() }
+                // FR-047: a new count gets new arrangement choices (filled in place, so nothing jumps under the pointer).
+                val shapeBox = h("div", "plan-shape")
+                fun fillShape() {
+                    shapeBox.clear()
+                    if (Prefs.layout != PlantingLayout.CLUMPS) return
+                    if (row.seed == null || row.count <= 1) { shapeBox.add(h("span", "hint", "Arrange as: set a count of 2 or more to choose rows and columns")); return }
+                    val opts = com.example.smartgardenplanner.core.ClumpShapes.options(row.count)
+                    val key = { rs: List<Int> -> rs.joinToString("x") }
+                    val arrange = select(listOf("" to "Let the planner choose (${opts.first().label})") + opts.map { key(it.rows) to it.label }, row.shape?.let(key) ?: "") { v ->
+                        row.shape = if (v.isBlank()) null else v.split("x").mapNotNull { it.toIntOrNull() }
+                        remember()
+                    }
+                    arrange.title = "How to lay out this clump: rows run across the plot, the first row is at the back (away from the sun)"
+                    val tidy = com.example.smartgardenplanner.core.ClumpShapes.nearbyTidy(row.count).take(3)
+                    shapeBox.add(h("span", "lbl", "Arrange as"), arrange)
+                    if (tidy.isNotEmpty()) shapeBox.add(h("span", "hint", "Neater counts:"))
+                    tidy.forEach { t -> shapeBox.add(button("${t.count} (${t.label})", "chip", "Change the count to ${t.count} so they make a neat ${t.label}") { row.count = t.count; row.shape = t.rows; remember(); draw() }) }
+                    Tips.apply(shapeBox)
+                }
+                count.on("change") { if (row.shape?.sum() != row.count) row.shape = null; fillShape(); checksSoon() }
+                count.title = "How many plants of this variety"
                 val star = button(if (row.priority) "★" else "☆", if (row.priority) "btn icon star on" else "btn icon star",
                     if (row.priority) "Most important: placed first, in the sunniest spots that suit it (click to unmark)" else "Mark as most important: placed first, in the sunniest spots that suit it") {
                     row.priority = !row.priority; remember(); draw()
@@ -293,8 +320,11 @@ object Dialogs {
                 } ?: "Not in the catalog yet"
                 list.add(h("div", "plan-row", kids = listOf(
                     star, h("div", "grow", kids = listOf(search, h("div", "hint", info))), count,
-                    button("✕", "btn icon", "Remove") { rows.removeAt(i); remember(); draw() }
+                    button("✕", "btn icon", "Remove this plant from the list") { rows.removeAt(i); remember(); draw() }
                 )))
+                // FR-047: choose how the clump is laid out before planting (organised clumps only).
+                fillShape()
+                if (Prefs.layout == PlantingLayout.CLUMPS) list.add(shapeBox)
             }
                         list.add(h("div", "row wrap", kids = listOf(
                 button("+ Add a plant", "btn") { rows += Row(null, 3); draw() },
@@ -308,6 +338,7 @@ object Dialogs {
                 }
             )))
             drawChecks()
+            Tips.apply(list)
         }
         draw()
         val usual = Store.usual()
@@ -327,7 +358,7 @@ object Dialogs {
             layoutBox.clear()
             layoutBox.add(h("span", "lbl", "How should each crop be arranged?"))
             layoutBox.add(h("div", "chips", kids = PlantingLayout.entries.map { l ->
-                button(l.label, if (l == layout) "chip on" else "chip") { layout = l; Prefs.layout = l; drawLayout() }
+                button(l.label, if (l == layout) "chip on" else "chip", l.description) { layout = l; Prefs.layout = l; drawLayout(); draw() }
             }))
             layoutBox.add(para(layout.description, "hint"))
         }
@@ -343,7 +374,7 @@ object Dialogs {
         ) + warn + list + checksBox + layoutBox, listOf(
             "Cancel" to { remember(); Store.previewArea = null; App.status("Plan cancelled. Your list is kept for next time."); App.render(); true },
             "Plan it" to plan@{
-                val requests = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count, r.priority) } }.filter { it.count > 0 }
+                val requests = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count, r.priority, r.shape?.takeIf { sh -> sh.sum() == r.count }) } }.filter { it.count > 0 }
                 if (requests.isEmpty()) { App.status("Add at least one plant with a count."); return@plan false }
                 remember()
                 Prefs.lastPlan = Store.planRows.toList()
@@ -403,6 +434,7 @@ object Dialogs {
                 App.render()
             },
                         if (rotation) button("◀ Year", "btn", "Previous year of the plan") { showRotationYear(Store.rotationIndex - 1) } else null,
+            if (rotation) button("Change a variety…", "btn", "Grow a different variety from this year on (the rest of the plan is worked out again)") { changeRotationVariety() } else null,
             if (rotation) button("Year ▶", "btn", "Next year of the plan") { showRotationYear(Store.rotationIndex + 1) } else null,
             if (rotation) null else button("Change selections", "btn", "Back to your list for the same area") {
                 val mode = Store.previewMode
@@ -458,6 +490,42 @@ object Dialogs {
         ))
     }
 
+    /** FR-051: change every plant of one variety on this plot to another variety, in one undo step. */
+    fun replaceAll(fromCode: String) {
+        val wp = Store.plot() ?: return
+        val from = Catalog.get(fromCode)
+        val count = wp.plants.count { it.seedCode == fromCode }
+        val variety = input("", placeholder = "Type another variety, e.g. " + (from?.let { CropReference.speciesName(it) } ?: "tomato"))
+        variety.setAttribute("list", "sgp-seed-names")
+        variety.title = "Type part of a name and pick from the list"
+        val same = from?.let { f -> Catalog.seeds.filter { it.botanicalCode != fromCode && CropReference.speciesKey(it) == CropReference.speciesKey(f) }.take(16) }.orEmpty()
+        val info = para("", "hint")
+        fun describe() {
+            val s = Catalog.byName[variety.value.trim().lowercase()]
+            info.textContent = s?.let { sd -> listOfNotNull(VarietyCatalogTraits.of(sd)?.details, "spacing ${(sd.exclusionRadiusM * 2).fmt(2)} m", "harvest ~${sd.daysToHarvest} days", RecommendationEngine.conflictReason(sd, Store.context(wp))?.let { "⚠ $it" }).joinToString(" · ") } ?: ""
+        }
+        variety.on("input") { describe() }
+        val body = mutableListOf<HTMLElement>(
+            para("Every ${from?.commonName ?: fromCode} on this plot ($count plants) becomes the variety you choose. They keep their places and planting dates; Undo reverses it.", "p"),
+            label("New variety", variety), info
+        )
+        if (same.isNotEmpty()) body += h("div", "field", kids = listOf(h("span", "lbl", "Other ${from?.let { CropReference.speciesName(it) }} varieties (click to choose)"),
+            h("div", "chips", kids = same.map { sd -> button(sd.commonName.substringAfter(" - "), "chip", VarietyCatalogTraits.of(sd)?.details ?: sd.commonName) { variety.value = sd.commonName; describe() } })))
+        modal("Replace all ${from?.commonName ?: fromCode}", body, listOf(
+            "Cancel" to { true },
+            "Replace all $count" to go@{
+                val to = Catalog.byName[variety.value.trim().lowercase()] ?: Catalog.search(variety.value, null, 1).firstOrNull()
+                if (to == null) { App.status("Choose a variety from the list."); return@go false }
+                val r = com.example.smartgardenplanner.core.PlantSwap.replaceAll(wp.plants, fromCode, to, { Catalog.get(it) }, wp.plot.hardinessZone, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive())
+                if (r.changed == 0) { App.status(r.messages.joinToString(" ")); return@go false }
+                Store.change { p -> p.plants = r.nodes }
+                Canvas.find = null
+                App.status(r.messages.joinToString(" ") + " Undo reverses it.")
+                App.render(); true
+            }
+        ))
+    }
+
     // ------------------------------------------------------------------ seasons (FR-033)
 
     /** Closes the current season: plants move to history, everything else on the plot stays. One undo step. */
@@ -491,21 +559,61 @@ object Dialogs {
         val wp = Store.plot() ?: return
         val base = com.example.smartgardenplanner.core.RotationPlanner.lastList(wp.plants, wp.history, { Catalog.get(it) })
         if (base.isEmpty()) { message("Nothing to rotate yet", listOf("Plant this season first (or close a season). The rotation plan re-uses that list every year.")); return }
-        val seasonsIn = select((2..10).map { it.toString() to "$it seasons" }, "5") {}
+        // FR-048: any number of seasons, 1–30.
+        val seasonsIn = input("5", "number").also { it.setAttribute("min", "1"); it.setAttribute("max", "${com.example.smartgardenplanner.core.RotationPlanner.MAX_SEASONS}"); it.classList.add("count"); it.title = "How many years to plan, 1 to ${com.example.smartgardenplanner.core.RotationPlanner.MAX_SEASONS}" }
         val firstYear = if (wp.plants.isNotEmpty()) wp.season() + 1 else wp.season()
         modal("Rotation plan for the next seasons", listOf(
             para("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before. Fences, buildings, trees, paths, areas and irrigation stay the same.", "p"),
-            label("How many seasons, starting $firstYear", seasonsIn),
-            para("This is a plan to look at: nothing changes until you choose “Use $firstYear now”. It is worked out again from your plot each time, so it follows any changes you make.", "hint")
+            label("How many seasons (years), starting $firstYear — 1 to ${com.example.smartgardenplanner.core.RotationPlanner.MAX_SEASONS}", seasonsIn),
+            para("This is a plan to look at: nothing changes until you choose “Use $firstYear now”. While looking at it you can swap a variety from any year on (“Change a variety…”), for example when you want something different or already have plenty. It is worked out again from your plot each time, so it follows any changes you make.", "hint")
         ), listOf(
             "Cancel" to { true },
-            "Make the plan" to {
-                val history = wp.history + (if (wp.plants.isNotEmpty()) com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }) else emptyList())
-                Store.rotation = com.example.smartgardenplanner.core.RotationPlanner.planSeasons(
-                    Store.context(wp), com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot), base, history, firstYear, seasonsIn.value.toInt(),
-                    { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin, wp.plot.orientationSet
-                )
-                showRotationYear(0); true
+            "Make the plan" to make@{
+                val n = seasonsIn.value.toIntOrNull()
+                if (n == null || n !in 1..com.example.smartgardenplanner.core.RotationPlanner.MAX_SEASONS) { App.status("Choose 1 to ${com.example.smartgardenplanner.core.RotationPlanner.MAX_SEASONS} seasons."); return@make false }
+                Store.rotationBase = base; Store.rotationFirstYear = firstYear; Store.rotationSeasons = n; Store.rotationChanges.clear()
+                replanRotation(0); true
+            }
+        ))
+    }
+
+    /** Works the rotation plan out again (after a variety change) and shows year [index]. */
+    fun replanRotation(index: Int) {
+        val wp = Store.plot() ?: return
+        val history = wp.history + (if (wp.plants.isNotEmpty()) com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }) else emptyList())
+        Store.rotation = com.example.smartgardenplanner.core.RotationPlanner.planSeasons(
+            Store.context(wp), com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot), Store.rotationBase, history, Store.rotationFirstYear, Store.rotationSeasons,
+            { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin, wp.plot.orientationSet,
+            Store.rotationChanges.mapValues { (_, m) -> m.mapNotNull { (from, to) -> Catalog.get(to)?.let { from to it } }.toMap() }
+        )
+        showRotationYear(index)
+    }
+
+    /** FR-048: swap one variety for another from the year being shown onward. */
+    fun changeRotationVariety() {
+        val plan = Store.rotation.getOrNull(Store.rotationIndex) ?: return
+        val year = plan.year
+        val listNow = com.example.smartgardenplanner.core.RotationPlanner.requestsFor(Store.rotationBase, Store.rotationChanges.mapValues { (_, m) -> m.mapNotNull { (f, t) -> Catalog.get(t)?.let { f to it } }.toMap() }, year)
+        val fromSel = select(listNow.map { it.seed.botanicalCode to "${it.count} × ${it.seed.commonName}" }, listNow.firstOrNull()?.seed?.botanicalCode) {}
+        fromSel.title = "The variety you want to stop growing from $year"
+        val to = input("", placeholder = "Type the new variety")
+        to.setAttribute("list", "sgp-seed-names")
+        to.title = "Type part of a name and pick from the list"
+        val existing = Store.rotationChanges.entries.sortedBy { it.key }.flatMap { (y, m) -> m.map { (f, t) -> "From $y: ${Catalog.get(f)?.commonName ?: f} → ${Catalog.get(t)?.commonName ?: t}" } }
+        modal("Change a variety from $year on", listOfNotNull(
+            para("Grow something different from $year: the plan for $year and every later year uses the new variety (same number of plants), and is worked out again with crop rotation.", "p"),
+            label("Replace", fromSel), label("With", to),
+            if (existing.isEmpty()) null else para("Changes so far: " + existing.joinToString("; "), "hint")
+        ), listOf(
+            "Cancel" to { true },
+            "Clear all changes" to { Store.rotationChanges.clear(); replanRotation(Store.rotationIndex); App.status("Variety changes cleared; the plan uses your original list."); true },
+            "Change" to go@{
+                val seed = Catalog.byName[to.value.trim().lowercase()] ?: Catalog.search(to.value, null, 1).firstOrNull()
+                if (seed == null) { App.status("Choose the new variety from the list."); return@go false }
+                Store.rotationChanges.getOrPut(year) { mutableMapOf() }[fromSel.value] = seed.botanicalCode
+                replanRotation(Store.rotationIndex)
+                App.status("From $year: ${Catalog.get(fromSel.value)?.commonName} → ${seed.commonName}. The plan was worked out again.")
+                true
             }
         ))
     }

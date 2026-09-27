@@ -76,6 +76,10 @@ object Prefs {
     var disclaimerAccepted: Boolean
         get() = get("disclaimer") == "1"
         set(v) = set("disclaimer", if (v) "1" else "0")
+    /** Where the "On this plot" box was dragged to (pixels from the layout's top-left), or null for the corner. */
+    var legendPos: Pair<Int, Int>?
+        get() = get("legendPos")?.split(",")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }?.let { it[0] to it[1] }
+        set(v) { if (v == null) set("legendPos", "") else set("legendPos", "${v.first},${v.second}") }
     var organic: Boolean
         get() = get("care") != "CONVENTIONAL"
         set(v) = set("care", if (v) "ORGANIC" else "CONVENTIONAL")
@@ -94,6 +98,8 @@ object Store {
     val planRows = mutableListOf<Pair<String, Int>>()
     /** Varieties marked "most important" in that list (FR-043). */
     val planPriority = mutableSetOf<String>()
+    /** Clump arrangements chosen in that list (FR-047): variety code → plants per row. */
+    val planShapes = mutableMapOf<String, List<Int>>()
     /** True when the browser draft had to be kept without the satellite photos (not enough browser storage). */
     var draftWithoutPhotos = false
         /** Past season shown faintly under this season's plants (null = none). */
@@ -105,6 +111,11 @@ object Store {
     /** A multi-season rotation plan being looked at, and which year is on the layout. */
     var rotation: List<com.example.smartgardenplanner.core.SeasonPlan> = emptyList()
     var rotationIndex = 0
+    /** What the rotation plan was made from, and the user's variety changes: year → (from code → to code) (FR-048). */
+    var rotationBase: List<com.example.smartgardenplanner.core.PlantRequest> = emptyList()
+    var rotationFirstYear = 0
+    var rotationSeasons = 5
+    val rotationChanges = mutableMapOf<Int, MutableMap<String, String>>()
     /** Shade display (FR-038): which day, whole day (null) or a solar hour, and whether plants cast shade. */
     var shadeDay = com.example.smartgardenplanner.core.ShadeDay.TODAY
     var shadeHour: Double? = null

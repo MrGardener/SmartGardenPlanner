@@ -36,6 +36,54 @@ data class GrowthGuide(val species: String, val area: List<PlotPoint>, val from:
  * so they don't grow into their neighbours looking for light. Every plant passes the normal placement rules. Pure
  * Kotlin.
  */
+/** A clump arrangement: plants per row, back row first (FR-047). */
+data class ClumpShape(val rows: List<Int>) {
+    val count: Int get() = rows.sum()
+    val label: String get() = ClumpShapes.label(rows)
+}
+
+/**
+ * Tidy ways to arrange n plants in a clump (FR-047), so the gardener can choose before planting: 50 → 5 rows of 10,
+ * 10 rows of 5, 7 rows of 7 + 1, 6 rows of 8 + 2… and nearby counts that make a neat rectangle (49 = 7 × 7).
+ */
+object ClumpShapes {
+
+    fun label(rows: List<Int>): String {
+        if (rows.isEmpty()) return "nothing"
+        if (rows.size == 1) return "1 row of ${rows[0]}"
+        if (rows.distinct().size == 1) return "${rows.size} rows of ${rows[0]}"
+        val main = rows.first()
+        val full = rows.takeWhile { it == main }
+        val rest = rows.drop(full.size)
+        return if (rest.size == 1 && full.size > 1) "${full.size} rows of $main + 1 row of ${rest[0]}" else "rows of ${rows.joinToString(" + ")}"
+    }
+
+    private fun aspect(rows: List<Int>): Double { val c = rows.max().toDouble(); val r = rows.size.toDouble(); return max(c, r) / kotlin.math.min(c, r) }
+
+    /** The planner's default first, then exact rectangles and "k rows of c + a shorter row", squarest first, then one long row. */
+    fun options(n: Int): List<ClumpShape> {
+        if (n <= 0) return emptyList()
+        val out = linkedSetOf(BlockPlanner.rowSizes(n))
+        val exact = mutableListOf<List<Int>>(); val withRest = mutableListOf<List<Int>>()
+        for (k in 2..n) {
+            val c = n / k
+            if (c < 1) break
+            val rem = n - k * c
+            if (rem == 0) exact += List(k) { c } else if (rem < c) withRest += List(k) { c } + rem
+        }
+        exact.filter { aspect(it) <= 5.0 }.sortedBy { aspect(it) }.forEach { out += it }
+        withRest.filter { aspect(it) <= 3.0 }.sortedBy { aspect(it) }.take(4).forEach { out += it }
+        out += listOf(n)
+        return out.map { ClumpShape(it) }.take(10)
+    }
+
+    /** Counts within ±3 of [n] that make a neat near-square rectangle (at most 2 : 1), e.g. 50 → 48 (6 × 8), 49 (7 × 7). */
+    fun nearbyTidy(n: Int): List<ClumpShape> =
+        ((n - 3)..(n + 3)).filter { it > 1 && it != n }.mapNotNull { m ->
+            (2..m).filter { k -> m % k == 0 && m / k >= k && (m / k).toDouble() / k <= 2.0 }.maxOrNull()?.let { k -> ClumpShape(List(k) { m / k }) }
+        }
+}
+
 object BlockPlanner {
 
     const val WALKWAY_M = 0.45f
@@ -46,7 +94,7 @@ object BlockPlanner {
         return rows to ceil(n / rows.toDouble()).toInt()
     }
 
-    /** Plants per row, front row shortest: 7 → [4, 3]. */
+    /** Plants per row, back row first and the front row shortest: 7 → [4, 3]. */
     fun rowSizes(n: Int): List<Int> {
         val (rows, cols) = shape(n)
         val out = MutableList(rows) { cols }
@@ -123,6 +171,8 @@ object BlockPlanner {
         val validator = CompanionPlantingValidator()
                 var rotationAvoided = 0; var rotationStuck = 0
         val relaxedFor = mutableSetOf<String>()
+        val split = mutableListOf<String>()
+        val reshaped = mutableListOf<String>()
 
         for (req in order) {
             val seed = req.seed
@@ -174,13 +224,14 @@ object BlockPlanner {
                 return true
             }
 
-            while (remaining > 0) {
-                val rows = rowSizes(remaining)
+            val step = max(pitch / 2f, sqrt(((uMax - uMin) * vSpan / 1200f).toDouble()).toFloat()).coerceAtLeast(0.05f)
+            class Found(val score: Double, val pts: List<PlotPoint>, val u0: Float, val v0: Float, val rows: List<Int>)
+            // Best position for a block of [rows] (plants per row, back row first), or null if no cell is free.
+            fun search(rows: List<Int>): Found? {
                 val cols = rows.max()
                 val blockW = (cols - 1) * pitch
                 val blockD = (rows.size - 1) * pitch
-                val step = max(pitch / 2f, sqrt(((uMax - uMin) * vSpan / 1200f).toDouble()).toFloat()).coerceAtLeast(0.05f)
-                var best: Triple<Double, List<PlotPoint>, Pair<Float, Float>>? = null
+                var best: Found? = null
                 var v0 = vMax - r * 0.5f
                 while (v0 >= vMin - blockD) {
                     var u0 = uMin + r * 0.5f
@@ -221,19 +272,40 @@ object BlockPlanner {
                                 }
                                 if (good + bad > 0) score += 3.0 * (good - 2.0 * bad) / (good + bad)
                             }
-                            if (best == null || score > best.first) best = Triple(score, pts, u0 to v0)
+                            if (best == null || score > best.score) best = Found(score, pts, u0, v0, rows)
                         }
                         u0 += step
                     }
                     v0 -= step
                 }
+                return best
+            }
+            val wantShape = req.shape?.takeIf { it.isNotEmpty() && it.all { n -> n > 0 } && it.sum() == req.count }
+
+            while (remaining > 0) {
+                // FR-047: the user's chosen arrangement first; otherwise the default, and before splitting a crop
+                // into several groups, other tidy arrangements that keep it in one block.
+                val preferred = if (blocks == 0 && wantShape != null) wantShape else rowSizes(remaining)
+                var best = search(preferred)
+                if (blocks == 0 && wantShape == null && (best == null || best.pts.size < remaining)) {
+                    for (alt in ClumpShapes.options(remaining).take(6)) {
+                        if (alt.rows == preferred) continue
+                        val f = search(alt.rows) ?: continue
+                        if (f.pts.size == remaining && (best == null || best.pts.size < remaining || f.score > best.score)) best = f
+                    }
+                    if (best != null && best.pts.size == remaining && best.rows != preferred) reshaped += "${CropReference.speciesName(seed)} (${ClumpShapes.label(best.rows)})"
+                }
+                val rows = best?.rows ?: preferred
+                val cols = rows.max()
+                val blockW = (cols - 1) * pitch
+                val blockD = (rows.size - 1) * pitch
                                 if (best == null) {
                     if (strictNow && lastSeason.isNotEmpty()) { strictNow = false; relaxedFor += CropReference.speciesName(seed); continue }
                     break
                 }
                 // Full rule check on the chosen block; keep the cells that pass.
                 val kept = mutableListOf<PlotPoint>()
-                for (p in best.second) {
+                for (p in best.pts) {
                     val node = PlantedNodeEntity(plotId = plot.id, seedCode = seed.botanicalCode, coordinateXM = p.x, coordinateYM = p.y)
                     if (validator.validatePlacement(node, seed, context.nodes + placedNodes, context.seedLookup, marginMultiplier, context.enforceCompanionRules, context.guilds).isValid) {
                         kept += p; placedNodes += node
@@ -244,7 +316,7 @@ object BlockPlanner {
                     placed += Placed(seed, p.x, p.y, r); result += PlannedPlant(seed, p.x, p.y)
                     if (past.isNotEmpty()) { if (rotationPenalty(p) > 0.0) rotationStuck++ else rotationAvoided++ }
                 }
-                val (bu, bv) = best.third
+                val bu = best.u0; val bv = best.v0
                 if (habit != null && !habit.climber) {
                     val front = bv - blockD - r
                     reserved += Rect(bu - r, bu + blockW + r, front - habit.runwayM, front)
@@ -255,12 +327,18 @@ object BlockPlanner {
                 shapes += if (kept.size == rows.sum()) rows else rowSizes(kept.size)
                 remaining -= kept.size
                 blocks++
-                if (kept.size < best.second.size && blocks > 6) break
+                if (kept.size < best.pts.size && blocks > 6) break
+            }
+            if (blocks > 1) {
+                val sizes = shapes.map { it.sum() }
+                split += "${CropReference.speciesName(seed)} is in $blocks groups (${sizes.joinToString(" + ")}): " +
+                    (if (wantShape != null) "your arrangement (${ClumpShapes.label(wantShape)}) didn't fit in one piece of free ground" else "no single block of ${req.count} fitted in the free ground") +
+                    ". To keep them together, choose another arrangement, a bigger area or fewer plants."
             }
             if (remaining > 0) unplaced[CropReference.speciesName(seed)] = (unplaced[CropReference.speciesName(seed)] ?: 0) + remaining
             val done = req.count - remaining
             if (done > 0) {
-                val shapeText = shapes.joinToString(" + ") { rs -> if (rs.size == 1) "1 row of ${rs[0]}" else if (rs.distinct().size == 1) "${rs.size} rows of ${rs[0]}" else "rows of ${rs.joinToString(" + ")}" }
+                val shapeText = shapes.joinToString(" + ") { ClumpShapes.label(it) }
                 blockNotes += "${CropReference.speciesName(seed)}: $done in $shapeText, ${(pitch * 100).toInt()} cm apart"
             }
         }
@@ -277,6 +355,8 @@ object BlockPlanner {
             val habit = order.first { CropReference.speciesName(it.seed) == species }.seed.let { VineHabits.of(it) }
             notes += "$species vines run toward the sun: the clump is at the sunny ($sunName) edge with about ${habit?.runwayM?.fmt(1) ?: "1"} m kept free toward the $sunName (arrow on the plan). Guide the runners that way so they don't grow into other crops looking for light."
         }
+        split.forEach { notes += it }
+        if (reshaped.isNotEmpty()) notes += "To keep each crop in one block, these got a different arrangement: ${reshaped.joinToString("; ")}."
                 if (relaxedFor.isNotEmpty()) notes += "Not enough room to keep ${relaxedFor.joinToString(", ")} off last season's spots, so some went back where the same family grew last year. Try a bigger area or fewer plants."
         if (rotationAvoided > 0 || rotationStuck > 0) {
             notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."

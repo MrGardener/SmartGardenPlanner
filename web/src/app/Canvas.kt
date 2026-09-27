@@ -39,7 +39,7 @@ enum class Tool(val label: String, val hint: String) {
     AREA("Sun / shade / flood / slope area", "Click the corners (3+), then press Enter or click Finish."),
         OUTLINE("Plot outline", "Drag a white corner to move it; double-click an edge to add a corner. Or click new corners in order (3+) and press Enter to redraw. “Delete outline” removes it."),
         PLAN("Plan an area for me", "Drag over the area you want planted; then list what to plant."),
-    WATER("Irrigation", "Sprinkler or hose tap: click where it is. Drip line: click points along it, then Enter. Choose the kind on the Plot tab."),
+    WATER("Irrigation", "Sprinkler or hose tap: click where it is. Drip line: click points along it, then Finish (Enter) or double-click. Choose the kind on the Plot or Care tab; click the tool again to stop."),
     PHOTO("Satellite photo", "Drag the photo to line it up with the plot. Add a photo, set its scale, turn it or hide it on the Plot tab → Satellite photo.")
 }
 
@@ -90,7 +90,19 @@ object Canvas {
         svg.on("wheel") { onWheel(it as WheelEvent) }
     }
 
-        fun setTool(t: Tool) {
+        /** Irrigation buttons: pick a kind, or click the same kind again to stop placing (FR-053). */
+    fun toggleWater(t: SiteFeatureType) {
+        if (tool == Tool.WATER && waterType == t) { setTool(Tool.SELECT); return }
+        waterType = t
+        setTool(Tool.WATER)
+        App.status(when (t) {
+            SiteFeatureType.DRIP_LINE -> "Drip line / soaker hose: click points along it, then click Finish (Enter) or double-click the last point. Esc cancels. Click Drip line again to stop."
+            SiteFeatureType.HOSE_BIB -> "Hose tap: click where the tap is, then give the hose length. Click Hose tap again to stop."
+            else -> "Sprinkler: click where it stands, then set its throw and pattern. Click Sprinkler again to stop."
+        })
+    }
+
+    fun setTool(t: Tool) {
         if (Store.viewSeason != null && t != Tool.SELECT) { App.status("You are looking at season ${Store.viewSeason} (read only). Choose the planning season on the Plot tab first."); return }
         if (t != Tool.PHOTO) Photo.calibrating = false
         tool = t; points.clear(); dragStart = null; App.status(t.hint); App.render()
@@ -414,7 +426,7 @@ object Canvas {
         val a = dragStart; val n = dragNow
         if (tool == Tool.PHOTO && !Photo.calibrating && a != null && n != null) b = b.moved(n.x - a.x, n.y - a.y)
         val el = s("image", "x" to b.xM, "y" to b.yM, "width" to b.widthM, "height" to b.heightM, "preserveAspectRatio" to "none",
-            "opacity" to b.opacity, "transform" to "rotate(${b.rotationDeg} ${b.xM} ${b.yM})", "class" to "backdrop-photo")
+            "opacity" to b.opacity, "transform" to "rotate(${b.rotationDeg} ${b.centreX} ${b.centreY})", "class" to "backdrop-photo")
         el.setAttribute("href", img)
         svg.add(el)
     }
@@ -642,9 +654,12 @@ object Canvas {
         fun finishPoints() {
         val wp = Store.plot() ?: return
         when (tool) {
-            Tool.WATER -> if (waterType == SiteFeatureType.DRIP_LINE && points.size >= 2) {
-                Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = SiteFeatureType.DRIP_LINE.name, pointsJson = PlotGeometry.serializePoints(points), radiusM = com.example.smartgardenplanner.core.Irrigation.DEFAULT_DRIP_HALF_WIDTH_M), isNew = true)
+            Tool.WATER -> if (waterType == SiteFeatureType.DRIP_LINE && dedupe(points).size >= 2) {
+                val line = dedupe(points)
                 points.clear()
+                // One line per Finish: back to Select / move, so clicks stop adding points (FR-053).
+                tool = Tool.SELECT
+                Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = SiteFeatureType.DRIP_LINE.name, pointsJson = PlotGeometry.serializePoints(line), radiusM = com.example.smartgardenplanner.core.Irrigation.DEFAULT_DRIP_HALF_WIDTH_M), isNew = true)
             } else if (waterType == SiteFeatureType.DRIP_LINE) App.status("Click at least 2 points along the drip line.")
             Tool.OUTLINE -> {
                 val problem = PlotGeometry.validateOutline(points)
@@ -669,6 +684,9 @@ object Canvas {
         }
         App.render()
     }
+
+    /** Drops points that repeat the previous one (a double-click adds the same point twice). */
+    private fun dedupe(pts: List<PlotPoint>): List<PlotPoint> = pts.fold(mutableListOf()) { acc, p -> if (acc.isEmpty() || dist(acc.last().x, acc.last().y, p) > 0.05f) acc += p; acc }
 
     fun cancelPoints() { points.clear(); Store.preview = null; Store.previewArea = null; App.render() }
 

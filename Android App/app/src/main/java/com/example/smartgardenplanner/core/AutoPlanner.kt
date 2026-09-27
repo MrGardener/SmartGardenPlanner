@@ -54,9 +54,10 @@ enum class PlantingLayout(val label: String, val description: String) {
 
 /**
  * Plants the user asked for (FR-027): a variety and how many. [priority] marks the plants the user cares about most
- * (FR-043): they are placed first and get the sunniest spots that suit them.
+ * (FR-043): they are placed first and get the sunniest spots that suit them. [shape] is the clump arrangement the user
+ * chose (plants per row, back row first; FR-047), or null to let the planner choose.
  */
-data class PlantRequest(val seed: SeedEntity, val count: Int, val priority: Boolean = false)
+data class PlantRequest(val seed: SeedEntity, val count: Int, val priority: Boolean = false, val shape: List<Int>? = null)
 
 data class PlannedPlant(val seed: SeedEntity, val x: Float, val y: Float)
 

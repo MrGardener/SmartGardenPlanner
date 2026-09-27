@@ -80,6 +80,10 @@ object Panels {
             button("Duplicate…", "btn", "Copy this plot (like duplicating a browser tab), with or without its plants and history") { Dialogs.duplicatePlot() },
             button("Delete plot", "btn danger") { Dialogs.confirm("Delete plot", "Delete “${p.name}” from this plan? (Undo can't bring back a deleted plot, but your saved file still has it.)", "Delete") { Store.removeCurrent(); App.render() } }
         )))
+        body.add(h("div", "row wrap", kids = listOf(
+            button("Open in Google Maps", "btn") { Photo.openMaps(wp, p.address.orEmpty()) },
+            h("span", "hint", p.address?.let { "📍 $it" } ?: "Add the address in Edit details… to open the exact yard")
+        )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))
 
         Photo.section(body, wp)
@@ -134,7 +138,7 @@ object Panels {
             button("Plan next season (rotate)…", "btn primary", "Re-plan the whole plot for next year with the same crops, rotated so nothing goes where its family grew") {
                 Dialogs.planForMe(com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot), PreviewMode.NEXT_SEASON)
             },
-            button("Rotation plan for 5 seasons…", "btn", "See the next seasons' layouts, one year at a time") { Dialogs.rotationPlan() },
+            button("Rotation plan for several seasons…", "btn", "Plan 1 to 30 years ahead with crop rotation and look at them one year at a time; you can swap varieties from any year on") { Dialogs.rotationPlan() },
             button("Start a new season (empty)…", "btn", "Move this season's plants into the history and start with an empty plot") { Dialogs.newSeason() }.also { if (wp.plants.isEmpty()) it.setAttribute("disabled", "") }
         )))
         if (years.isNotEmpty()) {
@@ -160,7 +164,7 @@ object Panels {
     private fun irrigation(body: HTMLElement, wp: WebPlot) {
         body.add(heading("Irrigation"))
         body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).map { t ->
-            button(t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.waterType = t; Canvas.setTool(Tool.WATER) }
+            button(t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.toggleWater(t) }
         } + button(if (Store.showWater) "Water map: on" else "Water map: off", if (Store.showWater) "btn on" else "btn") { Store.showWater = !Store.showWater; App.render() }))
         body.add(para("Draw where your sprinklers, drip lines or soaker hoses and hose taps are. The water map shows what each reaches; plants circled in red need a watering can.", "hint"))
     }
@@ -305,7 +309,7 @@ object Panels {
         body.add(heading("Watering and irrigation"))
         body.add(para("Draw your sprinklers, drip lines or soaker hoses and hose taps, then turn on the water map to see which areas get wet and which need watering by hand.", "hint"))
         body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).map { t ->
-            button("+ " + t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.waterType = t; Canvas.setTool(Tool.WATER) }
+            button("+ " + t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.toggleWater(t) }
         } + button(if (Store.showWater) "Water map: on" else "Water map: off", if (Store.showWater) "btn on" else "btn") { Store.showWater = !Store.showWater; App.render() }))
         val lookup = { c: String -> Catalog.get(c) }
         val specific = com.example.smartgardenplanner.core.WateringAdvice.forPlot(wp.plot, wp.plants, wp.features, lookup)

@@ -52,5 +52,7 @@ data class PlotEntity(
     val orientationSet: Boolean = false,         // FR-028: true once the user has said which way the plot faces
     // --- Schema 11 (MIGRATION_10_11) ---
     val pests: String? = null,                   // FR-042: pests seen in the yard, "DEER,RABBIT,…" (see Pest)
-    val backdropJson: String? = null             // FR-046: satellite photo placement (see Backdrop)
+    val backdropJson: String? = null,            // FR-046: satellite photo placement (see Backdrop)
+    // --- Schema 12 (MIGRATION_11_12) ---
+    val address: String? = null                  // FR-050: street address, to open the yard in Google Maps
 )
