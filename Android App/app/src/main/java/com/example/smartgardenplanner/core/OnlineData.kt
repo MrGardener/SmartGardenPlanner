@@ -8,7 +8,7 @@ package com.example.smartgardenplanner.core
 object OnlineData {
 
     /** The only hosts the app will ever contact. */
-    val ALLOWED_HOSTS = setOf("api.open-meteo.com", "archive-api.open-meteo.com", "api.nal.usda.gov")
+    val ALLOWED_HOSTS = setOf("api.open-meteo.com", "archive-api.open-meteo.com", "api.nal.usda.gov", "phzmapi.org")
 
     fun isAllowed(url: String): Boolean {
         if (!url.startsWith("https://")) return false
@@ -33,6 +33,16 @@ object OnlineData {
         val q = java.net.URLEncoder.encode("$foodName raw", "UTF-8")
         val key = java.net.URLEncoder.encode(apiKey.ifBlank { "DEMO_KEY" }, "UTF-8")
         return "https://api.nal.usda.gov/fdc/v1/foods/search?query=$q&dataType=Foundation,SR%20Legacy&pageSize=1&api_key=$key"
+    }
+
+    /** FR-028: USDA hardiness zone for a US ZIP (PRISM 2023 data via phzmapi.org, a free static API). */
+    fun zoneUrl(zip: String): String = "https://phzmapi.org/${zip.filter { it.isDigit() }.take(5)}.json"
+
+    /** Zone label such as "7a" from a phzmapi.org response, or null. */
+    fun parseZone(json: String): String? {
+        val root = MiniJson.parse(json) as? Map<*, *> ?: return null
+        val zone = (root["zone"] as? String)?.trim() ?: return null
+        return zone.takeIf { HardinessZones.number(it) != null }
     }
 
     /** Sum of the daily precipitation values, or null when the response has none. */

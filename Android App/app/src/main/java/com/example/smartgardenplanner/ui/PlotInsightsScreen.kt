@@ -185,7 +185,8 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
             }
             when (tab) {
                 0 -> SiteTab(snap, settings, online, context, ::savePlot, { message = it }, scope) { z ->
-                    withContext(SgpExecutors.dbDispatcher) { database.climateZoneDao().getByZip(z.trim())?.hardinessZone }
+                    // Offline starter table first, then phzmapi.org when Online features are on (FR-028).
+                    (com.example.smartgardenplanner.data.ZipLookup.zone(database, z, settings.onlineFeaturesEnabled) as? OnlineResult.Success)?.value
                 }
                 1 -> HarmonyTab(snap, settings)
                 2 -> SuggestTab(snap, settings)
@@ -299,9 +300,18 @@ private fun SiteTab(
             OutlinedTextField(value = zip, onValueChange = { zip = it.take(10) }, label = { Text("ZIP code", fontSize = 11.sp) }, singleLine = true, modifier = Modifier.weight(1f))
             TextButton(onClick = {
                 scope.launch {
-                    val found = if (zip.isBlank()) null else lookupZip(zip)
-                    if (found != null) savePlot(plot.copy(locationZip = zip, hardinessZone = found), "Zone $found from ZIP $zip.")
-                    else { savePlot(plot.copy(locationZip = zip), "ZIP saved. It isn't in the offline zone table yet: pick the zone from the list.") }
+                    val loc = com.example.smartgardenplanner.data.ZipLookup.location(context, zip)
+                    val zone = if (com.example.smartgardenplanner.core.ZipTable.isValidZip(zip)) lookupZip(zip) else null
+                    val updated = plot.copy(
+                        locationZip = zip.ifBlank { null },
+                        latitude = loc?.latitude ?: plot.latitude,
+                        longitude = loc?.longitude ?: plot.longitude,
+                        hardinessZone = zone ?: plot.hardinessZone
+                    )
+                    savePlot(updated, buildString {
+                        append(if (loc != null) "Location set from ZIP $zip. " else "ZIP not in the offline location table. ")
+                        append(if (zone != null) "Zone $zone." else if (settings.onlineFeaturesEnabled) "Zone not found: pick it from the list." else "Pick the zone from the list, or turn on Online features to look it up.")
+                    })
                 }
             }) { Text("Look up") }
         }
@@ -345,7 +355,7 @@ private fun SiteTab(
         Text("Top edge of the plot faces: ${compass(bearing)} (${bearing.toInt()}°)", fontSize = 13.sp)
         Text("Stand at the bottom edge looking across the plot and check a compass. Used for shade estimates.", fontSize = 11.sp, color = Color.Gray)
         Slider(value = bearing, onValueChange = { bearing = it }, valueRange = 0f..345f, steps = 22,
-            onValueChangeFinished = { savePlot(plot.copy(northBearingDeg = bearing), "Orientation saved.") })
+            onValueChangeFinished = { savePlot(plot.copy(northBearingDeg = bearing, orientationSet = true), "Orientation saved.") })
     }
 
     Section("Soil", "FR-013: record a soil test or estimate, and get advice on improving it.") {

@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -67,6 +69,9 @@ import com.example.smartgardenplanner.core.PlotGeometry
 import com.example.smartgardenplanner.core.PlotPoint
 import com.example.smartgardenplanner.core.PlotShape
 import com.example.smartgardenplanner.core.Recommendation
+import com.example.smartgardenplanner.core.AutoPlanner
+import com.example.smartgardenplanner.core.AutoPlanResult
+import com.example.smartgardenplanner.core.PlantRequest
 import com.example.smartgardenplanner.core.RecommendationEngine
 import com.example.smartgardenplanner.core.SiteFeatureEntity
 import com.example.smartgardenplanner.core.SiteFeatureType
@@ -356,6 +361,47 @@ fun DashboardScreen(
     var plotList by remember { mutableStateOf<List<PlotEntity>>(emptyList()) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var onlineOn by remember { mutableStateOf(false) }
+    var fileMessage by remember { mutableStateOf<String?>(null) }
+    val dashContext = LocalContext.current
+    val dashScope = rememberCoroutineScope()
+    suspend fun reloadPlots() {
+        plotList = withContext(SgpExecutors.dbDispatcher) { database.plotDao().getAllPlots() }
+    }
+    // FR-029: open a plan file (made on this or another device) as new plots; save all plots to one file.
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            dashScope.launch {
+                fileMessage = try {
+                    val text = com.example.smartgardenplanner.data.PlanFileIo.read(dashContext, uri)
+                    val report = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.PlanFileRepository(database).import(text) }
+                    reloadPlots()
+                    if (report.plotsImported == 0) "Couldn't open the file: " + report.messages.joinToString(" ")
+                    else "Opened ${report.plotsImported} plot(s) with ${report.plantsImported} plants." + if (report.messages.isNotEmpty()) " " + report.messages.joinToString(" ") else ""
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    "Couldn't open the file (${e.javaClass.simpleName}). Nothing was changed."
+                }
+            }
+        }
+    }
+    val exportAllLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            dashScope.launch {
+                fileMessage = try {
+                    val text = withContext(SgpExecutors.dbDispatcher) {
+                        com.example.smartgardenplanner.data.PlanFileRepository(database).export(plotList.map { it.id }, com.example.smartgardenplanner.data.PlanFileIo.appVersion(dashContext))
+                    }
+                    com.example.smartgardenplanner.data.PlanFileIo.write(dashContext, uri, text)
+                    "Saved ${plotList.size} plot(s) to the file."
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    "Couldn't save the file (${e.javaClass.simpleName})."
+                }
+            }
+        }
+    }
 
     // Reads through the DAO. The previous version guessed table and column names with raw SQL (DW-0704).
     LaunchedEffect(Unit) {
@@ -380,6 +426,12 @@ fun DashboardScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
                     com.example.smartgardenplanner.ui.OnlineBadge(onlineOn)
+                    IconButton(onClick = { importLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) }) {
+                        Icon(Icons.Default.FileOpen, contentDescription = "Open plan file", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(enabled = plotList.isNotEmpty(), onClick = { exportAllLauncher.launch("my-garden.sgp.json") }) {
+                        Icon(Icons.Default.Save, contentDescription = "Save all plots to a file", tint = MaterialTheme.colorScheme.primary)
+                    }
                     IconButton(onClick = onNavigateToEncyclopedia) {
                         Icon(Icons.Default.Search, contentDescription = "Botanical Encyclopedia", tint = MaterialTheme.colorScheme.primary)
                     }
@@ -409,6 +461,7 @@ fun DashboardScreen(
             Text("Active Plots", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
             loadError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+            fileMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, modifier = Modifier.clickable { fileMessage = null }) }
 
             if (plotList.isEmpty()) {
                 Box(
@@ -498,6 +551,10 @@ fun CreatorScreen(
     val regexValidator = remember { Regex("^[0-9]+(\\.[0-9]+)?$") }
     val creatorScope = rememberCoroutineScope()
     var saveError by remember { mutableStateOf<String?>(null) }
+    // FR-028: direction and ZIP asked up front (both optional here; the layout keeps asking until set).
+    var topFaces by remember { mutableStateOf<Float?>(null) }
+    var zipCode by remember { mutableStateOf("") }
+    val creatorContext = LocalContext.current
 
     val isInputValid = plotName.isNotBlank() &&
             plotLength.matches(regexValidator) &&
@@ -521,6 +578,7 @@ fun CreatorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -581,7 +639,19 @@ fun CreatorScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1.0f))
+            Text("Which way does the top edge of the plot face?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text("Stand at the bottom edge and look across the plot. Used to place tall plants where they won't shade others, and for sun and shade.", fontSize = 11.sp, color = Color.Gray)
+            com.example.smartgardenplanner.ui.CompassChips(topFaces) { topFaces = it }
+            OutlinedTextField(
+                value = zipCode,
+                onValueChange = { zipCode = it.filter { c -> c.isDigit() }.take(5) },
+                label = { Text("ZIP code (optional)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
 
@@ -595,14 +665,23 @@ fun CreatorScreen(
                                 val widthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotWidth, settings.distanceUnit)
                                 if (lengthMeters == null || widthMeters == null) return@launch
                                 val now = System.currentTimeMillis()
+                                val zip = zipCode.takeIf { com.example.smartgardenplanner.core.ZipTable.isValidZip(it) }
+                                val location = zip?.let { com.example.smartgardenplanner.data.ZipLookup.location(creatorContext, it) }
                                 val plotId = withContext(SgpExecutors.dbDispatcher) {
+                                    val zone = zip?.let { database.climateZoneDao().getByZip(it)?.hardinessZone }
                                     database.plotDao().insert(
                                         PlotEntity(
                                             name = plotName.trim(),
                                             lengthM = lengthMeters,
                                             widthM = widthMeters,
                                             createdTimestamp = now,
-                                            lastModifiedTimestamp = now
+                                            lastModifiedTimestamp = now,
+                                            northBearingDeg = topFaces ?: 0f,
+                                            orientationSet = topFaces != null,
+                                            locationZip = zip,
+                                            latitude = location?.latitude,
+                                            longitude = location?.longitude,
+                                            hardinessZone = zone
                                         )
                                     )
                                 }
@@ -682,7 +761,12 @@ enum class PathDrawSubMode { RECTANGLE, POINTS }
  * driven by a single pair of Undo/Redo buttons would itself be ambiguous (which stack should
  * "Undo" advance if the last action was a path draw vs. a node placement?), so this snapshots
  * both together as one atomic unit of history. */
-data class CanvasSnapshot(val nodes: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>)
+data class CanvasSnapshot(
+    val nodes: List<PlantedNodeEntity>,
+    val paths: List<PathZoneEntity>,
+    val features: List<SiteFeatureEntity>, // trees, fences, walls, buildings, sun/flood/slope areas
+    val boundaryJson: String?              // plot outline (FR-002)
+)
 
 /** [NEW] "x1,y1;x2,y2;..." <-> List<Offset> (meters) for POLYLINE path zones. */
 private fun parsePoints(json: String?): List<Offset> {
@@ -774,6 +858,34 @@ fun CanvasWorkspaceScreen(
     var barrierType by remember { mutableStateOf(SiteFeatureType.TREE) }
     var pendingSiteShape by remember { mutableStateOf<List<Offset>?>(null) }
     var editingSiteFeature by remember { mutableStateOf<SiteFeatureEntity?>(null) }
+    var movingSiteFeature by remember { mutableStateOf<SiteFeatureEntity?>(null) }
+    // FR-027 "Plan an area for me": choose area -> list plants -> preview -> accept.
+    var planForMe by remember { mutableStateOf(false) }
+    var autoPlanArea by remember { mutableStateOf<List<PlotPoint>?>(null) }
+    var planPreview by remember { mutableStateOf<AutoPlanResult?>(null) }
+    var planRunning by remember { mutableStateOf(false) }
+    val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
+    // FR-029: save this plot as a portable plan file (.sgp.json).
+    val canvasContext = LocalContext.current
+    val exportScope = rememberCoroutineScope()
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            exportScope.launch {
+                try {
+                    val text = withContext(SgpExecutors.dbDispatcher) {
+                        com.example.smartgardenplanner.data.PlanFileRepository(database).export(listOf(plotId), com.example.smartgardenplanner.data.PlanFileIo.appVersion(canvasContext))
+                    }
+                    com.example.smartgardenplanner.data.PlanFileIo.write(canvasContext, uri, text)
+                    snackbarMessage = "Plan file saved. Open it on another device with Plot list → Open plan file."
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    snackbarMessage = "Couldn't save the file (${e.javaClass.simpleName})."
+                }
+            }
+        }
+    }
+    var showDirectionDialog by remember { mutableStateOf(false) }
     var showSiteFeatures by remember { mutableStateOf(true) }
     var showShade by remember { mutableStateOf(false) }
     var shadeGrid by remember { mutableStateOf<Pair<Int, FloatArray>?>(null) }
@@ -826,16 +938,25 @@ fun CanvasWorkspaceScreen(
         }
     }
 
-    // Replaces the plot's plants and paths with a snapshot in one transaction, keeping row ids (DW-0802).
+    // Replaces the plot's plants, paths, site features and outline with a snapshot in one transaction,
+    // keeping row ids (DW-0802). Obstacles, areas and the outline are part of undo (T2-FUN-190).
     suspend fun restoreSnapshot(snapshot: CanvasSnapshot) {
-        withContext(SgpExecutors.dbDispatcher) {
+        val restoredPlot = withContext(SgpExecutors.dbDispatcher) {
             database.withTransaction {
                 database.plantedNodeDao().deleteAllForPlot(plotId)
                 if (snapshot.nodes.isNotEmpty()) database.plantedNodeDao().insertAll(snapshot.nodes)
                 database.pathZoneDao().deleteAllForPlot(plotId)
                 if (snapshot.paths.isNotEmpty()) database.pathZoneDao().insertAll(snapshot.paths)
+                database.siteFeatureDao().deleteAllForPlot(plotId)
+                if (snapshot.features.isNotEmpty()) database.siteFeatureDao().insertAll(snapshot.features)
+                val plot = database.plotDao().getById(plotId)
+                if (plot != null && plot.boundaryJson != snapshot.boundaryJson) {
+                    plot.copy(boundaryJson = snapshot.boundaryJson).also { database.plotDao().update(it) }
+                } else plot
             }
         }
+        siteFeatures = snapshot.features
+        if (restoredPlot != null) activePlot = restoredPlot
     }
     val validator = remember { CompanionPlantingValidator() }
     // [NEW — FR-012 defense-in-depth] Same tier gate as the Settings UI, applied here too: if the
@@ -849,6 +970,7 @@ fun CanvasWorkspaceScreen(
     val germinationEngine = remember { GerminationContingencyEngine() }
     val autoPopulateEngine = remember { AutoPopulateEngine() }
 
+    fun snapshotNow() = CanvasSnapshot(nodesState, pathZonesState, siteFeatures, activePlot?.boundaryJson)
     val seedMap = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
     fun seedFor(code: String): SeedEntity? = seedMap[code]
 
@@ -885,6 +1007,26 @@ fun CanvasWorkspaceScreen(
 
     fun toPlotPoints(points: List<Offset>) = points.map { PlotPoint(it.x, it.y) }
 
+    // Moves an obstacle or area so its anchor (a tree's trunk, otherwise the centre of its points) lands on
+    // (x, y), keeping every point inside the plot. Undoable.
+    fun moveSiteFeature(feature: SiteFeatureEntity, x: Float, y: Float) {
+        val plot = activePlot ?: return
+        val pts = PlotGeometry.parsePoints(feature.pointsJson)
+        if (pts.isEmpty()) return
+        val anchorX = if (feature.featureType == SiteFeatureType.TREE.name) pts[0].x else pts.map { it.x }.average().toFloat()
+        val anchorY = if (feature.featureType == SiteFeatureType.TREE.name) pts[0].y else pts.map { it.y }.average().toFloat()
+        val dx = (x - anchorX).coerceIn(-pts.minOf { it.x }, plot.lengthM - pts.maxOf { it.x })
+        val dy = (y - anchorY).coerceIn(-pts.minOf { it.y }, plot.widthM - pts.maxOf { it.y })
+        val moved = feature.copy(pointsJson = PlotGeometry.serializePoints(pts.map { PlotPoint(it.x + dx, it.y + dy) }))
+        launchSafely {
+            withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().update(moved) }
+            reloadFeatures()
+            undoStack.push(snapshotNow())
+            redoStack.clear()
+            snackbarMessage = "Moved."
+        }
+    }
+
     fun saveOutline(points: List<Offset>?) {
         val plot = activePlot ?: return
         val outline = points?.let { toPlotPoints(it) }
@@ -902,6 +1044,8 @@ fun CanvasWorkspaceScreen(
         launchSafely {
             withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
             activePlot = updated
+            undoStack.push(snapshotNow())
+            redoStack.clear()
             val outside = nodesState.count { !PlotShape.contains(updated, it.coordinateXM, it.coordinateYM) }
             snackbarMessage = if (outline == null) "Outline reset to the full rectangle."
             else if (outside > 0) "Outline saved. $outside plant(s) are now outside it — see Plot insights → Harmony."
@@ -948,7 +1092,7 @@ fun CanvasWorkspaceScreen(
                 siteFeatures = features
                 undoStack.clear()
                 redoStack.clear()
-                undoStack.push(CanvasSnapshot(list, paths))
+                undoStack.push(CanvasSnapshot(list, paths, features, activePlot?.boundaryJson))
             }
         }
     }
@@ -1131,6 +1275,14 @@ fun CanvasWorkspaceScreen(
                                     )
                                 }
                             }
+                            DropdownMenuItem(text = { Text("Plot direction and ZIP…") }, onClick = { showOptionsMenu = false; showDirectionDialog = true })
+                            DropdownMenuItem(
+                                text = { Text("Save this plot as a file…") },
+                                onClick = {
+                                    showOptionsMenu = false
+                                    exportLauncher.launch(com.example.smartgardenplanner.data.PlanFileIo.fileName(activePlot?.name ?: "garden"))
+                                }
+                            )
                             DropdownMenuItem(text = { Text("Plot insights (site, harmony, care, food)…") }, onClick = { showOptionsMenu = false; onOpenInsights() })
                             Divider()
                             // [NEW] Wires WeedMaskGeometryEngine and IrrigationRouteCalculator into the
@@ -1243,6 +1395,20 @@ fun CanvasWorkspaceScreen(
                             )
                         }
                         Text("Active Plantings: ${nodesState.size} nodes placed", color = Color.Gray, fontSize = 11.sp)
+                        // FR-028: the plot's compass direction drives sun, shade and planting direction; ask until it's set.
+                        if (!state.orientationSet) {
+                            Text(
+                                "⚠ Set which way the plot faces (needed for sun and shade)",
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEAB308),
+                                modifier = Modifier.clickable { showDirectionDialog = true }.padding(vertical = 2.dp)
+                            )
+                        } else {
+                            Text(
+                                "Top edge faces ${com.example.smartgardenplanner.ui.compassName(state.northBearingDeg)}" + (state.locationZip?.let { " • ZIP $it" } ?: ""),
+                                fontSize = 11.sp, color = Color.Gray,
+                                modifier = Modifier.clickable { showDirectionDialog = true }
+                            )
+                        }
                         // FR-009: highly visible guild state; tap to switch (Pro).
                         if (Feature.isEnabled(Feature.INTERPLANTING_GUILDS, settings.currentAppTier())) {
                             val guildColor = if (settings.guildsEnabled) Color(0xFF10B981) else Color(0xFFF97316)
@@ -1298,6 +1464,16 @@ fun CanvasWorkspaceScreen(
                             val active = seedFor(activeSeedCode)
                             Text(if (active != null) "Change Variety (${active.commonName})" else "Choose a Variety to Place")
                         }
+                        // FR-027: the app decides where everything goes.
+                        Button(
+                            onClick = {
+                                planForMe = true
+                                canvasMode = CanvasMode.SELECT_AREA
+                                inProgressPoints = emptyList()
+                                snackbarMessage = "Drag over the area you want planted (or tap its corners in Custom shape mode)."
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("✨ Plan an area for me") }
                     }
                 }
             }
@@ -1435,7 +1611,7 @@ fun CanvasWorkspaceScreen(
                                                             launchSafely {
                                                                 withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insert(candidateNode) }
                                                                 reloadNodes()
-                                                                undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                undoStack.push(snapshotNow())
                                                                 redoStack.clear()
                                                             }
                                                         }
@@ -1504,6 +1680,11 @@ fun CanvasWorkspaceScreen(
                                                     onTap = { offset ->
                                                         val realXM = (offset.x / size.width) * state.lengthM
                                                         val realYM = (offset.y / size.height) * state.widthM
+                                                        movingSiteFeature?.let { moving ->
+                                                            moveSiteFeature(moving, realXM, realYM)
+                                                            movingSiteFeature = null
+                                                            return@detectTapGestures
+                                                        }
                                                         if (inProgressPoints.isEmpty() && canvasMode != CanvasMode.OUTLINE) {
                                                             val wantBarrier = canvasMode == CanvasMode.BARRIER
                                                             val hit = siteFeatures.firstOrNull { f -> SiteFeatureType.of(f.featureType)?.isBarrier == wantBarrier && featureHit(f, realXM, realYM) }
@@ -1552,11 +1733,15 @@ fun CanvasWorkspaceScreen(
                                                                     launchSafely {
                                                                         withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
                                                                         reloadPaths()
-                                                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                        undoStack.push(snapshotNow())
                                                                         redoStack.clear()
                                                                     }
                                                                 } else if (canvasMode == CanvasMode.SELECT_AREA) {
-                                                                    pendingAreaSelection = androidx.compose.ui.geometry.Rect(xMin, yMin, xMin + wM, yMin + hM)
+                                                                    if (planForMe) {
+                                                                        autoPlanArea = listOf(PlotPoint(xMin, yMin), PlotPoint(xMin + wM, yMin), PlotPoint(xMin + wM, yMin + hM), PlotPoint(xMin, yMin + hM))
+                                                                    } else {
+                                                                        pendingAreaSelection = androidx.compose.ui.geometry.Rect(xMin, yMin, xMin + wM, yMin + hM)
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -1616,7 +1801,7 @@ fun CanvasWorkspaceScreen(
                                                                         launchSafely {
                                                                             withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(candidate) }
                                                                             reloadNodes()
-                                                                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                                                            undoStack.push(snapshotNow())
                                                                             redoStack.clear()
                                                                         }
                                                                     }
@@ -1756,6 +1941,25 @@ fun CanvasWorkspaceScreen(
                                         }
                                     }
 
+                                    // FR-028: compass rose (top-right). Grey with "?" until the plot's direction is set.
+                                    activePlot?.let { plot ->
+                                        val rel = Math.toRadians((0.0 - plot.northBearingDeg))
+                                        val cx = canvasW - 44f
+                                        val cy = 44f
+                                        val len = 30f
+                                        val tip = Offset(cx + (kotlin.math.sin(rel) * len).toFloat(), cy - (kotlin.math.cos(rel) * len).toFloat())
+                                        val tail = Offset(cx - (kotlin.math.sin(rel) * len * 0.6).toFloat(), cy + (kotlin.math.cos(rel) * len * 0.6).toFloat())
+                                        val colour = if (plot.orientationSet) Color(0xFFEF4444) else Color.Gray
+                                        drawCircle(Color(0x99000000), radius = 40f, center = Offset(cx, cy))
+                                        drawLine(Color.LightGray, tail, Offset(cx, cy), strokeWidth = 4f)
+                                        drawLine(colour, Offset(cx, cy), tip, strokeWidth = 5f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            if (plot.orientationSet) "N" else "N?",
+                                            tip.x - 8f, tip.y - 6f,
+                                            android.graphics.Paint().apply { color = android.graphics.Color.WHITE; textSize = 26f; isFakeBoldText = true }
+                                        )
+                                    }
+
                                     // [NEW] Weed-risk mask: everything NOT covered by a plant's spacing
                                     // radius, using the real Path.Op.DIFFERENCE geometry from
                                     // WeedMaskGeometryEngine (previously computed but never rendered).
@@ -1785,6 +1989,25 @@ fun CanvasWorkspaceScreen(
                                             )
                                         }
                                         screenRoute.forEach { drawCircle(color = Color(0xFF0EA5E9), radius = 4f, center = it) }
+                                    }
+
+                                    // FR-027 preview: faded circles where the planner would put each plant.
+                                    planPreview?.placed?.forEach { p ->
+                                        val c = Offset(p.x * scaleX, p.y * scaleY)
+                                        val colour = VegetableColorPalette.colorFor(p.seed)
+                                        drawCircle(colour.copy(alpha = 0.25f), radius = p.seed.exclusionRadiusM * scaleX, center = c)
+                                        drawCircle(colour.copy(alpha = 0.9f), radius = p.seed.exclusionRadiusM * scaleX, center = c, style = Stroke(width = 2f))
+                                        drawCircle(colour, radius = 6f, center = c)
+                                    }
+                                    autoPlanArea?.let { a ->
+                                        if (a.size >= 3) {
+                                            val areaPath = androidx.compose.ui.graphics.Path().apply {
+                                                moveTo(a[0].x * scaleX, a[0].y * scaleY)
+                                                for (i in 1 until a.size) lineTo(a[i].x * scaleX, a[i].y * scaleY)
+                                                close()
+                                            }
+                                            drawPath(areaPath, Color(0xFF10B981), style = Stroke(width = 3f))
+                                        }
                                     }
 
                                     // In-progress polyline path being built
@@ -1833,9 +2056,38 @@ fun CanvasWorkspaceScreen(
                                 } // closes the inner scrollable Box wrapping the Canvas
 
                                 Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
+                                    planPreview?.let { preview ->
+                                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                                            Column(modifier = Modifier.padding(10.dp).heightIn(max = 220.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text("Planting plan: ${preview.placed.size} plants", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                preview.placed.groupBy { CropReference.speciesName(it.seed) }.forEach { (name, list) ->
+                                                    Text("• $name × ${list.size}", fontSize = 11.sp)
+                                                }
+                                                preview.notes.forEach { Text(it, fontSize = 11.sp, color = Color.LightGray) }
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    Button(enabled = preview.placed.isNotEmpty(), onClick = {
+                                                        val nodes = preview.placed.map { PlantedNodeEntity(plotId = plotId, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y) }
+                                                        launchSafely {
+                                                            withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().insertAll(nodes) }
+                                                            reloadNodes()
+                                                            undoStack.push(snapshotNow())
+                                                            redoStack.clear()
+                                                            snackbarMessage = "Planted ${nodes.size} plants. Undo removes them all."
+                                                        }
+                                                        planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
+                                                    }) { Text("Plant them", fontSize = 12.sp) }
+                                                    OutlinedButton(onClick = { planPreview = null }) { Text("Change list", fontSize = 12.sp) }
+                                                    TextButton(onClick = { planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE }) { Text("Cancel", fontSize = 12.sp) }
+                                                }
+                                            }
+                                        }
+                                    }
                                     Text(
                                         text = when {
                                             zoomPanModeEnabled -> "Zoom/Pan Mode: use +/- to zoom, drag to pan • tap the zoom icon to turn this off (${"%.1f".format(zoomScale)}x)"
+                                            planPreview != null -> "Preview: faded circles show where the plants would go"
+                                            planForMe && canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON -> "Plan for me: tap the corners of the area to plant (3+), then Finish Area"
+                                            planForMe && canvasMode == CanvasMode.SELECT_AREA -> "Plan for me: drag over the area to plant"
                                             canvasMode == CanvasMode.PLACE_NODE && moveModeEnabled -> "Move Mode: drag a plant to reposition it, or tap the lock icon to turn this off"
                                             canvasMode == CanvasMode.PLACE_NODE -> "Double-tap to plant • Tap an existing plant for details, editing, or recovery"
                                             canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS -> "Tap to add points • tap an existing path to edit it"
@@ -1896,7 +2148,7 @@ fun CanvasWorkspaceScreen(
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Button(
                                                 onClick = {
-                                                    pendingPolygonSelection = inProgressPoints
+                                                    if (planForMe) autoPlanArea = toPlotPoints(inProgressPoints) else pendingPolygonSelection = inProgressPoints
                                                     inProgressPoints = emptyList()
                                                 },
                                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
@@ -1981,6 +2233,61 @@ fun CanvasWorkspaceScreen(
         )
     }
 
+    autoPlanArea?.let { area ->
+        if (planPreview == null && !showDirectionDialog) {
+            AutoPlanRequestDialog(
+                seedDictionary = seedDictionary,
+                rows = planRows,
+                conflictFor = pickerConflict,
+                orientationSet = activePlot?.orientationSet == true,
+                running = planRunning,
+                onSetDirection = { showDirectionDialog = true },
+                onPlan = { requests ->
+                    val plot = activePlot ?: return@AutoPlanRequestDialog
+                    planRunning = true
+                    launchSafely {
+                        val context = plotContext(plot)
+                        val paths = pathZonesState
+                        val result = try { withContext(Dispatchers.Default) {
+                            AutoPlanner.plan(
+                                context, area, requests,
+                                isBlocked = { x, y, r ->
+                                    paths.any { zone ->
+                                        if (zone.pathType == "POLYLINE") distanceToPolyline(x, y, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + r)
+                                        else circleIntersectsRect(x, y, r, zone.xM, zone.yM, zone.widthM, zone.heightM)
+                                    }
+                                },
+                                marginMultiplier = settings.spacingMarginMultiplier,
+                                orientationKnown = plot.orientationSet
+                            )
+                        } } finally { planRunning = false }
+                        planPreview = result
+                    }
+                },
+                onDismiss = { autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE }
+            )
+        }
+    }
+
+    if (showDirectionDialog) {
+        activePlot?.let { plot ->
+            com.example.smartgardenplanner.ui.PlotDirectionDialog(
+                plot = plot,
+                database = database,
+                onlineEnabled = settings.onlineFeaturesEnabled,
+                onSave = { updated ->
+                    launchSafely {
+                        withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
+                        activePlot = updated
+                        snackbarMessage = "Saved: top edge faces ${com.example.smartgardenplanner.ui.compassName(updated.northBearingDeg)}."
+                    }
+                    showDirectionDialog = false
+                },
+                onDismiss = { showDirectionDialog = false }
+            )
+        }
+    }
+
     // FR-003 to FR-006: details for a new area/barrier, or edit/delete an existing one.
     pendingSiteShape?.let { shape ->
         val type = if (canvasMode == CanvasMode.BARRIER) barrierType else siteAreaType
@@ -1996,11 +2303,14 @@ fun CanvasWorkspaceScreen(
             onSave = { feature ->
                 launchSafely {
                     withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().insert(feature) }
-                    reloadFeatures()
-                }
-                pendingSiteShape = null
+                        reloadFeatures()
+                        undoStack.push(snapshotNow())
+                        redoStack.clear()
+                    }
+                    pendingSiteShape = null
             },
             onDelete = null,
+            onMove = null,
             onDismiss = { pendingSiteShape = null }
         )
     }
@@ -2012,17 +2322,27 @@ fun CanvasWorkspaceScreen(
                 launchSafely {
                     withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().update(updated) }
                     reloadFeatures()
+                    undoStack.push(snapshotNow())
+                    redoStack.clear()
                 }
                 editingSiteFeature = null
             },
             onDelete = {
-                launchSafely {
-                    withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().delete(feature) }
-                    reloadFeatures()
-                }
-                editingSiteFeature = null
-            },
-            onDismiss = { editingSiteFeature = null }
+                    launchSafely {
+                        withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().delete(feature) }
+                        reloadFeatures()
+                        undoStack.push(snapshotNow())
+                        redoStack.clear()
+                    }
+                    editingSiteFeature = null
+                },
+                onMove = {
+                    // Next tap on the plot moves this obstacle/area there (obstacles can be relocated).
+                    movingSiteFeature = feature
+                    editingSiteFeature = null
+                    snackbarMessage = "Tap where the ${SiteFeatureType.of(feature.featureType)?.label?.lowercase() ?: "item"} should go."
+                },
+                onDismiss = { editingSiteFeature = null }
         )
     }
 
@@ -2051,7 +2371,7 @@ fun CanvasWorkspaceScreen(
                     launchSafely {
                         withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().insert(newZone) }
                         reloadPaths()
-                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                        undoStack.push(snapshotNow())
                         redoStack.clear()
                     }
                     inProgressPoints = emptyList()
@@ -2093,7 +2413,7 @@ fun CanvasWorkspaceScreen(
                         launchSafely {
                             withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().update(updated) }
                             reloadPaths()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                            undoStack.push(snapshotNow())
                             redoStack.clear()
                         }
                         editingPathZone = null
@@ -2108,7 +2428,7 @@ fun CanvasWorkspaceScreen(
                         launchSafely {
                             withContext(SgpExecutors.dbDispatcher) { database.pathZoneDao().delete(zone) }
                             reloadPaths()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                            undoStack.push(snapshotNow())
                             redoStack.clear()
                         }
                         editingPathZone = null
@@ -2151,7 +2471,7 @@ fun CanvasWorkspaceScreen(
                                     launchSafely {
                                         withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(updated) }
                                         reloadNodes()
-                                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                        undoStack.push(snapshotNow())
                                         redoStack.clear()
                                     }
                                     germinationDialogNode = null
@@ -2214,7 +2534,7 @@ fun CanvasWorkspaceScreen(
                             launchSafely {
                                 withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().delete(node) }
                                 reloadNodes()
-                                undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                                undoStack.push(snapshotNow())
                                 redoStack.clear()
                             }
                             infoDialogNode = null
@@ -2274,7 +2594,7 @@ fun CanvasWorkspaceScreen(
                     launchSafely {
                         withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().update(updated) }
                         reloadNodes()
-                        undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                        undoStack.push(snapshotNow())
                         redoStack.clear()
                     }
                     changeVarietyNode = null
@@ -2378,7 +2698,7 @@ fun CanvasWorkspaceScreen(
                                 if (newNodes.isNotEmpty()) database.plantedNodeDao().insertAll(newNodes)
                             }
                             reloadNodes()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                            undoStack.push(snapshotNow())
                             redoStack.clear()
                         }
                         pendingAreaSelection = null
@@ -2494,7 +2814,7 @@ fun CanvasWorkspaceScreen(
                                 if (newNodes.isNotEmpty()) database.plantedNodeDao().insertAll(newNodes)
                             }
                             reloadNodes()
-                            undoStack.push(CanvasSnapshot(nodesState, pathZonesState))
+                            undoStack.push(snapshotNow())
                             redoStack.clear()
                         }
                         pendingPolygonSelection = null
@@ -2710,8 +3030,9 @@ private fun SiteFeatureDialog(
     isNew: Boolean,
     onSave: (SiteFeatureEntity) -> Unit,
     onDelete: (() -> Unit)?,
+    onMove: (() -> Unit)?,
     onDismiss: () -> Unit
-) {
+    ) {
     val type = SiteFeatureType.of(initial.featureType) ?: SiteFeatureType.FULL_SUN
     var label by remember(initial.id) { mutableStateOf(initial.label) }
     var height by remember(initial.id) { mutableStateOf(if (initial.heightM > 0f) initial.heightM.toString() else "") }
@@ -2787,9 +3108,80 @@ private fun SiteFeatureDialog(
                 if (onDelete != null) {
                     TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text("Delete") }
                 }
+                if (onMove != null) {
+                    TextButton(onClick = onMove) { Text("Move") }
+                }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
     )
+}
+
+
+/** FR-027: the list of plants to place ("what and how many"). The app works out where. */
+@Composable
+private fun AutoPlanRequestDialog(
+    seedDictionary: List<SeedEntity>,
+    rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
+    conflictFor: (SeedEntity) -> String?,
+    orientationSet: Boolean,
+    running: Boolean,
+    onSetDirection: () -> Unit,
+    onPlan: (List<PlantRequest>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var picking by remember { mutableStateOf(false) }
+    val byCode = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("What do you want to plant here?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together.", fontSize = 12.sp)
+                if (!orientationSet) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚠ The plot's direction isn't set, so north is assumed to be the top edge.", fontSize = 11.sp, color = Color(0xFFEAB308), modifier = Modifier.weight(1f))
+                        TextButton(onClick = onSetDirection) { Text("Set it") }
+                    }
+                }
+                Column(modifier = Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
+                    if (rows.isEmpty()) Text("No plants yet. Tap Add a plant.", fontSize = 12.sp, color = Color.Gray)
+                    rows.forEachIndexed { i, (code, count) ->
+                        val seed = byCode[code]
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(10.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
+                            Spacer(Modifier.width(6.dp))
+                            Text(seed?.commonName ?: code, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { if (count > 1) rows[i] = code to count - 1 else rows.removeAt(i) }, contentPadding = PaddingValues(0.dp)) { Text("−", fontSize = 16.sp) }
+                            Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = { rows[i] = code to (count + 1).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+", fontSize = 16.sp) }
+                            TextButton(onClick = { rows[i] = code to (count + 5).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+5", fontSize = 11.sp) }
+                        }
+                    }
+                }
+                TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = rows.any { it.second > 0 } && !running,
+                onClick = { onPlan(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n) } }) }
+            ) { Text(if (running) "Planning…" else "Plan it") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+    if (picking) {
+        VarietyPickerDialog(
+            seedDictionary = seedDictionary,
+            conflictFor = conflictFor,
+            onSelect = { code ->
+                val i = rows.indexOfFirst { it.first == code }
+                if (i >= 0) rows[i] = code to rows[i].second + 1 else rows.add(code to 4)
+                picking = false
+            },
+            onDismiss = { picking = false }
+        )
+    }
 }

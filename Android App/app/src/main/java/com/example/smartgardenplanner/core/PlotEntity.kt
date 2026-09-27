@@ -46,5 +46,8 @@ data class PlotEntity(
     val soilSiltPct: Float? = null,
     val soilClayPct: Float? = null,
     val soilOrganicPct: Float? = null,
-    val soilPh: Float? = null
+    val soilPh: Float? = null,
+    // --- Schema 9 (MIGRATION_8_9) ---
+    @ColumnInfo(defaultValue = "0")
+    val orientationSet: Boolean = false          // FR-028: true once the user has said which way the plot faces
 )

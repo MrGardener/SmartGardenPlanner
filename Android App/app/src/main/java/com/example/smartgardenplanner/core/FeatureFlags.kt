@@ -37,7 +37,9 @@ enum class Feature(val minimumTier: AppTier, val roadmapId: String) {
     YIELD_ESTIMATES(AppTier.STANDARD, "FR-022"),
     VENDOR_LINKS(AppTier.BASIC, "FR-023"),
     VENDOR_TARGETING(AppTier.PRO, "FR-024"),
-    ONLINE_FEATURES(AppTier.BASIC, "FR-026"); // the switch itself is available to everyone; off by default
+    ONLINE_FEATURES(AppTier.BASIC, "FR-026"), // the switch itself is available to everyone; off by default
+    AUTO_PLAN(AppTier.BASIC, "FR-027"),       // "Plan an area for me": the core feature for new gardeners
+    PLAN_FILES(AppTier.BASIC, "FR-029");      // save/open portable plan files
 
     /** Tier name for "needs Standard" style messages. */
     val tierLabel: String get() = minimumTier.name.lowercase().replaceFirstChar { it.uppercase() }

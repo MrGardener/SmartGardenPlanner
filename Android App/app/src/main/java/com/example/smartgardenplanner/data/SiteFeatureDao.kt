@@ -21,4 +21,10 @@ interface SiteFeatureDao {
 
     @Query("SELECT * FROM site_features WHERE plotId = :plotId")
     suspend fun getByPlotId(plotId: Long): List<SiteFeatureEntity>
+
+    @Insert
+    suspend fun insertAll(features: List<SiteFeatureEntity>): List<Long>
+
+    @Query("DELETE FROM site_features WHERE plotId = :plotId")
+    suspend fun deleteAllForPlot(plotId: Long)
 }
