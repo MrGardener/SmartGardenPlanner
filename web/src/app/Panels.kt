@@ -53,6 +53,14 @@ object Panels {
         }
     }
 
+        /** Makes a line point out the plants of [species] on the layout when clicked (FR-036). */
+    private fun findable(e: HTMLElement, species: String): HTMLElement {
+        e.classList.add("findable")
+        e.setAttribute("title", "Show where the $species plants are")
+        e.on("click") { App.find(species, { n -> Catalog.get(n.seedCode)?.let { CropReference.speciesName(it).equals(species, true) } == true }) }
+        return e
+    }
+
     private fun kv(k: String, v: String) = h("div", "kv", kids = listOf(h("span", "k", k), h("span", "v", v)))
 
     private fun date(ms: Long) = Date(ms.toDouble()).toLocaleDateString()
@@ -84,7 +92,7 @@ object Panels {
         }))
         body.add(h("div", "row wrap", kids = listOf(
             button("Outline (odd shape)", if (Canvas.tool == Tool.OUTLINE) "btn on" else "btn") { Canvas.setTool(Tool.OUTLINE) },
-            button("Clear outline", "btn") { Store.change { it.plot = it.plot.copy(boundaryJson = null) }; App.render() }
+                        button("Delete outline", "btn danger") { Canvas.deleteOutline() }
         )))
         if (wp.features.isNotEmpty()) {
             body.add(heading("On this plot"))
@@ -197,7 +205,7 @@ object Panels {
         val r = HarmonyAnalyzer.analyze(Store.context(wp), Catalog.seeds, Prefs.margin)
         body.add(heading("Harmony score: ${r.score} / 100"))
         if (r.plantCounts.isEmpty()) body.add(para("Nothing planted yet.", "hint"))
-        r.plantCounts.forEach { (n, c) -> body.add(kv(n, c.toString())) }
+                r.plantCounts.forEach { (n, c) -> body.add(findable(kv(n, c.toString()), n)) }
         if (r.issues.isNotEmpty()) body.add(heading("To look at"))
         r.issues.forEach { i -> body.add(h("div", "issue ${i.severity.name.lowercase()}", kids = listOf(h("b", text = i.severity.label + ": "), h("span", text = i.text)))) }
         if (r.goodPairs.isNotEmpty()) { body.add(heading("Good neighbours")); r.goodPairs.forEach { body.add(para("✓ $it", "hint")) } }
@@ -238,7 +246,8 @@ object Panels {
         val lines = FoodPlanner.yieldLines(ctx)
         body.add(heading("Expected harvest"))
         if (lines.isEmpty()) body.add(para("No food crops planted yet.", "hint"))
-        lines.forEach { l -> body.add(kv("${l.species} × ${l.plants}", "${l.totalKg.fmt(1)} kg")) }
+                if (lines.isNotEmpty()) body.add(para("Click a line to see where those plants are.", "hint"))
+        lines.forEach { l -> body.add(findable(kv("${l.species} × ${l.plants}", "${l.totalKg.fmt(1)} kg"), l.species)) }
         if (lines.isNotEmpty()) {
             val t = FoodPlanner.nutritionTotals(ctx)
             body.add(heading("What that feeds (one adult)"))

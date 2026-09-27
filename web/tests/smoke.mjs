@@ -190,6 +190,65 @@ d = await draft();
 check(d.plots[0].history.length === plantsBefore, 'redo closes it again');
 const historyCount = d.plots[0].history.length;
 
+// Organised clumps, legend + find, plant editor, outline editing, compass.
+check(await page.locator('#sgp-svg g.compass polygon').count() === 8, 'compass has four arrowheads');
+await page.locator('nav.tools').getByRole('button', { name: 'Plan an area for me' }).click();
+await drag(3.3, 0.3, 7.9, 4.9);
+await page.locator('.modal').waitFor();
+await page.locator('.plan-row .grow input').first().fill('Sweet Corn - Silver Queen');
+await page.locator('.plan-row .grow input').first().dispatchEvent('change');
+await page.locator('.plan-row input.count').first().fill('20');
+await page.locator('.plan-row input.count').first().dispatchEvent('input');
+await btn('Plan it').click();
+await page.locator('#sgp-preview:not(.hidden)').waitFor();
+const proposal = await page.locator('#sgp-preview').innerText();
+check(proposal.includes('4 rows of 5'), 'organised clump: 20 corn in 4 rows of 5');
+check(proposal.includes('walkway'), 'proposal mentions walkways for watering');
+await btn('Keep this plan').click();
+d = await draft();
+check(d.plots[0].plants.length === 20, `corn planted (${d.plots[0].plants.length})`);
+check(await page.locator('.plant-legend .pl-row').count() === 1, 'legend lists what is planted');
+await page.locator('.plant-legend .pl-row').first().click();
+check(await page.locator('#sgp-svg .find-ring').count() === 20, 'find circles every corn plant');
+await page.keyboard.press('Escape');
+check(await page.locator('#sgp-svg .find-ring').count() === 0, 'Esc clears find');
+await page.locator('.tabs .tab', { hasText: /^Food$/ }).click();
+await page.locator('.panel-body .findable').first().click();
+check((await page.locator('.status').innerText()).startsWith('Showing 20'), 'harvest line finds its plants');
+await page.keyboard.press('Escape');
+// Edit a planted plant: select it, change the variety.
+await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+const first = d.plots[0].plants[0];
+await clickMetres(first.x, first.y);
+await page.locator('nav.tools').getByRole('button', { name: 'Edit plant…' }).click();
+await page.locator('.modal').waitFor();
+await page.locator('.modal input').first().fill('Sweet Corn - Golden Bantam');
+await page.locator('.modal').getByRole('button', { name: 'Save', exact: true }).click();
+d = await draft();
+check(d.plots[0].plants.some(p => p.variety === 'Sweet Corn - Golden Bantam'), 'plant variety changed');
+await page.keyboard.press('Control+z');
+d = await draft();
+check(d.plots[0].plants.every(p => p.variety !== 'Sweet Corn - Golden Bantam'), 'undo reverts the variety change');
+// Outline: draw, drag a corner, delete.
+await page.locator('nav.tools').getByRole('button', { name: 'Plot outline' }).click();
+for (const [x, y] of [[0.2, 0.2], [7.8, 0.2], [7.8, 4.8], [0.2, 4.8]]) await clickMetres(x, y);
+await page.keyboard.press('Enter');
+d = await draft();
+check(d.plots[0].outline && d.plots[0].outline.length === 4, 'outline drawn');
+await page.locator('nav.tools').getByRole('button', { name: 'Plot outline' }).click();
+check(await page.locator('#sgp-svg .handle').count() === 4, 'outline corners have handles');
+await drag(7.8, 4.8, 6.5, 4.5);
+d = await draft();
+check(Math.abs(d.plots[0].outline[2][0] - 6.5) < 0.1, `outline corner moved (${JSON.stringify(d.plots[0].outline[2])})`);
+await page.locator('nav.tools').getByRole('button', { name: 'Delete outline' }).click();
+d = await draft();
+check(!d.plots[0].outline, 'outline deleted');
+await page.keyboard.press('Control+z');
+d = await draft();
+check(d.plots[0].outline && d.plots[0].outline.length === 4, 'undo restores the outline');
+await page.screenshot({ path: path.join(shots, 'sgp-web-legend.png') });
+await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+
 // Tabs render without errors.
 for (const t of ['Plot', 'Harmony', 'Care', 'Food', 'Plants']) {
   await page.locator('.tabs .tab', { hasText: new RegExp('^' + t + '$') }).click();

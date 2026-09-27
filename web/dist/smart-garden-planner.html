@@ -76,6 +76,17 @@ details.pest,details.soil{background:var(--soft);border:1px solid var(--line);bo
 summary{cursor:pointer}
 .preview{position:absolute;right:12px;bottom:12px;max-width:420px;max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .hidden{display:none}
+.plant-legend{position:absolute;left:10px;bottom:10px;max-width:300px;max-height:45%;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:12px}
+.pl-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pl-row{display:flex;gap:8px;align-items:flex-start;width:100%;background:none;border:1px solid transparent;border-radius:6px;padding:3px 4px;color:var(--text);cursor:pointer;font:inherit;text-align:left}
+.pl-row:hover{background:var(--card)}
+.pl-row.on{border-color:#f97316;background:var(--on-bg)}
+.pl-row .name{font-weight:600;display:block}
+.sw2{width:16px;height:16px;border-radius:50%;border:3px solid;flex:none;margin-top:2px;box-sizing:border-box}
+.findable{cursor:pointer;border-radius:4px}
+.findable:hover{background:var(--card)}
+#sgp-svg .find-ring{animation:sgp-pulse 1.2s ease-in-out infinite}
+@keyframes sgp-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.25}}
 .legend{position:absolute;left:10px;top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.92);color:#292524;border:1px solid #d6d3d1;border-radius:8px;padding:5px 10px;font-size:12px;max-width:calc(100% - 20px)}
 .legend b{margin-right:2px}
 .legend .sw{display:inline-block;width:14px;height:14px;border:1px solid #57534e;vertical-align:-3px;margin-right:4px}
@@ -85979,11 +85990,17 @@ class Long extends Number_0 {
   unaryMinus_6uz0qp_k$() {
     return this.inv_28kx_k$().plus_gdf42y_k$(new Long(1, 0));
   }
+  shl_bg8if3_k$(bitCount) {
+    return shiftLeft(this, bitCount);
+  }
   shr_9fl3wl_k$(bitCount) {
     return shiftRight(this, bitCount);
   }
   and_5hkqyb_k$(other) {
     return new Long(this.low_1 & other.low_1, this.high_1 & other.high_1);
+  }
+  xor_eoldvb_k$(other) {
+    return new Long(this.low_1 ^ other.low_1, this.high_1 ^ other.high_1);
   }
   inv_28kx_k$() {
     return new Long(~this.low_1, ~this.high_1);
@@ -88832,18 +88849,21 @@ class PlannedPlant {
   }
 }
 class AutoPlanResult {
-  constructor(placed, unplaced, notes) {
+  constructor(placed, unplaced, notes, guides) {
+    guides = guides === VOID ? emptyList() : guides;
     this.placed_1 = placed;
     this.unplaced_1 = unplaced;
     this.notes_1 = notes;
+    this.guides_1 = guides;
   }
   toString() {
-    return 'AutoPlanResult(placed=' + toString_1(this.placed_1) + ', unplaced=' + toString_1(this.unplaced_1) + ', notes=' + toString_1(this.notes_1) + ')';
+    return 'AutoPlanResult(placed=' + toString_1(this.placed_1) + ', unplaced=' + toString_1(this.unplaced_1) + ', notes=' + toString_1(this.notes_1) + ', guides=' + toString_1(this.guides_1) + ')';
   }
   hashCode() {
     var result = hashCode(this.placed_1);
     result = imul_0(result, 31) + hashCode(this.unplaced_1) | 0;
     result = imul_0(result, 31) + hashCode(this.notes_1) | 0;
+    result = imul_0(result, 31) + hashCode(this.guides_1) | 0;
     return result;
   }
   equals(other) {
@@ -88857,6 +88877,8 @@ class AutoPlanResult {
     if (!equals(this.unplaced_1, tmp0_other_with_cast.unplaced_1))
       return false;
     if (!equals(this.notes_1, tmp0_other_with_cast.notes_1))
+      return false;
+    if (!equals(this.guides_1, tmp0_other_with_cast.guides_1))
       return false;
     return true;
   }
@@ -88949,6 +88971,8 @@ class AutoPlanner {
     var wanted = destination;
     if (wanted.isEmpty_y1axqb_k$() || area.get_size_woubt6_k$() < 3)
       return new AutoPlanResult(emptyList(), emptyMap(), listOf('Nothing to plan.'));
+    if (layout.equals(PlantingLayout_CLUMPS_getInstance()))
+      return BlockPlanner_instance.plan_bzkbni_k$(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear);
     // Inline function 'kotlin.collections.mutableListOf' call
     var notes = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
     var plot = context.plot_1;
@@ -89481,7 +89505,7 @@ class AutoPlanner {
       notes.add_utx5q5_k$(element_15);
     }
     // Inline function 'kotlin.collections.plusAssign' call
-    var element_16 = clumps ? 'Each crop is planted as a clump, not a long row. Next year the clumps can swap places (crop rotation) without tall plants ending up in front of short ones.' : 'Crops are in rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Clumps make rotation easier.';
+    var element_16 = 'Crops are in long rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Organised clumps make rotation easier.';
     notes.add_utx5q5_k$(element_16);
     if (rotationAvoided > 0 || rotationStuck > 0) {
       // Inline function 'kotlin.collections.plusAssign' call
@@ -89615,6 +89639,943 @@ class AutoPlanner {
     return $super === VOID ? this.plan_sfl7ag_k$(context, area, requests, isBlocked, marginMultiplier, orientationKnown, maxCandidates, layout, history, seasonYear) : $super.plan_sfl7ag_k$.call(this, context, area, requests, isBlocked, marginMultiplier, orientationKnown, maxCandidates, layout, history, seasonYear);
   }
 }
+class VineHabit {
+  constructor(runwayM, climber) {
+    this.runwayM_1 = runwayM;
+    this.climber_1 = climber;
+  }
+  toString() {
+    return 'VineHabit(runwayM=' + this.runwayM_1 + ', climber=' + this.climber_1 + ')';
+  }
+  hashCode() {
+    var result = getNumberHashCode(this.runwayM_1);
+    result = imul_0(result, 31) + getBooleanHashCode(this.climber_1) | 0;
+    return result;
+  }
+  equals(other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof VineHabit))
+      return false;
+    var tmp0_other_with_cast = other instanceof VineHabit ? other : THROW_CCE();
+    if (!equals(this.runwayM_1, tmp0_other_with_cast.runwayM_1))
+      return false;
+    if (!(this.climber_1 === tmp0_other_with_cast.climber_1))
+      return false;
+    return true;
+  }
+}
+class VineHabits {
+  constructor() {
+    VineHabits_instance = this;
+    this.HABITS_1 = mapOf_0([to('watermelon', new VineHabit(2.0, false)), to('melon', new VineHabit(1.5, false)), to('pumpkin', new VineHabit(2.5, false)), to('winter squash', new VineHabit(2.0, false)), to('cucumber', new VineHabit(1.2, false)), to('sweet potato', new VineHabit(1.5, false)), to('luffa', new VineHabit(2.0, false)), to('bottle gourd', new VineHabit(2.0, false)), to('bitter melon', new VineHabit(1.5, false)), to('summer squash mix', new VineHabit(0.8, false)), to('pole bean', new VineHabit(0.0, true)), to('yard-long bean', new VineHabit(0.0, true)), to('pea', new VineHabit(0.0, true))]);
+  }
+  of_xkctbz_k$(seed) {
+    return this.HABITS_1.get_wei43m_k$(CropReference_getInstance().speciesKey_x7vv_k$(seed));
+  }
+}
+class GrowthGuide {
+  constructor(species, area, from, to) {
+    this.species_1 = species;
+    this.area_1 = area;
+    this.from_1 = from;
+    this.to_1 = to;
+  }
+  toString() {
+    return 'GrowthGuide(species=' + this.species_1 + ', area=' + toString_1(this.area_1) + ', from=' + this.from_1.toString() + ', to=' + this.to_1.toString() + ')';
+  }
+  hashCode() {
+    var result = getStringHashCode(this.species_1);
+    result = imul_0(result, 31) + hashCode(this.area_1) | 0;
+    result = imul_0(result, 31) + this.from_1.hashCode() | 0;
+    result = imul_0(result, 31) + this.to_1.hashCode() | 0;
+    return result;
+  }
+  equals(other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof GrowthGuide))
+      return false;
+    var tmp0_other_with_cast = other instanceof GrowthGuide ? other : THROW_CCE();
+    if (!(this.species_1 === tmp0_other_with_cast.species_1))
+      return false;
+    if (!equals(this.area_1, tmp0_other_with_cast.area_1))
+      return false;
+    if (!this.from_1.equals(tmp0_other_with_cast.from_1))
+      return false;
+    if (!this.to_1.equals(tmp0_other_with_cast.to_1))
+      return false;
+    return true;
+  }
+}
+class Placed {
+  constructor(seed, x, y, r) {
+    this.seed_1 = seed;
+    this.x_1 = x;
+    this.y_1 = y;
+    this.r_1 = r;
+  }
+}
+class Rect {
+  constructor(u0, u1, v0, v1) {
+    this.u0__1 = u0;
+    this.u1__1 = u1;
+    this.v0__1 = v0;
+    this.v1__1 = v1;
+  }
+  contains_wtyech_k$(u, v) {
+    var tmp;
+    var containsLower = this.u0__1;
+    if (u <= this.u1__1 ? containsLower <= u : false) {
+      var containsLower_0 = this.v0__1;
+      tmp = v <= this.v1__1 ? containsLower_0 <= v : false;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  }
+}
+class sam$kotlin_Comparator$0_1 {
+  constructor(function_0) {
+    this.function_1 = function_0;
+  }
+  compare_bczr_k$(a, b) {
+    return this.function_1(a, b);
+  }
+  compare(a, b) {
+    return this.compare_bczr_k$(a, b);
+  }
+  getFunctionDelegate_jtodtf_k$() {
+    return this.function_1;
+  }
+  equals(other) {
+    var tmp;
+    if (!(other == null) ? isInterface(other, Comparator) : false) {
+      var tmp_0;
+      if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
+        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+      } else {
+        tmp_0 = false;
+      }
+      tmp = tmp_0;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  }
+  hashCode() {
+    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+  }
+}
+class BlockPlanner {
+  constructor() {
+    this.WALKWAY_M_1 = 0.45;
+  }
+  shape_v54jmx_k$(n) {
+    // Inline function 'kotlin.math.sqrt' call
+    // Inline function 'kotlin.math.floor' call
+    var x = Math.sqrt(n);
+    var tmp$ret$1 = Math.floor(x);
+    // Inline function 'kotlin.math.max' call
+    var b = numberToInt(tmp$ret$1);
+    var rows = Math.max(1, b);
+    // Inline function 'kotlin.math.ceil' call
+    var x_0 = n / rows;
+    var tmp$ret$3 = Math.ceil(x_0);
+    return to(rows, numberToInt(tmp$ret$3));
+  }
+  rowSizes_zed3sw_k$(n) {
+    var _destruct__k2r9zo = this.shape_v54jmx_k$(n);
+    var rows = _destruct__k2r9zo.component1_7eebsc_k$();
+    var cols = _destruct__k2r9zo.component2_7eebsb_k$();
+    // Inline function 'kotlin.collections.MutableList' call
+    var list = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(rows);
+    // Inline function 'kotlin.repeat' call
+    var inductionVariable = 0;
+    if (inductionVariable < rows)
+      do {
+        var index = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        list.add_utx5q5_k$(cols);
+      }
+       while (inductionVariable < rows);
+    var out = list;
+    var extra = imul_0(rows, cols) - n | 0;
+    var i = rows - 1 | 0;
+    while (extra > 0) {
+      var _index_0__fvwizt = i;
+      var _unary__edvuaz = out.get_c1px32_k$(_index_0__fvwizt);
+      out.set_82063s_k$(_index_0__fvwizt, _unary__edvuaz - 1 | 0);
+      extra = extra - 1 | 0;
+      i = i === 0 ? rows - 1 | 0 : i - 1 | 0;
+    }
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s = out.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      if (element > 0) {
+        destination.add_utx5q5_k$(element);
+      }
+    }
+    return destination;
+  }
+  plan_bzkbni_k$(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear) {
+    var plot = context.plot_1;
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var notes = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _destruct__k2r9zo = AutoPlanner_getInstance().sunwardVector_as6203_k$(context.get_latitude_feukvp_k$(), plot.northBearingDeg_1);
+    var sx = _destruct__k2r9zo.component1_7eebsc_k$();
+    var sy = _destruct__k2r9zo.component2_7eebsb_k$();
+    var lx = -sy;
+    var ly = sx;
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(area, 10));
+    var _iterator__ex2g4s = area.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$1 = plan$toU(lx, ly, item.x_1, item.y_1);
+      destination.add_utx5q5_k$(tmp$ret$1);
+    }
+    var us = destination;
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_0 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(area, 10));
+    var _iterator__ex2g4s_0 = area.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var tmp$ret$4 = plan$toV(sx, sy, item_0.x_1, item_0.y_1);
+      destination_0.add_utx5q5_k$(tmp$ret$4);
+    }
+    var vs = destination_0;
+    var uMin = min_0(us);
+    var uMax = max_0(us);
+    var vMin = min_0(vs);
+    var vMax = max_0(vs);
+    var vSpan = coerceAtLeast_0(vMax - vMin, 0.01);
+    // Inline function 'kotlin.math.sqrt' call
+    var x = (uMax - uMin) * (uMax - uMin) + vSpan * vSpan;
+    var tmp$ret$7 = Math.sqrt(x);
+    var diag = coerceAtLeast(tmp$ret$7, 0.1);
+    // Inline function 'kotlin.collections.associate' call
+    var capacity = coerceAtLeast_1(mapCapacity(collectionSizeOrDefault(wanted, 10)), 16);
+    // Inline function 'kotlin.collections.associateTo' call
+    var destination_1 = LinkedHashMap.new_kotlin_collections_LinkedHashMap_31p40q_k$(capacity);
+    var _iterator__ex2g4s_1 = wanted.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_1.next_20eer_k$();
+      // Inline function 'kotlin.collections.plusAssign' call
+      var pair = to(element.seed_1.botanicalCode_1, PlantHeights_getInstance().heightM_llw55e_k$(element.seed_1));
+      destination_1.put_4fpzoq_k$(pair.first_1, pair.second_1);
+    }
+    var heights = destination_1;
+    var hMin = min_0(heights.get_values_ksazhn_k$());
+    var hMax = max_0(heights.get_values_ksazhn_k$());
+    var isPollinator = BlockPlanner$plan$lambda;
+    // Inline function 'kotlin.comparisons.compareBy' call
+    var tmp = BlockPlanner$plan$lambda_0(isPollinator);
+    // Inline function 'kotlin.comparisons.thenByDescending' call
+    var this_0 = new sam$kotlin_Comparator$0_1(tmp);
+    var tmp_0 = BlockPlanner$plan$lambda_1(this_0, heights);
+    var tmp$ret$13 = new sam$kotlin_Comparator$0_1(tmp_0);
+    var order = sortedWith(wanted, tmp$ret$13);
+    var sunMemo = HashMap.new_kotlin_collections_HashMap_2a5kxx_k$();
+    var tmp_1;
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!context.get_barriers_ahpmcl_k$().isEmpty_y1axqb_k$()) {
+      tmp_1 = true;
+    } else {
+      var tmp0 = context.get_areaFeatures_ezrufh_k$();
+      var tmp$ret$15;
+      $l$block_0: {
+        // Inline function 'kotlin.collections.any' call
+        var tmp_2;
+        if (isInterface(tmp0, Collection)) {
+          tmp_2 = tmp0.isEmpty_y1axqb_k$();
+        } else {
+          tmp_2 = false;
+        }
+        if (tmp_2) {
+          tmp$ret$15 = false;
+          break $l$block_0;
+        }
+        var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+          var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+          var tmp0_safe_receiver = Companion_instance_13.of_5gnbr7_k$(element_0.featureType_1);
+          var tmp_3;
+          if (tmp0_safe_receiver == null) {
+            tmp_3 = null;
+          } else {
+            // Inline function 'kotlin.let' call
+            tmp_3 = tmp0_safe_receiver.equals(SiteFeatureType_FULL_SUN_getInstance()) || tmp0_safe_receiver.equals(SiteFeatureType_PART_SHADE_getInstance()) || tmp0_safe_receiver.equals(SiteFeatureType_FULL_SHADE_getInstance());
+          }
+          if (tmp_3 === true) {
+            tmp$ret$15 = true;
+            break $l$block_0;
+          }
+        }
+        tmp$ret$15 = false;
+      }
+      tmp_1 = tmp$ret$15;
+    }
+    var sunKnown = tmp_1;
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_2 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_3 = history.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
+      var tmp_4;
+      if (!(element_1.get_group_is3eja_k$() == null)) {
+        var containsUpper = ensureNotNull(element_1.get_group_is3eja_k$()).waitYears_1;
+        var containsArg = seasonYear - element_1.seasonYear_1 | 0;
+        tmp_4 = 1 <= containsArg ? containsArg <= containsUpper : false;
+      } else {
+        tmp_4 = false;
+      }
+      if (tmp_4) {
+        destination_2.add_utx5q5_k$(element_1);
+      }
+    }
+    // Inline function 'kotlin.collections.groupBy' call
+    // Inline function 'kotlin.collections.groupByTo' call
+    var destination_3 = LinkedHashMap.new_kotlin_collections_LinkedHashMap_ga0any_k$();
+    var _iterator__ex2g4s_4 = destination_2.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+      var element_2 = _iterator__ex2g4s_4.next_20eer_k$();
+      var key = ensureNotNull(element_2.get_group_is3eja_k$());
+      // Inline function 'kotlin.collections.getOrPut' call
+      var value = destination_3.get_wei43m_k$(key);
+      var tmp_5;
+      if (value == null) {
+        var answer = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+        destination_3.put_4fpzoq_k$(key, answer);
+        tmp_5 = answer;
+      } else {
+        tmp_5 = value;
+      }
+      var list = tmp_5;
+      list.add_utx5q5_k$(element_2);
+    }
+    var pastByGroup = destination_3;
+    // Inline function 'kotlin.collections.mapNotNull' call
+    var tmp0_0 = context.nodes_1;
+    // Inline function 'kotlin.collections.mapNotNullTo' call
+    var destination_4 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_5 = tmp0_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+      var element_3 = _iterator__ex2g4s_5.next_20eer_k$();
+      var tmp0_safe_receiver_0 = context.seedLookup_1(element_3.seedCode_1);
+      var tmp_6;
+      if (tmp0_safe_receiver_0 == null) {
+        tmp_6 = null;
+      } else {
+        // Inline function 'kotlin.let' call
+        tmp_6 = new Placed(tmp0_safe_receiver_0, element_3.coordinateXM_1, element_3.coordinateYM_1, tmp0_safe_receiver_0.exclusionRadiusM_1);
+      }
+      var tmp0_safe_receiver_1 = tmp_6;
+      if (tmp0_safe_receiver_1 == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        destination_4.add_utx5q5_k$(tmp0_safe_receiver_1);
+      }
+    }
+    var existing = destination_4;
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var placedNodes = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var placed = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var result = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.linkedMapOf' call
+    var unplaced = LinkedHashMap.new_kotlin_collections_LinkedHashMap_ga0any_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var reserved = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var guides = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var blockNotes = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var insectCentres = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var validator = new CompanionPlantingValidator();
+    var rotationAvoided = 0;
+    var rotationStuck = 0;
+    var _iterator__ex2g4s_6 = order.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
+      var req = _iterator__ex2g4s_6.next_20eer_k$();
+      var seed = req.seed_1;
+      var crop = CropReference_getInstance().forSeed_24qp1a_k$(seed);
+      var key_0 = CropReference_getInstance().speciesKey_x7vv_k$(seed);
+      var habit = VineHabits_getInstance().of_xkctbz_k$(seed);
+      var r = seed.exclusionRadiusM_1;
+      var pitch = coerceAtLeast_0(2.0 * r * marginMultiplier, 0.05) + 0.001;
+      var target = plan$targetDepth_0(hMax, hMin, heights, seed);
+      var group = Companion_getInstance_12().forSeed_24qp1a_k$(seed);
+      var tmp_7;
+      if (group == null) {
+        tmp_7 = null;
+      } else {
+        // Inline function 'kotlin.let' call
+        tmp_7 = pastByGroup.get_wei43m_k$(group);
+      }
+      // Inline function 'kotlin.collections.orEmpty' call
+      var tmp0_elvis_lhs = tmp_7;
+      var past = tmp0_elvis_lhs == null ? emptyList() : tmp0_elvis_lhs;
+      var remaining = req.count_1;
+      var blocks = 0;
+      // Inline function 'kotlin.collections.mutableListOf' call
+      var shapes = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+      $l$loop_1: while (remaining > 0) {
+        var rows = this.rowSizes_zed3sw_k$(remaining);
+        var cols = max_1(rows);
+        var blockW = (cols - 1 | 0) * pitch;
+        var blockD = (rows.get_size_woubt6_k$() - 1 | 0) * pitch;
+        var tmp0_1 = pitch / 2.0;
+        // Inline function 'kotlin.math.sqrt' call
+        var x_0 = (uMax - uMin) * vSpan / 1200.0;
+        // Inline function 'kotlin.math.max' call
+        var b = Math.sqrt(x_0);
+        var tmp$ret$49 = Math.max(tmp0_1, b);
+        var step = coerceAtLeast_0(tmp$ret$49, 0.05);
+        var best = null;
+        var v0 = vMax - r * 0.5;
+        while (v0 >= vMin - blockD) {
+          var u0 = uMin + r * 0.5;
+          while (u0 <= uMax) {
+            // Inline function 'kotlin.collections.mutableListOf' call
+            var cells = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+            // Inline function 'kotlin.collections.forEachIndexed' call
+            var index = 0;
+            var _iterator__ex2g4s_7 = rows.iterator_jk1svi_k$();
+            while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
+              var item_1 = _iterator__ex2g4s_7.next_20eer_k$();
+              var _unary__edvuaz = index;
+              index = _unary__edvuaz + 1 | 0;
+              var ri = checkIndexOverflow(_unary__edvuaz);
+              var off = (cols - item_1 | 0) * pitch / 2.0;
+              var inductionVariable = 0;
+              if (inductionVariable < item_1)
+                do {
+                  var ci = inductionVariable;
+                  inductionVariable = inductionVariable + 1 | 0;
+                  // Inline function 'kotlin.collections.plusAssign' call
+                  var element_4 = to(u0 + off + ci * pitch, v0 - ri * pitch);
+                  cells.add_utx5q5_k$(element_4);
+                }
+                 while (inductionVariable < item_1);
+            }
+            // Inline function 'kotlin.collections.filter' call
+            // Inline function 'kotlin.collections.filterTo' call
+            var destination_5 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+            var _iterator__ex2g4s_8 = cells.iterator_jk1svi_k$();
+            while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
+              var element_5 = _iterator__ex2g4s_8.next_20eer_k$();
+              var u = element_5.component1_7eebsc_k$();
+              var v = element_5.component2_7eebsb_k$();
+              if (plan$cellOk(area, plot, isBlocked, r, context, crop, reserved, existing, marginMultiplier, placed, key_0, lx, sx, ly, sy, u, v)) {
+                destination_5.add_utx5q5_k$(element_5);
+              }
+            }
+            var ok = destination_5;
+            // Inline function 'kotlin.collections.isNotEmpty' call
+            if (!ok.isEmpty_y1axqb_k$()) {
+              // Inline function 'kotlin.collections.map' call
+              // Inline function 'kotlin.collections.mapTo' call
+              var destination_6 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(ok, 10));
+              var _iterator__ex2g4s_9 = ok.iterator_jk1svi_k$();
+              while (_iterator__ex2g4s_9.hasNext_bitz1p_k$()) {
+                var item_2 = _iterator__ex2g4s_9.next_20eer_k$();
+                var u_0 = item_2.component1_7eebsc_k$();
+                var v_0 = item_2.component2_7eebsb_k$();
+                var tmp$ret$58 = plan$toXY(lx, sx, ly, sy, u_0, v_0);
+                destination_6.add_utx5q5_k$(tmp$ret$58);
+              }
+              var pts = destination_6;
+              var score = ok.get_size_woubt6_k$() * 10.0;
+              // Inline function 'kotlin.collections.map' call
+              // Inline function 'kotlin.collections.mapTo' call
+              var destination_7 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(ok, 10));
+              var _iterator__ex2g4s_10 = ok.iterator_jk1svi_k$();
+              while (_iterator__ex2g4s_10.hasNext_bitz1p_k$()) {
+                var item_3 = _iterator__ex2g4s_10.next_20eer_k$();
+                var v_1 = item_3.component2_7eebsb_k$();
+                var tmp$ret$61 = (v_1 - vMin) / vSpan;
+                destination_7.add_utx5q5_k$(tmp$ret$61);
+              }
+              var meanDepth = average(destination_7);
+              var tmp_8 = score;
+              // Inline function 'kotlin.math.abs' call
+              var x_1 = meanDepth - target;
+              score = tmp_8 - Math.abs(x_1) * 4.0;
+              if (sunKnown) {
+                var need = crop.sun_1.minHours_1;
+                var tmp_9 = score;
+                // Inline function 'kotlin.collections.map' call
+                // Inline function 'kotlin.collections.mapTo' call
+                var destination_8 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
+                var _iterator__ex2g4s_11 = pts.iterator_jk1svi_k$();
+                while (_iterator__ex2g4s_11.hasNext_bitz1p_k$()) {
+                  var item_4 = _iterator__ex2g4s_11.next_20eer_k$();
+                  var tmp0_safe_receiver_2 = plan$sunAt(sunMemo, context, item_4.x_1, item_4.y_1);
+                  var tmp_10;
+                  if (tmp0_safe_receiver_2 == null) {
+                    tmp_10 = null;
+                  } else {
+                    // Inline function 'kotlin.let' call
+                    // Inline function 'kotlin.math.max' call
+                    var b_0 = need - tmp0_safe_receiver_2;
+                    tmp_10 = Math.max(0.0, b_0) / need;
+                  }
+                  var tmp1_elvis_lhs = tmp_10;
+                  var tmp$ret$68 = tmp1_elvis_lhs == null ? 0.0 : tmp1_elvis_lhs;
+                  destination_8.add_utx5q5_k$(tmp$ret$68);
+                }
+                score = tmp_9 - average_0(destination_8) * 5.0;
+              }
+              // Inline function 'kotlin.collections.isNotEmpty' call
+              if (!past.isEmpty_y1axqb_k$()) {
+                var tmp_11 = score;
+                // Inline function 'kotlin.collections.map' call
+                // Inline function 'kotlin.collections.mapTo' call
+                var destination_9 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
+                var _iterator__ex2g4s_12 = pts.iterator_jk1svi_k$();
+                while (_iterator__ex2g4s_12.hasNext_bitz1p_k$()) {
+                  var item_5 = _iterator__ex2g4s_12.next_20eer_k$();
+                  var tmp$ret$72 = plan$rotationPenalty_0(past, r, seasonYear, group, item_5);
+                  destination_9.add_utx5q5_k$(tmp$ret$72);
+                }
+                score = tmp_11 - average_0(destination_9);
+              }
+              var tmp_12;
+              if (isPollinator(seed)) {
+                // Inline function 'kotlin.collections.isNotEmpty' call
+                tmp_12 = !insectCentres.isEmpty_y1axqb_k$();
+              } else {
+                tmp_12 = false;
+              }
+              if (tmp_12) {
+                // Inline function 'kotlin.collections.map' call
+                // Inline function 'kotlin.collections.mapTo' call
+                var destination_10 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
+                var _iterator__ex2g4s_13 = pts.iterator_jk1svi_k$();
+                while (_iterator__ex2g4s_13.hasNext_bitz1p_k$()) {
+                  var item_6 = _iterator__ex2g4s_13.next_20eer_k$();
+                  var tmp$ret$76 = item_6.x_1;
+                  destination_10.add_utx5q5_k$(tmp$ret$76);
+                }
+                var tmp_13 = average(destination_10);
+                // Inline function 'kotlin.collections.map' call
+                // Inline function 'kotlin.collections.mapTo' call
+                var destination_11 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
+                var _iterator__ex2g4s_14 = pts.iterator_jk1svi_k$();
+                while (_iterator__ex2g4s_14.hasNext_bitz1p_k$()) {
+                  var item_7 = _iterator__ex2g4s_14.next_20eer_k$();
+                  var tmp$ret$79 = item_7.y_1;
+                  destination_11.add_utx5q5_k$(tmp$ret$79);
+                }
+                var c = new PlotPoint(tmp_13, average(destination_11));
+                var tmp_14 = score;
+                // Inline function 'kotlin.collections.minOf' call
+                var iterator = insectCentres.iterator_jk1svi_k$();
+                if (!iterator.hasNext_bitz1p_k$())
+                  throw NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$();
+                var it = iterator.next_20eer_k$();
+                // Inline function 'kotlin.math.sqrt' call
+                var x_2 = (c.x_1 - it.x_1) * (c.x_1 - it.x_1) + (c.y_1 - it.y_1) * (c.y_1 - it.y_1);
+                var minValue = Math.sqrt(x_2);
+                while (iterator.hasNext_bitz1p_k$()) {
+                  var it_0 = iterator.next_20eer_k$();
+                  // Inline function 'kotlin.math.sqrt' call
+                  var x_3 = (c.x_1 - it_0.x_1) * (c.x_1 - it_0.x_1) + (c.y_1 - it_0.y_1) * (c.y_1 - it_0.y_1);
+                  var v_2 = Math.sqrt(x_3);
+                  // Inline function 'kotlin.comparisons.minOf' call
+                  var a = minValue;
+                  minValue = Math.min(a, v_2);
+                }
+                score = tmp_14 - minValue / diag * 4.0;
+              }
+              if (!(habit == null) && !habit.climber_1) {
+                var front = v0 - blockD - r;
+                var good = 0;
+                var bad = 0;
+                var t = 0.25;
+                while (t <= habit.runwayM_1) {
+                  var uu = u0;
+                  while (uu <= u0 + blockW + 0.001) {
+                    var p = plan$toXY(lx, sx, ly, sy, uu, front - t);
+                    var tmp0_2 = plus(existing, placed);
+                    var tmp$ret$88;
+                    $l$block_2: {
+                      // Inline function 'kotlin.collections.any' call
+                      var tmp_15;
+                      if (isInterface(tmp0_2, Collection)) {
+                        tmp_15 = tmp0_2.isEmpty_y1axqb_k$();
+                      } else {
+                        tmp_15 = false;
+                      }
+                      if (tmp_15) {
+                        tmp$ret$88 = false;
+                        break $l$block_2;
+                      }
+                      var _iterator__ex2g4s_15 = tmp0_2.iterator_jk1svi_k$();
+                      while (_iterator__ex2g4s_15.hasNext_bitz1p_k$()) {
+                        var element_6 = _iterator__ex2g4s_15.next_20eer_k$();
+                        if ((element_6.x_1 - p.x_1) * (element_6.x_1 - p.x_1) + (element_6.y_1 - p.y_1) * (element_6.y_1 - p.y_1) < element_6.r_1 * element_6.r_1) {
+                          tmp$ret$88 = true;
+                          break $l$block_2;
+                        }
+                      }
+                      tmp$ret$88 = false;
+                    }
+                    var occupied = tmp$ret$88;
+                    var tmp_16;
+                    if (sunKnown) {
+                      var tmp1_elvis_lhs_0 = plan$sunAt(sunMemo, context, p.x_1, p.y_1);
+                      tmp_16 = (tmp1_elvis_lhs_0 == null ? 8.0 : tmp1_elvis_lhs_0) < 3.0;
+                    } else {
+                      tmp_16 = false;
+                    }
+                    var shaded = tmp_16;
+                    if (occupied || shaded || !PlotShape_instance.contains_fxfbhl_k$(plot, p.x_1, p.y_1)) {
+                      bad = bad + 1 | 0;
+                    } else {
+                      good = good + 1 | 0;
+                    }
+                    var tmp_17 = uu;
+                    // Inline function 'kotlin.math.max' call
+                    uu = tmp_17 + Math.max(pitch, 0.5);
+                  }
+                  t = t + 0.5;
+                }
+                if ((good + bad | 0) > 0)
+                  score = score + 3.0 * (good - 2.0 * bad) / (good + bad | 0);
+              }
+              if (best == null || score > best.first_1)
+                best = new Triple(score, pts, to(u0, v0));
+            }
+            u0 = u0 + step;
+          }
+          v0 = v0 - step;
+        }
+        if (best == null)
+          break $l$loop_1;
+        // Inline function 'kotlin.collections.mutableListOf' call
+        var kept = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+        var _iterator__ex2g4s_16 = best.second_1.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_16.hasNext_bitz1p_k$()) {
+          var p_0 = _iterator__ex2g4s_16.next_20eer_k$();
+          var node = new PlantedNodeEntity(VOID, plot.id_1, seed.botanicalCode_1, p_0.x_1, p_0.y_1);
+          if (validator.validatePlacement_ome8gn_k$(node, seed, plus(context.nodes_1, placedNodes), context.seedLookup_1, marginMultiplier, context.enforceCompanionRules_1, context.guilds_1).isValid_1) {
+            // Inline function 'kotlin.collections.plusAssign' call
+            kept.add_utx5q5_k$(p_0);
+            // Inline function 'kotlin.collections.plusAssign' call
+            placedNodes.add_utx5q5_k$(node);
+          }
+        }
+        if (kept.isEmpty_y1axqb_k$())
+          break $l$loop_1;
+        // Inline function 'kotlin.collections.forEach' call
+        var _iterator__ex2g4s_17 = kept.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_17.hasNext_bitz1p_k$()) {
+          var element_7 = _iterator__ex2g4s_17.next_20eer_k$();
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_8 = new Placed(seed, element_7.x_1, element_7.y_1, r);
+          placed.add_utx5q5_k$(element_8);
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_9 = new PlannedPlant(seed, element_7.x_1, element_7.y_1);
+          result.add_utx5q5_k$(element_9);
+          // Inline function 'kotlin.collections.isNotEmpty' call
+          if (!past.isEmpty_y1axqb_k$()) {
+            if (plan$rotationPenalty_0(past, r, seasonYear, group, element_7) > 0.0) {
+              rotationStuck = rotationStuck + 1 | 0;
+            } else {
+              rotationAvoided = rotationAvoided + 1 | 0;
+            }
+          }
+        }
+        var _destruct__k2r9zo_0 = best.third_1;
+        var bu = _destruct__k2r9zo_0.component1_7eebsc_k$();
+        var bv = _destruct__k2r9zo_0.component2_7eebsb_k$();
+        if (!(habit == null) && !habit.climber_1) {
+          var front_0 = bv - blockD - r;
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_10 = new Rect(bu - r, bu + blockW + r, front_0 - habit.runwayM_1, front_0);
+          reserved.add_utx5q5_k$(element_10);
+          var poly = listOf_0([plan$toXY(lx, sx, ly, sy, bu - r, front_0), plan$toXY(lx, sx, ly, sy, bu + blockW + r, front_0), plan$toXY(lx, sx, ly, sy, bu + blockW + r, front_0 - habit.runwayM_1), plan$toXY(lx, sx, ly, sy, bu - r, front_0 - habit.runwayM_1)]);
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_11 = new GrowthGuide(CropReference_getInstance().speciesName_3q2qgh_k$(seed), poly, plan$toXY(lx, sx, ly, sy, bu + blockW / 2.0, front_0), plan$toXY(lx, sx, ly, sy, bu + blockW / 2.0, front_0 - habit.runwayM_1));
+          guides.add_utx5q5_k$(element_11);
+        }
+        if (AutoPlanner_getInstance().INSECT_POLLINATED_1.contains_aljjnj_k$(key_0)) {
+          // Inline function 'kotlin.collections.map' call
+          // Inline function 'kotlin.collections.mapTo' call
+          var destination_12 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(kept, 10));
+          var _iterator__ex2g4s_18 = kept.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_18.hasNext_bitz1p_k$()) {
+            var item_8 = _iterator__ex2g4s_18.next_20eer_k$();
+            var tmp$ret$101 = item_8.x_1;
+            destination_12.add_utx5q5_k$(tmp$ret$101);
+          }
+          var tmp_18 = average(destination_12);
+          // Inline function 'kotlin.collections.map' call
+          // Inline function 'kotlin.collections.mapTo' call
+          var destination_13 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(kept, 10));
+          var _iterator__ex2g4s_19 = kept.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_19.hasNext_bitz1p_k$()) {
+            var item_9 = _iterator__ex2g4s_19.next_20eer_k$();
+            var tmp$ret$104 = item_9.y_1;
+            destination_13.add_utx5q5_k$(tmp$ret$104);
+          }
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_12 = new PlotPoint(tmp_18, average(destination_13));
+          insectCentres.add_utx5q5_k$(element_12);
+        }
+        // Inline function 'kotlin.collections.plusAssign' call
+        var element_13 = kept.get_size_woubt6_k$() === sum(rows) ? rows : this.rowSizes_zed3sw_k$(kept.get_size_woubt6_k$());
+        shapes.add_utx5q5_k$(element_13);
+        remaining = remaining - kept.get_size_woubt6_k$() | 0;
+        blocks = blocks + 1 | 0;
+        if (kept.get_size_woubt6_k$() < best.second_1.get_size_woubt6_k$() && blocks > 6)
+          break $l$loop_1;
+      }
+      if (remaining > 0) {
+        var tmp2 = CropReference_getInstance().speciesName_3q2qgh_k$(seed);
+        var tmp2_elvis_lhs = unplaced.get_wei43m_k$(CropReference_getInstance().speciesName_3q2qgh_k$(seed));
+        // Inline function 'kotlin.collections.set' call
+        var value_0 = (tmp2_elvis_lhs == null ? 0 : tmp2_elvis_lhs) + remaining | 0;
+        unplaced.put_4fpzoq_k$(tmp2, value_0);
+      }
+      var done = req.count_1 - remaining | 0;
+      if (done > 0) {
+        var shapeText = joinToString_0(shapes, ' + ', VOID, VOID, VOID, VOID, BlockPlanner$plan$lambda_2);
+        // Inline function 'kotlin.collections.plusAssign' call
+        var element_14 = CropReference_getInstance().speciesName_3q2qgh_k$(seed) + ': ' + done + ' in ' + shapeText + ', ' + numberToInt(pitch * 100) + ' cm apart';
+        blockNotes.add_utx5q5_k$(element_14);
+      }
+    }
+    var backName = context.get_latitude_feukvp_k$() >= 0 ? 'north' : 'south';
+    var sunName = context.get_latitude_feukvp_k$() >= 0 ? 'south' : 'north';
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!blockNotes.isEmpty_y1axqb_k$()) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_15 = 'Organised clumps: ' + joinToString_0(blockNotes, '; ') + ('. Each clump is in rows and columns with a ' + numberToInt(0.45 * 100) + ' cm walkway around it, so you can reach and hose every plant. Next year the clumps can swap places for crop rotation.');
+      notes.add_utx5q5_k$(element_15);
+    }
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_14 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_20 = order.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_20.hasNext_bitz1p_k$()) {
+      var element_16 = _iterator__ex2g4s_20.next_20eer_k$();
+      if (VineHabits_getInstance().of_xkctbz_k$(element_16.seed_1) == null && !isPollinator(element_16.seed_1)) {
+        destination_14.add_utx5q5_k$(element_16);
+      }
+    }
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_15 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(destination_14, 10));
+    var _iterator__ex2g4s_21 = destination_14.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_21.hasNext_bitz1p_k$()) {
+      var item_10 = _iterator__ex2g4s_21.next_20eer_k$();
+      var tmp$ret$116 = item_10.seed_1;
+      destination_15.add_utx5q5_k$(tmp$ret$116);
+    }
+    // Inline function 'kotlin.collections.distinctBy' call
+    var set = HashSet.new_kotlin_collections_HashSet_ovxcsm_k$();
+    var list_0 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_22 = destination_15.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_22.hasNext_bitz1p_k$()) {
+      var e = _iterator__ex2g4s_22.next_20eer_k$();
+      var key_1 = CropReference_getInstance().speciesKey_x7vv_k$(e);
+      if (set.add_utx5q5_k$(key_1)) {
+        list_0.add_utx5q5_k$(e);
+      }
+    }
+    var tall = list_0;
+    if (tall.get_size_woubt6_k$() > 1) {
+      var tmp_19 = take(tall, 2);
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_17 = 'Taller clumps (' + joinToString_0(tmp_19, ', ', VOID, VOID, VOID, VOID, BlockPlanner$plan$lambda_3) + ') are on the ' + backName + " side, shorter ones on the sunny side, so tall plants don't shade short ones.";
+      notes.add_utx5q5_k$(element_17);
+    }
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_16 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_23 = order.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_23.hasNext_bitz1p_k$()) {
+      var element_18 = _iterator__ex2g4s_23.next_20eer_k$();
+      var tmp0_safe_receiver_3 = VineHabits_getInstance().of_xkctbz_k$(element_18.seed_1);
+      if ((tmp0_safe_receiver_3 == null ? null : tmp0_safe_receiver_3.climber_1) === true) {
+        destination_16.add_utx5q5_k$(element_18);
+      }
+    }
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_17 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(destination_16, 10));
+    var _iterator__ex2g4s_24 = destination_16.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_24.hasNext_bitz1p_k$()) {
+      var item_11 = _iterator__ex2g4s_24.next_20eer_k$();
+      var tmp$ret$125 = CropReference_getInstance().speciesName_3q2qgh_k$(item_11.seed_1);
+      destination_17.add_utx5q5_k$(tmp$ret$125);
+    }
+    var climbers = distinct(destination_17);
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!climbers.isEmpty_y1axqb_k$()) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_19 = joinToString_0(climbers, ', ') + ' climb: they are at the back (' + backName + ') edge. Put up a trellis or poles there so they grow up, not over their neighbours.';
+      notes.add_utx5q5_k$(element_19);
+    }
+    // Inline function 'kotlin.collections.groupBy' call
+    // Inline function 'kotlin.collections.groupByTo' call
+    var destination_18 = LinkedHashMap.new_kotlin_collections_LinkedHashMap_ga0any_k$();
+    var _iterator__ex2g4s_25 = guides.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_25.hasNext_bitz1p_k$()) {
+      var element_20 = _iterator__ex2g4s_25.next_20eer_k$();
+      var key_2 = element_20.species_1;
+      // Inline function 'kotlin.collections.getOrPut' call
+      var value_1 = destination_18.get_wei43m_k$(key_2);
+      var tmp_20;
+      if (value_1 == null) {
+        var answer_0 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+        destination_18.put_4fpzoq_k$(key_2, answer_0);
+        tmp_20 = answer_0;
+      } else {
+        tmp_20 = value_1;
+      }
+      var list_1 = tmp_20;
+      list_1.add_utx5q5_k$(element_20);
+    }
+    // Inline function 'kotlin.collections.forEach' call
+    // Inline function 'kotlin.collections.iterator' call
+    var _iterator__ex2g4s_26 = destination_18.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_26.hasNext_bitz1p_k$()) {
+      var element_21 = _iterator__ex2g4s_26.next_20eer_k$();
+      // Inline function 'kotlin.collections.component1' call
+      var species = element_21.get_key_18j28a_k$();
+      // Inline function 'kotlin.collections.component2' call
+      var g = element_21.get_value_j01efc_k$();
+      var tmp$ret$139;
+      $l$block_3: {
+        // Inline function 'kotlin.collections.first' call
+        var _iterator__ex2g4s_27 = order.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_27.hasNext_bitz1p_k$()) {
+          var element_22 = _iterator__ex2g4s_27.next_20eer_k$();
+          if (CropReference_getInstance().speciesName_3q2qgh_k$(element_22.seed_1) === species) {
+            tmp$ret$139 = element_22;
+            break $l$block_3;
+          }
+        }
+        throw NoSuchElementException.new_kotlin_NoSuchElementException_eborbh_k$('Collection contains no element matching the predicate.');
+      }
+      // Inline function 'kotlin.let' call
+      var it_1 = tmp$ret$139.seed_1;
+      var habit_0 = VineHabits_getInstance().of_xkctbz_k$(it_1);
+      var tmp1_safe_receiver = habit_0 == null ? null : habit_0.runwayM_1;
+      var tmp2_elvis_lhs_0 = tmp1_safe_receiver == null ? null : fmt_0(tmp1_safe_receiver, 1);
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_23 = species + ' vines run toward the sun: the clump is at the sunny (' + sunName + ') edge with about ' + (tmp2_elvis_lhs_0 == null ? '1' : tmp2_elvis_lhs_0) + ' m kept free toward the ' + sunName + " (arrow on the plan). Guide the runners that way so they don't grow into other crops looking for light.";
+      notes.add_utx5q5_k$(element_23);
+    }
+    if (rotationAvoided > 0 || rotationStuck > 0) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_24 = rotationStuck === 0 ? 'Crop rotation: no crop was put where its family grew in the last seasons.' : 'Crop rotation: ' + rotationStuck + ' plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them.';
+      notes.add_utx5q5_k$(element_24);
+    }
+    if (!orientationKnown) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_25 = "The plot's compass direction isn't set, so the top edge is assumed to face north. Set it for accurate sun placement.";
+      notes.add_utx5q5_k$(element_25);
+    }
+    // Inline function 'kotlin.collections.plusAssign' call
+    var element_26 = sunKnown ? 'Full-sun crops got the sunniest spots, using your sun/shade areas and the shade from obstacles.' : 'No obstacles or sun/shade areas are marked, so the whole area is treated as full sun.';
+    notes.add_utx5q5_k$(element_26);
+    var tmp$ret$148;
+    $l$block_5: {
+      // Inline function 'kotlin.collections.any' call
+      var tmp_21;
+      if (isInterface(wanted, Collection)) {
+        tmp_21 = wanted.isEmpty_y1axqb_k$();
+      } else {
+        tmp_21 = false;
+      }
+      if (tmp_21) {
+        tmp$ret$148 = false;
+        break $l$block_5;
+      }
+      var _iterator__ex2g4s_28 = wanted.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_28.hasNext_bitz1p_k$()) {
+        var element_27 = _iterator__ex2g4s_28.next_20eer_k$();
+        if (AutoPlanner_getInstance().BLOCK_PLANTED_1.contains_aljjnj_k$(CropReference_getInstance().speciesKey_x7vv_k$(element_27.seed_1))) {
+          tmp$ret$148 = true;
+          break $l$block_5;
+        }
+      }
+      tmp$ret$148 = false;
+    }
+    if (tmp$ret$148) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_28 = 'Sweet corn (and other wind-pollinated grains) is a square-ish block, not a single row, so the pollen reaches every ear.';
+      notes.add_utx5q5_k$(element_28);
+    }
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_19 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_29 = wanted.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_29.hasNext_bitz1p_k$()) {
+      var element_29 = _iterator__ex2g4s_29.next_20eer_k$();
+      if (AutoPlanner_getInstance().INSECT_POLLINATED_1.contains_aljjnj_k$(CropReference_getInstance().speciesKey_x7vv_k$(element_29.seed_1))) {
+        destination_19.add_utx5q5_k$(element_29);
+      }
+    }
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_20 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(destination_19, 10));
+    var _iterator__ex2g4s_30 = destination_19.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_30.hasNext_bitz1p_k$()) {
+      var item_12 = _iterator__ex2g4s_30.next_20eer_k$();
+      var tmp$ret$154 = CropReference_getInstance().speciesName_3q2qgh_k$(item_12.seed_1);
+      destination_20.add_utx5q5_k$(tmp$ret$154);
+    }
+    var needsInsects = distinct(destination_20);
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_21 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s_31 = wanted.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_31.hasNext_bitz1p_k$()) {
+      var element_30 = _iterator__ex2g4s_31.next_20eer_k$();
+      if (isPollinator(element_30.seed_1)) {
+        destination_21.add_utx5q5_k$(element_30);
+      }
+    }
+    var helpers = destination_21;
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!needsInsects.isEmpty_y1axqb_k$()) {
+      var tmp_22;
+      // Inline function 'kotlin.collections.isNotEmpty' call
+      if (!helpers.isEmpty_y1axqb_k$()) {
+        tmp_22 = 'Pollinator plants (' + joinToString_0(helpers, ', ', VOID, VOID, VOID, VOID, BlockPlanner$plan$lambda_4) + ') are spread among the clumps of ' + joinToString_0(needsInsects, ', ') + ', right next to them, to bring bees to their flowers.';
+      } else {
+        tmp_22 = joinToString_0(needsInsects, ', ') + ' need bees to set fruit. Consider adding a few pollinator plants such as marigold, borage, basil or dill.';
+      }
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_31 = tmp_22;
+      notes.add_utx5q5_k$(element_31);
+    }
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!unplaced.isEmpty_y1axqb_k$()) {
+      var tmp_23 = unplaced.get_entries_p20ztl_k$();
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_32 = "Didn't fit: " + joinToString_0(tmp_23, ', ', VOID, VOID, VOID, VOID, BlockPlanner$plan$lambda_5) + '. Choose a larger area or fewer plants.';
+      notes.add_utx5q5_k$(element_32);
+    }
+    return new AutoPlanResult(result, unplaced, notes, guides);
+  }
+}
 class CarePreference extends Enum {}
 class FertilizeEvent {
   constructor(dueEpochMillis, species, action) {
@@ -89737,7 +90698,7 @@ class PestEntry {
     this.scouting_1 = scouting;
   }
 }
-class sam$kotlin_Comparator$0_1 {
+class sam$kotlin_Comparator$0_2 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -89769,7 +90730,7 @@ class sam$kotlin_Comparator$0_1 {
     return hashCode(this.getFunctionDelegate_jtodtf_k$());
   }
 }
-class sam$kotlin_Comparator$0_2 {
+class sam$kotlin_Comparator$0_3 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -90041,7 +91002,7 @@ class CarePlanner {
     // Inline function 'kotlin.collections.sortedBy' call
     // Inline function 'kotlin.comparisons.compareBy' call
     var tmp_5 = CarePlanner$fertilizingPlan$lambda;
-    var tmp$ret$57 = new sam$kotlin_Comparator$0_1(tmp_5);
+    var tmp$ret$57 = new sam$kotlin_Comparator$0_2(tmp_5);
     return sortedWith(destination_2, tmp$ret$57);
   }
   pestPlan_5s2wxg_k$(context, preference) {
@@ -90174,7 +91135,7 @@ class CarePlanner {
     // Inline function 'kotlin.collections.sortedByDescending' call
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_2 = CarePlanner$pestPlan$lambda;
-    var tmp$ret$24 = new sam$kotlin_Comparator$0_2(tmp_2);
+    var tmp$ret$24 = new sam$kotlin_Comparator$0_3(tmp_2);
     return sortedWith(destination_1, tmp$ret$24);
   }
   wateringIntervalDays_8i7ymt_k$(context) {
@@ -90978,7 +91939,7 @@ class RecipeMatch {
     return true;
   }
 }
-class sam$kotlin_Comparator$0_3 {
+class sam$kotlin_Comparator$0_4 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -91010,7 +91971,7 @@ class sam$kotlin_Comparator$0_3 {
     return hashCode(this.getFunctionDelegate_jtodtf_k$());
   }
 }
-class sam$kotlin_Comparator$0_4 {
+class sam$kotlin_Comparator$0_5 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -91187,7 +92148,7 @@ class FoodPlanner {
     // Inline function 'kotlin.collections.sortedByDescending' call
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_0 = FoodPlanner$yieldLines$lambda;
-    var tmp$ret$14 = new sam$kotlin_Comparator$0_3(tmp_0);
+    var tmp$ret$14 = new sam$kotlin_Comparator$0_4(tmp_0);
     return sortedWith(destination_1, tmp$ret$14);
   }
   nutritionTotals_rs4k65_k$(context, overrides) {
@@ -91262,9 +92223,9 @@ class FoodPlanner {
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_0 = FoodPlanner$recipeMatches$lambda;
     // Inline function 'kotlin.comparisons.thenByDescending' call
-    var this_1 = new sam$kotlin_Comparator$0_4(tmp_0);
+    var this_1 = new sam$kotlin_Comparator$0_5(tmp_0);
     var tmp_1 = FoodPlanner$recipeMatches$lambda_0(this_1);
-    var tmp$ret$11 = new sam$kotlin_Comparator$0_4(tmp_1);
+    var tmp$ret$11 = new sam$kotlin_Comparator$0_5(tmp_1);
     return sortedWith(tmp, tmp$ret$11);
   }
 }
@@ -91444,7 +92405,7 @@ class Recommendation {
     return true;
   }
 }
-class sam$kotlin_Comparator$0_5 {
+class sam$kotlin_Comparator$0_6 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -91791,9 +92752,9 @@ class RecommendationEngine {
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_5 = RecommendationEngine$recommend$lambda_2;
     // Inline function 'kotlin.comparisons.thenBy' call
-    var this_0 = new sam$kotlin_Comparator$0_5(tmp_5);
+    var this_0 = new sam$kotlin_Comparator$0_6(tmp_5);
     var tmp_6 = RecommendationEngine$recommend$lambda_3(this_0);
-    var tmp$ret$55 = new sam$kotlin_Comparator$0_5(tmp_6);
+    var tmp$ret$55 = new sam$kotlin_Comparator$0_6(tmp_6);
     return take(sortedWith(results, tmp$ret$55), limit);
   }
   recommend$default_174svj_k$(catalog, context, area, limit, foodOnly, $super) {
@@ -91873,7 +92834,7 @@ class HarmonyReport {
     return true;
   }
 }
-class sam$kotlin_Comparator$0_6 {
+class sam$kotlin_Comparator$0_7 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -91979,7 +92940,7 @@ class HarmonyAnalyzer {
     // Inline function 'kotlin.collections.sortedByDescending' call
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_1 = HarmonyAnalyzer$analyze$lambda;
-    var tmp$ret$18 = new sam$kotlin_Comparator$0_6(tmp_1);
+    var tmp$ret$18 = new sam$kotlin_Comparator$0_7(tmp_1);
     var counts = sortedWith(destination_1, tmp$ret$18);
     // Inline function 'kotlin.collections.mutableListOf' call
     var issues = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
@@ -92247,7 +93208,7 @@ class HarmonyAnalyzer {
     var this_0 = eachCount(tmp$ret$80).get_entries_p20ztl_k$();
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_4 = HarmonyAnalyzer$analyze$lambda_0;
-    var tmp$ret$81 = new sam$kotlin_Comparator$0_6(tmp_4);
+    var tmp$ret$81 = new sam$kotlin_Comparator$0_7(tmp_4);
     // Inline function 'kotlin.collections.mapNotNull' call
     var tmp0_1 = sortedWith(this_0, tmp$ret$81);
     // Inline function 'kotlin.collections.mapNotNullTo' call
@@ -92426,7 +93387,7 @@ class HarmonyAnalyzer {
     // Inline function 'kotlin.collections.sortedBy' call
     // Inline function 'kotlin.comparisons.compareBy' call
     var tmp_10 = HarmonyAnalyzer$analyze$lambda_1;
-    var tmp$ret$108 = new sam$kotlin_Comparator$0_6(tmp_10);
+    var tmp$ret$108 = new sam$kotlin_Comparator$0_7(tmp_10);
     var tmp$ret$109 = sortedWith(issues, tmp$ret$108);
     return new HarmonyReport(counts, tmp$ret$109, sorted(goodPairs), recommendations, score);
   }
@@ -94993,7 +95954,7 @@ class RotationHit {
     return true;
   }
 }
-class sam$kotlin_Comparator$0_7 {
+class sam$kotlin_Comparator$0_8 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -95261,9 +96222,9 @@ class Seasons {
     // Inline function 'kotlin.comparisons.compareByDescending' call
     var tmp_1 = Seasons$usualVarieties$lambda;
     // Inline function 'kotlin.comparisons.thenBy' call
-    var this_0 = new sam$kotlin_Comparator$0_7(tmp_1);
+    var this_0 = new sam$kotlin_Comparator$0_8(tmp_1);
     var tmp_2 = Seasons$usualVarieties$lambda_0(this_0);
-    var tmp$ret$27 = new sam$kotlin_Comparator$0_7(tmp_2);
+    var tmp$ret$27 = new sam$kotlin_Comparator$0_8(tmp_2);
     return take(sortedWith(tmp_0, tmp$ret$27), limit);
   }
 }
@@ -96847,6 +97808,8 @@ class Canvas {
     this.areaType_1 = SiteFeatureType_FULL_SUN_getInstance();
     this.selection_1 = null;
     this.showShade_1 = false;
+    this.find_1 = null;
+    this.dragVertex_1 = null;
     var tmp = this;
     // Inline function 'kotlin.collections.mutableListOf' call
     tmp.points_1 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
@@ -96895,9 +97858,17 @@ class Canvas {
     // Inline function 'kotlin.math.max' call
     var b = p.widthM_1;
     var pad = Math.max(tmp0, b) * 0.08 + 0.4;
+    var tmp0_0 = p.lengthM_1;
+    // Inline function 'kotlin.math.max' call
+    var b_0 = p.widthM_1;
+    var comp = Math.max(tmp0_0, b_0) / 38.0 * 3.8;
+    var tmp0_1 = pad * 1.6;
+    // Inline function 'kotlin.math.max' call
+    var b_1 = comp * 1.75;
+    var top = Math.max(tmp0_1, b_1);
     var tmp_0 = this;
     // Inline function 'kotlin.doubleArrayOf' call
-    tmp_0.vb_1 = new Float64Array([-pad * 1.2, -pad * 1.6, p.lengthM_1 + pad * 3.0, p.widthM_1 + pad * 2.6]);
+    tmp_0.vb_1 = new Float64Array([-pad * 1.2, -top, p.lengthM_1 + pad * 1.2 + comp * 2.6, p.widthM_1 + pad + top]);
     this.fittedFor_1 = p.id_1;
   }
   zoom_26t2kd_k$(factor, cx, cy) {
@@ -96924,14 +97895,22 @@ class Canvas {
     if (!!(this.svg_1 == null))
       return Unit_instance;
     clear(_get_svg__e6gxbh(this));
+    var tmp = _get_svg__e6gxbh(this);
+    // Inline function 'kotlin.also' call
+    var this_0 = s('defs', []);
+    // Inline function 'kotlin.also' call
+    var this_1 = s('marker', [to('id', 'sgp-arrow'), to('viewBox', '0 0 10 10'), to('refX', 8), to('refY', 5), to('markerWidth', 5), to('markerHeight', 5), to('orient', 'auto-start-reverse')]);
+    add_0(this_1, [s('path', [to('d', 'M0,0 L10,5 L0,10 z'), to('fill', '#16a34a')])]);
+    add_0(this_0, [this_1]);
+    add_0(tmp, [this_0]);
     var wp = Store_getInstance().plot_21tcx_k$();
     if (wp == null) {
       _get_svg__e6gxbh(this).setAttribute('viewBox', '0 0 10 6');
-      var tmp = _get_svg__e6gxbh(this);
+      var tmp_0 = _get_svg__e6gxbh(this);
       // Inline function 'kotlin.also' call
-      var this_0 = s('text', [to('x', 5), to('y', 3), to('text-anchor', 'middle'), to('font-size', 0.45), to('fill', 'currentColor')]);
-      this_0.textContent = 'Create a plot or open a plan file to start.';
-      add_0(tmp, [this_0]);
+      var this_2 = s('text', [to('x', 5), to('y', 3), to('text-anchor', 'middle'), to('font-size', 0.45), to('fill', 'currentColor')]);
+      this_2.textContent = 'Create a plot or open a plan file to start.';
+      add_0(tmp_0, [this_2]);
       return Unit_instance;
     }
     var p = wp.plot_1;
@@ -96945,16 +97924,16 @@ class Canvas {
     var fs = Math.max(tmp0, b) / 38.0;
     var outline = PlotShape_instance.outline_ieyvk6_k$(p);
     add_0(_get_svg__e6gxbh(this), [s('rect', [to('x', 0), to('y', 0), to('width', p.lengthM_1), to('height', p.widthM_1), to('fill', col(this, new Long(-658970, 0))), to('stroke', col(this, new Long(-11054258, 0))), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
-    var tmp_0;
+    var tmp_1;
     var tmp0_0 = p.lengthM_1;
     // Inline function 'kotlin.math.max' call
     var b_0 = p.widthM_1;
     if (Math.max(tmp0_0, b_0) > 40) {
-      tmp_0 = 5.0;
+      tmp_1 = 5.0;
     } else {
-      tmp_0 = 1.0;
+      tmp_1 = 1.0;
     }
-    var step = tmp_0;
+    var step = tmp_1;
     var g = step;
     while (g < p.lengthM_1) {
       add_0(_get_svg__e6gxbh(this), [line(this, g, 0.0, g, p.widthM_1, col(this, new Long(-2239037, 0)), 1.0)]);
@@ -96983,10 +97962,18 @@ class Canvas {
     }
     if (outline.get_size_woubt6_k$() >= 3) {
       var poly = joinToString_0(outline, ' ', VOID, VOID, VOID, VOID, Canvas$render$lambda);
-      var tmp_1 = _get_svg__e6gxbh(this);
-      var tmp_2 = 'M0,0 H' + p.lengthM_1 + ' V' + p.widthM_1 + ' H0 Z M';
-      add_0(tmp_1, [s('path', [to('d', tmp_2 + joinToString_0(outline, ' L', VOID, VOID, VOID, VOID, Canvas$render$lambda_0) + ' Z'), to('fill', col(this, new Long(-1720159892, 0))), to('fill-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-1720159892, 0))), to('fill-rule', 'evenodd')])]);
+      var tmp_2 = _get_svg__e6gxbh(this);
+      var tmp_3 = 'M0,0 H' + p.lengthM_1 + ' V' + p.widthM_1 + ' H0 Z M';
+      add_0(tmp_2, [s('path', [to('d', tmp_3 + joinToString_0(outline, ' L', VOID, VOID, VOID, VOID, Canvas$render$lambda_0) + ' Z'), to('fill', col(this, new Long(-1720159892, 0))), to('fill-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-1720159892, 0))), to('fill-rule', 'evenodd')])]);
       add_0(_get_svg__e6gxbh(this), [s('polygon', [to('points', poly), to('fill', 'none'), to('stroke', col(this, new Long(-11054258, 0))), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
+      if (this.tool_1.equals(Tool_OUTLINE_getInstance()) && this.points_1.isEmpty_y1axqb_k$()) {
+        // Inline function 'kotlin.collections.forEach' call
+        var _iterator__ex2g4s_1 = outline.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+          var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
+          add_0(_get_svg__e6gxbh(Canvas_getInstance()), [s('circle', [to('cx', element_1.x_1), to('cy', element_1.y_1), to('r', handleR(Canvas_getInstance())), to('fill', '#ffffff'), to('stroke', col(Canvas_getInstance(), new Long(-11054258, 0))), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke'), to('class', 'handle')])]);
+        }
+      }
     }
     var tmp0_safe_receiver = Store_getInstance().historyYear_1;
     if (tmp0_safe_receiver == null)
@@ -96996,13 +97983,13 @@ class Canvas {
       drawHistory(Canvas_getInstance(), wp, tmp0_safe_receiver, fs);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_1 = wp.plants_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp_3 = Canvas_getInstance();
-      var tmp_4 = Canvas_getInstance().selection_1;
-      var tmp0_safe_receiver_0 = tmp_4 instanceof Plant ? tmp_4 : null;
-      drawPlant(tmp_3, element_1, equals(tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.id_1, element_1.id_1), fs);
+    var _iterator__ex2g4s_2 = wp.plants_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
+      var tmp_4 = Canvas_getInstance();
+      var tmp_5 = Canvas_getInstance().selection_1;
+      var tmp0_safe_receiver_0 = tmp_5 instanceof Plant ? tmp_5 : null;
+      drawPlant(tmp_4, element_2, equals(tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.id_1, element_2.id_1), fs);
     }
     var tmp1_safe_receiver = Store_getInstance().preview_1;
     var tmp2_safe_receiver = tmp1_safe_receiver == null ? null : tmp1_safe_receiver.placed_1;
@@ -97010,20 +97997,39 @@ class Canvas {
       null;
     else {
       // Inline function 'kotlin.collections.forEach' call
-      var _iterator__ex2g4s_2 = tmp2_safe_receiver.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-        var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
-        var c = Colors_instance.of_l9lkdk_k$(element_2.seed_1);
-        add_0(_get_svg__e6gxbh(Canvas_getInstance()), [s('circle', [to('cx', element_2.x_1), to('cy', element_2.y_1), to('r', element_2.seed_1.exclusionRadiusM_1), to('fill', c), to('fill-opacity', 0.25), to('stroke', c), to('stroke-dasharray', '4 3'), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+      var _iterator__ex2g4s_3 = tmp2_safe_receiver.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+        var element_3 = _iterator__ex2g4s_3.next_20eer_k$();
+        var c = Colors_instance.of_l9lkdk_k$(element_3.seed_1);
+        add_0(_get_svg__e6gxbh(Canvas_getInstance()), [s('circle', [to('cx', element_3.x_1), to('cy', element_3.y_1), to('r', element_3.seed_1.exclusionRadiusM_1), to('fill', c), to('fill-opacity', 0.25), to('stroke', c), to('stroke-dasharray', '4 3'), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
       }
     }
-    var tmp3_safe_receiver = Store_getInstance().previewArea_1;
-    if (tmp3_safe_receiver == null)
+    var tmp3_safe_receiver = Store_getInstance().preview_1;
+    var tmp4_safe_receiver = tmp3_safe_receiver == null ? null : tmp3_safe_receiver.guides_1;
+    if (tmp4_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.collections.forEach' call
+      var _iterator__ex2g4s_4 = tmp4_safe_receiver.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+        var element_4 = _iterator__ex2g4s_4.next_20eer_k$();
+        var tmp_6 = _get_svg__e6gxbh(Canvas_getInstance());
+        add_0(tmp_6, [s('polygon', [to('points', joinToString_0(element_4.area_1, ' ', VOID, VOID, VOID, VOID, Canvas$render$lambda_1)), to('fill', '#16a34a'), to('fill-opacity', 0.08), to('stroke', '#16a34a'), to('stroke-dasharray', '5 4'), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke'), to('class', 'guide')])]);
+        add_0(_get_svg__e6gxbh(Canvas_getInstance()), [s('line', [to('x1', element_4.from_1.x_1), to('y1', element_4.from_1.y_1), to('x2', element_4.to_1.x_1), to('y2', element_4.to_1.y_1), to('stroke', '#16a34a'), to('stroke-width', 3), to('marker-end', 'url(#sgp-arrow)'), to('vector-effect', 'non-scaling-stroke')])]);
+        var tmp_7 = _get_svg__e6gxbh(Canvas_getInstance());
+        // Inline function 'kotlin.also' call
+        var this_3 = s('text', [to('x', (element_4.from_1.x_1 + element_4.to_1.x_1) / 2), to('y', (element_4.from_1.y_1 + element_4.to_1.y_1) / 2), to('font-size', fs * 0.6), to('fill', '#166534'), to('text-anchor', 'middle'), to('font-style', 'italic')]);
+        this_3.textContent = element_4.species_1 + ' runs this way';
+        add_0(tmp_7, [this_3]);
+      }
+    }
+    var tmp5_safe_receiver = Store_getInstance().previewArea_1;
+    if (tmp5_safe_receiver == null)
       null;
     else {
       // Inline function 'kotlin.let' call
-      var tmp_5 = _get_svg__e6gxbh(Canvas_getInstance());
-      add_0(tmp_5, [s('polygon', [to('points', joinToString_0(tmp3_safe_receiver, ' ', VOID, VOID, VOID, VOID, Canvas$render$lambda_1)), to('fill', 'none'), to('stroke', '#10b981'), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
+      var tmp_8 = _get_svg__e6gxbh(Canvas_getInstance());
+      add_0(tmp_8, [s('polygon', [to('points', joinToString_0(tmp5_safe_receiver, ' ', VOID, VOID, VOID, VOID, Canvas$render$lambda_2)), to('fill', 'none'), to('stroke', '#10b981'), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
     }
     drawInProgress(this);
     drawCompass(this, p.lengthM_1, fs, p.northBearingDeg_1, p.orientationSet_1);
@@ -97040,6 +98046,70 @@ class Canvas {
     }
     var tmp1_elvis_lhs_0 = tmp;
     return tmp1_elvis_lhs_0 == null ? '?' : tmp1_elvis_lhs_0;
+  }
+  addOutlineCorner_3ie9w5_k$(pt) {
+    var tmp0_elvis_lhs = Store_getInstance().plot_21tcx_k$();
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var wp = tmp;
+    var o = PlotShape_instance.outline_ieyvk6_k$(wp.plot_1);
+    if (o.get_size_woubt6_k$() < 3)
+      return Unit_instance;
+    var tmp0 = get_indices(o);
+    var tmp$ret$0;
+    $l$block: {
+      // Inline function 'kotlin.collections.minBy' call
+      var iterator = tmp0.iterator_jk1svi_k$();
+      if (!iterator.hasNext_bitz1p_k$())
+        throw NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$();
+      var minElem = iterator.next_20eer_k$();
+      if (!iterator.hasNext_bitz1p_k$()) {
+        tmp$ret$0 = minElem;
+        break $l$block;
+      }
+      var it = minElem;
+      var minValue = PlotGeometry_instance.distanceToSegment_4ae9lv_k$(pt.x_1, pt.y_1, o.get_c1px32_k$(it), o.get_c1px32_k$((it + 1 | 0) % o.get_size_woubt6_k$() | 0));
+      do {
+        var e = iterator.next_20eer_k$();
+        var v = PlotGeometry_instance.distanceToSegment_4ae9lv_k$(pt.x_1, pt.y_1, o.get_c1px32_k$(e), o.get_c1px32_k$((e + 1 | 0) % o.get_size_woubt6_k$() | 0));
+        if (compareTo(minValue, v) > 0) {
+          minElem = e;
+          minValue = v;
+        }
+      }
+       while (iterator.hasNext_bitz1p_k$());
+      tmp$ret$0 = minElem;
+    }
+    var i = tmp$ret$0;
+    if (PlotGeometry_instance.distanceToSegment_4ae9lv_k$(pt.x_1, pt.y_1, o.get_c1px32_k$(i), o.get_c1px32_k$((i + 1 | 0) % o.get_size_woubt6_k$() | 0)) > handleR(this) * 3)
+      return Unit_instance;
+    // Inline function 'kotlin.also' call
+    var this_0 = toMutableList(o);
+    this_0.add_dl6gt3_k$(i + 1 | 0, clampToPlot(Canvas_getInstance(), wp, pt));
+    var n = this_0;
+    var tmp_0 = Store_getInstance();
+    tmp_0.change_dk0lks_k$(Canvas$addOutlineCorner$lambda(n));
+    App_instance.status_b46o3c_k$('Corner added. Drag it where you want it.');
+    App_instance.render_dje1iy_k$();
+  }
+  deleteOutline_tw1iyv_k$() {
+    var tmp0_safe_receiver = Store_getInstance().plot_21tcx_k$();
+    var tmp1_safe_receiver = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.plot_1;
+    // Inline function 'kotlin.text.isNullOrBlank' call
+    var this_0 = tmp1_safe_receiver == null ? null : tmp1_safe_receiver.boundaryJson_1;
+    if (this_0 == null || isBlank(this_0)) {
+      App_instance.status_b46o3c_k$('This plot has no outline; it is the full rectangle.');
+      return Unit_instance;
+    }
+    var tmp = Store_getInstance();
+    tmp.change_dk0lks_k$(Canvas$deleteOutline$lambda);
+    this.points_1.clear_j9egeb_k$();
+    App_instance.status_b46o3c_k$('Outline deleted: the plot is the full rectangle again. Undo brings it back.');
+    App_instance.render_dje1iy_k$();
   }
   finishPoints_snt6d6_k$() {
     var tmp0_elvis_lhs = Store_getInstance().plot_21tcx_k$();
@@ -97351,6 +98421,7 @@ class Canvas {
               if (k === 'Escape') {
                 this.cancelPoints_io0ilp_k$();
                 this.selection_1 = null;
+                this.find_1 = null;
                 App_instance.render_dje1iy_k$();
               }
             }
@@ -97394,7 +98465,7 @@ class Embedded {
     return destination_0;
   }
 }
-class sam$kotlin_Comparator$0_8 {
+class sam$kotlin_Comparator$0_9 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -97523,7 +98594,7 @@ class Catalog {
     var this_0 = filter(tmp_0, Catalog$search$lambda_0(q));
     // Inline function 'kotlin.comparisons.compareBy' call
     var tmp_1 = Catalog$search$lambda_1;
-    var tmp$ret$3 = new sam$kotlin_Comparator$0_8(tmp_1);
+    var tmp$ret$3 = new sam$kotlin_Comparator$0_9(tmp_1);
     var tmp$ret$4 = sortedWith_0(this_0, tmp$ret$3);
     return toList_0(take_0(tmp$ret$4, limit));
   }
@@ -97687,15 +98758,21 @@ class Dialogs {
     return tmp;
   }
   close_yn9xrc_k$() {
-    var tmp0_safe_receiver = this.open_1;
-    if (tmp0_safe_receiver == null)
-      null;
-    else {
-      // Inline function 'kotlin.let' call
-      var tmp0_safe_receiver_0 = tmp0_safe_receiver.parentNode;
-      tmp0_safe_receiver_0 == null || tmp0_safe_receiver_0.removeChild(tmp0_safe_receiver);
+    var tmp0_elvis_lhs = this.open_1;
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp = tmp0_elvis_lhs;
     }
+    var o = tmp;
     this.open_1 = null;
+    releaseFocusIn(o);
+    var tmp1_safe_receiver = o.parentNode;
+    if (tmp1_safe_receiver == null)
+      null;
+    else
+      tmp1_safe_receiver.removeChild(o);
   }
   message_vmt5j5_k$(title, lines) {
     // Inline function 'kotlin.collections.map' call
@@ -98079,6 +99156,74 @@ class Dialogs {
     add_0(card, [h('div', 'row wrap', VOID, VOID, listOf_0([tmp_2, tmp_3, button('Discard', 'btn', 'Drop this proposal. Your plants and your list stay as they are.', Dialogs$previewCard$lambda_2(card))]))]);
     card.classList.remove('hidden');
   }
+  plant_5j52sg_k$(node) {
+    var tmp0_elvis_lhs = Store_getInstance().plot_21tcx_k$();
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var wp = tmp;
+    var seed = Catalog_getInstance().get_6bo4tg_k$(node.seedCode_1);
+    var tmp2_elvis_lhs = seed == null ? null : seed.commonName_1;
+    var variety = input(tmp2_elvis_lhs == null ? node.seedCode_1 : tmp2_elvis_lhs, VOID, 'Type a variety');
+    variety.setAttribute('list', 'sgp-seed-names');
+    var date = input(take_1(CivilDate_getInstance().isoUtc_brhmkl_k$(node.datePlantedEpochMillis_1), 10), 'date');
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var body = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    if (seed == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      var tmp0_safe_receiver = VarietyCatalogTraits_getInstance().of_xkctbz_k$(seed);
+      if (tmp0_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        // Inline function 'kotlin.collections.plusAssign' call
+        var element = para(tmp0_safe_receiver.get_details_r0zbrt_k$(), 'kind');
+        body.add_utx5q5_k$(element);
+      }
+      // Inline function 'kotlin.text.lowercase' call
+      // Inline function 'kotlin.js.asDynamic' call
+      var tmp_0 = seed.plantType_1.toLowerCase();
+      // Inline function 'kotlin.text.lowercase' call
+      // Inline function 'kotlin.js.asDynamic' call
+      var tmp$ret$7 = seed.lifecycle_1.toLowerCase();
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_0 = para(tmp_0 + ' \xB7 ' + tmp$ret$7 + ' \xB7 spacing ' + fmt_0(seed.exclusionRadiusM_1 * 2, 2) + ' m \xB7 harvest about ' + seed.daysToHarvest_1 + ' days after planting', 'hint');
+      body.add_utx5q5_k$(element_0);
+      // Inline function 'kotlin.text.isNotBlank' call
+      var this_0 = seed.careNotes_1;
+      if (!isBlank(this_0)) {
+        // Inline function 'kotlin.collections.plusAssign' call
+        var element_1 = para(seed.careNotes_1, 'hint');
+        body.add_utx5q5_k$(element_1);
+      }
+    }
+    // Inline function 'kotlin.collections.plusAssign' call
+    var element_2 = para('Position: ' + fmt_0(node.coordinateXM_1, 2) + ' m from the left, ' + fmt_0(node.coordinateYM_1, 2) + ' m from the top (' + CropRotation_instance.describeSpot_1k419h_k$(wp.plot_1, node.coordinateXM_1, node.coordinateYM_1) + '). Drag it with Select / move to change it.', 'hint');
+    body.add_utx5q5_k$(element_2);
+    // Inline function 'kotlin.collections.plusAssign' call
+    var element_3 = label('Variety', variety);
+    body.add_utx5q5_k$(element_3);
+    // Inline function 'kotlin.collections.plusAssign' call
+    var element_4 = label('Planted on', date);
+    body.add_utx5q5_k$(element_4);
+    var tmp_1;
+    if (seed == null) {
+      tmp_1 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_1 = VarietyCatalogTraits_getInstance().displayName_tg12ln_k$(seed);
+    }
+    var tmp5_elvis_lhs = tmp_1;
+    var tmp_2 = tmp5_elvis_lhs == null ? node.seedCode_1 : tmp5_elvis_lhs;
+    var tmp_3 = to('Cancel', Dialogs$plant$lambda);
+    var tmp_4 = to('Delete plant', Dialogs$plant$lambda_0(node));
+    this.modal$default_uwejiz_k$(tmp_2, body, listOf_0([tmp_3, tmp_4, to('Save', Dialogs$plant$lambda_1(variety, date, node, wp))]));
+  }
   newSeason_4dcyzx_k$() {
     var tmp0_elvis_lhs = Store_getInstance().plot_21tcx_k$();
     var tmp;
@@ -98100,11 +99245,47 @@ class Dialogs {
     this.modal$default_uwejiz_k$(tmp_0, body, listOf_0([tmp_1, to('Start new season', Dialogs$newSeason$lambda_0(yearIn, wp))]));
   }
   help_3u9isx_k$() {
-    var tmp = listOf_0([para('This page is the whole app: it runs in your browser with no install and no account, and works offline. Your plan is kept in this browser as a draft, but the plan FILE is what you keep and share.'), heading('Getting started'), para('1. New plot: give its size, ZIP code and which way the top edge faces.'), para("2. Draw what's there: trees, fences, walls, buildings (with a rough height), and paths."), para('3. Plant: choose a variety on the Plants tab and click the layout. Or drag an area with \u201CPlan an area for me\u201D and list what you want.'), para('4. Save: saves a .sgp.json file. Open it on the Android app (Plots \u2192 Import) or in this page on any computer.'), para("5. When the season ends: Plot tab \u2192 Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. \u201CNames\u201D shows what each plant is (sweet or hot pepper, cherry or large tomato\u2026)."), heading('Moving plans between computer and phone'), para('Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive\u2026). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here.'), heading('Keyboard'), para('Ctrl+Z undo \xB7 Ctrl+Y redo \xB7 Delete removes the selection \xB7 Enter finishes a shape \xB7 Esc cancels \xB7 mouse wheel zooms \xB7 drag empty space to pan.'), para('Version 1.0 \xB7 uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.', 'hint')]);
+    var tmp = listOf_0([para('This page is the whole app: it runs in your browser with no install and no account, and works offline. Your plan is kept in this browser as a draft, but the plan FILE is what you keep and share.'), heading('Getting started'), para('1. New plot: give its size, ZIP code and which way the top edge faces.'), para("2. Draw what's there: trees, fences, walls, buildings (with a rough height), and paths."), para('3. Plant: choose a variety on the Plants tab and click the layout. Or drag an area with \u201CPlan an area for me\u201D and list what you want.'), para('4. Save: saves a .sgp.json file. Open it on the Android app (Plots \u2192 Import) or in this page on any computer.'), para("5. When the season ends: Plot tab \u2192 Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. \u201CNames\u201D shows what each plant is (sweet or hot pepper, cherry or large tomato\u2026)."), heading('Moving plans between computer and phone'), para('Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive\u2026). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here.'), heading('Finding and changing things'), para('\u201COn this plot\u201D (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant\u2026) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline.'), heading('Keyboard'), para('Ctrl+Z undo \xB7 Ctrl+Y redo \xB7 Delete removes the selection \xB7 Enter finishes a shape \xB7 Esc cancels \xB7 mouse wheel zooms \xB7 drag empty space to pan.'), para('Version 1.0 \xB7 uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.', 'hint')]);
     return this.modal_ndyh7b_k$('How to use Smart Garden Planner', tmp, listOf(to('Close', Dialogs$help$lambda)), true);
   }
 }
+class sam$kotlin_Comparator$0_10 {
+  constructor(function_0) {
+    this.function_1 = function_0;
+  }
+  compare_bczr_k$(a, b) {
+    return this.function_1(a, b);
+  }
+  compare(a, b) {
+    return this.compare_bczr_k$(a, b);
+  }
+  getFunctionDelegate_jtodtf_k$() {
+    return this.function_1;
+  }
+  equals(other) {
+    var tmp;
+    if (!(other == null) ? isInterface(other, Comparator) : false) {
+      var tmp_0;
+      if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
+        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+      } else {
+        tmp_0 = false;
+      }
+      tmp = tmp_0;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  }
+  hashCode() {
+    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+  }
+}
 class App {
+  constructor() {
+    this.legendOpen_1 = true;
+    this.legendFindCode_1 = null;
+  }
   status_b46o3c_k$(text) {
     if (!(this.statusLine_1 == null)) {
       _get_statusLine__ostjyd(this).textContent = text;
@@ -98136,7 +99317,8 @@ class App {
     this.panel_1 = h('aside', 'panel');
     this.statusLine_1 = h('footer', 'status', VOID, mapOf_0([to('role', 'status'), to('aria-live', 'polite')]));
     this.legend_1 = h('div', 'legend hidden', VOID, mapOf_0([to('id', 'sgp-legend'), to('aria-label', 'Shade legend')]));
-    var stage = h('div', 'stage', VOID, VOID, listOf_0([canvasHost, _get_legend__wb6gde(this), preview]));
+    this.plantLegend_1 = h('div', 'plant-legend', VOID, mapOf_0([to('id', 'sgp-plant-legend'), to('aria-label', 'Plants on this plot')]));
+    var stage = h('div', 'stage', VOID, VOID, listOf_0([canvasHost, _get_legend__wb6gde(this), _get_plantLegend__ltawxl(this), preview]));
     add_0(root, [_get_header__k2z46a(this), h('main', 'main', VOID, VOID, listOf_0([_get_tools__aufwyy(this), stage, _get_panel__cycb77(this)])), _get_statusLine__ostjyd(this)]);
     var tmp = mapOf(to('id', 'sgp-seed-names'));
     // Inline function 'kotlin.collections.map' call
@@ -98187,8 +99369,50 @@ class App {
     renderHeader(this);
     renderTools(this);
     renderLegend(this);
+    renderPlantLegend(this);
     Panels_getInstance().render_to8o5s_k$(_get_panel__cycb77(this));
     Canvas_getInstance().render_dje1iy_k$();
+  }
+  find_cfcmr2_k$(label, test) {
+    Canvas_getInstance().find_1 = test;
+    if (!(test == null) && !(label == null)) {
+      var tmp0_safe_receiver = Store_getInstance().plot_21tcx_k$();
+      var tmp1_safe_receiver = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.plants_1;
+      var tmp;
+      if (tmp1_safe_receiver == null) {
+        tmp = null;
+      } else {
+        var tmp$ret$0;
+        $l$block: {
+          // Inline function 'kotlin.collections.count' call
+          var tmp_0;
+          if (isInterface(tmp1_safe_receiver, Collection)) {
+            tmp_0 = tmp1_safe_receiver.isEmpty_y1axqb_k$();
+          } else {
+            tmp_0 = false;
+          }
+          if (tmp_0) {
+            tmp$ret$0 = 0;
+            break $l$block;
+          }
+          var count = 0;
+          var _iterator__ex2g4s = tmp1_safe_receiver.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+            var element = _iterator__ex2g4s.next_20eer_k$();
+            if (test(element)) {
+              count = count + 1 | 0;
+              checkCountOverflow(count);
+            }
+          }
+          tmp$ret$0 = count;
+        }
+        tmp = tmp$ret$0;
+      }
+      var tmp2_elvis_lhs = tmp;
+      var n = tmp2_elvis_lhs == null ? 0 : tmp2_elvis_lhs;
+      this.status_b46o3c_k$(n === 0 ? 'No ' + label + ' on this plot.' : 'Showing ' + n + ' \xD7 ' + label + ' (circled in orange). Click it again or press Esc to clear.');
+    }
+    this.render_dje1iy_k$();
   }
   openFile_hwzdhy_k$() {
     var tmp;
@@ -98837,7 +100061,7 @@ class Tab extends Enum {
     this.label_1 = label;
   }
 }
-class sam$kotlin_Comparator$0_9 {
+class sam$kotlin_Comparator$0_11 {
   constructor(function_0) {
     this.function_1 = function_0;
   }
@@ -98947,6 +100171,9 @@ function single(_this__u8e3s4) {
   }
   return tmp;
 }
+function filterNotNull(_this__u8e3s4) {
+  return filterNotNullTo(_this__u8e3s4, ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$());
+}
 function toSet(_this__u8e3s4) {
   switch (_this__u8e3s4.length) {
     case 0:
@@ -98957,19 +100184,6 @@ function toSet(_this__u8e3s4) {
       return toCollection(_this__u8e3s4, LinkedHashSet.new_kotlin_collections_LinkedHashSet_wmub5z_k$(mapCapacity(_this__u8e3s4.length)));
   }
 }
-function filterNotNull(_this__u8e3s4) {
-  return filterNotNullTo(_this__u8e3s4, ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$());
-}
-function toCollection(_this__u8e3s4, destination) {
-  var inductionVariable = 0;
-  var last = _this__u8e3s4.length;
-  while (inductionVariable < last) {
-    var item = _this__u8e3s4[inductionVariable];
-    inductionVariable = inductionVariable + 1 | 0;
-    destination.add_utx5q5_k$(item);
-  }
-  return destination;
-}
 function filterNotNullTo(_this__u8e3s4, destination) {
   var inductionVariable = 0;
   var last = _this__u8e3s4.length;
@@ -98979,6 +100193,16 @@ function filterNotNullTo(_this__u8e3s4, destination) {
     if (!(element == null)) {
       destination.add_utx5q5_k$(element);
     }
+  }
+  return destination;
+}
+function toCollection(_this__u8e3s4, destination) {
+  var inductionVariable = 0;
+  var last = _this__u8e3s4.length;
+  while (inductionVariable < last) {
+    var item = _this__u8e3s4[inductionVariable];
+    inductionVariable = inductionVariable + 1 | 0;
+    destination.add_utx5q5_k$(item);
   }
   return destination;
 }
@@ -99230,6 +100454,67 @@ function last(_this__u8e3s4) {
 function distinct(_this__u8e3s4) {
   return toList(toMutableSet(_this__u8e3s4));
 }
+function sortedWith(_this__u8e3s4, comparator) {
+  if (isInterface(_this__u8e3s4, Collection)) {
+    if (_this__u8e3s4.get_size_woubt6_k$() <= 1)
+      return toList(_this__u8e3s4);
+    // Inline function 'kotlin.collections.toTypedArray' call
+    var tmp = copyToArray(_this__u8e3s4);
+    // Inline function 'kotlin.apply' call
+    var this_0 = isArray(tmp) ? tmp : THROW_CCE();
+    sortWith(this_0, comparator);
+    return asList(this_0);
+  }
+  // Inline function 'kotlin.apply' call
+  var this_1 = toMutableList_0(_this__u8e3s4);
+  sortWith_0(this_1, comparator);
+  return this_1;
+}
+function max_1(_this__u8e3s4) {
+  var iterator = _this__u8e3s4.iterator_jk1svi_k$();
+  if (!iterator.hasNext_bitz1p_k$())
+    throw NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$();
+  var max = iterator.next_20eer_k$();
+  while (iterator.hasNext_bitz1p_k$()) {
+    var e = iterator.next_20eer_k$();
+    if (compareTo(max, e) < 0)
+      max = e;
+  }
+  return max;
+}
+function average(_this__u8e3s4) {
+  var sum = 0.0;
+  var count = 0;
+  var _iterator__ex2g4s = _this__u8e3s4.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    sum = sum + element;
+    count = count + 1 | 0;
+    checkCountOverflow(count);
+  }
+  return count === 0 ? NaN : sum / count;
+}
+function average_0(_this__u8e3s4) {
+  var sum = 0.0;
+  var count = 0;
+  var _iterator__ex2g4s = _this__u8e3s4.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    sum = sum + element;
+    count = count + 1 | 0;
+    checkCountOverflow(count);
+  }
+  return count === 0 ? NaN : sum / count;
+}
+function sum(_this__u8e3s4) {
+  var sum = 0;
+  var _iterator__ex2g4s = _this__u8e3s4.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    sum = sum + element | 0;
+  }
+  return sum;
+}
 function first(_this__u8e3s4) {
   if (_this__u8e3s4.isEmpty_y1axqb_k$())
     throw NoSuchElementException.new_kotlin_NoSuchElementException_eborbh_k$('List is empty.');
@@ -99279,22 +100564,6 @@ function toSet_0(_this__u8e3s4) {
 function firstOrNull(_this__u8e3s4) {
   return _this__u8e3s4.isEmpty_y1axqb_k$() ? null : _this__u8e3s4.get_c1px32_k$(0);
 }
-function sortedWith(_this__u8e3s4, comparator) {
-  if (isInterface(_this__u8e3s4, Collection)) {
-    if (_this__u8e3s4.get_size_woubt6_k$() <= 1)
-      return toList(_this__u8e3s4);
-    // Inline function 'kotlin.collections.toTypedArray' call
-    var tmp = copyToArray(_this__u8e3s4);
-    // Inline function 'kotlin.apply' call
-    var this_0 = isArray(tmp) ? tmp : THROW_CCE();
-    sortWith(this_0, comparator);
-    return asList(this_0);
-  }
-  // Inline function 'kotlin.apply' call
-  var this_1 = toMutableList_0(_this__u8e3s4);
-  sortWith_0(this_1, comparator);
-  return this_1;
-}
 function minus(_this__u8e3s4, elements) {
   var other = convertToListIfNotCollection(elements);
   if (other.isEmpty_y1axqb_k$())
@@ -99310,18 +100579,6 @@ function minus(_this__u8e3s4, elements) {
     }
   }
   return destination;
-}
-function average(_this__u8e3s4) {
-  var sum = 0.0;
-  var count = 0;
-  var _iterator__ex2g4s = _this__u8e3s4.iterator_jk1svi_k$();
-  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-    var element = _iterator__ex2g4s.next_20eer_k$();
-    sum = sum + element;
-    count = count + 1 | 0;
-    checkCountOverflow(count);
-  }
-  return count === 0 ? NaN : sum / count;
 }
 function toMutableList(_this__u8e3s4) {
   return ArrayList.new_kotlin_collections_ArrayList_nk3udn_k$(_this__u8e3s4);
@@ -100638,14 +101895,14 @@ function asList(_this__u8e3s4) {
   // Inline function 'kotlin.js.asDynamic' call
   return ArrayList.new_kotlin_collections_ArrayList_qfbsh5_k$(_this__u8e3s4);
 }
-function sort(_this__u8e3s4) {
-  if (_this__u8e3s4.length > 1) {
-    sortArray(_this__u8e3s4);
-  }
-}
 function sortWith(_this__u8e3s4, comparator) {
   if (_this__u8e3s4.length > 1) {
     sortArrayWith(_this__u8e3s4, comparator);
+  }
+}
+function sort(_this__u8e3s4) {
+  if (_this__u8e3s4.length > 1) {
+    sortArray(_this__u8e3s4);
   }
 }
 function fill(_this__u8e3s4, element, fromIndex, toIndex) {
@@ -100811,11 +102068,14 @@ function mapOf(pair) {
 function mapCapacity(expectedSize) {
   return expectedSize;
 }
-function sort_0(_this__u8e3s4) {
-  collectionsSort(_this__u8e3s4, naturalOrder());
-}
 function sortWith_0(_this__u8e3s4, comparator) {
   collectionsSort(_this__u8e3s4, comparator);
+}
+function checkIndexOverflow(index) {
+  if (index < 0) {
+    throwIndexOverflow();
+  }
+  return index;
 }
 function checkCountOverflow(count) {
   if (count < 0) {
@@ -100823,11 +102083,8 @@ function checkCountOverflow(count) {
   }
   return count;
 }
-function checkIndexOverflow(index) {
-  if (index < 0) {
-    throwIndexOverflow();
-  }
-  return index;
+function sort_0(_this__u8e3s4) {
+  collectionsSort(_this__u8e3s4, naturalOrder());
 }
 function copyToArray(collection) {
   var tmp;
@@ -101697,6 +102954,31 @@ function endsWith(_this__u8e3s4, suffix, ignoreCase) {
   } else
     return regionMatches(_this__u8e3s4, _this__u8e3s4.length - suffix.length | 0, suffix, 0, suffix.length, ignoreCase);
 }
+function equals_0(_this__u8e3s4, other, ignoreCase) {
+  ignoreCase = ignoreCase === VOID ? false : ignoreCase;
+  if (_this__u8e3s4 == null)
+    return other == null;
+  if (other == null)
+    return false;
+  if (!ignoreCase)
+    return _this__u8e3s4 == other;
+  if (!(_this__u8e3s4.length === other.length))
+    return false;
+  var inductionVariable = 0;
+  var last = _this__u8e3s4.length;
+  if (inductionVariable < last)
+    do {
+      var index = inductionVariable;
+      inductionVariable = inductionVariable + 1 | 0;
+      var thisChar = charCodeAt(_this__u8e3s4, index);
+      var otherChar = charCodeAt(other, index);
+      if (!equals_1(thisChar, otherChar, ignoreCase)) {
+        return false;
+      }
+    }
+     while (inductionVariable < last);
+  return true;
+}
 function regionMatches(_this__u8e3s4, thisOffset, other, otherOffset, length, ignoreCase) {
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
   return regionMatchesImpl(_this__u8e3s4, thisOffset, other, otherOffset, length, ignoreCase);
@@ -101951,11 +103233,11 @@ var EmptyIterator_instance;
 function EmptyIterator_getInstance() {
   return EmptyIterator_instance;
 }
-function throwCountOverflow() {
-  throw ArithmeticException.new_kotlin_ArithmeticException_y2sjkx_k$('Count overflow has happened.');
-}
 function throwIndexOverflow() {
   throw ArithmeticException.new_kotlin_ArithmeticException_y2sjkx_k$('Index overflow has happened.');
+}
+function throwCountOverflow() {
+  throw ArithmeticException.new_kotlin_ArithmeticException_y2sjkx_k$('Count overflow has happened.');
 }
 function collectionSizeOrDefault(_this__u8e3s4, default_0) {
   var tmp;
@@ -102215,7 +103497,7 @@ function appendElement(_this__u8e3s4, element, transform) {
     }
   }
 }
-function equals_0(_this__u8e3s4, other, ignoreCase) {
+function equals_1(_this__u8e3s4, other, ignoreCase) {
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
   if (_this__u8e3s4 === other)
     return true;
@@ -102685,7 +103967,7 @@ function regionMatchesImpl(_this__u8e3s4, thisOffset, other, otherOffset, length
     do {
       var index = inductionVariable;
       inductionVariable = inductionVariable + 1 | 0;
-      if (!equals_0(charSequenceGet(_this__u8e3s4, thisOffset + index | 0), charSequenceGet(other, otherOffset + index | 0), ignoreCase))
+      if (!equals_1(charSequenceGet(_this__u8e3s4, thisOffset + index | 0), charSequenceGet(other, otherOffset + index | 0), ignoreCase))
         return false;
     }
      while (inductionVariable < length);
@@ -102727,7 +104009,7 @@ function indexOfAny(_this__u8e3s4, chars, startIndex, ignoreCase) {
         while (inductionVariable_0 < last_0) {
           var element = chars[inductionVariable_0];
           inductionVariable_0 = inductionVariable_0 + 1 | 0;
-          if (equals_0(element, charAtIndex, ignoreCase)) {
+          if (equals_1(element, charAtIndex, ignoreCase)) {
             tmp$ret$4 = true;
             break $l$block;
           }
@@ -102761,11 +104043,11 @@ function lastIndexOf(_this__u8e3s4, string, startIndex, ignoreCase) {
 }
 function startsWith_1(_this__u8e3s4, char, ignoreCase) {
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
-  return charSequenceLength(_this__u8e3s4) > 0 && equals_0(charSequenceGet(_this__u8e3s4, 0), char, ignoreCase);
+  return charSequenceLength(_this__u8e3s4) > 0 && equals_1(charSequenceGet(_this__u8e3s4, 0), char, ignoreCase);
 }
 function endsWith_0(_this__u8e3s4, char, ignoreCase) {
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
-  return charSequenceLength(_this__u8e3s4) > 0 && equals_0(charSequenceGet(_this__u8e3s4, get_lastIndex_1(_this__u8e3s4)), char, ignoreCase);
+  return charSequenceLength(_this__u8e3s4) > 0 && equals_1(charSequenceGet(_this__u8e3s4, get_lastIndex_1(_this__u8e3s4)), char, ignoreCase);
 }
 function trimEnd(_this__u8e3s4, chars) {
   // Inline function 'kotlin.text.trimEnd' call
@@ -102866,8 +104148,8 @@ function PlantingLayout_initEntries() {
   if (PlantingLayout_entriesInitialized)
     return Unit_instance;
   PlantingLayout_entriesInitialized = true;
-  PlantingLayout_CLUMPS_instance = new PlantingLayout('CLUMPS', 0, 'Clumps (recommended)', 'Each crop grows as a compact group. Next year the groups can swap places for crop rotation, and tall groups still sit behind short ones.');
-  PlantingLayout_ROWS_instance = new PlantingLayout('ROWS', 1, 'Rows', 'Crops are lined up in rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.');
+  PlantingLayout_CLUMPS_instance = new PlantingLayout('CLUMPS', 0, 'Organised clumps (recommended)', 'Each crop is a small block of rows and columns (e.g. 20 corn = 4 rows of 5) with walkways between blocks for watering with a hose. Vines get room to run toward the sun. Next year the blocks can swap places for crop rotation.');
+  PlantingLayout_ROWS_instance = new PlantingLayout('ROWS', 1, 'Long rows', 'Crops are lined up in long rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.');
 }
 var $ENTRIES;
 function plan$depthOf(pMax, pMin, sx, sy, x, y) {
@@ -102984,6 +104266,192 @@ function PlantingLayout_CLUMPS_getInstance() {
 function PlantingLayout_ROWS_getInstance() {
   PlantingLayout_initEntries();
   return PlantingLayout_ROWS_instance;
+}
+var VineHabits_instance;
+function VineHabits_getInstance() {
+  if (VineHabits_instance === VOID)
+    new VineHabits();
+  return VineHabits_instance;
+}
+function plan$toU(lx, ly, x, y) {
+  return x * lx + y * ly;
+}
+function plan$toV(sx, sy, x, y) {
+  return -(x * sx + y * sy);
+}
+function plan$toXY(lx, sx, ly, sy, u, v) {
+  return new PlotPoint(u * lx - v * sx, u * ly - v * sy);
+}
+function plan$targetDepth_0(hMax, hMin, heights, seed) {
+  var habit = VineHabits_getInstance().of_xkctbz_k$(seed);
+  var tmp;
+  if ((habit == null ? null : habit.climber_1) === true) {
+    tmp = 1.0;
+  } else {
+    if (!(habit == null)) {
+      tmp = 0.0;
+    } else {
+      if (hMax - hMin < 0.05) {
+        tmp = 0.5;
+      } else {
+        tmp = (getValue(heights, seed.botanicalCode_1) - hMin) / (hMax - hMin);
+      }
+    }
+  }
+  return tmp;
+}
+function plan$rank(isPollinator, r) {
+  var h = VineHabits_getInstance().of_xkctbz_k$(r.seed_1);
+  var tmp;
+  if ((h == null ? null : h.climber_1) === true) {
+    tmp = 0;
+  } else {
+    if (isPollinator(r.seed_1)) {
+      tmp = 3;
+    } else {
+      if (!(h == null)) {
+        tmp = 1;
+      } else {
+        tmp = 2;
+      }
+    }
+  }
+  return tmp;
+}
+function plan$sunAt(sunMemo, $context, x, y) {
+  // Inline function 'kotlin.math.floor' call
+  var x_0 = x / 0.25;
+  var tmp$ret$0 = Math.floor(x_0);
+  var tmp = numberToLong(tmp$ret$0).shl_bg8if3_k$(32);
+  // Inline function 'kotlin.math.floor' call
+  var x_1 = y / 0.25;
+  var tmp$ret$1 = Math.floor(x_1);
+  var key = tmp.xor_eoldvb_k$(numberToLong(tmp$ret$1).and_5hkqyb_k$(new Long(-1, 0)));
+  // Inline function 'kotlin.collections.getOrPut' call
+  var value = sunMemo.get_wei43m_k$(key);
+  var tmp_0;
+  if (value == null) {
+    var answer = $context.sunHoursAt_i61x3e_k$(x, y);
+    sunMemo.put_4fpzoq_k$(key, answer);
+    tmp_0 = answer;
+  } else {
+    tmp_0 = value;
+  }
+  return tmp_0;
+}
+function plan$rotationPenalty_0(past, r, $seasonYear, group, p) {
+  var worst = 0.0;
+  var _iterator__ex2g4s = past.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var h = _iterator__ex2g4s.next_20eer_k$();
+    var dx = p.x_1 - h.coordinateXM_1;
+    var dy = p.y_1 - h.coordinateYM_1;
+    // Inline function 'kotlin.math.sqrt' call
+    var x = dx * dx + dy * dy;
+    if (Math.sqrt(x) < CropRotation_instance.reach_id8geh_k$(h) + r * 0.5) {
+      var tmp0 = worst;
+      // Inline function 'kotlin.math.max' call
+      var b = 6.0 * (1.0 - (($seasonYear - h.seasonYear_1 | 0) - 1 | 0) / ensureNotNull(group).waitYears_1);
+      worst = Math.max(tmp0, b);
+    }
+  }
+  return worst;
+}
+function plan$cellOk($area, plot, $isBlocked, r, $context, crop, reserved, existing, $marginMultiplier, placed, key, lx, sx, ly, sy, u, v) {
+  var p = plan$toXY(lx, sx, ly, sy, u, v);
+  if (!PlotGeometry_instance.pointInPolygon_1ubb6c_k$(p.x_1, p.y_1, $area) || !PlotShape_instance.contains_fxfbhl_k$(plot, p.x_1, p.y_1))
+    return false;
+  if ($isBlocked(p.x_1, p.y_1, r))
+    return false;
+  if (!($context.floodZoneAt_b1xzod_k$(p.x_1, p.y_1) == null) && !crop.floodTolerant_1)
+    return false;
+  var tmp$ret$0;
+  $l$block_0: {
+    // Inline function 'kotlin.collections.any' call
+    var tmp;
+    if (isInterface(reserved, Collection)) {
+      tmp = reserved.isEmpty_y1axqb_k$();
+    } else {
+      tmp = false;
+    }
+    if (tmp) {
+      tmp$ret$0 = false;
+      break $l$block_0;
+    }
+    var _iterator__ex2g4s = reserved.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      if (element.contains_wtyech_k$(u, v)) {
+        tmp$ret$0 = true;
+        break $l$block_0;
+      }
+    }
+    tmp$ret$0 = false;
+  }
+  if (tmp$ret$0)
+    return false;
+  var _iterator__ex2g4s_0 = existing.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+    var o = _iterator__ex2g4s_0.next_20eer_k$();
+    var need = (r + o.r_1) * $marginMultiplier;
+    var dx = p.x_1 - o.x_1;
+    var dy = p.y_1 - o.y_1;
+    if (dx * dx + dy * dy < need * need)
+      return false;
+  }
+  var _iterator__ex2g4s_1 = placed.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+    var o_0 = _iterator__ex2g4s_1.next_20eer_k$();
+    var gap = CropReference_getInstance().speciesKey_x7vv_k$(o_0.seed_1) === key ? 0.0 : 0.45;
+    var need_0 = (r + o_0.r_1) * $marginMultiplier + gap;
+    var dx_0 = p.x_1 - o_0.x_1;
+    var dy_0 = p.y_1 - o_0.y_1;
+    if (dx_0 * dx_0 + dy_0 * dy_0 < need_0 * need_0)
+      return false;
+  }
+  return true;
+}
+function BlockPlanner$plan$lambda(s) {
+  return AutoPlanner_getInstance().POLLINATOR_PLANTS_1.contains_aljjnj_k$(CropReference_getInstance().speciesKey_x7vv_k$(s));
+}
+function BlockPlanner$plan$lambda_0($isPollinator) {
+  return function (a, b) {
+    // Inline function 'kotlin.comparisons.compareValuesBy' call
+    var tmp = plan$rank($isPollinator, a);
+    var tmp$ret$1 = plan$rank($isPollinator, b);
+    return compareValues(tmp, tmp$ret$1);
+  };
+}
+function BlockPlanner$plan$lambda_1($this, $heights) {
+  return function (a, b) {
+    var previousCompare = $this.compare(a, b);
+    var tmp;
+    if (!(previousCompare === 0)) {
+      tmp = previousCompare;
+    } else {
+      // Inline function 'kotlin.comparisons.compareValuesBy' call
+      var tmp_0 = getValue($heights, b.seed_1.botanicalCode_1);
+      var tmp$ret$1 = getValue($heights, a.seed_1.botanicalCode_1);
+      tmp = compareValues(tmp_0, tmp$ret$1);
+    }
+    return tmp;
+  };
+}
+function BlockPlanner$plan$lambda_2(rs) {
+  return rs.get_size_woubt6_k$() === 1 ? '1 row of ' + rs.get_c1px32_k$(0) : distinct(rs).get_size_woubt6_k$() === 1 ? '' + rs.get_size_woubt6_k$() + ' rows of ' + rs.get_c1px32_k$(0) : 'rows of ' + joinToString_0(rs, ' + ');
+}
+function BlockPlanner$plan$lambda_3(it) {
+  return CropReference_getInstance().speciesName_3q2qgh_k$(it);
+}
+function BlockPlanner$plan$lambda_4(it) {
+  return CropReference_getInstance().speciesName_3q2qgh_k$(it.seed_1);
+}
+function BlockPlanner$plan$lambda_5(it) {
+  return '' + it.get_value_j01efc_k$() + ' ' + it.get_key_18j28a_k$();
+}
+var BlockPlanner_instance;
+function BlockPlanner_getInstance() {
+  return BlockPlanner_instance;
 }
 var CarePreference_ORGANIC_instance;
 var CarePreference_CONVENTIONAL_instance;
@@ -104461,7 +105929,7 @@ function Tool_initEntries() {
   Tool_TREE_instance = new Tool('TREE', 3, 'Tree', 'Click where the trunk is, then give its height and crown size.');
   Tool_LINE_OBSTACLE_instance = new Tool('LINE_OBSTACLE', 4, 'Fence / wall / building', 'Click points along it, then press Enter or click Finish.');
   Tool_AREA_instance = new Tool('AREA', 5, 'Sun / shade / flood / slope area', 'Click the corners (3+), then press Enter or click Finish.');
-  Tool_OUTLINE_instance = new Tool('OUTLINE', 6, 'Plot outline', "Click the plot's corners in order (3+), then press Enter or click Finish.");
+  Tool_OUTLINE_instance = new Tool('OUTLINE', 6, 'Plot outline', 'Drag a white corner to move it; double-click an edge to add a corner. Or click new corners in order (3+) and press Enter to redraw. \u201CDelete outline\u201D removes it.');
   Tool_PLAN_instance = new Tool('PLAN', 7, 'Plan an area for me', 'Drag over the area you want planted; then list what to plant.');
 }
 var $ENTRIES_4;
@@ -104506,32 +105974,34 @@ function drawRulers($this, l, w, fs, step) {
   }
 }
 function drawCompass($this, l, fs, bearing, set) {
-  var cx = l + fs * 3.4;
-  var cy = -fs * 1.6;
-  var r = fs * 1.1;
-  var a = -bearing * 3.141592653589793 / 180.0;
-  // Inline function 'kotlin.math.sin' call
-  var tx = cx + Math.sin(a) * r;
-  // Inline function 'kotlin.math.cos' call
-  var ty = cy - Math.cos(a) * r;
-  add_0(_get_svg__e6gxbh($this), [s('circle', [to('cx', cx), to('cy', cy), to('r', r * 2.2), to('fill', 'var(--card)'), to('stroke', 'var(--line)'), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
-  var tmp = _get_svg__e6gxbh($this);
-  // Inline function 'kotlin.math.sin' call
-  var tmp$ret$2 = Math.sin(a);
-  var tmp_0 = to('x1', cx - tmp$ret$2 * r * 0.6);
-  // Inline function 'kotlin.math.cos' call
-  var tmp$ret$3 = Math.cos(a);
-  add_0(tmp, [s('line', [tmp_0, to('y1', cy + tmp$ret$3 * r * 0.6), to('x2', tx), to('y2', ty), to('stroke', set ? '#ef4444' : '#64748b'), to('stroke-width', 3), to('stroke-linecap', 'round'), to('vector-effect', 'non-scaling-stroke')])]);
-  var tmp_1 = _get_svg__e6gxbh($this);
-  // Inline function 'kotlin.math.sin' call
-  var tmp$ret$4 = Math.sin(a);
-  var tmp_2 = to('x', cx + tmp$ret$4 * r * 1.75);
-  // Inline function 'kotlin.math.cos' call
-  var tmp$ret$5 = Math.cos(a);
-  // Inline function 'kotlin.also' call
-  var this_0 = s('text', [tmp_2, to('y', cy - tmp$ret$5 * r * 1.75 + fs * 0.32), to('font-size', fs * 0.9), to('fill', 'currentColor'), to('text-anchor', 'middle'), to('font-weight', 'bold')]);
-  this_0.textContent = set ? 'N' : 'N?';
-  add_0(tmp_1, [this_0]);
+  var r = fs * 3.8;
+  var cx = l + r * 1.3;
+  var cy = -r * 0.45;
+  var g = s('g', [to('class', 'compass'), to('transform', 'translate(' + num_1(cx) + ',' + num_1(cy) + ') rotate(' + num_1(-bearing) + ')')]);
+  add_0(g, [s('circle', [to('cx', 0), to('cy', 0), to('r', r * 1.12), to('fill', 'var(--card)'), to('stroke', 'var(--line)'), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
+  // Inline function 'kotlin.collections.forEach' call
+  var _iterator__ex2g4s = listOf_0([to(0.0, 'N'), to(90.0, 'E'), to(180.0, 'S'), to(270.0, 'W')]).iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    var deg = element.component1_7eebsc_k$();
+    var letter = element.component2_7eebsb_k$();
+    var a = deg * 3.141592653589793 / 180.0;
+    var north = letter === 'N';
+    var ink = north && set ? '#dc2626' : north ? '#9ca3af' : 'currentColor';
+    var tip = drawCompass$_anonymous_$pt_kd49yn(a, r * 1.02, 0.0);
+    var base = drawCompass$_anonymous_$pt_kd49yn(a, r * 0.6, 0.0);
+    add_0(g, [s('polygon', [to('points', tip + ' ' + drawCompass$_anonymous_$pt_kd49yn(a, r * 0.52, -r * 0.2) + ' ' + base), to('fill', ink), to('stroke', ink), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(g, [s('polygon', [to('points', tip + ' ' + drawCompass$_anonymous_$pt_kd49yn(a, r * 0.52, r * 0.2) + ' ' + base), to('fill', 'var(--card)'), to('stroke', ink), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+    // Inline function 'kotlin.math.sin' call
+    var lx = Math.sin(a) * r * 0.34;
+    // Inline function 'kotlin.math.cos' call
+    var ly = -Math.cos(a) * r * 0.34;
+    // Inline function 'kotlin.also' call
+    var this_0 = s('text', [to('x', lx), to('y', ly), to('font-size', fs * (north ? 1.35 : 1.1)), to('font-weight', 'bold'), to('fill', ink), to('text-anchor', 'middle'), to('dominant-baseline', 'central'), to('transform', 'rotate(' + num_1(bearing) + ' ' + num_1(lx) + ' ' + num_1(ly) + ')')]);
+    this_0.textContent = north && !set ? 'N?' : letter;
+    add_0(g, [this_0]);
+  }
+  add_0(_get_svg__e6gxbh($this), [g]);
 }
 function drawShade($this, wp) {
   var p = wp.plot_1;
@@ -104764,7 +106234,9 @@ function drawPlant($this, n, selected, fs) {
   }
   var tmp4_elvis_lhs = tmp_0;
   var dot = tmp4_elvis_lhs == null ? c : tmp4_elvis_lhs;
-  var g = s('g', [to('class', 'plant'), to('data-code', n.seedCode_1)]);
+  var f = $this.find_1;
+  var found = !(f == null) && f(n);
+  var g = s('g', [to('class', found ? 'plant found' : 'plant'), to('data-code', n.seedCode_1), to('opacity', !(f == null) && !found ? 0.25 : 1.0)]);
   // Inline function 'kotlin.also' call
   var this_0 = s('title', []);
   var tmp_1;
@@ -104786,14 +106258,25 @@ function drawPlant($this, n, selected, fs) {
   var a_0 = Math.min(a, 0.12);
   var tmp$ret$9 = Math.max(a_0, 0.05);
   add_0(g, [s('circle', [tmp_2, tmp_3, to('r', tmp$ret$9), to('fill', dot), to('stroke', col($this, new Long(-14080732, 0))), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
-  if (Prefs_instance.get_showLabels_au2717_k$()) {
-    var tmp_4 = to('x', n.coordinateXM_1);
+  if (found) {
+    add_0(g, [s('circle', [to('cx', n.coordinateXM_1), to('cy', n.coordinateYM_1), to('r', r + fs * 0.35), to('fill', 'none'), to('stroke', '#f97316'), to('stroke-width', 4), to('vector-effect', 'non-scaling-stroke'), to('class', 'find-ring')])]);
+  }
+  var label = $this.shortLabel_x49qyv_k$(seed);
+  var tmp0 = fs * 0.5;
+  var tmp_4 = r * 2.0 * 1.7;
+  // Inline function 'kotlin.math.max' call
+  var b = label.length;
+  // Inline function 'kotlin.math.min' call
+  var b_0 = tmp_4 / Math.max(4, b);
+  var labelSize = Math.min(tmp0, b_0);
+  if (Prefs_instance.get_showLabels_au2717_k$() || found) {
+    var tmp_5 = to('x', n.coordinateXM_1);
     // Inline function 'kotlin.math.max' call
     var a_1 = r * 0.3;
-    var tmp$ret$10 = Math.max(a_1, 0.05);
+    var tmp$ret$12 = Math.max(a_1, 0.05);
     // Inline function 'kotlin.also' call
-    var this_1 = s('text', [tmp_4, to('y', n.coordinateYM_1 + tmp$ret$10 + fs * 0.62), to('font-size', fs * 0.5), to('fill', col($this, new Long(-14080732, 0))), to('text-anchor', 'middle'), to('class', 'plant-label'), to('stroke', col($this, new Long(-658970, 0))), to('stroke-width', fs * 0.12), to('paint-order', 'stroke'), to('stroke-linejoin', 'round')]);
-    this_1.textContent = Canvas_getInstance().shortLabel_x49qyv_k$(seed);
+    var this_1 = s('text', [tmp_5, to('y', n.coordinateYM_1 + tmp$ret$12 + labelSize * 1.2), to('font-size', labelSize), to('fill', col($this, new Long(-14080732, 0))), to('text-anchor', 'middle'), to('class', 'plant-label'), to('stroke', col($this, new Long(-658970, 0))), to('stroke-width', labelSize * 0.24), to('paint-order', 'stroke'), to('stroke-linejoin', 'round')]);
+    this_1.textContent = label;
     add_0(g, [this_1]);
   }
   add_0(_get_svg__e6gxbh($this), [g]);
@@ -104987,6 +106470,9 @@ function hitPath($this, wp, pt) {
   }
   return tmp$ret$1;
 }
+function handleR($this) {
+  return $this.vb_1[2] / 90.0;
+}
 function dist_0($this, x, y, p) {
   var dx = x - p.x_1;
   var dy = y - p.y_1;
@@ -105034,6 +106520,45 @@ function onDown($this, e) {
       $this.dragStart_1 = pt;
       $this.dragNow_1 = pt;
       break;
+    case 6:
+      if ($this.points_1.isEmpty_y1axqb_k$()) {
+        var outline = PlotShape_instance.outline_ieyvk6_k$(wp.plot_1);
+        var tmp0 = get_indices(outline);
+        var tmp$ret$3;
+        $l$block_0: {
+          // Inline function 'kotlin.collections.minByOrNull' call
+          var iterator = tmp0.iterator_jk1svi_k$();
+          if (!iterator.hasNext_bitz1p_k$()) {
+            tmp$ret$3 = null;
+            break $l$block_0;
+          }
+          var minElem = iterator.next_20eer_k$();
+          if (!iterator.hasNext_bitz1p_k$()) {
+            tmp$ret$3 = minElem;
+            break $l$block_0;
+          }
+          var it = minElem;
+          var minValue = dist_0(Canvas_getInstance(), outline.get_c1px32_k$(it).x_1, outline.get_c1px32_k$(it).y_1, pt);
+          do {
+            var e_0 = iterator.next_20eer_k$();
+            var v = dist_0(Canvas_getInstance(), outline.get_c1px32_k$(e_0).x_1, outline.get_c1px32_k$(e_0).y_1, pt);
+            if (compareTo(minValue, v) > 0) {
+              minElem = e_0;
+              minValue = v;
+            }
+          }
+           while (iterator.hasNext_bitz1p_k$());
+          tmp$ret$3 = minElem;
+        }
+        var i = tmp$ret$3;
+        if (!(i == null) && dist_0($this, outline.get_c1px32_k$(i).x_1, outline.get_c1px32_k$(i).y_1, pt) <= handleR($this) * 2.2) {
+          $this.dragVertex_1 = i;
+          $this.dragStart_1 = pt;
+          $this.dragNow_1 = pt;
+        }
+      }
+
+      break;
     default:
       break;
   }
@@ -105073,6 +106598,20 @@ function onMove($this, e) {
     renderMovePreview($this, start, pt);
   } else if ($this.tool_1.equals(Tool_PATH_getInstance()) || $this.tool_1.equals(Tool_PLAN_getInstance())) {
     $this.render_dje1iy_k$();
+  } else if ($this.tool_1.equals(Tool_OUTLINE_getInstance()) && !($this.dragVertex_1 == null)) {
+    $this.render_dje1iy_k$();
+    var tmp2_elvis_lhs = Store_getInstance().plot_21tcx_k$();
+    var tmp_3;
+    if (tmp2_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp_3 = tmp2_elvis_lhs;
+    }
+    var wp = tmp_3;
+    var o_0 = toMutableList(PlotShape_instance.outline_ieyvk6_k$(wp.plot_1));
+    o_0.set_82063s_k$(ensureNotNull($this.dragVertex_1), clampToPlot($this, wp, pt));
+    var tmp_4 = _get_svg__e6gxbh($this);
+    add_0(tmp_4, [s('polygon', [to('points', joinToString_0(o_0, ' ', VOID, VOID, VOID, VOID, Canvas$onMove$lambda)), to('fill', 'none'), to('stroke', '#f97316'), to('stroke-dasharray', '6 4'), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
   }
 }
 function renderMovePreview($this, start, now) {
@@ -105227,9 +106766,24 @@ function onUp($this, e) {
     case 3:
       Dialogs_instance.feature_8lo7ub_k$(new SiteFeatureEntity(VOID, wp.plot_1.id_1, 'TREE', PlotGeometry_instance.serializePoints_ourzje_k$(listOf(pt)), VOID, 6.0, 2.0), true);
       break;
+    case 6:
+      var v = $this.dragVertex_1;
+      $this.dragVertex_1 = null;
+      if (!(v == null)) {
+        if ($this.dragMoved_1) {
+          moveOutlineCorner($this, wp, v, clampToPlot($this, wp, pt));
+        } else {
+          App_instance.render_dje1iy_k$();
+        }
+      } else {
+        // Inline function 'kotlin.collections.plusAssign' call
+        $this.points_1.add_utx5q5_k$(pt);
+        App_instance.render_dje1iy_k$();
+      }
+
+      break;
     case 4:
     case 5:
-    case 6:
       // Inline function 'kotlin.collections.plusAssign' call
 
       $this.points_1.add_utx5q5_k$(pt);
@@ -105239,6 +106793,52 @@ function onUp($this, e) {
       noWhenBranchMatchedException();
       break;
   }
+}
+function clampToPlot($this, wp, p) {
+  return new PlotPoint(coerceIn(p.x_1, 0.0, wp.plot_1.lengthM_1), coerceIn(p.y_1, 0.0, wp.plot_1.widthM_1));
+}
+function moveOutlineCorner($this, wp, index, to) {
+  var o = toMutableList(PlotShape_instance.outline_ieyvk6_k$(wp.plot_1));
+  o.set_82063s_k$(index, to);
+  var tmp0_safe_receiver = PlotGeometry_instance.validateOutline_9hlhbh_k$(o);
+  if (tmp0_safe_receiver == null)
+    null;
+  else {
+    // Inline function 'kotlin.let' call
+    App_instance.status_b46o3c_k$("Can't move the corner there: " + tmp0_safe_receiver);
+    App_instance.render_dje1iy_k$();
+    return Unit_instance;
+  }
+  var tmp = Store_getInstance();
+  tmp.change_dk0lks_k$(Canvas$moveOutlineCorner$lambda(o));
+  var tmp0 = wp.plants_1;
+  var tmp$ret$1;
+  $l$block: {
+    // Inline function 'kotlin.collections.count' call
+    var tmp_0;
+    if (isInterface(tmp0, Collection)) {
+      tmp_0 = tmp0.isEmpty_y1axqb_k$();
+    } else {
+      tmp_0 = false;
+    }
+    if (tmp_0) {
+      tmp$ret$1 = 0;
+      break $l$block;
+    }
+    var count = 0;
+    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      if (!PlotShape_instance.contains_fxfbhl_k$(wp.plot_1, element.coordinateXM_1, element.coordinateYM_1)) {
+        count = count + 1 | 0;
+        checkCountOverflow(count);
+      }
+    }
+    tmp$ret$1 = count;
+  }
+  var outside = tmp$ret$1;
+  App_instance.status_b46o3c_k$(outside > 0 ? 'Corner moved. ' + outside + ' plant(s) are now outside the outline.' : 'Corner moved. Undo puts it back.');
+  App_instance.render_dje1iy_k$();
 }
 function moveSelection($this, wp, dx, dy) {
   var p = wp.plot_1;
@@ -105448,6 +107048,17 @@ function moveSelection($this, wp, dx, dy) {
   }
   App_instance.render_dje1iy_k$();
 }
+function drawCompass$_anonymous_$pt_kd49yn(a, dist, side) {
+  // Inline function 'kotlin.math.sin' call
+  var tmp = Math.sin(a) * dist;
+  // Inline function 'kotlin.math.cos' call
+  var x = tmp + Math.cos(a) * side;
+  // Inline function 'kotlin.math.cos' call
+  var tmp_0 = -Math.cos(a) * dist;
+  // Inline function 'kotlin.math.sin' call
+  var y = tmp_0 + Math.sin(a) * side;
+  return num_1(x) + ',' + num_1(y);
+}
 function Canvas$mount$lambda(it) {
   var tmp = Canvas_getInstance();
   onDown(tmp, it instanceof MouseEvent ? it : THROW_CCE());
@@ -105463,9 +107074,49 @@ function Canvas$mount$lambda_1(it) {
   onUp(tmp, it instanceof MouseEvent ? it : THROW_CCE());
   return Unit_instance;
 }
-function Canvas$mount$lambda_2(it) {
-  if (setOf_0([Tool_LINE_OBSTACLE_getInstance(), Tool_AREA_getInstance(), Tool_OUTLINE_getInstance()]).contains_aljjnj_k$(Canvas_getInstance().tool_1)) {
+function Canvas$mount$lambda_2(e) {
+  if (Canvas_getInstance().tool_1.equals(Tool_OUTLINE_getInstance()) && Canvas_getInstance().points_1.isEmpty_y1axqb_k$()) {
+    var tmp = Canvas_getInstance();
+    var tmp_0 = Canvas_getInstance();
+    tmp.addOutlineCorner_3ie9w5_k$(toMetres(tmp_0, e instanceof MouseEvent ? e : THROW_CCE()));
+  } else if (setOf_0([Tool_LINE_OBSTACLE_getInstance(), Tool_AREA_getInstance(), Tool_OUTLINE_getInstance()]).contains_aljjnj_k$(Canvas_getInstance().tool_1)) {
     Canvas_getInstance().finishPoints_snt6d6_k$();
+  } else if (Canvas_getInstance().tool_1.equals(Tool_SELECT_getInstance())) {
+    var tmp_1 = Canvas_getInstance().selection_1;
+    var tmp0_safe_receiver = tmp_1 instanceof Plant ? tmp_1 : null;
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      var tmp0_safe_receiver_0 = Store_getInstance().plot_21tcx_k$();
+      var tmp1_safe_receiver = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.plants_1;
+      var tmp_2;
+      if (tmp1_safe_receiver == null) {
+        tmp_2 = null;
+      } else {
+        var tmp$ret$1;
+        $l$block: {
+          // Inline function 'kotlin.collections.firstOrNull' call
+          var _iterator__ex2g4s = tmp1_safe_receiver.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+            var element = _iterator__ex2g4s.next_20eer_k$();
+            if (element.id_1.equals(tmp0_safe_receiver.id_1)) {
+              tmp$ret$1 = element;
+              break $l$block;
+            }
+          }
+          tmp$ret$1 = null;
+        }
+        tmp_2 = tmp$ret$1;
+      }
+      var tmp2_safe_receiver = tmp_2;
+      if (tmp2_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        Dialogs_instance.plant_5j52sg_k$(tmp2_safe_receiver);
+      }
+    }
   }
   return Unit_instance;
 }
@@ -105483,6 +107134,9 @@ function Canvas$render$lambda_0(it) {
 function Canvas$render$lambda_1(it) {
   return '' + it.x_1 + ',' + it.y_1;
 }
+function Canvas$render$lambda_2(it) {
+  return '' + it.x_1 + ',' + it.y_1;
+}
 function Canvas$drawFeature$lambda(it) {
   return '' + it.x_1 + ',' + it.y_1;
 }
@@ -105495,6 +107149,9 @@ function Canvas$drawPath$lambda(it) {
 function Canvas$drawInProgress$lambda(it) {
   return '' + it.x_1 + ',' + it.y_1;
 }
+function Canvas$onMove$lambda(it) {
+  return '' + it.x_1 + ',' + it.y_1;
+}
 function Canvas$renderMovePreview$lambda(it) {
   return '' + it.x_1 + ',' + it.y_1;
 }
@@ -105503,6 +107160,22 @@ function Canvas$onUp$lambda($x, $y, $w, $h) {
     it.paths_1 = plus_0(it.paths_1, new PathZoneEntity(Store_getInstance().newId_1qcd0b_k$(), it.plot_1.id_1, $x, $y, $w, $h));
     return Unit_instance;
   };
+}
+function Canvas$moveOutlineCorner$lambda($o) {
+  return function (it) {
+    it.plot_1 = it.plot_1.copy$default_hlcz3h_k$(VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, PlotGeometry_instance.serializePoints_ourzje_k$($o));
+    return Unit_instance;
+  };
+}
+function Canvas$addOutlineCorner$lambda($n) {
+  return function (it) {
+    it.plot_1 = it.plot_1.copy$default_hlcz3h_k$(VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, PlotGeometry_instance.serializePoints_ourzje_k$($n));
+    return Unit_instance;
+  };
+}
+function Canvas$deleteOutline$lambda(it) {
+  it.plot_1 = it.plot_1.copy$default_hlcz3h_k$(VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, null);
+  return Unit_instance;
 }
 function Canvas$finishPoints$lambda($outline) {
   return function (it) {
@@ -106562,6 +108235,121 @@ function Dialogs$previewCard$lambda_2($card) {
     return Unit_instance;
   };
 }
+function Dialogs$plant$lambda() {
+  return true;
+}
+function Dialogs$plant$lambda$lambda($node) {
+  return function (p) {
+    var tmp = p;
+    // Inline function 'kotlin.collections.filter' call
+    var tmp0 = p.plants_1;
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      if (!element.id_1.equals($node.id_1)) {
+        destination.add_utx5q5_k$(element);
+      }
+    }
+    tmp.plants_1 = destination;
+    return Unit_instance;
+  };
+}
+function Dialogs$plant$lambda_0($node) {
+  return function () {
+    var tmp = Store_getInstance();
+    tmp.change_dk0lks_k$(Dialogs$plant$lambda$lambda($node));
+    Canvas_getInstance().selection_1 = null;
+    App_instance.status_b46o3c_k$('Plant deleted. Undo brings it back.');
+    App_instance.render_dje1iy_k$();
+    return true;
+  };
+}
+function Dialogs$plant$lambda$lambda_0(it) {
+  return Catalog_getInstance().get_6bo4tg_k$(it);
+}
+function Dialogs$plant$lambda$lambda_1($node, $updated) {
+  return function (p) {
+    var tmp = p;
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = p.plants_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$0 = item.id_1.equals($node.id_1) ? $updated : item;
+      destination.add_utx5q5_k$(tmp$ret$0);
+    }
+    tmp.plants_1 = destination;
+    return Unit_instance;
+  };
+}
+function Dialogs$plant$lambda_1($variety, $date, $node, $wp) {
+  return function () {
+    var tmp = Catalog_getInstance().get_byName_bo21l7_k$();
+    // Inline function 'kotlin.text.trim' call
+    var this_0 = $variety.value;
+    // Inline function 'kotlin.text.lowercase' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var tmp$ret$2 = toString_1(trim(isCharSequence(this_0) ? this_0 : THROW_CCE())).toLowerCase();
+    var tmp0_elvis_lhs = tmp.get_wei43m_k$(tmp$ret$2);
+    var newSeed = tmp0_elvis_lhs == null ? firstOrNull(Catalog_getInstance().search_ei2krx_k$($variety.value, null, 1)) : tmp0_elvis_lhs;
+    var tmp_0;
+    if (newSeed == null) {
+      App_instance.status_b46o3c_k$('Choose a variety from the list.');
+      return false;
+    }
+    // Inline function 'kotlin.collections.mapNotNull' call
+    var tmp0 = split($date.value, ['-']);
+    // Inline function 'kotlin.collections.mapNotNullTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var tmp0_safe_receiver = toIntOrNull(element);
+      if (tmp0_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        destination.add_utx5q5_k$(tmp0_safe_receiver);
+      }
+    }
+    var day = destination;
+    var planted = day.get_size_woubt6_k$() === 3 ? CivilDate_getInstance().localMidnight_t9hdc7_k$(day.get_c1px32_k$(0), day.get_c1px32_k$(1), day.get_c1px32_k$(2), PlatformClock_instance.localOffsetMillis_8lai9s_k$($node.datePlantedEpochMillis_1)).plus_gdf42y_k$(new Long(43200000, 0)) : $node.datePlantedEpochMillis_1;
+    var updated = $node.copy$default_mezutg_k$(VOID, VOID, newSeed.botanicalCode_1, VOID, VOID, planted);
+    var tmp_1;
+    if (!(newSeed.botanicalCode_1 === $node.seedCode_1)) {
+      // Inline function 'kotlin.collections.filter' call
+      var tmp0_0 = $wp.plants_1;
+      // Inline function 'kotlin.collections.filterTo' call
+      var destination_0 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+      var _iterator__ex2g4s_0 = tmp0_0.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+        var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+        if (!element_0.id_1.equals($node.id_1)) {
+          destination_0.add_utx5q5_k$(element_0);
+        }
+      }
+      var others = destination_0;
+      var tmp_2 = new CompanionPlantingValidator();
+      var ok = tmp_2.validatePlacement_ome8gn_k$(updated, newSeed, others, Dialogs$plant$lambda$lambda_0, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$()).isValid_1;
+      var tmp_3;
+      if (!ok) {
+        App_instance.status_b46o3c_k$(newSeed.commonName_1 + " doesn't fit here (spacing or a plant it dislikes nearby). Move it first or choose another variety.");
+        return false;
+      }
+      tmp_1 = tmp_3;
+    }
+    var tmp_4 = Store_getInstance();
+    tmp_4.change_dk0lks_k$(Dialogs$plant$lambda$lambda_1($node, updated));
+    App_instance.status_b46o3c_k$('Saved ' + VarietyCatalogTraits_getInstance().displayName_tg12ln_k$(newSeed) + '.');
+    App_instance.render_dje1iy_k$();
+    return true;
+  };
+}
 function Dialogs$newSeason$lambda() {
   return true;
 }
@@ -106816,6 +108604,7 @@ function add_0(_this__u8e3s4, kids) {
   return _this__u8e3s4;
 }
 function clear(_this__u8e3s4) {
+  releaseFocusIn(_this__u8e3s4);
   $l$loop: while (true) {
     var tmp0_elvis_lhs = _this__u8e3s4.firstChild;
     var tmp;
@@ -106825,7 +108614,23 @@ function clear(_this__u8e3s4) {
       tmp = tmp0_elvis_lhs;
     }
     var c = tmp;
-    _this__u8e3s4.removeChild(c);
+    if (c.parentNode === _this__u8e3s4) {
+      _this__u8e3s4.removeChild(c);
+    }
+  }
+}
+function releaseFocusIn(e) {
+  var tmp = document.activeElement;
+  var tmp0_elvis_lhs = tmp instanceof HTMLElement ? tmp : null;
+  var tmp_0;
+  if (tmp0_elvis_lhs == null) {
+    return Unit_instance;
+  } else {
+    tmp_0 = tmp0_elvis_lhs;
+  }
+  var active = tmp_0;
+  if (!(active === document.body) && e.contains(active)) {
+    active.blur();
   }
 }
 function byId(id) {
@@ -106928,6 +108733,14 @@ function _get_legend__wb6gde($this) {
     throwUninitializedPropertyAccessException('legend');
   }
 }
+function _get_plantLegend__ltawxl($this) {
+  var tmp = $this.plantLegend_1;
+  if (!(tmp == null))
+    return tmp;
+  else {
+    throwUninitializedPropertyAccessException('plantLegend');
+  }
+}
 function renderHeader($this) {
   clear(_get_header__k2z46a($this));
   add_0(_get_header__k2z46a($this), [h('div', 'brand', VOID, VOID, listOf_0([h('span', 'logo', '\uD83C\uDF31'), h('span', VOID, 'Smart Garden Planner')]))]);
@@ -107013,6 +108826,103 @@ function renderLegend($this) {
     add_0(_get_legend__wb6gde(App_instance), [h('span', VOID, VOID, VOID, listOf_0([sw, h('span', VOID, element.label_1)]))]);
   }
 }
+function renderPlantLegend($this) {
+  clear(_get_plantLegend__ltawxl($this));
+  var wp = Store_getInstance().plot_21tcx_k$();
+  if (wp == null || wp.plants_1.isEmpty_y1axqb_k$()) {
+    _get_plantLegend__ltawxl($this).classList.add('hidden');
+    return Unit_instance;
+  }
+  _get_plantLegend__ltawxl($this).classList.remove('hidden');
+  var tmp = _get_plantLegend__ltawxl($this);
+  var tmp_0 = h('b', VOID, 'On this plot (' + wp.plants_1.get_size_woubt6_k$() + ')');
+  var tmp_1 = $this.legendOpen_1 ? '\u2212' : '+';
+  var tmp_2 = $this.legendOpen_1 ? 'Hide the list' : 'Show the list';
+  add_0(tmp, [h('div', 'pl-head', VOID, VOID, listOf_0([tmp_0, button(tmp_1, 'btn small', tmp_2, App$renderPlantLegend$lambda)]))]);
+  if (!$this.legendOpen_1)
+    return Unit_instance;
+  add_0(_get_plantLegend__ltawxl($this), [para('Click a line to find those plants.', 'hint')]);
+  // Inline function 'kotlin.collections.groupBy' call
+  var tmp0 = wp.plants_1;
+  // Inline function 'kotlin.collections.groupByTo' call
+  var destination = LinkedHashMap.new_kotlin_collections_LinkedHashMap_ga0any_k$();
+  var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    var key = element.seedCode_1;
+    // Inline function 'kotlin.collections.getOrPut' call
+    var value = destination.get_wei43m_k$(key);
+    var tmp_3;
+    if (value == null) {
+      var answer = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+      destination.put_4fpzoq_k$(key, answer);
+      tmp_3 = answer;
+    } else {
+      tmp_3 = value;
+    }
+    var list = tmp_3;
+    list.add_utx5q5_k$(element);
+  }
+  // Inline function 'kotlin.collections.sortedByDescending' call
+  var this_0 = destination.get_entries_p20ztl_k$();
+  // Inline function 'kotlin.comparisons.compareByDescending' call
+  var tmp_4 = App$renderPlantLegend$lambda_0;
+  var tmp$ret$5 = new sam$kotlin_Comparator$0_10(tmp_4);
+  // Inline function 'kotlin.collections.forEach' call
+  var _iterator__ex2g4s_0 = sortedWith(this_0, tmp$ret$5).iterator_jk1svi_k$();
+  while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+    var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+    // Inline function 'kotlin.collections.component1' call
+    var code = element_0.get_key_18j28a_k$();
+    // Inline function 'kotlin.collections.component2' call
+    var list_0 = element_0.get_value_j01efc_k$();
+    var seed = Catalog_getInstance().get_6bo4tg_k$(code);
+    var ring = Colors_instance.of_l9lkdk_k$(seed);
+    var tmp_5;
+    if (seed == null) {
+      tmp_5 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_5 = VarietyCatalogTraits_getInstance().dotArgb_g4p13x_k$(seed);
+    }
+    var tmp1_safe_receiver = tmp_5;
+    var tmp_6;
+    if (tmp1_safe_receiver == null) {
+      tmp_6 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_6 = LayoutPalette_getInstance().hex_4eca15_k$(tmp1_safe_receiver);
+    }
+    var tmp2_elvis_lhs = tmp_6;
+    var dot = tmp2_elvis_lhs == null ? ring : tmp2_elvis_lhs;
+    var tmp4_elvis_lhs = seed == null ? null : seed.commonName_1;
+    var name = tmp4_elvis_lhs == null ? code : tmp4_elvis_lhs;
+    var tmp_7;
+    if (seed == null) {
+      tmp_7 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      var tmp0_safe_receiver = VarietyCatalogTraits_getInstance().of_xkctbz_k$(seed);
+      tmp_7 = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.get_details_r0zbrt_k$();
+    }
+    var kind = tmp_7;
+    var active = !(Canvas_getInstance().find_1 == null) && ensureNotNull(Canvas_getInstance().find_1)(first(list_0)) && App_instance.legendFindCode_1 === code;
+    var tmp_8 = active ? 'pl-row on' : 'pl-row';
+    var tmp_9 = mapOf_0([to('type', 'button'), to('title', 'Find ' + list_0.get_size_woubt6_k$() + ' \xD7 ' + name)]);
+    var tmp_10 = h('span', 'sw2', VOID, mapOf(to('style', 'border-color:' + ring + ';background:radial-gradient(circle,' + dot + ' 0 38%,transparent 40%)')));
+    var tmp_11 = h('span', 'name', '' + list_0.get_size_woubt6_k$() + ' \xD7 ' + name);
+    var tmp_12;
+    if (kind == null) {
+      tmp_12 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_12 = h('span', 'hint', kind);
+    }
+    var row = h('button', tmp_8, VOID, tmp_9, listOfNotNull([tmp_10, h('span', 'grow', VOID, VOID, listOfNotNull([tmp_11, tmp_12]))]));
+    on(row, 'click', App$renderPlantLegend$lambda_1(active, code, name));
+    add_0(_get_plantLegend__ltawxl(App_instance), [row]);
+  }
+}
 function cssRgba($this, argb) {
   var r = argb.shr_9fl3wl_k$(16).and_5hkqyb_k$(new Long(255, 0));
   var g = argb.shr_9fl3wl_k$(8).and_5hkqyb_k$(new Long(255, 0));
@@ -107053,13 +108963,21 @@ function renderTools($this) {
   add_0(tmp_8, [button('\uFF0D', 'tool icon', 'Zoom out', App$renderTools$lambda_4)]);
   var tmp_9 = _get_tools__aufwyy($this);
   add_0(tmp_9, [button('Fit', 'tool', 'Fit the plot to the window', App$renderTools$lambda_5)]);
-  var tmp_10 = Canvas_getInstance().selection_1;
-  if (tmp_10 instanceof Feature) {
-    var tmp0_safe_receiver = Store_getInstance().plot_21tcx_k$();
-    var tmp1_safe_receiver = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.features_1;
-    var tmp_11;
+  if (Canvas_getInstance().tool_1.equals(Tool_OUTLINE_getInstance())) {
+    var tmp_10 = _get_tools__aufwyy($this);
+    add_0(tmp_10, [button('Delete outline', 'tool danger', 'Remove the outline; the plot becomes the full rectangle (undoable)', App$renderTools$lambda_6)]);
+  }
+  var tmp_11 = Canvas_getInstance().selection_1;
+  var tmp0_safe_receiver = tmp_11 instanceof Plant ? tmp_11 : null;
+  if (tmp0_safe_receiver == null)
+    null;
+  else {
+    // Inline function 'kotlin.let' call
+    var tmp0_safe_receiver_0 = Store_getInstance().plot_21tcx_k$();
+    var tmp1_safe_receiver = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.plants_1;
+    var tmp_12;
     if (tmp1_safe_receiver == null) {
-      tmp_11 = null;
+      tmp_12 = null;
     } else {
       var tmp$ret$4;
       $l$block: {
@@ -107067,25 +108985,58 @@ function renderTools($this) {
         var _iterator__ex2g4s_0 = tmp1_safe_receiver.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
           var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
-          var tmp_12 = Canvas_getInstance().selection_1;
-          if (element_0.id_1.equals((tmp_12 instanceof Feature ? tmp_12 : THROW_CCE()).id_1)) {
+          if (element_0.id_1.equals(tmp0_safe_receiver.id_1)) {
             tmp$ret$4 = element_0;
             break $l$block;
           }
         }
         tmp$ret$4 = null;
       }
-      tmp_11 = tmp$ret$4;
+      tmp_12 = tmp$ret$4;
     }
-    var f = tmp_11;
+    var tmp2_safe_receiver = tmp_12;
+    var tmp_13;
+    if (tmp2_safe_receiver == null) {
+      tmp_13 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      var tmp_14 = _get_tools__aufwyy(App_instance);
+      tmp_13 = add_0(tmp_14, [button('Edit plant\u2026', 'tool primary', 'Change variety or planting date, or delete (double-click a plant also works)', App$renderTools$lambda_7(tmp2_safe_receiver))]);
+    }
+  }
+  var tmp_15 = Canvas_getInstance().selection_1;
+  if (tmp_15 instanceof Feature) {
+    var tmp1_safe_receiver_0 = Store_getInstance().plot_21tcx_k$();
+    var tmp2_safe_receiver_0 = tmp1_safe_receiver_0 == null ? null : tmp1_safe_receiver_0.features_1;
+    var tmp_16;
+    if (tmp2_safe_receiver_0 == null) {
+      tmp_16 = null;
+    } else {
+      var tmp$ret$10;
+      $l$block_0: {
+        // Inline function 'kotlin.collections.firstOrNull' call
+        var _iterator__ex2g4s_1 = tmp2_safe_receiver_0.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+          var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
+          var tmp_17 = Canvas_getInstance().selection_1;
+          if (element_1.id_1.equals((tmp_17 instanceof Feature ? tmp_17 : THROW_CCE()).id_1)) {
+            tmp$ret$10 = element_1;
+            break $l$block_0;
+          }
+        }
+        tmp$ret$10 = null;
+      }
+      tmp_16 = tmp$ret$10;
+    }
+    var f = tmp_16;
     if (!(f == null)) {
-      var tmp_13 = _get_tools__aufwyy($this);
-      add_0(tmp_13, [button('Edit selected\u2026', 'tool primary', VOID, App$renderTools$lambda_6(f))]);
+      var tmp_18 = _get_tools__aufwyy($this);
+      add_0(tmp_18, [button('Edit selected\u2026', 'tool primary', VOID, App$renderTools$lambda_8(f))]);
     }
   }
   if (!(Canvas_getInstance().selection_1 == null)) {
-    var tmp_14 = _get_tools__aufwyy($this);
-    add_0(tmp_14, [button('Delete selected', 'tool danger', VOID, App$renderTools$lambda_7)]);
+    var tmp_19 = _get_tools__aufwyy($this);
+    add_0(tmp_19, [button('Delete selected', 'tool danger', VOID, App$renderTools$lambda_9)]);
   }
 }
 function pickAndRead($this) {
@@ -107198,6 +109149,39 @@ function App$renderHeader$lambda_8() {
   Dialogs_instance.help_3u9isx_k$();
   return Unit_instance;
 }
+function App$renderPlantLegend$lambda() {
+  App_instance.legendOpen_1 = !App_instance.legendOpen_1;
+  App_instance.render_dje1iy_k$();
+  return Unit_instance;
+}
+function App$renderPlantLegend$lambda_0(a, b) {
+  // Inline function 'kotlin.comparisons.compareValuesBy' call
+  var tmp = b.get_value_j01efc_k$().get_size_woubt6_k$();
+  var tmp$ret$1 = a.get_value_j01efc_k$().get_size_woubt6_k$();
+  return compareValues(tmp, tmp$ret$1);
+}
+function App$renderPlantLegend$lambda$lambda($code) {
+  return function (it) {
+    return it.seedCode_1 === $code;
+  };
+}
+function App$renderPlantLegend$lambda_1($active, $code, $name) {
+  return function (it) {
+    var tmp;
+    if ($active) {
+      App_instance.legendFindCode_1 = null;
+      App_instance.find_cfcmr2_k$(null, null);
+      tmp = Unit_instance;
+    } else {
+      App_instance.legendFindCode_1 = $code;
+      var tmp_0 = App_instance;
+      var tmp_1 = $name;
+      tmp_0.find_cfcmr2_k$(tmp_1, App$renderPlantLegend$lambda$lambda($code));
+      tmp = Unit_instance;
+    }
+    return Unit_instance;
+  };
+}
 function App$renderTools$lambda($t) {
   return function () {
     var tmp;
@@ -107235,13 +109219,23 @@ function App$renderTools$lambda_5() {
   Canvas_getInstance().render_dje1iy_k$();
   return Unit_instance;
 }
-function App$renderTools$lambda_6($f) {
+function App$renderTools$lambda_6() {
+  Canvas_getInstance().deleteOutline_tw1iyv_k$();
+  return Unit_instance;
+}
+function App$renderTools$lambda_7($n) {
+  return function () {
+    Dialogs_instance.plant_5j52sg_k$($n);
+    return Unit_instance;
+  };
+}
+function App$renderTools$lambda_8($f) {
   return function () {
     Dialogs_instance.feature_8lo7ub_k$($f, false);
     return Unit_instance;
   };
 }
-function App$renderTools$lambda_7() {
+function App$renderTools$lambda_9() {
   Canvas_getInstance().deleteSelection_74uk6n_k$();
   return Unit_instance;
 }
@@ -107497,6 +109491,12 @@ function Tab_initEntries() {
   Tab_FOOD_instance = new Tab('FOOD', 4, 'Food');
 }
 var $ENTRIES_5;
+function findable($this, e, species) {
+  e.classList.add('findable');
+  e.setAttribute('title', 'Show where the ' + species + ' plants are');
+  on(e, 'click', Panels$findable$lambda(species));
+  return e;
+}
 function kv($this, k, v) {
   return h('div', 'kv', VOID, VOID, listOf_0([h('span', 'k', k), h('span', 'v', v)]));
 }
@@ -107579,7 +109579,7 @@ function plot($this, body, wp) {
   add_0(body, [h('div', 'row wrap', VOID, VOID, destination_1)]);
   var tmp_6 = Canvas_getInstance().tool_1.equals(Tool_OUTLINE_getInstance()) ? 'btn on' : 'btn';
   var tmp_7 = button('Outline (odd shape)', tmp_6, VOID, Panels$plot$lambda_4);
-  add_0(body, [h('div', 'row wrap', VOID, VOID, listOf_0([tmp_7, button('Clear outline', 'btn', VOID, Panels$plot$lambda_5)]))]);
+  add_0(body, [h('div', 'row wrap', VOID, VOID, listOf_0([tmp_7, button('Delete outline', 'btn danger', VOID, Panels$plot$lambda_5)]))]);
   // Inline function 'kotlin.collections.isNotEmpty' call
   if (!wp.features_1.isEmpty_y1axqb_k$()) {
     add_0(body, [heading('On this plot')]);
@@ -107726,7 +109726,7 @@ function seasons($this, body, wp) {
       var this_1 = destination_1.get_entries_p20ztl_k$();
       // Inline function 'kotlin.comparisons.compareByDescending' call
       var tmp_6 = Panels$seasons$lambda_1;
-      var tmp$ret$16 = new sam$kotlin_Comparator$0_9(tmp_6);
+      var tmp$ret$16 = new sam$kotlin_Comparator$0_11(tmp_6);
       var tmp_7 = sortedWith(this_1, tmp$ret$16);
       add_0(body, [h('details', 'pest', VOID, VOID, listOf_0([tmp_4, para(joinToString_0(tmp_7, ', ', VOID, VOID, VOID, VOID, Panels$seasons$lambda_2), 'hint')]))]);
     }
@@ -107910,7 +109910,7 @@ function harmony($this, body, wp) {
     var element = _iterator__ex2g4s.next_20eer_k$();
     var n = element.component1_7eebsc_k$();
     var c = element.component2_7eebsb_k$();
-    add_0(body, [kv(Panels_getInstance(), n, c.toString())]);
+    add_0(body, [findable(Panels_getInstance(), kv(Panels_getInstance(), n, c.toString()), n)]);
   }
   // Inline function 'kotlin.collections.isNotEmpty' call
   if (!r.issues_1.isEmpty_y1axqb_k$()) {
@@ -108022,11 +110022,15 @@ function food($this, body, wp) {
   if (lines.isEmpty_y1axqb_k$()) {
     add_0(body, [para('No food crops planted yet.', 'hint')]);
   }
+  // Inline function 'kotlin.collections.isNotEmpty' call
+  if (!lines.isEmpty_y1axqb_k$()) {
+    add_0(body, [para('Click a line to see where those plants are.', 'hint')]);
+  }
   // Inline function 'kotlin.collections.forEach' call
   var _iterator__ex2g4s = lines.iterator_jk1svi_k$();
   while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
     var element = _iterator__ex2g4s.next_20eer_k$();
-    add_0(body, [kv(Panels_getInstance(), element.species_1 + ' \xD7 ' + element.plants_1, fmt_0(element.totalKg_1, 1) + ' kg')]);
+    add_0(body, [findable(Panels_getInstance(), kv(Panels_getInstance(), element.species_1 + ' \xD7 ' + element.plants_1, fmt_0(element.totalKg_1, 1) + ' kg'), element.species_1)]);
   }
   // Inline function 'kotlin.collections.isNotEmpty' call
   if (!lines.isEmpty_y1axqb_k$()) {
@@ -108043,8 +110047,8 @@ function food($this, body, wp) {
     var _iterator__ex2g4s_0 = this_0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
       var item = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$3 = CropReference_getInstance().speciesKey_x7vv_k$(item);
-      destination.add_utx5q5_k$(tmp$ret$3);
+      var tmp$ret$4 = CropReference_getInstance().speciesKey_x7vv_k$(item);
+      destination.add_utx5q5_k$(tmp$ret$4);
     }
     var keys = toSet_0(destination);
     var matches = take(FoodPlanner_getInstance().recipeMatches_5lres5_k$(keys), 6);
@@ -108091,6 +110095,26 @@ function Panels$render$lambda_1() {
   App_instance.openFile_hwzdhy_k$();
   return Unit_instance;
 }
+function Panels$findable$lambda$lambda($species) {
+  return function (n) {
+    var tmp0_safe_receiver = Catalog_getInstance().get_6bo4tg_k$(n.seedCode_1);
+    var tmp;
+    if (tmp0_safe_receiver == null) {
+      tmp = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp = equals_0(CropReference_getInstance().speciesName_3q2qgh_k$(tmp0_safe_receiver), $species, true);
+    }
+    return tmp === true;
+  };
+}
+function Panels$findable$lambda($species) {
+  return function (it) {
+    var tmp = App_instance;
+    tmp.find_cfcmr2_k$($species, Panels$findable$lambda$lambda($species));
+    return Unit_instance;
+  };
+}
 function Panels$plot$lambda($p) {
   return function () {
     Dialogs_instance.plotDetails_6kwaym_k$($p);
@@ -108133,13 +110157,7 @@ function Panels$plot$lambda_4() {
   return Unit_instance;
 }
 function Panels$plot$lambda_5() {
-  var tmp = Store_getInstance();
-  tmp.change_dk0lks_k$(Panels$plot$lambda$lambda_0);
-  App_instance.render_dje1iy_k$();
-  return Unit_instance;
-}
-function Panels$plot$lambda$lambda_0(it) {
-  it.plot_1 = it.plot_1.copy$default_hlcz3h_k$(VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, null);
+  Canvas_getInstance().deleteOutline_tw1iyv_k$();
   return Unit_instance;
 }
 function Panels$plot$lambda_6($f) {
@@ -108428,14 +110446,21 @@ initMetadataForClass(Candidate, 'Candidate');
 initMetadataForClass(Group, 'Group', Group);
 initMetadataForClass(sam$kotlin_Comparator$0_0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(AutoPlanner, 'AutoPlanner');
+initMetadataForClass(VineHabit, 'VineHabit');
+initMetadataForObject(VineHabits, 'VineHabits');
+initMetadataForClass(GrowthGuide, 'GrowthGuide');
+initMetadataForClass(Placed, 'Placed');
+initMetadataForClass(Rect, 'Rect');
+initMetadataForClass(sam$kotlin_Comparator$0_1, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForObject(BlockPlanner, 'BlockPlanner');
 initMetadataForClass(CarePreference, 'CarePreference');
 initMetadataForClass(FertilizeEvent, 'FertilizeEvent');
 initMetadataForClass(PestAdvice, 'PestAdvice');
 initMetadataForClass(CareTaskType, 'CareTaskType');
 initMetadataForClass(CareTask, 'CareTask');
 initMetadataForClass(PestEntry, 'PestEntry');
-initMetadataForClass(sam$kotlin_Comparator$0_1, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForClass(sam$kotlin_Comparator$0_2, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_3, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(CarePlanner, 'CarePlanner');
 initMetadataForClass(ValidationResult, 'ValidationResult');
 initMetadataForCompanion(Companion_10);
@@ -108451,18 +110476,18 @@ initMetadataForClass(YieldLine, 'YieldLine');
 initMetadataForClass(NutritionTotals, 'NutritionTotals');
 initMetadataForClass(Recipe, 'Recipe');
 initMetadataForClass(RecipeMatch, 'RecipeMatch');
-initMetadataForClass(sam$kotlin_Comparator$0_3, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForClass(sam$kotlin_Comparator$0_4, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_5, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(FoodPlanner, 'FoodPlanner');
 initMetadataForClass(PlotContext, 'PlotContext');
 initMetadataForObject(Relationships, 'Relationships');
 initMetadataForClass(Recommendation, 'Recommendation');
-initMetadataForClass(sam$kotlin_Comparator$0_5, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_6, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(RecommendationEngine, 'RecommendationEngine');
 initMetadataForClass(Severity, 'Severity');
 initMetadataForClass(HarmonyIssue, 'HarmonyIssue');
 initMetadataForClass(HarmonyReport, 'HarmonyReport');
-initMetadataForClass(sam$kotlin_Comparator$0_6, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_7, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForClass(HarmonyAnalyzer$analyze$$inlined$groupingBy$1);
 initMetadataForObject(HarmonyAnalyzer, 'HarmonyAnalyzer');
 initMetadataForClass(Guild, 'Guild');
@@ -108488,7 +110513,7 @@ initMetadataForClass(PlantingHistoryEntity, 'PlantingHistoryEntity');
 initMetadataForCompanion(Companion_12);
 initMetadataForClass(RotationGroup, 'RotationGroup');
 initMetadataForClass(RotationHit, 'RotationHit');
-initMetadataForClass(sam$kotlin_Comparator$0_7, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_8, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForClass(Seasons$seasonOf$$inlined$groupingBy$1);
 initMetadataForClass(Seasons$usualVarieties$$inlined$map$1);
 initMetadataForObject(Seasons, 'Seasons');
@@ -108522,19 +110547,20 @@ initMetadataForClass(Path, 'Path');
 initMetadataForClass(Feature, 'Feature');
 initMetadataForObject(Canvas, 'Canvas');
 initMetadataForObject(Embedded, 'Embedded');
-initMetadataForClass(sam$kotlin_Comparator$0_8, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_9, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(Catalog, 'Catalog');
 initMetadataForObject(Zips, 'Zips');
 initMetadataForObject(Colors, 'Colors');
 initMetadataForClass(Row, 'Row');
 initMetadataForObject(Dialogs, 'Dialogs');
+initMetadataForClass(sam$kotlin_Comparator$0_10, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(App, 'App');
 initMetadataForClass(Snap, 'Snap');
 initMetadataForClass(WebPlot, 'WebPlot');
 initMetadataForObject(Prefs, 'Prefs');
 initMetadataForObject(Store, 'Store');
 initMetadataForClass(Tab, 'Tab');
-initMetadataForClass(sam$kotlin_Comparator$0_9, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+initMetadataForClass(sam$kotlin_Comparator$0_11, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
 initMetadataForObject(Panels, 'Panels');
 initMetadataForObject(PlatformClock, 'PlatformClock');
 //endregion
@@ -108553,6 +110579,7 @@ NaturalOrderComparator_instance = new NaturalOrderComparator();
 Companion_instance_9 = new Companion_9();
 State_instance = new State();
 UNINITIALIZED_VALUE_instance = new UNINITIALIZED_VALUE();
+BlockPlanner_instance = new BlockPlanner();
 Companion_instance_10 = new Companion_10();
 Relationships_instance = new Relationships();
 RecommendationEngine_instance = new RecommendationEngine();

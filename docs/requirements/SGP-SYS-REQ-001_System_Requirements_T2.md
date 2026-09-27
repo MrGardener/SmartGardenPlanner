@@ -291,6 +291,25 @@ it shall stay viewable (per season, and drawn faintly on the layout on request),
 Parent: owner request 2026-09-27 (FR-033) · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
+### T2-FUN-240 — Organised clumps and room for vines (NEW 2026-09-27)
+**Statement:** "Plan an area for me" shall, by default, lay out each crop as an organised block of rows and columns
+at the crop's spacing (e.g. 20 sweet corn as 4 rows of 5; 7 tomatoes as a row of 4 and a row of 3), leave a walkway
+between blocks so every plant can be reached and watered with a hose, keep climbing crops at the side away from the
+midday sun (for a trellis), and put sprawling vines (e.g. watermelon, squash, pumpkin, cucumber) at the sunny side
+with free, sunny ground reserved toward the sun for their runners, shown on the proposal, so they don't grow into
+other crops looking for light.
+Parent: owner request 2026-09-27 (FR-035) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-250 — Find, edit and outline (NEW 2026-09-27)
+**Statement:** The user shall be able to (a) see a legend of what is planted on the plot, with counts, and have the
+plants of a chosen variety pointed out on the layout, also from the harvest and harmony lists; (b) change a planted
+plant's variety (and, on the computer, its planting date) or delete it; (c) move the corners of a plot outline, add
+corners, and delete the outline. The layout's compass shall show four arrowheads labelled N, E, S and W turned to the
+plot's direction, with north stressed.
+Parent: owner problem report 2026-09-27 (FR-036) · Safety: FC-01 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
 ### T2-FUN-230 — Keep the gardener's choices (NEW 2026-09-27)
 **Statement:** Discarding a "Plan an area for me" proposal shall not change the plot or lose the list of plants;
 the user shall be able to go back from the proposal to the list, with the same area and choices, change it and plan

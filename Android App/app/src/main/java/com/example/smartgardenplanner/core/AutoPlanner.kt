@@ -48,8 +48,8 @@ object PlantHeights {
  * is easy to move to another part of the plot next year (crop rotation). ROWS lines crops up by height.
  */
 enum class PlantingLayout(val label: String, val description: String) {
-    CLUMPS("Clumps (recommended)", "Each crop grows as a compact group. Next year the groups can swap places for crop rotation, and tall groups still sit behind short ones."),
-    ROWS("Rows", "Crops are lined up in rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.")
+    CLUMPS("Organised clumps (recommended)", "Each crop is a small block of rows and columns (e.g. 20 corn = 4 rows of 5) with walkways between blocks for watering with a hose. Vines get room to run toward the sun. Next year the blocks can swap places for crop rotation."),
+    ROWS("Long rows", "Crops are lined up in long rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.")
 }
 
 /** Plants the user asked for (FR-027): a variety and how many. */
@@ -62,7 +62,9 @@ data class AutoPlanResult(
     /** Species name → number of plants that didn't fit. */
     val unplaced: Map<String, Int>,
     /** Plain-language explanation of what was done and why. */
-    val notes: List<String>
+    val notes: List<String>,
+    /** Where vines are expected to run (FR-035), drawn as arrows on the proposal. */
+    val guides: List<GrowthGuide> = emptyList()
 )
 
 /**
@@ -129,6 +131,7 @@ object AutoPlanner {
     ): AutoPlanResult {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return AutoPlanResult(emptyList(), emptyMap(), listOf("Nothing to plan."))
+        if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear)
         val notes = mutableListOf<String>()
         val plot = context.plot
 
@@ -267,8 +270,7 @@ object AutoPlanner {
         if (speciesByHeight.size > 1) {
             notes += "Tallest plants (${speciesByHeight.take(2).joinToString(", ") { CropReference.speciesName(it) }}) are on the $backName side and the shortest (${CropReference.speciesName(speciesByHeight.last())}) on the sunny side, so tall plants don't shade short ones."
         }
-        notes += if (clumps) "Each crop is planted as a clump, not a long row. Next year the clumps can swap places (crop rotation) without tall plants ending up in front of short ones."
-        else "Crops are in rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Clumps make rotation easier."
+        notes += "Crops are in long rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Organised clumps make rotation easier."
         if (rotationAvoided > 0 || rotationStuck > 0) {
             notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
             else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."

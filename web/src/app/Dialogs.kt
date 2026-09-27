@@ -51,7 +51,12 @@ object Dialogs {
         (box.querySelector("input, select, textarea") as? HTMLElement ?: box.querySelector("button") as? HTMLElement)?.focus()
     }
 
-    fun close() { open?.let { it.parentNode?.removeChild(it) }; open = null }
+    fun close() {
+        val o = open ?: return
+        open = null
+        releaseFocusIn(o)
+        o.parentNode?.removeChild(o)
+    }
 
     fun message(title: String, lines: List<String>) = modal(title, lines.map { para(it) }, listOf("OK" to { true }))
 
@@ -329,6 +334,45 @@ object Dialogs {
         card.classList.remove("hidden")
     }
 
+    // ------------------------------------------------------------------ planted plants
+
+    /** Details of a planted plant, with change variety, planting date and delete (all undoable). */
+    fun plant(node: PlantedNodeEntity) {
+        val wp = Store.plot() ?: return
+        val seed = Catalog.get(node.seedCode)
+        val variety = input(seed?.commonName ?: node.seedCode, placeholder = "Type a variety")
+        variety.setAttribute("list", "sgp-seed-names")
+        val date = input(com.example.smartgardenplanner.core.CivilDate.isoUtc(node.datePlantedEpochMillis).take(10), "date")
+        val body = mutableListOf<HTMLElement>()
+        seed?.let { sd ->
+            VarietyCatalogTraits.of(sd)?.let { body += para(it.details, "kind") }
+            body += para("${sd.plantType.lowercase()} · ${sd.lifecycle.lowercase()} · spacing ${(sd.exclusionRadiusM * 2).fmt(2)} m · harvest about ${sd.daysToHarvest} days after planting", "hint")
+            if (sd.careNotes.isNotBlank()) body += para(sd.careNotes, "hint")
+        }
+        body += para("Position: ${node.coordinateXM.fmt(2)} m from the left, ${node.coordinateYM.fmt(2)} m from the top (${com.example.smartgardenplanner.core.CropRotation.describeSpot(wp.plot, node.coordinateXM, node.coordinateYM)}). Drag it with Select / move to change it.", "hint")
+        body += label("Variety", variety)
+        body += label("Planted on", date)
+        modal(seed?.let { VarietyCatalogTraits.displayName(it) } ?: node.seedCode, body, listOf(
+            "Cancel" to { true },
+            "Delete plant" to { Store.change { p -> p.plants = p.plants.filter { it.id != node.id } }; Canvas.selection = null; App.status("Plant deleted. Undo brings it back."); App.render(); true },
+            "Save" to save@{
+                val newSeed = Catalog.byName[variety.value.trim().lowercase()] ?: Catalog.search(variety.value, null, 1).firstOrNull()
+                if (newSeed == null) { App.status("Choose a variety from the list."); return@save false }
+                val day = date.value.split("-").mapNotNull { it.toIntOrNull() }
+                val planted = if (day.size == 3) com.example.smartgardenplanner.core.CivilDate.localMidnight(day[0], day[1], day[2], com.example.smartgardenplanner.core.PlatformClock.localOffsetMillis(node.datePlantedEpochMillis)) + 12 * 3_600_000L else node.datePlantedEpochMillis
+                val updated = node.copy(seedCode = newSeed.botanicalCode, datePlantedEpochMillis = planted)
+                if (newSeed.botanicalCode != node.seedCode) {
+                    val others = wp.plants.filter { it.id != node.id }
+                    val ok = com.example.smartgardenplanner.core.CompanionPlantingValidator().validatePlacement(updated, newSeed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive()).isValid
+                    if (!ok) { App.status("${newSeed.commonName} doesn't fit here (spacing or a plant it dislikes nearby). Move it first or choose another variety."); return@save false }
+                }
+                Store.change { p -> p.plants = p.plants.map { if (it.id == node.id) updated else it } }
+                App.status("Saved ${VarietyCatalogTraits.displayName(newSeed)}.")
+                App.render(); true
+            }
+        ))
+    }
+
     // ------------------------------------------------------------------ seasons (FR-033)
 
     /** Closes the current season: plants move to history, everything else on the plot stays. One undo step. */
@@ -367,6 +411,8 @@ object Dialogs {
         para("5. When the season ends: Plot tab → Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. “Names” shows what each plant is (sweet or hot pepper, cherry or large tomato…)."),
         heading("Moving plans between computer and phone"),
         para("Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive…). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here."),
+        heading("Finding and changing things"),
+        para("“On this plot” (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant…) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline."),
         heading("Keyboard"),
         para("Ctrl+Z undo · Ctrl+Y redo · Delete removes the selection · Enter finishes a shape · Esc cancels · mouse wheel zooms · drag empty space to pan."),
         para("Version $WEB_VERSION · uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.", "hint")

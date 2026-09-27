@@ -14,7 +14,9 @@ object App {
     private lateinit var tools: HTMLElement
     private lateinit var panel: HTMLElement
     private lateinit var statusLine: HTMLElement
-    private lateinit var legend: HTMLElement
+        private lateinit var legend: HTMLElement
+    private lateinit var plantLegend: HTMLElement
+    private var legendOpen = true
 
     fun status(text: String) { if (::statusLine.isInitialized) statusLine.textContent = text }
 
@@ -34,7 +36,8 @@ object App {
         panel = h("aside", "panel")
         statusLine = h("footer", "status", attrs = mapOf("role" to "status", "aria-live" to "polite"))
         legend = h("div", "legend hidden", attrs = mapOf("id" to "sgp-legend", "aria-label" to "Shade legend"))
-        val stage = h("div", "stage", kids = listOf(canvasHost, legend, preview))
+                plantLegend = h("div", "plant-legend", attrs = mapOf("id" to "sgp-plant-legend", "aria-label" to "Plants on this plot"))
+        val stage = h("div", "stage", kids = listOf(canvasHost, legend, plantLegend, preview))
         root.add(header, h("main", "main", kids = listOf(tools, stage, panel)), statusLine)
         root.add(h("datalist", attrs = mapOf("id" to "sgp-seed-names"), kids = Catalog.seeds.map { h("option", attrs = mapOf("value" to it.commonName)) }))
         Canvas.mount(canvasHost)
@@ -62,7 +65,8 @@ object App {
     fun render() {
         renderHeader()
         renderTools()
-        renderLegend()
+                renderLegend()
+        renderPlantLegend()
         Panels.render(panel)
         Canvas.render()
     }
@@ -104,6 +108,47 @@ object App {
         }
     }
 
+        /** Points out plants matching [test] on the layout ("find"); null clears. */
+    fun find(label: String?, test: ((com.example.smartgardenplanner.core.PlantedNodeEntity) -> Boolean)?) {
+        Canvas.find = test
+        if (test != null && label != null) {
+            val n = Store.plot()?.plants?.count(test) ?: 0
+            status(if (n == 0) "No $label on this plot." else "Showing $n × $label (circled in orange). Click it again or press Esc to clear.")
+        }
+        render()
+    }
+
+    /** Legend of what's planted, with counts; clicking a line points those plants out (FR-036). */
+    private fun renderPlantLegend() {
+        plantLegend.clear()
+        val wp = Store.plot()
+        if (wp == null || wp.plants.isEmpty()) { plantLegend.classList.add("hidden"); return }
+        plantLegend.classList.remove("hidden")
+        plantLegend.add(h("div", "pl-head", kids = listOf(
+            h("b", text = "On this plot (${wp.plants.size})"),
+            button(if (legendOpen) "−" else "+", "btn small", if (legendOpen) "Hide the list" else "Show the list") { legendOpen = !legendOpen; render() }
+        )))
+        if (!legendOpen) return
+        plantLegend.add(para("Click a line to find those plants.", "hint"))
+        wp.plants.groupBy { it.seedCode }.entries.sortedByDescending { it.value.size }.forEach { (code, list) ->
+            val seed = Catalog.get(code)
+            val ring = Colors.of(seed)
+            val dot = seed?.let { com.example.smartgardenplanner.core.VarietyCatalogTraits.dotArgb(it) }?.let { com.example.smartgardenplanner.core.LayoutPalette.hex(it) } ?: ring
+            val name = seed?.commonName ?: code
+            val kind = seed?.let { com.example.smartgardenplanner.core.VarietyCatalogTraits.of(it)?.details }
+            val active = Canvas.find != null && Canvas.find!!(list.first()) && legendFindCode == code
+            val row = h("button", if (active) "pl-row on" else "pl-row", attrs = mapOf("type" to "button", "title" to "Find ${list.size} × $name"), kids = listOfNotNull(
+                h("span", "sw2", attrs = mapOf("style" to "border-color:$ring;background:radial-gradient(circle,$dot 0 38%,transparent 40%)")),
+                h("span", "grow", kids = listOfNotNull(h("span", "name", "${list.size} × $name"), kind?.let { h("span", "hint", it) }))
+            ))
+            row.on("click") {
+                if (active) { legendFindCode = null; find(null, null) } else { legendFindCode = code; find("$name", { it.seedCode == code }) }
+            }
+            plantLegend.add(row)
+        }
+    }
+    private var legendFindCode: String? = null
+
     private fun cssRgba(argb: Long): String {
         val r = (argb shr 16) and 0xFF; val g = (argb shr 8) and 0xFF; val b = argb and 0xFF
         return "rgba($r,$g,$b,${com.example.smartgardenplanner.core.LayoutPalette.alpha(argb)})"
@@ -126,6 +171,10 @@ object App {
         tools.add(button("＋", "tool icon", "Zoom in") { Canvas.zoom(1 / 1.3) })
         tools.add(button("－", "tool icon", "Zoom out") { Canvas.zoom(1.3) })
         tools.add(button("Fit", "tool", "Fit the plot to the window") { Canvas.fit(); Canvas.render() })
+                if (Canvas.tool == Tool.OUTLINE) tools.add(button("Delete outline", "tool danger", "Remove the outline; the plot becomes the full rectangle (undoable)") { Canvas.deleteOutline() })
+        (Canvas.selection as? Selection.Plant)?.let { sel ->
+            Store.plot()?.plants?.firstOrNull { it.id == sel.id }?.let { n -> tools.add(button("Edit plant…", "tool primary", "Change variety or planting date, or delete (double-click a plant also works)") { Dialogs.plant(n) }) }
+        }
         if (Canvas.selection is Selection.Feature) {
             val f = Store.plot()?.features?.firstOrNull { it.id == (Canvas.selection as Selection.Feature).id }
             if (f != null) tools.add(button("Edit selected…", "tool primary") { Dialogs.feature(f, isNew = false) })

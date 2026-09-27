@@ -34,7 +34,18 @@ fun num(v: Double): String {
 
 fun <T : Element> T.on(event: String, handler: (Event) -> Unit): T { addEventListener(event, handler); return this }
 fun Element.add(vararg kids: Node): Element { kids.forEach { appendChild(it) }; return this }
-fun Element.clear() { while (true) { val c = firstChild ?: break; removeChild(c) } }
+/** Removes all children. Removing a focused input can fire blur/change handlers that clear the same element again,
+ *  so each child is removed only if it is still attached here. */
+fun Element.clear() {
+    releaseFocusIn(this)
+    while (true) { val c = firstChild ?: break; if (c.parentNode === this) removeChild(c) }
+}
+
+/** Blurs the focused element if it is inside [e], so its blur/change handlers run before [e] is emptied or removed. */
+fun releaseFocusIn(e: Element) {
+    val active = document.activeElement as? HTMLElement ?: return
+    if (active !== document.body && e.contains(active)) active.blur()
+}
 fun byId(id: String): HTMLElement = document.getElementById(id) as HTMLElement
 
 fun button(label: String, cls: String = "btn", title: String? = null, onClick: () -> Unit): HTMLElement =

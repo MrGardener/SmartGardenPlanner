@@ -49,7 +49,7 @@ Central into `~/.cache/sgp-kotlin` (set `KOTLIN_JARS` to use another folder).
 ```sh
 sh web/build.sh                  # writes web/dist/smart-garden-planner.html (reproducible)
 cd web && npm install --no-save playwright@1 && npx playwright install chromium
-node tests/smoke.mjs             # 51 checks
+node tests/smoke.mjs             # 66 checks
 ```
 
 On every pull request that touches `web/`, `core/` or the assets, CI (`.github/workflows/web-planner.yml`) does

@@ -1,0 +1,284 @@
+package com.example.smartgardenplanner.core
+
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sqrt
+
+/**
+ * How a crop grows before it bears (FR-035). Sprawling vines (melons, squash, pumpkins, cucumbers left on the ground,
+ * sweet potatoes) run [runwayM] metres along the ground toward the light; climbers (pole beans, peas) go up a trellis.
+ */
+data class VineHabit(val runwayM: Float, val climber: Boolean)
+
+object VineHabits {
+    private val HABITS = mapOf(
+        "watermelon" to VineHabit(2.0f, false), "melon" to VineHabit(1.5f, false), "pumpkin" to VineHabit(2.5f, false),
+        "winter squash" to VineHabit(2.0f, false), "cucumber" to VineHabit(1.2f, false), "sweet potato" to VineHabit(1.5f, false),
+        "luffa" to VineHabit(2.0f, false), "bottle gourd" to VineHabit(2.0f, false), "bitter melon" to VineHabit(1.5f, false),
+        "summer squash mix" to VineHabit(0.8f, false),
+        "pole bean" to VineHabit(0f, true), "yard-long bean" to VineHabit(0f, true), "pea" to VineHabit(0f, true)
+    )
+
+    fun of(seed: SeedEntity): VineHabit? = HABITS[CropReference.speciesKey(seed)]
+}
+
+/** Where a vine is expected to run (FR-035), for drawing an arrow on the proposal. */
+data class GrowthGuide(val species: String, val area: List<PlotPoint>, val from: PlotPoint, val to: PlotPoint)
+
+/**
+ * "Organised clumps" for Plan an area for me (FR-035): each crop becomes a block of rows × columns at its own
+ * spacing, e.g. 20 sweet corn = 4 rows of 5, 7 tomatoes = a row of 4 and a row of 3. Blocks are separated by a
+ * walkway so every plant can be reached and watered with a hose. Tall blocks go to the side away from the midday
+ * sun; climbers at the very back on a trellis; sprawling vines at the sunny edge with a free runway toward the sun,
+ * so they don't grow into their neighbours looking for light. Every plant passes the normal placement rules. Pure
+ * Kotlin.
+ */
+object BlockPlanner {
+
+    const val WALKWAY_M = 0.45f
+
+    /** Rows and columns for [n] plants: as square as possible with no more rows than columns. */
+    fun shape(n: Int): Pair<Int, Int> {
+        val rows = max(1, floor(sqrt(n.toDouble())).toInt())
+        return rows to ceil(n / rows.toDouble()).toInt()
+    }
+
+    /** Plants per row, front row shortest: 7 → [4, 3]. */
+    fun rowSizes(n: Int): List<Int> {
+        val (rows, cols) = shape(n)
+        val out = MutableList(rows) { cols }
+        var extra = rows * cols - n
+        var i = rows - 1
+        while (extra > 0) { out[i]--; extra--; i = if (i == 0) rows - 1 else i - 1 }
+        return out.filter { it > 0 }
+    }
+
+    private class Placed(val seed: SeedEntity, val x: Float, val y: Float, val r: Float)
+    private class Rect(val u0: Float, val u1: Float, val v0: Float, val v1: Float) {
+        fun contains(u: Float, v: Float) = u in u0..u1 && v in v0..v1
+    }
+
+    fun plan(
+        context: PlotContext,
+        area: List<PlotPoint>,
+        wanted: List<PlantRequest>,
+        isBlocked: (x: Float, y: Float, radiusM: Float) -> Boolean,
+        marginMultiplier: Float,
+        orientationKnown: Boolean,
+        history: List<PlantingHistoryEntity>,
+        seasonYear: Int
+    ): AutoPlanResult {
+        val plot = context.plot
+        val notes = mutableListOf<String>()
+        // Frame: v grows toward the back (away from the midday sun), u runs along the rows.
+        val (sx, sy) = AutoPlanner.sunwardVector(context.latitude, plot.northBearingDeg)
+        val lx = -sy; val ly = sx
+        fun toU(x: Float, y: Float) = (x * lx + y * ly).toFloat()
+        fun toV(x: Float, y: Float) = (-(x * sx + y * sy)).toFloat()
+        fun toXY(u: Float, v: Float) = PlotPoint((u * lx - v * sx).toFloat(), (u * ly - v * sy).toFloat())
+        val us = area.map { toU(it.x, it.y) }; val vs = area.map { toV(it.x, it.y) }
+        val uMin = us.min(); val uMax = us.max(); val vMin = vs.min(); val vMax = vs.max()
+        val vSpan = (vMax - vMin).coerceAtLeast(0.01f)
+        val diag = sqrt(((uMax - uMin) * (uMax - uMin) + vSpan * vSpan).toDouble()).coerceAtLeast(0.1)
+
+        val heights = wanted.associate { it.seed.botanicalCode to PlantHeights.heightM(it.seed) }
+        val hMin = heights.values.min(); val hMax = heights.values.max()
+        val isPollinator = { s: SeedEntity -> CropReference.speciesKey(s) in AutoPlanner.POLLINATOR_PLANTS }
+        fun targetDepth(seed: SeedEntity): Float {
+            val habit = VineHabits.of(seed)
+            return when {
+                habit?.climber == true -> 1f
+                habit != null -> 0f
+                hMax - hMin < 0.05f -> 0.5f
+                else -> (heights.getValue(seed.botanicalCode) - hMin) / (hMax - hMin)
+            }
+        }
+        // Order: climbers (back edge), sprawling vines (they claim the sunny edge and its runway), then the rest tallest
+        // first, pollinator plants last.
+        fun rank(r: PlantRequest): Int { val h = VineHabits.of(r.seed); return when { h?.climber == true -> 0; isPollinator(r.seed) -> 3; h != null -> 1; else -> 2 } }
+        val order = wanted.sortedWith(compareBy<PlantRequest> { rank(it) }.thenByDescending { heights.getValue(it.seed.botanicalCode) })
+
+        val sunMemo = HashMap<Long, Double?>()
+        fun sunAt(x: Float, y: Float): Double? {
+            val key = (floor(x / 0.25f).toLong() shl 32) xor (floor(y / 0.25f).toLong() and 0xffffffffL)
+            return sunMemo.getOrPut(key) { context.sunHoursAt(x, y) }
+        }
+        val sunKnown = context.barriers.isNotEmpty() || context.areaFeatures.any { SiteFeatureType.of(it.featureType)?.let { t -> t == SiteFeatureType.FULL_SUN || t == SiteFeatureType.PART_SHADE || t == SiteFeatureType.FULL_SHADE } == true }
+        val pastByGroup = history.filter { it.group != null && seasonYear - it.seasonYear in 1..it.group!!.waitYears }.groupBy { it.group!! }
+
+        val existing = context.nodes.mapNotNull { n -> context.seedLookup(n.seedCode)?.let { Placed(it, n.coordinateXM, n.coordinateYM, it.exclusionRadiusM) } }
+        val placedNodes = mutableListOf<PlantedNodeEntity>()
+        val placed = mutableListOf<Placed>()
+        val result = mutableListOf<PlannedPlant>()
+        val unplaced = linkedMapOf<String, Int>()
+        val reserved = mutableListOf<Rect>()   // vine runways, in frame coordinates
+        val guides = mutableListOf<GrowthGuide>()
+        val blockNotes = mutableListOf<String>()
+        val insectCentres = mutableListOf<PlotPoint>()
+        val validator = CompanionPlantingValidator()
+        var rotationAvoided = 0; var rotationStuck = 0
+
+        for (req in order) {
+            val seed = req.seed
+            val crop = CropReference.forSeed(seed)
+            val key = CropReference.speciesKey(seed)
+            val habit = VineHabits.of(seed)
+            val r = seed.exclusionRadiusM
+            val pitch = (2f * r * marginMultiplier).coerceAtLeast(0.05f) + 0.001f
+            val target = targetDepth(seed)
+            val group = RotationGroup.forSeed(seed)
+            val past = group?.let { pastByGroup[it] }.orEmpty()
+            var remaining = req.count
+            var blocks = 0
+            val shapes = mutableListOf<List<Int>>()
+
+            fun rotationPenalty(p: PlotPoint): Double {
+                var worst = 0.0
+                for (h in past) {
+                    val dx = p.x - h.coordinateXM; val dy = p.y - h.coordinateYM
+                    if (sqrt((dx * dx + dy * dy).toDouble()) < CropRotation.reach(h) + r * 0.5) {
+                        worst = max(worst, 6.0 * (1.0 - (seasonYear - h.seasonYear - 1).toDouble() / group!!.waitYears))
+                    }
+                }
+                return worst
+            }
+            // Cheap checks: inside, not blocked, clear of other plants (plus a walkway from other crops) and runways.
+            fun cellOk(u: Float, v: Float): Boolean {
+                val p = toXY(u, v)
+                if (!PlotGeometry.pointInPolygon(p.x, p.y, area) || !PlotShape.contains(plot, p.x, p.y)) return false
+                if (isBlocked(p.x, p.y, r)) return false
+                if (context.floodZoneAt(p.x, p.y) != null && !crop.floodTolerant) return false
+                if (reserved.any { it.contains(u, v) }) return false
+                for (o in existing) {
+                    val need = (r + o.r) * marginMultiplier
+                    val dx = p.x - o.x; val dy = p.y - o.y
+                    if (dx * dx + dy * dy < need * need) return false
+                }
+                for (o in placed) {
+                    val gap = if (CropReference.speciesKey(o.seed) == key) 0f else WALKWAY_M
+                    val need = (r + o.r) * marginMultiplier + gap
+                    val dx = p.x - o.x; val dy = p.y - o.y
+                    if (dx * dx + dy * dy < need * need) return false
+                }
+                return true
+            }
+
+            while (remaining > 0) {
+                val rows = rowSizes(remaining)
+                val cols = rows.max()
+                val blockW = (cols - 1) * pitch
+                val blockD = (rows.size - 1) * pitch
+                val step = max(pitch / 2f, sqrt(((uMax - uMin) * vSpan / 1200f).toDouble()).toFloat()).coerceAtLeast(0.05f)
+                var best: Triple<Double, List<PlotPoint>, Pair<Float, Float>>? = null
+                var v0 = vMax - r * 0.5f
+                while (v0 >= vMin - blockD) {
+                    var u0 = uMin + r * 0.5f
+                    while (u0 <= uMax) {
+                        // Cells: back row first; each row centred on the block's width.
+                        val cells = mutableListOf<Pair<Float, Float>>()
+                        rows.forEachIndexed { ri, n -> val off = (cols - n) * pitch / 2f; for (ci in 0 until n) cells += (u0 + off + ci * pitch) to (v0 - ri * pitch) }
+                        val ok = cells.filter { (u, v) -> cellOk(u, v) }
+                        if (ok.isNotEmpty()) {
+                            val pts = ok.map { (u, v) -> toXY(u, v) }
+                            var score = ok.size * 10.0
+                            val meanDepth = ok.map { (_, v) -> (v - vMin) / vSpan }.average()
+                            score -= abs(meanDepth - target) * 4.0
+                            if (sunKnown) {
+                                val need = crop.sun.minHours.toDouble()
+                                score -= pts.map { p -> sunAt(p.x, p.y)?.let { h -> max(0.0, need - h) / need } ?: 0.0 }.average() * 5.0
+                            }
+                            if (past.isNotEmpty()) score -= pts.map { rotationPenalty(it) }.average()
+                            if (isPollinator(seed) && insectCentres.isNotEmpty()) {
+                                val c = PlotPoint(pts.map { it.x }.average().toFloat(), pts.map { it.y }.average().toFloat())
+                                score -= insectCentres.minOf { sqrt(((c.x - it.x) * (c.x - it.x) + (c.y - it.y) * (c.y - it.y)).toDouble()) } / diag * 4.0
+                            }
+                            if (habit != null && !habit.climber) {
+                                // Runway toward the sun, in front of the block: it should be free, inside the plot and sunny.
+                                val front = v0 - blockD - r
+                                var good = 0; var bad = 0
+                                var t = 0.25f
+                                while (t <= habit.runwayM) {
+                                    var uu = u0; while (uu <= u0 + blockW + 0.001f) {
+                                        val p = toXY(uu, front - t)
+                                        val occupied = (existing + placed).any { o -> (o.x - p.x) * (o.x - p.x) + (o.y - p.y) * (o.y - p.y) < o.r * o.r }
+                                        val shaded = sunKnown && (sunAt(p.x, p.y) ?: 8.0) < 3.0
+                                        if (occupied || shaded || !PlotShape.contains(plot, p.x, p.y)) bad++ else good++
+                                        uu += max(pitch, 0.5f)
+                                    }
+                                    t += 0.5f
+                                }
+                                if (good + bad > 0) score += 3.0 * (good - 2.0 * bad) / (good + bad)
+                            }
+                            if (best == null || score > best.first) best = Triple(score, pts, u0 to v0)
+                        }
+                        u0 += step
+                    }
+                    v0 -= step
+                }
+                if (best == null) break
+                // Full rule check on the chosen block; keep the cells that pass.
+                val kept = mutableListOf<PlotPoint>()
+                for (p in best.second) {
+                    val node = PlantedNodeEntity(plotId = plot.id, seedCode = seed.botanicalCode, coordinateXM = p.x, coordinateYM = p.y)
+                    if (validator.validatePlacement(node, seed, context.nodes + placedNodes, context.seedLookup, marginMultiplier, context.enforceCompanionRules, context.guilds).isValid) {
+                        kept += p; placedNodes += node
+                    }
+                }
+                if (kept.isEmpty()) break
+                kept.forEach { p ->
+                    placed += Placed(seed, p.x, p.y, r); result += PlannedPlant(seed, p.x, p.y)
+                    if (past.isNotEmpty()) { if (rotationPenalty(p) > 0.0) rotationStuck++ else rotationAvoided++ }
+                }
+                val (bu, bv) = best.third
+                if (habit != null && !habit.climber) {
+                    val front = bv - blockD - r
+                    reserved += Rect(bu - r, bu + blockW + r, front - habit.runwayM, front)
+                    val poly = listOf(toXY(bu - r, front), toXY(bu + blockW + r, front), toXY(bu + blockW + r, front - habit.runwayM), toXY(bu - r, front - habit.runwayM))
+                    guides += GrowthGuide(CropReference.speciesName(seed), poly, toXY(bu + blockW / 2f, front), toXY(bu + blockW / 2f, front - habit.runwayM))
+                }
+                if (key in AutoPlanner.INSECT_POLLINATED) insectCentres += PlotPoint(kept.map { it.x }.average().toFloat(), kept.map { it.y }.average().toFloat())
+                shapes += if (kept.size == rows.sum()) rows else rowSizes(kept.size)
+                remaining -= kept.size
+                blocks++
+                if (kept.size < best.second.size && blocks > 6) break
+            }
+            if (remaining > 0) unplaced[CropReference.speciesName(seed)] = (unplaced[CropReference.speciesName(seed)] ?: 0) + remaining
+            val done = req.count - remaining
+            if (done > 0) {
+                val shapeText = shapes.joinToString(" + ") { rs -> if (rs.size == 1) "1 row of ${rs[0]}" else if (rs.distinct().size == 1) "${rs.size} rows of ${rs[0]}" else "rows of ${rs.joinToString(" + ")}" }
+                blockNotes += "${CropReference.speciesName(seed)}: $done in $shapeText, ${(pitch * 100).toInt()} cm apart"
+            }
+        }
+
+        // --- Explain.
+        val backName = if (context.latitude >= 0) "north" else "south"
+        val sunName = if (context.latitude >= 0) "south" else "north"
+        if (blockNotes.isNotEmpty()) notes += "Organised clumps: " + blockNotes.joinToString("; ") + ". Each clump is in rows and columns with a ${(WALKWAY_M * 100).toInt()} cm walkway around it, so you can reach and hose every plant. Next year the clumps can swap places for crop rotation."
+        val tall = order.filter { VineHabits.of(it.seed) == null && !isPollinator(it.seed) }.map { it.seed }.distinctBy { CropReference.speciesKey(it) }
+        if (tall.size > 1) notes += "Taller clumps (${tall.take(2).joinToString(", ") { CropReference.speciesName(it) }}) are on the $backName side, shorter ones on the sunny side, so tall plants don't shade short ones."
+        val climbers = order.filter { VineHabits.of(it.seed)?.climber == true }.map { CropReference.speciesName(it.seed) }.distinct()
+        if (climbers.isNotEmpty()) notes += "${climbers.joinToString(", ")} climb: they are at the back ($backName) edge. Put up a trellis or poles there so they grow up, not over their neighbours."
+        guides.groupBy { it.species }.forEach { (species, g) ->
+            val habit = order.first { CropReference.speciesName(it.seed) == species }.seed.let { VineHabits.of(it) }
+            notes += "$species vines run toward the sun: the clump is at the sunny ($sunName) edge with about ${habit?.runwayM?.fmt(1) ?: "1"} m kept free toward the $sunName (arrow on the plan). Guide the runners that way so they don't grow into other crops looking for light."
+        }
+        if (rotationAvoided > 0 || rotationStuck > 0) {
+            notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
+            else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."
+        }
+        if (!orientationKnown) notes += "The plot's compass direction isn't set, so the top edge is assumed to face north. Set it for accurate sun placement."
+        notes += if (sunKnown) "Full-sun crops got the sunniest spots, using your sun/shade areas and the shade from obstacles." else "No obstacles or sun/shade areas are marked, so the whole area is treated as full sun."
+        if (wanted.any { CropReference.speciesKey(it.seed) in AutoPlanner.BLOCK_PLANTED }) notes += "Sweet corn (and other wind-pollinated grains) is a square-ish block, not a single row, so the pollen reaches every ear."
+        val needsInsects = wanted.filter { CropReference.speciesKey(it.seed) in AutoPlanner.INSECT_POLLINATED }.map { CropReference.speciesName(it.seed) }.distinct()
+        val helpers = wanted.filter { isPollinator(it.seed) }
+        if (needsInsects.isNotEmpty()) {
+            notes += if (helpers.isNotEmpty()) "Pollinator plants (${helpers.joinToString(", ") { CropReference.speciesName(it.seed) }}) are spread among the clumps of ${needsInsects.joinToString(", ")}, right next to them, to bring bees to their flowers."
+            else "${needsInsects.joinToString(", ")} need bees to set fruit. Consider adding a few pollinator plants such as marigold, borage, basil or dill."
+        }
+        if (unplaced.isNotEmpty()) notes += "Didn't fit: " + unplaced.entries.joinToString(", ") { "${it.value} ${it.key}" } + ". Choose a larger area or fewer plants."
+        return AutoPlanResult(result, unplaced, notes, guides)
+    }
+}

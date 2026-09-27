@@ -37,7 +37,7 @@ enum class Tool(val label: String, val hint: String) {
     TREE("Tree", "Click where the trunk is, then give its height and crown size."),
     LINE_OBSTACLE("Fence / wall / building", "Click points along it, then press Enter or click Finish."),
     AREA("Sun / shade / flood / slope area", "Click the corners (3+), then press Enter or click Finish."),
-    OUTLINE("Plot outline", "Click the plot's corners in order (3+), then press Enter or click Finish."),
+        OUTLINE("Plot outline", "Drag a white corner to move it; double-click an edge to add a corner. Or click new corners in order (3+) and press Enter to redraw. “Delete outline” removes it."),
     PLAN("Plan an area for me", "Drag over the area you want planted; then list what to plant.")
 }
 
@@ -55,7 +55,10 @@ object Canvas {
     var obstacleType = SiteFeatureType.FENCE
     var areaType = SiteFeatureType.FULL_SUN
     var selection: Selection? = null
-    var showShade = false
+        var showShade = false
+    /** Plants to point out on the layout (legend / harvest "find"), or null. */
+    var find: ((PlantedNodeEntity) -> Boolean)? = null
+    private var dragVertex: Int? = null
     val points = mutableListOf<PlotPoint>()           // polygon/polyline being drawn
     private var dragStart: PlotPoint? = null           // rectangle tools, panning and moving
     private var dragNow: PlotPoint? = null
@@ -72,7 +75,13 @@ object Canvas {
         svg.on("pointerdown") { onDown(it as MouseEvent) }
         svg.on("pointermove") { onMove(it as MouseEvent) }
         svg.on("pointerup") { onUp(it as MouseEvent) }
-        svg.on("dblclick") { if (tool in setOf(Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE)) finishPoints() }
+                svg.on("dblclick") { e ->
+            when {
+                tool == Tool.OUTLINE && points.isEmpty() -> addOutlineCorner(toMetres(e as MouseEvent))
+                tool in setOf(Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE) -> finishPoints()
+                tool == Tool.SELECT -> (selection as? Selection.Plant)?.let { sel -> Store.plot()?.plants?.firstOrNull { it.id == sel.id }?.let { Dialogs.plant(it) } }
+            }
+        }
         svg.on("wheel") { onWheel(it as WheelEvent) }
     }
 
@@ -81,7 +90,9 @@ object Canvas {
     fun fit() {
         val p = Store.plot()?.plot ?: return
         val pad = max(p.lengthM, p.widthM) * 0.08 + 0.4
-        vb = doubleArrayOf(-pad * 1.2, -pad * 1.6, p.lengthM + pad * 3.0, p.widthM + pad * 2.6)
+        val comp = max(p.lengthM, p.widthM) / 38.0 * 3.8   // compass radius (see drawCompass)
+        val top = max(pad * 1.6, comp * 1.75)
+        vb = doubleArrayOf(-pad * 1.2, -top, p.lengthM + pad * 1.2 + comp * 2.6, p.widthM + pad + top)
         fittedFor = p.id
     }
 
@@ -103,7 +114,8 @@ object Canvas {
 
     fun render() {
         if (!::svg.isInitialized) return
-        svg.clear()
+                svg.clear()
+        svg.add(s("defs").also { d -> d.add(s("marker", "id" to "sgp-arrow", "viewBox" to "0 0 10 10", "refX" to 8, "refY" to 5, "markerWidth" to 5, "markerHeight" to 5, "orient" to "auto-start-reverse").also { m -> m.add(s("path", "d" to "M0,0 L10,5 L0,10 z", "fill" to "#16a34a")) }) })
         val wp = Store.plot()
         if (wp == null) {
             svg.setAttribute("viewBox", "0 0 10 6")
@@ -132,13 +144,21 @@ object Canvas {
             val poly = outline.joinToString(" ") { "${num(it.x.toDouble())},${num(it.y.toDouble())}" }
             svg.add(s("path", "d" to "M0,0 H${p.lengthM} V${p.widthM} H0 Z M" + outline.joinToString(" L") { "${num(it.x.toDouble())},${num(it.y.toDouble())}" } + " Z",
                 "fill" to col(LayoutPalette.OUTSIDE_OUTLINE), "fill-opacity" to LayoutPalette.alpha(LayoutPalette.OUTSIDE_OUTLINE), "fill-rule" to "evenodd"))
-            svg.add(s("polygon", "points" to poly, "fill" to "none", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
+                        svg.add(s("polygon", "points" to poly, "fill" to "none", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
+            if (tool == Tool.OUTLINE && points.isEmpty()) outline.forEach { v ->
+                svg.add(s("circle", "cx" to v.x, "cy" to v.y, "r" to handleR(), "fill" to "#ffffff", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke", "class" to "handle"))
+            }
         }
         Store.historyYear?.let { y -> drawHistory(wp, y, fs) }
         wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id, fs = fs) }
         Store.preview?.placed?.forEach { pl ->
             val c = Colors.of(pl.seed)
             svg.add(s("circle", "cx" to pl.x, "cy" to pl.y, "r" to pl.seed.exclusionRadiusM, "fill" to c, "fill-opacity" to 0.25, "stroke" to c, "stroke-dasharray" to "4 3", "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
+        }
+                Store.preview?.guides?.forEach { gd ->
+            svg.add(s("polygon", "points" to gd.area.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "#16a34a", "fill-opacity" to 0.08, "stroke" to "#16a34a", "stroke-dasharray" to "5 4", "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke", "class" to "guide"))
+            svg.add(s("line", "x1" to gd.from.x, "y1" to gd.from.y, "x2" to gd.to.x, "y2" to gd.to.y, "stroke" to "#16a34a", "stroke-width" to 3, "marker-end" to "url(#sgp-arrow)", "vector-effect" to "non-scaling-stroke"))
+            svg.add(s("text", "x" to (gd.from.x + gd.to.x) / 2, "y" to (gd.from.y + gd.to.y) / 2, "font-size" to fs * 0.6, "fill" to "#166534", "text-anchor" to "middle", "font-style" to "italic").also { it.textContent = "${gd.species} runs this way" })
         }
         Store.previewArea?.let { a -> svg.add(s("polygon", "points" to a.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to "#10b981", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke")) }
         drawInProgress()
@@ -161,13 +181,29 @@ object Canvas {
         }
     }
 
+    /** Compass rose with four arrowheads and N / E / S / W, turned to the plot's direction (FR-028). */
     private fun drawCompass(l: Double, fs: Double, bearing: Double, set: Boolean) {
-        val cx = l + fs * 3.4; val cy = -fs * 1.6; val r = fs * 1.1
-        val a = -bearing * kotlin.math.PI / 180.0
-        val tx = cx + sin(a) * r; val ty = cy - cos(a) * r
-        svg.add(s("circle", "cx" to cx, "cy" to cy, "r" to r * 2.2, "fill" to "var(--card)", "stroke" to "var(--line)", "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
-        svg.add(s("line", "x1" to cx - sin(a) * r * 0.6, "y1" to cy + cos(a) * r * 0.6, "x2" to tx, "y2" to ty, "stroke" to if (set) "#ef4444" else "#64748b", "stroke-width" to 3, "stroke-linecap" to "round", "vector-effect" to "non-scaling-stroke"))
-        svg.add(s("text", "x" to cx + sin(a) * r * 1.75, "y" to cy - cos(a) * r * 1.75 + fs * 0.32, "font-size" to fs * 0.9, "fill" to "currentColor", "text-anchor" to "middle", "font-weight" to "bold").also { it.textContent = if (set) "N" else "N?" })
+        val r = fs * 3.8
+        val cx = l + r * 1.3; val cy = -r * 0.45
+        val g = s("g", "class" to "compass", "transform" to "translate(${num(cx)},${num(cy)}) rotate(${num(-bearing)})")
+        g.add(s("circle", "cx" to 0, "cy" to 0, "r" to r * 1.12, "fill" to "var(--card)", "stroke" to "var(--line)", "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+        listOf(0.0 to "N", 90.0 to "E", 180.0 to "S", 270.0 to "W").forEach { (deg, letter) ->
+            val a = deg * kotlin.math.PI / 180.0
+            fun pt(dist: Double, side: Double): String {
+                val x = sin(a) * dist + cos(a) * side; val y = -cos(a) * dist + sin(a) * side
+                return "${num(x)},${num(y)}"
+            }
+            val north = letter == "N"
+            val ink = if (north && set) "#dc2626" else if (north) "#9ca3af" else "currentColor"
+            val tip = pt(r * 1.02, 0.0); val base = pt(r * 0.6, 0.0)
+            // Half-filled arrowhead, like a classic compass rose.
+            g.add(s("polygon", "points" to "$tip ${pt(r * 0.52, -r * 0.2)} $base", "fill" to ink, "stroke" to ink, "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+            g.add(s("polygon", "points" to "$tip ${pt(r * 0.52, r * 0.2)} $base", "fill" to "var(--card)", "stroke" to ink, "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
+            val lx = sin(a) * r * 0.34; val ly = -cos(a) * r * 0.34
+            g.add(s("text", "x" to lx, "y" to ly, "font-size" to fs * (if (north) 1.35 else 1.1), "font-weight" to "bold", "fill" to ink, "text-anchor" to "middle", "dominant-baseline" to "central",
+                "transform" to "rotate(${num(bearing)} ${num(lx)} ${num(ly)})").also { it.textContent = if (north && !set) "N?" else letter })
+        }
+        svg.add(g)
     }
 
     private fun drawShade(wp: WebPlot) {
@@ -253,12 +289,18 @@ object Canvas {
         val c = Colors.of(seed)
         val r = seed?.exclusionRadiusM ?: 0.3f
         val dot = seed?.let { VarietyCatalogTraits.dotArgb(it) }?.let { LayoutPalette.hex(it) } ?: c
-        val g = s("g", "class" to "plant", "data-code" to n.seedCode)
+                val f = find
+        val found = f != null && f(n)
+        val g = s("g", "class" to if (found) "plant found" else "plant", "data-code" to n.seedCode, "opacity" to if (f != null && !found) 0.25 else 1.0)
         g.add(s("title").also { it.textContent = seed?.let { sd -> VarietyCatalogTraits.displayName(sd) } ?: n.seedCode })
         g.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r, "fill" to c, "fill-opacity" to 0.16, "stroke" to if (selected) "#f97316" else c, "stroke-width" to if (selected) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
         g.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to max(min(r * 0.3f, 0.12f), 0.05f), "fill" to dot, "stroke" to col(LayoutPalette.INK), "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
-        if (Prefs.showLabels) g.add(s("text", "x" to n.coordinateXM, "y" to n.coordinateYM + max(r * 0.3f, 0.05f) + fs * 0.62, "font-size" to fs * 0.5, "fill" to col(LayoutPalette.INK), "text-anchor" to "middle", "class" to "plant-label",
-            "stroke" to col(LayoutPalette.PAPER), "stroke-width" to fs * 0.12, "paint-order" to "stroke", "stroke-linejoin" to "round").also { it.textContent = shortLabel(seed) })
+                if (found) g.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r + fs * 0.35, "fill" to "none", "stroke" to "#f97316", "stroke-width" to 4, "vector-effect" to "non-scaling-stroke", "class" to "find-ring"))
+        val label = shortLabel(seed)
+        // Names shrink to fit tight spacing (e.g. corn at 40 cm) so neighbours' names don't overlap.
+        val labelSize = min(fs * 0.5, r * 2.0 * 1.7 / max(4, label.length))
+        if (Prefs.showLabels || found) g.add(s("text", "x" to n.coordinateXM, "y" to n.coordinateYM + max(r * 0.3f, 0.05f) + labelSize * 1.2, "font-size" to labelSize, "fill" to col(LayoutPalette.INK), "text-anchor" to "middle", "class" to "plant-label",
+            "stroke" to col(LayoutPalette.PAPER), "stroke-width" to labelSize * 0.24, "paint-order" to "stroke", "stroke-linejoin" to "round").also { it.textContent = label })
         svg.add(g)
     }
 
@@ -303,6 +345,8 @@ object Canvas {
         else pt.x in z.xM..(z.xM + z.widthM) && pt.y in z.yM..(z.yM + z.heightM)
     }
 
+        private fun handleR(): Double = vb[2] / 90.0
+
     private fun dist(x: Float, y: Float, p: PlotPoint): Float { val dx = x - p.x; val dy = y - p.y; return sqrt(dx * dx + dy * dy) }
 
     private fun onWheel(e: WheelEvent) {
@@ -331,7 +375,12 @@ object Canvas {
                 if (selection == null) panOrigin = doubleArrayOf(e.clientX.toDouble(), e.clientY.toDouble(), vb[0], vb[1])
                 App.render()
             }
-            Tool.PATH, Tool.PLAN -> { dragStart = pt; dragNow = pt }
+                        Tool.PATH, Tool.PLAN -> { dragStart = pt; dragNow = pt }
+            Tool.OUTLINE -> if (points.isEmpty()) {
+                val outline = PlotShape.outline(wp.plot)
+                val i = outline.indices.minByOrNull { dist(outline[it].x, outline[it].y, pt) }
+                if (i != null && dist(outline[i].x, outline[i].y, pt) <= handleR() * 2.2) { dragVertex = i; dragStart = pt; dragNow = pt }
+            }
             else -> {}
         }
     }
@@ -348,7 +397,14 @@ object Canvas {
             vb[1] = o[3] - (e.clientY - o[1]) * scale
             render(); return
         }
-        if (tool == Tool.SELECT && dragMoved) renderMovePreview(start, pt) else if (tool == Tool.PATH || tool == Tool.PLAN) render()
+                if (tool == Tool.SELECT && dragMoved) renderMovePreview(start, pt) else if (tool == Tool.PATH || tool == Tool.PLAN) render()
+        else if (tool == Tool.OUTLINE && dragVertex != null) {
+            render()
+            val wp = Store.plot() ?: return
+            val o = PlotShape.outline(wp.plot).toMutableList()
+            o[dragVertex!!] = clampToPlot(wp, pt)
+            svg.add(s("polygon", "points" to o.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to "#f97316", "stroke-dasharray" to "6 4", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
+        }
     }
 
     private fun renderMovePreview(start: PlotPoint, now: PlotPoint) {
@@ -387,8 +443,49 @@ object Canvas {
                 App.render()
             }
             Tool.TREE -> Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = SiteFeatureType.TREE.name, pointsJson = PlotGeometry.serializePoints(listOf(pt)), heightM = 6f, radiusM = 2f), isNew = true)
-            Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE -> { points += pt; App.render() }
+                        Tool.OUTLINE -> {
+                val v = dragVertex
+                dragVertex = null
+                if (v != null) {
+                    if (dragMoved) moveOutlineCorner(wp, v, clampToPlot(wp, pt)) else App.render()
+                } else { points += pt; App.render() }
+            }
+            Tool.LINE_OBSTACLE, Tool.AREA -> { points += pt; App.render() }
         }
+    }
+
+    private fun clampToPlot(wp: WebPlot, p: PlotPoint) = PlotPoint(p.x.coerceIn(0f, wp.plot.lengthM), p.y.coerceIn(0f, wp.plot.widthM))
+
+    /** Moves one outline corner (one undo step), if the outline stays valid. */
+    private fun moveOutlineCorner(wp: WebPlot, index: Int, to: PlotPoint) {
+        val o = PlotShape.outline(wp.plot).toMutableList()
+        o[index] = to
+        PlotGeometry.validateOutline(o)?.let { App.status("Can't move the corner there: $it"); App.render(); return }
+        Store.change { it.plot = it.plot.copy(boundaryJson = PlotGeometry.serializePoints(o)) }
+        val outside = wp.plants.count { !PlotShape.contains(wp.plot, it.coordinateXM, it.coordinateYM) }
+        App.status(if (outside > 0) "Corner moved. $outside plant(s) are now outside the outline." else "Corner moved. Undo puts it back.")
+        App.render()
+    }
+
+    /** Double-click near an outline edge adds a corner there. */
+    fun addOutlineCorner(pt: PlotPoint) {
+        val wp = Store.plot() ?: return
+        val o = PlotShape.outline(wp.plot)
+        if (o.size < 3) return
+        val i = o.indices.minBy { PlotGeometry.distanceToSegment(pt.x, pt.y, o[it], o[(it + 1) % o.size]) }
+        if (PlotGeometry.distanceToSegment(pt.x, pt.y, o[i], o[(i + 1) % o.size]) > handleR() * 3) return
+        val n = o.toMutableList().also { it.add(i + 1, clampToPlot(wp, pt)) }
+        Store.change { it.plot = it.plot.copy(boundaryJson = PlotGeometry.serializePoints(n)) }
+        App.status("Corner added. Drag it where you want it.")
+        App.render()
+    }
+
+    fun deleteOutline() {
+        if (Store.plot()?.plot?.boundaryJson.isNullOrBlank()) { App.status("This plot has no outline; it is the full rectangle."); return }
+        Store.change { it.plot = it.plot.copy(boundaryJson = null) }
+        points.clear()
+        App.status("Outline deleted: the plot is the full rectangle again. Undo brings it back.")
+        App.render()
     }
 
     fun finishPoints() {
@@ -514,7 +611,7 @@ object Canvas {
             ctrl && (k == "y" || k == "Y" || ((k == "z" || k == "Z") && (e.asDynamic().shiftKey as Boolean))) -> { e.preventDefault(); if (Store.redo()) App.render() }
             k == "Delete" || k == "Backspace" -> { e.preventDefault(); deleteSelection() }
             k == "Enter" -> finishPoints()
-            k == "Escape" -> { cancelPoints(); selection = null; App.render() }
+                        k == "Escape" -> { cancelPoints(); selection = null; find = null; App.render() }
         }
     }
 }

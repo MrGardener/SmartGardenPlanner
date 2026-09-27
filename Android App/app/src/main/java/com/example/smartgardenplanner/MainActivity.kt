@@ -43,6 +43,7 @@ import kotlin.math.roundToInt
 // --- EXPLICIT COMPLIANCE IMPORTS: PREVENT COUPLING RESOLUTION FAILURES ---
 import com.example.smartgardenplanner.core.PlotEntity
 import com.example.smartgardenplanner.core.LayoutPalette
+import androidx.compose.ui.graphics.toArgb
 import com.example.smartgardenplanner.core.PlantingHistoryEntity
 import com.example.smartgardenplanner.core.PlantingLayout
 import com.example.smartgardenplanner.core.Seasons
@@ -893,7 +894,10 @@ fun CanvasWorkspaceScreen(
     var historyState by remember { mutableStateOf<List<PlantingHistoryEntity>>(emptyList()) }
     var historyYear by remember { mutableStateOf<Int?>(null) }
     var allPlantedCodes by remember { mutableStateOf<List<String>>(emptyList()) }
-    var showNewSeasonDialog by remember { mutableStateOf(false) }
+        var showNewSeasonDialog by remember { mutableStateOf(false) }
+    // FR-036: variety pointed out on the layout from the legend, and the outline corner being moved (FR-002).
+    var findCode by remember { mutableStateOf<String?>(null) }
+    var movingOutlineCorner by remember { mutableStateOf<Int?>(null) }
     // FR-029: save this plot as a portable plan file (.sgp.json).
     val canvasContext = LocalContext.current
     val exportScope = rememberCoroutineScope()
@@ -1266,7 +1270,7 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                             if (activePlot?.boundaryJson != null) {
-                                DropdownMenuItem(text = { Text("Reset outline to rectangle") }, onClick = { saveOutline(null); showOptionsMenu = false })
+                                DropdownMenuItem(text = { Text("Delete outline (back to the full rectangle)") }, onClick = { saveOutline(null); movingOutlineCorner = null; showOptionsMenu = false; snackbarMessage = "Outline deleted. Undo brings it back." })
                             }
                             DropdownMenuItem(
                                 text = { Text((if (canvasMode == CanvasMode.SITE_AREA) "✓ " else "") + "Mark sun / shade / flood / slope area" + lockLabel(Feature.SUN_SHADE_ZONES)) },
@@ -1381,16 +1385,25 @@ fun CanvasWorkspaceScreen(
                                 if (placedSeedCodes.isEmpty()) "Legend (nothing placed yet)" else "Legend (this plot)",
                                 fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                             )
+                                                        if (placedSeedCodes.isNotEmpty()) Text("Tap a variety to find it on the layout", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp))
                             placedSeedCodes.mapNotNull { seedFor(it) }.forEach { seed ->
+                                val count = nodesState.count { it.seedCode == seed.botanicalCode }
                                 DropdownMenuItem(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(modifier = Modifier.size(10.dp).background(VegetableColorPalette.colorFor(seed), shape = androidx.compose.foundation.shape.CircleShape))
+                                            Box(modifier = Modifier.size(12.dp).background(VegetableColorPalette.colorFor(seed), shape = androidx.compose.foundation.shape.CircleShape))
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text(seed.commonName, fontSize = 12.sp)
+                                            Column {
+                                                Text((if (findCode == seed.botanicalCode) "◉ " else "") + "$count × ${seed.commonName}", fontSize = 12.sp)
+                                                VarietyCatalogTraits.of(seed)?.let { Text(it.details, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
+                                            }
                                         }
                                     },
-                                    onClick = { showOptionsMenu = false }
+                                    onClick = {
+                                        findCode = if (findCode == seed.botanicalCode) null else seed.botanicalCode
+                                        showOptionsMenu = false
+                                        if (findCode != null) snackbarMessage = "Showing $count × ${seed.commonName} (circled in orange)."
+                                    }
                                 )
                             }
                         }
@@ -1752,10 +1765,28 @@ fun CanvasWorkspaceScreen(
                                                     onTap = { offset ->
                                                         val realXM = (offset.x / size.width) * state.lengthM
                                                         val realYM = (offset.y / size.height) * state.widthM
-                                                        movingSiteFeature?.let { moving ->
+                                                                                                                movingSiteFeature?.let { moving ->
                                                             moveSiteFeature(moving, realXM, realYM)
                                                             movingSiteFeature = null
                                                             return@detectTapGestures
+                                                        }
+                                                        // FR-002: edit an existing outline — tap a corner, then tap where it should go.
+                                                        val currentOutline = activePlot?.let { PlotShape.outline(it) }.orEmpty()
+                                                        if (canvasMode == CanvasMode.OUTLINE && inProgressPoints.isEmpty() && currentOutline.size >= 3) {
+                                                            val moving = movingOutlineCorner
+                                                            if (moving != null) {
+                                                                val moved = currentOutline.toMutableList().also { it[moving] = PlotPoint(realXM.coerceIn(0f, state.lengthM), realYM.coerceIn(0f, state.widthM)) }
+                                                                movingOutlineCorner = null
+                                                                saveOutline(moved.map { Offset(it.x, it.y) })
+                                                                return@detectTapGestures
+                                                            }
+                                                            val grab = (0.12f * kotlin.math.max(state.lengthM, state.widthM) / 4f).coerceIn(0.25f, 1.5f)
+                                                            val nearest = currentOutline.indices.minByOrNull { i -> (currentOutline[i].x - realXM) * (currentOutline[i].x - realXM) + (currentOutline[i].y - realYM) * (currentOutline[i].y - realYM) }
+                                                            if (nearest != null && kotlin.math.hypot((currentOutline[nearest].x - realXM).toDouble(), (currentOutline[nearest].y - realYM).toDouble()) <= grab) {
+                                                                movingOutlineCorner = nearest
+                                                                snackbarMessage = "Corner selected. Tap where it should go."
+                                                                return@detectTapGestures
+                                                            }
                                                         }
                                                         if (inProgressPoints.isEmpty() && canvasMode != CanvasMode.OUTLINE) {
                                                             val wantBarrier = canvasMode == CanvasMode.BARRIER
@@ -2007,27 +2038,42 @@ fun CanvasWorkspaceScreen(
                                                 addPath(outlinePath)
                                             }
                                             drawPath(outside, Color(LayoutPalette.OUTSIDE_OUTLINE))
-                                            drawPath(outlinePath, Color(LayoutPalette.BORDER), style = Stroke(width = 3f))
+                                                                                        drawPath(outlinePath, Color(LayoutPalette.BORDER), style = Stroke(width = 3f))
+                                            if (canvasMode == CanvasMode.OUTLINE && inProgressPoints.isEmpty()) outline.forEachIndexed { i, v ->
+                                                drawCircle(Color.White, radius = 14f, center = v)
+                                                drawCircle(if (movingOutlineCorner == i) Color(0xFFF97316) else Color(LayoutPalette.BORDER), radius = 14f, center = v, style = Stroke(width = 4f))
+                                            }
                                         }
                                     }
 
-                                    // FR-028: compass rose (top-right). Grey with "?" until the plot's direction is set.
+                                    // FR-028: compass rose (top-right) with four arrowheads and N/E/S/W, turned to the plot's
+                                    // direction. North is red once the direction is set, grey with "N?" until then.
                                     activePlot?.let { plot ->
-                                        val rel = Math.toRadians((0.0 - plot.northBearingDeg))
-                                        val cx = canvasW - 44f
-                                        val cy = 44f
-                                        val len = 30f
-                                        val tip = Offset(cx + (kotlin.math.sin(rel) * len).toFloat(), cy - (kotlin.math.cos(rel) * len).toFloat())
-                                        val tail = Offset(cx - (kotlin.math.sin(rel) * len * 0.6).toFloat(), cy + (kotlin.math.cos(rel) * len * 0.6).toFloat())
-                                        val colour = if (plot.orientationSet) Color(0xFFEF4444) else Color.Gray
-                                        drawCircle(Color(0x99000000), radius = 40f, center = Offset(cx, cy))
-                                        drawLine(Color.LightGray, tail, Offset(cx, cy), strokeWidth = 4f)
-                                        drawLine(colour, Offset(cx, cy), tip, strokeWidth = 5f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                                        drawContext.canvas.nativeCanvas.drawText(
-                                            if (plot.orientationSet) "N" else "N?",
-                                            tip.x - 8f, tip.y - 6f,
-                                            android.graphics.Paint().apply { color = android.graphics.Color.WHITE; textSize = 26f; isFakeBoldText = true }
-                                        )
+                                        val r = 62f
+                                        val cx = canvasW - r - 14f
+                                        val cy = r + 14f
+                                        drawCircle(Color(0xE6FFFFFF), radius = r * 1.1f, center = Offset(cx, cy))
+                                        drawCircle(Color(LayoutPalette.BORDER), radius = r * 1.1f, center = Offset(cx, cy), style = Stroke(width = 2f))
+                                        val letterPaint = android.graphics.Paint().apply { isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; isFakeBoldText = true }
+                                        listOf(0f to "N", 90f to "E", 180f to "S", 270f to "W").forEach { (deg, letter) ->
+                                            val a = Math.toRadians((deg - plot.northBearingDeg).toDouble())
+                                            fun pt(dist: Float, side: Float) = Offset(
+                                                cx + (kotlin.math.sin(a) * dist + kotlin.math.cos(a) * side).toFloat(),
+                                                cy + (-kotlin.math.cos(a) * dist + kotlin.math.sin(a) * side).toFloat()
+                                            )
+                                            val north = letter == "N"
+                                            val ink = if (north && plot.orientationSet) Color(0xFFDC2626) else if (north) Color.Gray else Color(LayoutPalette.INK)
+                                            val tip = pt(r * 1.02f, 0f); val base = pt(r * 0.6f, 0f)
+                                            val left = androidx.compose.ui.graphics.Path().apply { moveTo(tip.x, tip.y); pt(r * 0.52f, -r * 0.2f).let { lineTo(it.x, it.y) }; lineTo(base.x, base.y); close() }
+                                            val right = androidx.compose.ui.graphics.Path().apply { moveTo(tip.x, tip.y); pt(r * 0.52f, r * 0.2f).let { lineTo(it.x, it.y) }; lineTo(base.x, base.y); close() }
+                                            drawPath(left, ink)
+                                            drawPath(right, Color.White)
+                                            drawPath(right, ink, style = Stroke(width = 2f))
+                                            val lp = pt(r * 0.34f, 0f)
+                                            letterPaint.color = ink.toArgb()
+                                            letterPaint.textSize = if (north) 30f else 24f
+                                            drawContext.canvas.nativeCanvas.drawText(if (north && !plot.orientationSet) "N?" else letter, lp.x, lp.y + letterPaint.textSize * 0.36f, letterPaint)
+                                        }
                                     }
 
                                     // [NEW] Weed-risk mask: everything NOT covered by a plant's spacing
@@ -2068,6 +2114,20 @@ fun CanvasWorkspaceScreen(
                                         drawCircle(colour.copy(alpha = 0.25f), radius = p.seed.exclusionRadiusM * scaleX, center = c)
                                         drawCircle(colour.copy(alpha = 0.9f), radius = p.seed.exclusionRadiusM * scaleX, center = c, style = Stroke(width = 2f))
                                         drawCircle(colour, radius = 6f, center = c)
+                                    }
+                                                                        // FR-035: where vines are expected to run (toward the sun), dashed area + arrow.
+                                    planPreview?.guides?.forEach { g ->
+                                        val path = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(g.area[0].x * scaleX, g.area[0].y * scaleY)
+                                            g.area.drop(1).forEach { lineTo(it.x * scaleX, it.y * scaleY) }
+                                            close()
+                                        }
+                                        drawPath(path, Color(0x1416A34A))
+                                        drawPath(path, Color(0xFF16A34A), style = Stroke(width = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
+                                        val from = Offset(g.from.x * scaleX, g.from.y * scaleY); val to = Offset(g.to.x * scaleX, g.to.y * scaleY)
+                                        drawLine(Color(0xFF16A34A), from, to, strokeWidth = 5f)
+                                        val ang = kotlin.math.atan2((to.y - from.y).toDouble(), (to.x - from.x).toDouble())
+                                        listOf(2.6, -2.6).forEach { d -> drawLine(Color(0xFF16A34A), to, Offset(to.x + (18 * kotlin.math.cos(ang + d)).toFloat(), to.y + (18 * kotlin.math.sin(ang + d)).toFloat()), strokeWidth = 5f) }
                                     }
                                     autoPlanArea?.let { a ->
                                         if (a.size >= 3) {
@@ -2123,8 +2183,10 @@ fun CanvasWorkspaceScreen(
                                         val seed = seedFor(node.seedCode)
                                         val exclusionRadiusM = seed?.exclusionRadiusM ?: 0.5f
                                         val exclusionRadiusPx = exclusionRadiusM * scaleX
-                                        val baseColor = VegetableColorPalette.colorFor(seed)
-                                        val alpha = if (isDragging) 0.6f else 1.0f
+                                                                                val baseColor = VegetableColorPalette.colorFor(seed)
+                                        val found = findCode != null && node.seedCode == findCode
+                                        val alpha = if (isDragging) 0.6f else if (findCode != null && !found) 0.25f else 1.0f
+                                        if (found) drawCircle(Color(0xFFF97316), radius = exclusionRadiusPx + 10f, center = centerOffset, style = Stroke(width = 6f))
 
                                         drawCircle(color = VegetableColorPalette.exclusionRingColorFor(seed).copy(alpha = VegetableColorPalette.exclusionRingColorFor(seed).alpha * alpha), radius = exclusionRadiusPx, center = centerOffset)
                                         drawCircle(color = baseColor.copy(alpha = 0.8f * alpha), radius = exclusionRadiusPx, center = centerOffset, style = Stroke(width = 2f))
@@ -2132,7 +2194,7 @@ fun CanvasWorkspaceScreen(
                                         val dotColor = seed?.let { VarietyCatalogTraits.dotArgb(it) }?.let { Color(it) } ?: baseColor
                                         drawCircle(color = dotColor.copy(alpha = alpha), radius = 10f, center = centerOffset)
                                         drawCircle(color = Color(LayoutPalette.INK).copy(alpha = alpha), radius = 10f, center = centerOffset, style = Stroke(width = 1.5f))
-                                        if (settings.showPlantLabels && seed != null && !isDragging) {
+                                                                                if ((settings.showPlantLabels || found) && seed != null && !isDragging) {
                                             val tag = VarietyCatalogTraits.of(seed)?.tag ?: CropReference.speciesName(seed)
                                             drawContext.canvas.nativeCanvas.drawText(tag, centerOffset.x, centerOffset.y + 34f, labelHalo)
                                             drawContext.canvas.nativeCanvas.drawText(tag, centerOffset.x, centerOffset.y + 34f, labelPaint)
@@ -2160,7 +2222,13 @@ fun CanvasWorkspaceScreen(
                                         }
                                     }
                                 }
-                                Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
+                                                                Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
+                                    findCode?.let { code ->
+                                        val name = seedFor(code)?.commonName ?: code
+                                        Button(onClick = { findCode = null }, modifier = Modifier.padding(bottom = 4.dp)) {
+                                            Text("Showing ${nodesState.count { it.seedCode == code }} × $name — tap to clear", fontSize = 12.sp)
+                                        }
+                                    }
                                     planPreview?.let { preview ->
                                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
                                             Column(modifier = Modifier.padding(10.dp).heightIn(max = 220.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -2678,6 +2746,7 @@ fun CanvasWorkspaceScreen(
             title = { Text(seed?.commonName ?: node.seedCode) },
             text = {
                 Column {
+                                        seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(it.details, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
                     val plantedDate = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(node.datePlantedEpochMillis))
                     Text("Planted: $plantedDate")
                     if (seed != null) {

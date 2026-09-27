@@ -81,6 +81,17 @@ details.pest,details.soil{background:var(--soft);border:1px solid var(--line);bo
 summary{cursor:pointer}
 .preview{position:absolute;right:12px;bottom:12px;max-width:420px;max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .hidden{display:none}
+.plant-legend{position:absolute;left:10px;bottom:10px;max-width:300px;max-height:45%;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:12px}
+.pl-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pl-row{display:flex;gap:8px;align-items:flex-start;width:100%;background:none;border:1px solid transparent;border-radius:6px;padding:3px 4px;color:var(--text);cursor:pointer;font:inherit;text-align:left}
+.pl-row:hover{background:var(--card)}
+.pl-row.on{border-color:#f97316;background:var(--on-bg)}
+.pl-row .name{font-weight:600;display:block}
+.sw2{width:16px;height:16px;border-radius:50%;border:3px solid;flex:none;margin-top:2px;box-sizing:border-box}
+.findable{cursor:pointer;border-radius:4px}
+.findable:hover{background:var(--card)}
+#sgp-svg .find-ring{animation:sgp-pulse 1.2s ease-in-out infinite}
+@keyframes sgp-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.25}}
 .legend{position:absolute;left:10px;top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.92);color:#292524;border:1px solid #d6d3d1;border-radius:8px;padding:5px 10px;font-size:12px;max-width:calc(100% - 20px)}
 .legend b{margin-right:2px}
 .legend .sw{display:inline-block;width:14px;height:14px;border:1px solid #57534e;vertical-align:-3px;margin-right:4px}

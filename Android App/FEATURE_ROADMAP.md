@@ -125,6 +125,8 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-032 | Crop rotation and clumps | Rotation families and waiting periods; a note (not a block) when a plant goes where its family grew recently; Plan an area for me avoids those spots and plants clumps by default (rows on request) with the rotation reason explained; per-plot rotation advice (Plot insights → Harmony; web Plot tab). | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
 | FR-033 | Seasons and plot history | "Start a new season": plants move to the plot's history; fences, buildings, trees, paths, areas and outline stay. History per season, drawn dashed on request, used for rotation, saved in plan files, undoable. | All | FR-029 | **Implemented — Awaiting Your Confirmation** |
 | FR-034 | Keep my choices | Discarding a proposal leaves the plot and the list alone; "Change selections" returns to the list for the same area; the last list is remembered; "What you usually plant" one-tap additions. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-035 | Organised clumps and room for vines | Plan an area for me lays each crop out in rows × columns (20 corn = 4 × 5; 7 tomatoes = 4 + 3) with 45 cm walkways for hose watering; climbers at the back for a trellis; sprawling vines at the sunny side with their runway kept free and shown by an arrow. | All | FR-032 | **Implemented — Awaiting Your Confirmation** |
+| FR-036 | Find, edit and outline | Legend with counts; tap a variety (or a harvest/harmony line on the computer) to circle its plants; edit a planted plant's variety/date or delete it; move/add outline corners and delete the outline; compass with N/E/S/W arrowheads. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
 ---
@@ -229,6 +231,11 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (find, edit, organised clumps)**: From your report: outline corners can be moved and the outline
+  deleted; planted plants can be edited (variety, date on the computer) or deleted; a legend with counts finds plants
+  on the layout (also from the harvest list on the computer); organised row × column clumps with walkways; vines get
+  room to run toward the sun and climbers go to the back; bigger N/E/S/W compass with arrowheads.
 
 - **2026-09-27 (seasons, rotation, variety details)**: From your notes on discarding plans, peppers, tomatoes, onions
   and crop rotation: FR-031 to FR-034. Discard no longer loses anything and "Change selections" goes back to your list;
