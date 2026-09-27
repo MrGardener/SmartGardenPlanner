@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SRS-STD-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §11.6 (also used for T2 system requirements under ARP4754A) |
 | Control category | CC1 |
 

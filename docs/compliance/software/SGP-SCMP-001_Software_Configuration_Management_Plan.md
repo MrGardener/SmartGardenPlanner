@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SCMP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §7, §11.4, Table A-8; ARP4754A configuration management (system-level CM is also covered by this plan) |
 | Replaces | The "exit protocol / save files" procedures in the master plan, `smart_garden_planner_automated_handoff.md`, `rename_gemini_files.py` |
 | Control category | CC1 |

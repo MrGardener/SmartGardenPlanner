@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-CB-001 |
-| Revision | A (Draft) |
-| Status | Draft, awaiting approval by the Project Owner |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
+| Status | Provisionally adopted; formal approval pending |
 | Applies to | Smart Garden Planner (SGP) Android application, all project-authored software and data |
 | Control category | CC1 (see SGP-SCMP-001) |
 

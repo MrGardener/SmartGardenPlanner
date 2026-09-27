@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SQAP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §8, §11.5, Table A-9; also serves as the ARP4754A **Process Assurance Plan** |
 | Replaces | 11-Perspective Audit and Review Board records (withdrawn); T2-GOV-*/HLR-GOV-* process obligations (moved here) |
 | Control category | CC1 |

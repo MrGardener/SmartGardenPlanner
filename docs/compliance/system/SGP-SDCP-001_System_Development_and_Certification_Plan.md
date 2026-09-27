@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SDCP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | References | ARP4754A §3–5 (planning, development, integral processes); combines the ARP4754A *Certification Plan* and *Development Plan* |
 | Related | SGP-SAP-001 (safety), SGP-SVVP-001 (validation & verification), SGP-SCMP-001 (CM, system + software), SGP-SQAP-001 (process assurance, system + software), SGP-PSAC-001 (software) |
 | Control category | CC1 |

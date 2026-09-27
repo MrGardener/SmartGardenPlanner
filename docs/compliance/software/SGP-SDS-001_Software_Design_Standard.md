@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SDS-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §11.7; DO-332 design considerations |
 | Control category | CC1 |
 

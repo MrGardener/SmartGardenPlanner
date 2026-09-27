@@ -10,24 +10,28 @@ still to be done).
 
 | Document | Title | DO-178C / ARP4754A role | Status |
 |---|---|---|---|
-| [SGP-CB-001](SGP-CB-001_Compliance_Basis_and_Deviations.md) | Compliance Basis, Applicability and Deviations | Basis for all plans | Draft A |
-| [SGP-GAP-001](SGP-GAP-001_Existing_Document_Assessment.md) | Assessment of existing plans, documents and requirements | Gap analysis (DO-178C §12.1.4 input) | Draft A |
-| [SGP-RSM-001](SGP-RSM-001_Requirements_Status_Matrix.md) | Requirements implementation status (T2 + HLR) | Baseline assessment | Draft A |
-| [SGP-DWR-001](SGP-DWR-001_Deferred_Work_Register.md) | Deferred Work Register (195 items) | Work tracking until the PR system is live | Draft A |
+| [SGP-CB-001](SGP-CB-001_Compliance_Basis_and_Deviations.md) | Compliance Basis, Applicability and Deviations | Basis for all plans | A (provisional) |
+| [SGP-GAP-001](SGP-GAP-001_Existing_Document_Assessment.md) | Assessment of existing plans, documents and requirements | Gap analysis (DO-178C §12.1.4 input) | A (provisional) |
+| [SGP-RSM-001](SGP-RSM-001_Requirements_Status_Matrix.md) | Requirements implementation status (T2 + HLR) | Baseline assessment | A (provisional) |
+| [SGP-DWR-001](SGP-DWR-001_Deferred_Work_Register.md) | Deferred Work Register (195 items) | Work tracking until the PR system is live | A (provisional) |
 | **System level (ARP4754A)** | | | |
-| [SGP-SDCP-001](system/SGP-SDCP-001_System_Development_and_Certification_Plan.md) | System Development & Certification Plan | Certification plan + development plan | Draft A |
-| [SGP-SAP-001](system/SGP-SAP-001_Safety_Assessment_Plan_and_Preliminary_FHA.md) | Safety Assessment Plan + preliminary FHA | Safety program plan (ARP4761A) | Draft A |
-| [SGP-SVVP-001](system/SGP-SVVP-001_System_Validation_and_Verification_Plan.md) | System Validation & Verification Plan | Validation plan + verification plan | Draft A |
+| [SGP-SDCP-001](system/SGP-SDCP-001_System_Development_and_Certification_Plan.md) | System Development & Certification Plan | Certification plan + development plan | A (provisional) |
+| [SGP-SAP-001](system/SGP-SAP-001_Safety_Assessment_Plan_and_Preliminary_FHA.md) | Safety Assessment Plan + preliminary FHA | Safety program plan (ARP4761A) | A (provisional) |
+| [SGP-SVVP-001](system/SGP-SVVP-001_System_Validation_and_Verification_Plan.md) | System Validation & Verification Plan | Validation plan + verification plan | A (provisional) |
 | **Software level (DO-178C)** | | | |
-| [SGP-PSAC-001](software/SGP-PSAC-001_Plan_for_Software_Aspects_of_Certification.md) | PSAC | §11.1 | Draft A |
-| [SGP-SDP-001](software/SGP-SDP-001_Software_Development_Plan.md) | Software Development Plan | §11.2 (replaces the Integration Plan) | Draft A |
-| [SGP-SVP-001](software/SGP-SVP-001_Software_Verification_Plan.md) | Software Verification Plan | §11.3 (replaces the v20.19 Verification Plan) | Draft A |
-| [SGP-SCMP-001](software/SGP-SCMP-001_Software_Configuration_Management_Plan.md) | SCM Plan (system + software) | §11.4 + ARP4754A CM plan | Draft A |
-| [SGP-SQAP-001](software/SGP-SQAP-001_Software_Quality_Assurance_Plan.md) | SQA Plan (system + software) | §11.5 + ARP4754A process assurance plan | Draft A |
-| [SGP-SRS-STD-001](software/SGP-SRS-STD-001_Software_Requirements_Standard.md) | Requirements Standard | §11.6 | Draft A |
-| [SGP-SDS-001](software/SGP-SDS-001_Software_Design_Standard.md) | Design Standard | §11.7 | Draft A |
-| [SGP-SCS-001](software/SGP-SCS-001_Software_Code_Standard.md) | Code Standard (Kotlin) | §11.8 | Draft A |
-| [SGP-TQP-001](software/SGP-TQP-001_Tool_Qualification_Plan.md) | Tool Assessment & Qualification Plan | §12.2 / DO-330 | Draft A |
+| [SGP-PSAC-001](software/SGP-PSAC-001_Plan_for_Software_Aspects_of_Certification.md) | PSAC | §11.1 | A (provisional) |
+| [SGP-SDP-001](software/SGP-SDP-001_Software_Development_Plan.md) | Software Development Plan | §11.2 (replaces the Integration Plan) | A (provisional) |
+| [SGP-SVP-001](software/SGP-SVP-001_Software_Verification_Plan.md) | Software Verification Plan | §11.3 (replaces the v20.19 Verification Plan) | A (provisional) |
+| [SGP-SCMP-001](software/SGP-SCMP-001_Software_Configuration_Management_Plan.md) | SCM Plan (system + software) | §11.4 + ARP4754A CM plan | A (provisional) |
+| [SGP-SQAP-001](software/SGP-SQAP-001_Software_Quality_Assurance_Plan.md) | SQA Plan (system + software) | §11.5 + ARP4754A process assurance plan | A (provisional) |
+| [SGP-SRS-STD-001](software/SGP-SRS-STD-001_Software_Requirements_Standard.md) | Requirements Standard | §11.6 | A (provisional) |
+| [SGP-SDS-001](software/SGP-SDS-001_Software_Design_Standard.md) | Design Standard | §11.7 | A (provisional) |
+| [SGP-SCS-001](software/SGP-SCS-001_Software_Code_Standard.md) | Code Standard (Kotlin) | §11.8 | A (provisional) |
+| [SGP-TQP-001](software/SGP-TQP-001_Tool_Qualification_Plan.md) | Tool Assessment & Qualification Plan | §12.2 / DO-330 | A (provisional) |
+
+## Requirements
+
+- [SGP-SYS-REQ-001](../requirements/SGP-SYS-REQ-001_System_Requirements_T2.md): re-baselined system requirements (T2), Proposed. HLR/LLR re-baseline to follow.
 
 ## Life cycle data still to be produced (tracked in SGP-DWR-001)
 
@@ -48,6 +52,8 @@ to `docs/archive/` at the first baseline (DW-1505):
 
 ## Approval
 
-All documents are **Draft A**. They become effective when the Project Owner approves them (DW-0101…DW-0105).
+All documents are **Revision A, provisionally adopted** (Project Owner direction, 2026-09-27): work proceeds
+under them now, and the formal review and approval (DW-0101…DW-0105) follows later. Any change you make
+during that review is handled as a normal revision (B, C…).
 Until an independent reviewer exists, approvals are recorded with "independence not satisfied" (SGP-CB-001
 DEV-04).

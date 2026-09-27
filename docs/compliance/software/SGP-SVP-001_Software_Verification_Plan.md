@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SVP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §11.3; Annex A Tables A-3 … A-7 |
 | Supersedes | `Smart_Garden_Planner_Verification_Plan_and_Test_Specification_v20_19.md` (withdrawn, SGP-GAP-001 §2.1) |
 | Control category | CC1 |

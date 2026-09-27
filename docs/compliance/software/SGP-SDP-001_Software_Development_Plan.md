@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SDP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §11.2 (supersedes the development/integration content of `Smart_Garden_Planner_Integration_Plan_v20_19.md`) |
 | Control category | CC1 |
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SCS-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | DO-178C reference | §11.8 |
 | Enforcement | Android Lint + detekt + ktlint configurations under CM (DW-1502), plus code review (SVP §4.3). Rules marked **(R)** are review-only. |
 | Control category | CC1 |

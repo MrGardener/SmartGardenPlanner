@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-RSM-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | Baseline assessed | Source at commit `074117f`; requirements from `smart_garden_planner_master_plan.md` (v20.18) and Knowledge Base Part 11 |
 | Method | Requirement text extracted by script from the sources above; statuses assigned by code inspection (not by test) |
 

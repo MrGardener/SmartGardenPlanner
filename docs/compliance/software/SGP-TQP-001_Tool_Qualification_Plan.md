@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-TQP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | References | DO-178C §12.2; DO-330 |
 | Control category | CC1 |
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-DWR-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | Purpose | Single list of **everything that still has to be handled or implemented**: product work, compliance work, documentation, debt and open decisions. |
 | Sources | REVAMP_PLAN_Pixel10Pro.md (issue IDs such as BLD-01, CAN-04), SGP-GAP-001, SGP-RSM-001, FEATURE_ROADMAP.md (FR-xxx), Dev Log debt items (DEBT-xxx), new findings from this review (marked **NEW**). |
 
@@ -22,7 +22,7 @@
   FHA/PSSA/SSA (safety assessment), PDI (parameter data item).
 - **Change control:** once SGP-SCMP-001 is approved, every item becomes (or links to) a Problem Report / change
   request in the issue tracker. This file then keeps the index and the status.
-- All items start with status **Open**.
+- All items start with status **Open**, except those listed in §5 (status updates).
 
 ## 2. Work packages
 
@@ -350,3 +350,12 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | WP-01 … WP-15, WP-17 … WP-19 | 169 |
 | WP-16 roadmap | 26 |
 | **Total** | **195** |
+
+## 5. Status updates
+
+| Date | Item(s) | New status | Note |
+|---|---|---|---|
+| 2026-09-27 | DW-0101 … DW-0105 | In progress — provisionally adopted | Project Owner directed work to proceed under all Revision A plans and standards; the formal review is deferred. |
+| 2026-09-27 | DW-1901 (D-01) | Closed | Keep DO-178C/ARP4754A DAL A. |
+| 2026-09-27 | DW-0301 | In progress | T2 level done: `docs/requirements/SGP-SYS-REQ-001_System_Requirements_T2.md` (Proposed). HLR and LLR levels remain. |
+| 2026-09-27 | DW-0302, DW-0303, DW-0304, DW-0306, DW-0307 | In progress | Done at T2 level (new T2 for untraced functions, conflicts RQ-01…RQ-10 resolved or proposed, measurable wording, GOV deleted, missing requirements added). HLR/LLR level remains. 31 values await confirmation (`[TBC-01…31]`, §15 of SGP-SYS-REQ-001). |

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-SAP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | References | ARP4754A §5.1; ARP4761A (FHA, PSSA, SSA, CCA) |
 | Control category | CC1 |
 

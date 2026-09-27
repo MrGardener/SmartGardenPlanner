@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-GAP-001 |
-| Revision | A (Draft) |
+| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | Purpose | Decide which existing documents can be used as DO-178C / ARP4754A life cycle data, which must be rewritten, and which must be withdrawn. |
 | Method | Each document was read in full (the 2.6 MB Verification Plan was sampled and structurally analysed) and compared with the content DO-178C §11 / ARP4754A §4–5 require for that type of document, and with the actual source code at commit `074117f`. |
 
