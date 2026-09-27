@@ -45,6 +45,7 @@ jobs:
           if ! git diff --quiet -- web/dist; then
             echo "::error::web/dist/smart-garden-planner.html is out of date. Run web/build.sh and commit it."
             git diff --stat -- web/dist
+            git diff -U0 -- web/dist | cut -c1-300 | head -40
             exit 1
           fi
       - name: Browser smoke test
