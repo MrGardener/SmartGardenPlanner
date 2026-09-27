@@ -171,8 +171,9 @@ missing.
 Parent: ConOps §5.3 · Safety: FC-13 · Verify: Test · Status: Proposed
 **Was:** "…input a location parameter (ZIP code or geographic coordinates) associated with the planting zone."
 **Why changed:** Added the device-location option, and the behaviour when the location is absent.
-**Now:** IMPL: ZIP → latitude/longitude offline (bundled table); zone from the offline table, a list, or online
-(T2-CON-010 switch); device location on the Site tab.
+**Now:** IMPL: ZIP → latitude/longitude offline (bundled table) and ZIP → hardiness zone offline from the 2023
+USDA Plant Hardiness Zone Map ZIP tables (PRISM/OSU; 40,502 ZIPs incl. AK, HI, PR); manual zone list; online
+lookup only for ZIPs not in the table; device location on the Site tab.
 
 ### T2-FUN-100 — No-plant paths (NEW)
 **Statement:** The system shall let the user mark areas of a plot where nothing may be planted (paths,

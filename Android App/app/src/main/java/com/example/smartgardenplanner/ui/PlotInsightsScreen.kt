@@ -186,7 +186,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
             when (tab) {
                 0 -> SiteTab(snap, settings, online, context, ::savePlot, { message = it }, scope) { z ->
                     // Offline starter table first, then phzmapi.org when Online features are on (FR-028).
-                    (com.example.smartgardenplanner.data.ZipLookup.zone(database, z, settings.onlineFeaturesEnabled) as? OnlineResult.Success)?.value
+                    (com.example.smartgardenplanner.data.ZipLookup.zone(context, database, z, settings.onlineFeaturesEnabled) as? OnlineResult.Success)?.value
                 }
                 1 -> HarmonyTab(snap, settings)
                 2 -> SuggestTab(snap, settings)
@@ -310,7 +310,7 @@ private fun SiteTab(
                     )
                     savePlot(updated, buildString {
                         append(if (loc != null) "Location set from ZIP $zip. " else "ZIP not in the offline location table. ")
-                        append(if (zone != null) "Zone $zone." else if (settings.onlineFeaturesEnabled) "Zone not found: pick it from the list." else "Pick the zone from the list, or turn on Online features to look it up.")
+                        append(if (zone != null) "Zone $zone (2023 USDA map)." else "This ZIP isn't in the zone table: pick the zone from the list.")
                     })
                 }
             }) { Text("Look up") }

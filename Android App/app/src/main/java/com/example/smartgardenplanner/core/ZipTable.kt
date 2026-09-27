@@ -22,7 +22,16 @@ object ZipTable {
     }
 
     /** Binary search over lines sorted by their leading 5-digit ZIP. */
-    fun find(sortedLines: List<String>, zip: String): ZipLocation? {
+    fun find(sortedLines: List<String>, zip: String): ZipLocation? = findLine(sortedLines, zip)?.let { parseLine(it) }
+
+    /**
+     * Hardiness zone from the bundled 2023 USDA/PRISM table `assets/zip_zones.txt` ("zip|zone", sorted by ZIP;
+     * see assets/NOTICE_zip_zones.txt). Returns null when the ZIP isn't listed or the value isn't a valid zone.
+     */
+    fun findZone(sortedLines: List<String>, zip: String): String? =
+        findLine(sortedLines, zip)?.split("|")?.getOrNull(1)?.trim()?.takeIf { HardinessZones.number(it) != null && (it.endsWith("a") || it.endsWith("b")) }
+
+    private fun findLine(sortedLines: List<String>, zip: String): String? {
         if (!isValidZip(zip)) return null
         var lo = 0
         var hi = sortedLines.size - 1
@@ -31,7 +40,7 @@ object ZipTable {
             val key = sortedLines[mid].take(5)
             val cmp = key.compareTo(zip)
             when {
-                cmp == 0 -> return parseLine(sortedLines[mid])
+                cmp == 0 -> return sortedLines[mid]
                 cmp < 0 -> lo = mid + 1
                 else -> hi = mid - 1
             }

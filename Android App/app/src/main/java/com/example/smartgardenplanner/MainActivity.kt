@@ -668,7 +668,7 @@ fun CreatorScreen(
                                 val zip = zipCode.takeIf { com.example.smartgardenplanner.core.ZipTable.isValidZip(it) }
                                 val location = zip?.let { com.example.smartgardenplanner.data.ZipLookup.location(creatorContext, it) }
                                 val plotId = withContext(SgpExecutors.dbDispatcher) {
-                                    val zone = zip?.let { database.climateZoneDao().getByZip(it)?.hardinessZone }
+                                    val zone = zip?.let { com.example.smartgardenplanner.data.ZipLookup.offlineZone(creatorContext, it) ?: database.climateZoneDao().getByZip(it)?.hardinessZone }
                                     database.plotDao().insert(
                                         PlotEntity(
                                             name = plotName.trim(),

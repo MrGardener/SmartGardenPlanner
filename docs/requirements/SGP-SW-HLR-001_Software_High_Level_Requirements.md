@@ -826,8 +826,9 @@ a flag recording that it was set. → T2-FUN-170
 while the direction is not set, show a warning that opens the direction dialog. → T2-FUN-170
 
 **HLR-ORNT-030** Entering a 5-digit ZIP shall set the plot's latitude/longitude from the bundled ZIP table without
-a network connection, and its hardiness zone from the offline table or, when Online features are on, from the
-allow-listed zone service. → T2-FUN-090
+a network connection, and its hardiness zone from the bundled 2023 USDA/PRISM ZIP zone table (also offline);
+only a ZIP missing from that table may use the allow-listed online zone service when Online features are on.
+→ T2-FUN-090
 
 **HLR-OBST-010** An existing obstacle or site area shall offer Edit, Delete and Move. Move places it so that its
 anchor (a tree's trunk, otherwise the centre of its points) is at the next tapped position, keeping all its

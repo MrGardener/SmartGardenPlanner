@@ -1215,9 +1215,11 @@ bearing −northBearingDeg (red, labelled "N"), grey and labelled "N?" when `ori
 tappable warning text in the plot header while it is false. ↑ HLR-ORNT-020
 
 **LLR-ORNT-030** `ZipLookup.location` shall binary-search the bundled `zip_locations.txt` (lines "zip|lat|lon|state",
-sorted by ZIP, loaded once) with `ZipTable.find`. `ZipLookup.zone` shall return the starter climate table's zone,
-else call `NetworkGateway` with `OnlineData.zoneUrl(zip)` (host phzmapi.org on the allow-list) and accept only a
-zone that `HardinessZones.number` recognises. ↑ HLR-ORNT-030
+sorted by ZIP, loaded once) with `ZipTable.find`. `ZipLookup.zone` shall return, in order: the zone from the
+bundled `zip_zones.txt` ("zip|zone", 40,502 ZIPs from the 2023 USDA/PRISM tables, sorted, loaded once) via
+`ZipTable.findZone`; the starter climate table's zone; else, only when Online features are on, the result of
+`NetworkGateway` with `OnlineData.zoneUrl(zip)`. Only zones `1a`–`13b` are accepted. The data files are checked
+by `ZipDataTest` (sorted, well-formed, 40,502 entries, published zones for sample ZIPs). ↑ HLR-ORNT-030
 
 **LLR-OBST-010** `SiteFeatureDialog` shall show Move for existing features. After Move, the next tap in a site
 tool mode calls `moveSiteFeature`, which translates all points by (tap − anchor), with the translation clamped so

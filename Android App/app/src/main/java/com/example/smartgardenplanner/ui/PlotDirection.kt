@@ -83,14 +83,14 @@ fun PlotDirectionDialog(
                     scope.launch {
                         val loc = ZipLookup.location(context, zip)
                         if (loc != null) { lat = loc.latitude; lon = loc.longitude }
-                        val zoneResult = ZipLookup.zone(database, zip, onlineEnabled)
+                        val zoneResult = ZipLookup.zone(context, database, zip, onlineEnabled)
                         if (zoneResult is OnlineResult.Success) zone = zoneResult.value
                         note = buildString {
                             append(if (loc != null) "Location: ${"%.3f".format(Locale.US, loc.latitude)}, ${"%.3f".format(Locale.US, loc.longitude)} (${loc.state}). " else "ZIP not in the offline table. ")
                             append(
                                 when (zoneResult) {
                                     is OnlineResult.Success -> "Zone ${zoneResult.value}."
-                                    OnlineResult.Disabled -> "Zone: pick it on Plot insights → Site, or turn on Online features to look it up."
+                                    OnlineResult.Disabled -> "This ZIP isn't in the zone table: pick the zone on Plot insights → Site."
                                     is OnlineResult.Failure -> zoneResult.message
                                 }
                             )
