@@ -38,7 +38,8 @@ enum class Tool(val label: String, val hint: String) {
     LINE_OBSTACLE("Fence / wall / building", "Click points along it, then press Enter or click Finish."),
     AREA("Sun / shade / flood / slope area", "Click the corners (3+), then press Enter or click Finish."),
         OUTLINE("Plot outline", "Drag a white corner to move it; double-click an edge to add a corner. Or click new corners in order (3+) and press Enter to redraw. “Delete outline” removes it."),
-    PLAN("Plan an area for me", "Drag over the area you want planted; then list what to plant.")
+        PLAN("Plan an area for me", "Drag over the area you want planted; then list what to plant."),
+    WATER("Irrigation", "Sprinkler or hose tap: click where it is. Drip line: click points along it, then Enter. Choose the kind on the Plot tab.")
 }
 
 /** What is currently selected on the layout. */
@@ -53,7 +54,9 @@ object Canvas {
     var tool = Tool.SELECT
     var activeSeed: SeedEntity? = null
     var obstacleType = SiteFeatureType.FENCE
-    var areaType = SiteFeatureType.FULL_SUN
+        var areaType = SiteFeatureType.FULL_SUN
+    var waterType = SiteFeatureType.SPRINKLER
+    private var hoverAt: PlotPoint? = null
     var selection: Selection? = null
         var showShade = false
     /** Plants to point out on the layout (legend / harvest "find"), or null. */
@@ -75,8 +78,9 @@ object Canvas {
         svg.on("pointerdown") { onDown(it as MouseEvent) }
         svg.on("pointermove") { onMove(it as MouseEvent) }
         svg.on("pointerup") { onUp(it as MouseEvent) }
-                svg.on("dblclick") { e ->
+                        svg.on("dblclick") { e ->
             when {
+                tool == Tool.WATER && waterType == SiteFeatureType.DRIP_LINE -> finishPoints()
                 tool == Tool.OUTLINE && points.isEmpty() -> addOutlineCorner(toMetres(e as MouseEvent))
                 tool in setOf(Tool.LINE_OBSTACLE, Tool.AREA, Tool.OUTLINE) -> finishPoints()
                 tool == Tool.SELECT -> (selection as? Selection.Plant)?.let { sel -> Store.plot()?.plants?.firstOrNull { it.id == sel.id }?.let { Dialogs.plant(it) } }
@@ -85,7 +89,10 @@ object Canvas {
         svg.on("wheel") { onWheel(it as WheelEvent) }
     }
 
-    fun setTool(t: Tool) { tool = t; points.clear(); dragStart = null; App.status(t.hint); App.render() }
+        fun setTool(t: Tool) {
+        if (Store.viewSeason != null && t != Tool.SELECT) { App.status("You are looking at season ${Store.viewSeason} (read only). Choose the planning season on the Plot tab first."); return }
+        tool = t; points.clear(); dragStart = null; App.status(t.hint); App.render()
+    }
 
     fun fit() {
         val p = Store.plot()?.plot ?: return
@@ -137,7 +144,8 @@ object Canvas {
         while (g < p.widthM) { svg.add(line(0.0, g, p.lengthM.toDouble(), g, col(LayoutPalette.GRID), 1.0)); g += step }
         drawRulers(p.lengthM.toDouble(), p.widthM.toDouble(), fs, step)
 
-        if (showShade) drawShade(wp)
+                if (showShade) drawShade(wp)
+        if (Store.showWater) drawWater(wp, fs)
         wp.features.forEach { drawFeature(it, fs) }
         wp.paths.forEach { drawPath(it) }
         if (outline.size >= 3) {
@@ -149,8 +157,19 @@ object Canvas {
                 svg.add(s("circle", "cx" to v.x, "cy" to v.y, "r" to handleR(), "fill" to "#ffffff", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke", "class" to "handle"))
             }
         }
-        Store.historyYear?.let { y -> drawHistory(wp, y, fs) }
-        wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id, fs = fs) }
+                val viewing = Store.viewSeason
+        if (viewing != null) {
+            // A past season, read-only: its plants drawn as normal plants instead of this season's.
+            wp.history.filter { it.seasonYear == viewing }.forEach { h ->
+                drawPlant(PlantedNodeEntity(id = -h.id, plotId = wp.plot.id, seedCode = h.seedCode, coordinateXM = h.coordinateXM, coordinateYM = h.coordinateYM, datePlantedEpochMillis = h.datePlantedEpochMillis), selected = false, fs = fs)
+            }
+        } else {
+                        Store.historyYear?.let { y -> drawHistory(wp, y, fs) }
+            // While previewing next season or a rotation year, this season's plants are hidden: that plan replaces them.
+            val replacing = Store.preview != null && Store.previewMode != PreviewMode.NORMAL
+            if (!replacing) wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id, fs = fs) }
+            if (Store.showWater) drawDryRings(wp, fs)
+        }
         Store.preview?.placed?.forEach { pl ->
             val c = Colors.of(pl.seed)
             svg.add(s("circle", "cx" to pl.x, "cy" to pl.y, "r" to pl.seed.exclusionRadiusM, "fill" to c, "fill-opacity" to 0.25, "stroke" to c, "stroke-dasharray" to "4 3", "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
@@ -206,31 +225,73 @@ object Canvas {
         svg.add(g)
     }
 
+    /** Barriers for the shade display: obstacles, plus the plants at mature height when switched on (FR-038). */
+    fun shadeBarriers(wp: WebPlot): List<Barrier> =
+        wp.features.mapNotNull { Barrier.from(it) } + (if (Store.shadePlants) com.example.smartgardenplanner.core.ShadeTools.plantBarriers(wp.plants, { Catalog.get(it) }) else emptyList())
+
+    fun shadeDayOfYear(wp: WebPlot): Int = Store.shadeDay.dayOfYear(wp.plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE, SunlightEngine.dayOfYear(PlatformClock.nowMillis()))
+
     private fun drawShade(wp: WebPlot) {
         val p = wp.plot
-        val barriers = wp.features.mapNotNull { Barrier.from(it) }
-        val key = "${p.lengthM},${p.widthM},${p.latitude},${p.northBearingDeg},${wp.features.hashCode()}"
+        val barriers = shadeBarriers(wp)
+        val lat = p.latitude ?: SunlightEngine.DEFAULT_LATITUDE
+        val day = shadeDayOfYear(wp)
         val cols = 30
         val rows = (cols * p.widthM / p.lengthM).toInt().coerceIn(4, 60)
-        val grid = shadeCache?.takeIf { it.first == key }?.second ?: SunlightEngine.sunHoursGrid(
-            p.lengthM, p.widthM, cols, rows, p.latitude ?: SunlightEngine.DEFAULT_LATITUDE,
-            SunlightEngine.dayOfYear(PlatformClock.nowMillis()), p.northBearingDeg, barriers
-        ).also { shadeCache = key to it }
         val cw = p.lengthM.toDouble() / cols; val ch = p.widthM.toDouble() / rows
-        // Shared SunBand colours: yellow = full sun, blue = part shade, indigo = shade (same as the phone).
         val g = s("g", "class" to "shade")
-        for (r in 0 until rows) for (c in 0 until cols) {
-            val band = SunBand.of(grid[r * cols + c])
-            g.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to col(band.overlayArgb),
-                "fill-opacity" to LayoutPalette.alpha(band.overlayArgb), "data-band" to band.name).also { it.add(s("title").also { t -> t.textContent = "${band.label}: about ${grid[r * cols + c].fmt(1)} h of direct sun today" }) })
+        val hour = Store.shadeHour
+        if (hour != null) {
+            // Shade at one moment: dark where the sun doesn't reach right now.
+            val shadow = com.example.smartgardenplanner.core.ShadeTools.shadowGridAt(p.lengthM, p.widthM, cols, rows, lat, day, p.northBearingDeg, barriers, hour)
+            for (r in 0 until rows) for (c in 0 until cols) if (shadow[r * cols + c]) {
+                g.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to "#312e81", "fill-opacity" to 0.55, "data-shadow" to "1"))
+            }
+        } else {
+            val key = "${p.lengthM},${p.widthM},${p.latitude},${p.northBearingDeg},$day,${barriers.hashCode()}"
+            val grid = shadeCache?.takeIf { it.first == key }?.second ?: SunlightEngine.sunHoursGrid(p.lengthM, p.widthM, cols, rows, lat, day, p.northBearingDeg, barriers).also { shadeCache = key to it }
+            // Shared SunBand colours: yellow = full sun, blue = part shade, indigo = shade (same as the phone).
+            for (r in 0 until rows) for (c in 0 until cols) {
+                val band = SunBand.of(grid[r * cols + c])
+                g.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to col(band.overlayArgb),
+                    "fill-opacity" to LayoutPalette.alpha(band.overlayArgb), "data-band" to band.name).also { it.add(s("title").also { t -> t.textContent = "${band.label}: about ${grid[r * cols + c].fmt(1)} h of direct sun over the day" }) })
+            }
         }
         svg.add(g)
     }
 
-    private fun col(argb: Long) = LayoutPalette.hex(argb)
+    /** Irrigation coverage (FR-039): wet areas coloured by source; plants out of reach get a red dashed ring. */
+    private fun drawWater(wp: WebPlot, fs: Double) {
+        val p = wp.plot
+        val cols = 40
+        val rows = (cols * p.widthM / p.lengthM).toInt().coerceIn(4, 80)
+        val cw = p.lengthM.toDouble() / cols; val ch = p.widthM.toDouble() / rows
+        val irrigation = wp.features.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }
+        val grid = com.example.smartgardenplanner.core.Irrigation.grid(p, irrigation, cols, rows)
+        val g = s("g", "class" to "water")
+        for (i in grid.indices) {
+            val src = grid[i]
+            if (src == com.example.smartgardenplanner.core.WaterSource.MANUAL) continue
+            val c = i % cols; val r = i / cols
+            g.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to col(src.argb), "fill-opacity" to LayoutPalette.alpha(src.argb), "data-water" to src.name))
+        }
+        svg.add(g)
+    }
 
-    /** Fill (with its opacity) and edge colour for a site feature, from the shared palette. */
+    private fun drawDryRings(wp: WebPlot, fs: Double) {
+        val irrigation = wp.features.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }
+        if (irrigation.isEmpty()) return
+        com.example.smartgardenplanner.core.Irrigation.plants(wp.plot, wp.plants, irrigation, { Catalog.get(it) })
+            .filter { it.source == com.example.smartgardenplanner.core.WaterSource.MANUAL }.forEach { pw ->
+                val r = (pw.seed?.exclusionRadiusM ?: 0.3f) + fs * 0.25
+                svg.add(s("circle", "cx" to pw.node.coordinateXM, "cy" to pw.node.coordinateYM, "r" to r, "fill" to "none", "stroke" to "#dc2626", "stroke-dasharray" to "3 3", "stroke-width" to 2.5, "vector-effect" to "non-scaling-stroke", "class" to "dry-ring"))
+            }
+    }
+
+        private fun col(argb: Long) = LayoutPalette.hex(argb)
+
     private fun featureColours(t: SiteFeatureType): Triple<String, Double, String> = when {
+        t.isIrrigation -> Triple("#3b82f6", 0.1, "#2563eb")
         t.isArea -> LayoutPalette.area(t).let { Triple(col(it.first), LayoutPalette.alpha(it.first), col(it.second)) }
         t == SiteFeatureType.TREE -> Triple(col(LayoutPalette.TREE_FILL), LayoutPalette.alpha(LayoutPalette.TREE_FILL), col(LayoutPalette.TREE_EDGE))
         t == SiteFeatureType.FENCE -> Triple("none", 0.0, col(LayoutPalette.FENCE))
@@ -247,7 +308,35 @@ object Canvas {
         val ink = col(LayoutPalette.INK)
         val stroke = if (sel) "#f97316" else edge
         val g = s("g", "data-feature" to f.id)
-        when {
+                when {
+            t == SiteFeatureType.SPRINKLER -> {
+                val c = pts[0]
+                val r = if (f.radiusM > 0f) f.radiusM else com.example.smartgardenplanner.core.Irrigation.DEFAULT_THROW_M
+                val arc = if (f.slopeGradePct <= 0f || f.slopeGradePct >= 360f) 360f else f.slopeGradePct
+                if (arc >= 360f) g.add(s("circle", "cx" to c.x, "cy" to c.y, "r" to r, "fill" to "none", "stroke" to "#2563eb", "stroke-dasharray" to "6 4", "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+                else {
+                    // Arc: compass bearings turned into plot directions.
+                    val n = Store.plot()?.plot?.northBearingDeg ?: 0f
+                    fun at(bearing: Double): PlotPoint { val (dx, dy) = SunlightEngine.sunDirectionInPlot(bearing, n); return PlotPoint((c.x + dx * r).toFloat(), (c.y + dy * r).toFloat()) }
+                    val a0 = f.slopeDirectionDeg - arc / 2.0; val a1 = f.slopeDirectionDeg + arc / 2.0
+                    val steps = (arc / 10f).toInt().coerceAtLeast(2)
+                    val pts2 = (0..steps).map { at(a0 + (a1 - a0) * it / steps) }
+                    g.add(s("polygon", "points" to (listOf(c) + pts2).joinToString(" ") { "${it.x},${it.y}" }, "fill" to "#3b82f6", "fill-opacity" to 0.08, "stroke" to "#2563eb", "stroke-dasharray" to "6 4", "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+                }
+                g.add(s("circle", "cx" to c.x, "cy" to c.y, "r" to fs * 0.35, "fill" to "#2563eb", "stroke" to stroke, "stroke-width" to if (sel) 3 else 1, "vector-effect" to "non-scaling-stroke"))
+                g.add(s("text", "x" to c.x, "y" to c.y - fs * 0.5, "font-size" to fs * 0.6, "fill" to "#1e3a8a", "text-anchor" to "middle").also { it.textContent = "💧 ${r.fmt(1)} m" })
+            }
+            t == SiteFeatureType.DRIP_LINE -> {
+                g.add(s("polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to if (sel) "#f97316" else "#0369a1", "stroke-width" to 3, "stroke-dasharray" to "1 6", "stroke-linecap" to "round", "vector-effect" to "non-scaling-stroke"))
+                g.add(s("polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to "#0369a1", "stroke-opacity" to 0.5, "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+            }
+            t == SiteFeatureType.HOSE_BIB -> {
+                val c = pts[0]
+                val len = if (f.radiusM > 0f) f.radiusM else com.example.smartgardenplanner.core.Irrigation.DEFAULT_HOSE_M
+                g.add(s("circle", "cx" to c.x, "cy" to c.y, "r" to len, "fill" to "none", "stroke" to "#6366f1", "stroke-dasharray" to "2 6", "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+                g.add(s("rect", "x" to c.x - fs * 0.3, "y" to c.y - fs * 0.3, "width" to fs * 0.6, "height" to fs * 0.6, "fill" to "#6366f1", "stroke" to stroke, "stroke-width" to if (sel) 3 else 1, "vector-effect" to "non-scaling-stroke"))
+                g.add(s("text", "x" to c.x, "y" to c.y - fs * 0.5, "font-size" to fs * 0.6, "fill" to "#3730a3", "text-anchor" to "middle").also { it.textContent = "Tap · ${len.fmt(0)} m hose" })
+            }
             t.isArea && pts.size >= 3 -> {
                 g.add(s("polygon", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to fill, "fill-opacity" to fillAlpha, "stroke" to stroke, "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
                 val cx = pts.map { it.x }.average(); val cy = pts.map { it.y }.average()
@@ -335,7 +424,8 @@ object Canvas {
         val pts = PlotGeometry.parsePoints(f.pointsJson)
         when {
             t.isArea -> PlotGeometry.pointInPolygon(pt.x, pt.y, pts)
-            t == SiteFeatureType.TREE -> PlotGeometry.distanceToPolyline(pt.x, pt.y, pts) <= max(f.radiusM, 0.3f)
+                        t == SiteFeatureType.TREE -> PlotGeometry.distanceToPolyline(pt.x, pt.y, pts) <= max(f.radiusM, 0.3f)
+            t == SiteFeatureType.SPRINKLER || t == SiteFeatureType.HOSE_BIB -> PlotGeometry.distanceToPolyline(pt.x, pt.y, pts) <= max(0.3f, handleR().toFloat() * 1.5f)
             else -> PlotGeometry.distanceToPolyline(pt.x, pt.y, pts) <= 0.3f
         }
     }
@@ -345,7 +435,23 @@ object Canvas {
         else pt.x in z.xM..(z.xM + z.widthM) && pt.y in z.yM..(z.yM + z.heightM)
     }
 
-        private fun handleR(): Double = vb[2] / 90.0
+            private fun handleR(): Double = vb[2] / 90.0
+
+    /** With shade on, pointing at a spot tells when it gets sun (FR-038); with water on, how it is watered. */
+    private fun hover(pt: PlotPoint) {
+        val wp = Store.plot() ?: return
+        if (!showShade && !Store.showWater) return
+        if (!PlotShape.contains(wp.plot, pt.x, pt.y)) return
+        val last = hoverAt
+        if (last != null && dist(last.x, last.y, pt) < 0.15f) return
+        hoverAt = pt
+        val parts = mutableListOf<String>()
+        if (showShade) parts += com.example.smartgardenplanner.core.ShadeTools.describeWindows(
+            com.example.smartgardenplanner.core.ShadeTools.sunWindows(pt.x, pt.y, wp.plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE, shadeDayOfYear(wp), wp.plot.northBearingDeg, shadeBarriers(wp))
+        ) + " (solar time, ${Store.shadeDay.label.lowercase()})"
+        if (Store.showWater) parts += "Water: " + com.example.smartgardenplanner.core.Irrigation.sourceAt(pt.x, pt.y, wp.features.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }, wp.plot.northBearingDeg).label
+        App.status("At ${pt.x.fmt(1)}, ${pt.y.fmt(1)} m: " + parts.joinToString(" · "))
+    }
 
     private fun dist(x: Float, y: Float, p: PlotPoint): Float { val dx = x - p.x; val dy = y - p.y; return sqrt(dx * dx + dy * dy) }
 
@@ -355,9 +461,16 @@ object Canvas {
         zoom(if (e.deltaY > 0) 1.15 else 1 / 1.15, pt.x.toDouble(), pt.y.toDouble())
     }
 
-    private fun onDown(e: MouseEvent) {
+        private fun onDown(e: MouseEvent) {
         val wp = Store.plot() ?: return
         val pt = toMetres(e)
+        if (Store.viewSeason != null) {
+            // Read-only past season: only panning.
+            selection = null; dragStart = pt; dragNow = pt; dragMoved = false
+            panOrigin = doubleArrayOf(e.clientX.toDouble(), e.clientY.toDouble(), vb[0], vb[1])
+            svg.asDynamic().setPointerCapture(e.asDynamic().pointerId)
+            return
+        }
         svg.asDynamic().setPointerCapture(e.asDynamic().pointerId)
         dragMoved = false
         when (tool) {
@@ -385,12 +498,13 @@ object Canvas {
         }
     }
 
-    private fun onMove(e: MouseEvent) {
-        val start = dragStart ?: return
+        private fun onMove(e: MouseEvent) {
+        val start = dragStart
         val pt = toMetres(e)
+        if (start == null) { hover(pt); return }
         dragNow = pt
         if (dist(start.x, start.y, pt) > 0.02f) dragMoved = true
-        if (tool == Tool.SELECT && selection == null) {
+                if ((tool == Tool.SELECT && selection == null) || Store.viewSeason != null) {
             val o = panOrigin ?: return
             val scale = vb[2] / (svg.asDynamic().clientWidth as Double).coerceAtLeast(1.0)
             vb[0] = o[2] - (e.clientX - o[0]) * scale
@@ -423,12 +537,13 @@ object Canvas {
         }
     }
 
-    private fun onUp(e: MouseEvent) {
+        private fun onUp(e: MouseEvent) {
         val wp = Store.plot()
         val start = dragStart
         val pt = toMetres(e)
         dragStart = null; dragNow = null; panOrigin = null
         if (wp == null) return
+        Store.viewSeason?.let { y -> if (!dragMoved) App.status("You are looking at season $y (read only). Choose the planning season on the Plot tab to make changes."); return }
         when (tool) {
             Tool.SELECT -> if (dragMoved && start != null) moveSelection(wp, pt.x - start.x, pt.y - start.y) else App.render()
             Tool.PLANT -> place(wp, pt)
@@ -442,6 +557,10 @@ object Canvas {
                 if (x1 - x0 > 0.2f && y1 - y0 > 0.2f) Dialogs.planForMe(listOf(PlotPoint(x0, y0), PlotPoint(x1, y0), PlotPoint(x1, y1), PlotPoint(x0, y1)))
                 App.render()
             }
+                        Tool.WATER -> if (waterType == SiteFeatureType.DRIP_LINE) { points += pt; App.render() }
+                else Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = waterType.name, pointsJson = PlotGeometry.serializePoints(listOf(pt)),
+                    radiusM = if (waterType == SiteFeatureType.SPRINKLER) com.example.smartgardenplanner.core.Irrigation.DEFAULT_THROW_M else com.example.smartgardenplanner.core.Irrigation.DEFAULT_HOSE_M,
+                    slopeGradePct = if (waterType == SiteFeatureType.SPRINKLER) 360f else 0f), isNew = true)
             Tool.TREE -> Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = SiteFeatureType.TREE.name, pointsJson = PlotGeometry.serializePoints(listOf(pt)), heightM = 6f, radiusM = 2f), isNew = true)
                         Tool.OUTLINE -> {
                 val v = dragVertex
@@ -488,9 +607,13 @@ object Canvas {
         App.render()
     }
 
-    fun finishPoints() {
+        fun finishPoints() {
         val wp = Store.plot() ?: return
         when (tool) {
+            Tool.WATER -> if (waterType == SiteFeatureType.DRIP_LINE && points.size >= 2) {
+                Dialogs.feature(SiteFeatureEntity(plotId = wp.plot.id, featureType = SiteFeatureType.DRIP_LINE.name, pointsJson = PlotGeometry.serializePoints(points), radiusM = com.example.smartgardenplanner.core.Irrigation.DEFAULT_DRIP_HALF_WIDTH_M), isNew = true)
+                points.clear()
+            } else if (waterType == SiteFeatureType.DRIP_LINE) App.status("Click at least 2 points along the drip line.")
             Tool.OUTLINE -> {
                 val problem = PlotGeometry.validateOutline(points)
                 if (problem != null) { App.status(problem); return }

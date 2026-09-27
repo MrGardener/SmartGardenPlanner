@@ -75,7 +75,8 @@ object App {
         header.clear()
         header.add(h("div", "brand", kids = listOf(h("span", "logo", "🌱"), h("span", text = "Smart Garden Planner"))))
         val plotPicker = if (Store.plots.isNotEmpty()) select(Store.plots.mapIndexed { i, p -> i.toString() to p.plot.name }, Store.current.toString()) {
-            Store.current = it.toInt(); Canvas.selection = null; Store.preview = null; Store.previewArea = null; render()
+                        Store.current = it.toInt(); Canvas.selection = null; Store.preview = null; Store.previewArea = null
+            Store.viewSeason = null; Store.historyYear = null; Store.rotation = emptyList(); Store.previewMode = PreviewMode.NORMAL; render()
         }.also { it.setAttribute("aria-label", "Plot") } else null
         val file = h("span", "file", (if (Store.dirty) "● " else "") + Store.fileName, mapOf("title" to if (Store.dirty) "Unsaved changes" else "Saved"))
         val wp = Store.plot()
@@ -87,7 +88,8 @@ object App {
             plotPicker,
             button("↶", "btn icon", "Undo (Ctrl+Z)") { if (Store.undo()) render() }.also { if (wp?.undo?.isEmpty() != false) it.setAttribute("disabled", "") },
             button("↷", "btn icon", "Redo (Ctrl+Y)") { if (Store.redo()) render() }.also { if (wp?.redo?.isEmpty() != false) it.setAttribute("disabled", "") },
-            button(if (Canvas.showShade) "Shade: on" else "Shade: off", if (Canvas.showShade) "btn on" else "btn", "Show estimated shade from trees, fences and buildings today") { Canvas.showShade = !Canvas.showShade; render() },
+                        button(if (Canvas.showShade) "Shade: on" else "Shade: off", if (Canvas.showShade) "btn on" else "btn", "Show sun and shade over the whole day or at a chosen time, from obstacles and tall plants") { Canvas.showShade = !Canvas.showShade; render() },
+            button(if (Store.showWater) "Water: on" else "Water: off", if (Store.showWater) "btn on" else "btn", "Show what sprinklers, drip lines and hoses reach, and which plants need a watering can") { Store.showWater = !Store.showWater; render() },
             button(when (Prefs.theme) { "light" -> "☀ Light"; "dark" -> "☾ Dark"; else -> "◐ Auto" }, "btn", "Page colours: follow the system, light or dark. The layout itself stays light so shade is easy to see.") {
                 Prefs.theme = when (Prefs.theme) { "auto" -> "light"; "light" -> "dark"; else -> "auto" }
                 applyTheme(); render()
@@ -99,16 +101,64 @@ object App {
 
     private fun renderLegend() {
         legend.clear()
-        if (!Canvas.showShade || Store.plot() == null) { legend.classList.add("hidden"); return }
+        val wp = Store.plot()
+        val viewing = Store.viewSeason
+        if (wp == null || (!Canvas.showShade && !Store.showWater && viewing == null)) { legend.classList.add("hidden"); return }
         legend.classList.remove("hidden")
-        legend.add(h("b", text = "Sun today:"))
-        com.example.smartgardenplanner.core.SunBand.entries.forEach { b ->
-            val sw = h("span", "sw", attrs = mapOf("style" to "background:linear-gradient(${cssRgba(b.overlayArgb)},${cssRgba(b.overlayArgb)}),#f5f1e6"))
-            legend.add(h("span", kids = listOf(sw, h("span", text = b.label))))
+        if (viewing != null) legend.add(h("div", "legend-row", kids = listOf(h("b", text = "Looking back at $viewing (read only)"),
+            button("Back to ${wp.season()}", "btn small") { Store.viewSeason = null; render() })))
+        if (Canvas.showShade) {
+            val lat = wp.plot.latitude ?: com.example.smartgardenplanner.core.SunlightEngine.DEFAULT_LATITUDE
+            val day = Canvas.shadeDayOfYear(wp)
+            val (rise, set) = com.example.smartgardenplanner.core.ShadeTools.sunriseSunset(lat, day)
+            val row = h("div", "legend-row")
+            row.add(select(com.example.smartgardenplanner.core.ShadeDay.entries.map { it.name to it.label }, Store.shadeDay.name) { Store.shadeDay = com.example.smartgardenplanner.core.ShadeDay.valueOf(it); render() }.also { it.setAttribute("aria-label", "Day") })
+            row.add(select(listOf("day" to "Whole day (hours of sun)", "time" to "At a time of day"), if (Store.shadeHour == null) "day" else "time") {
+                Store.shadeHour = if (it == "time") 9.0.coerceIn(rise, set) else null; render()
+            }.also { it.setAttribute("aria-label", "Shade mode") })
+            val plants = h("input", attrs = mapOf("type" to "checkbox")) as HTMLInputElement
+            plants.checked = Store.shadePlants
+            plants.on("change") { Store.shadePlants = plants.checked; render() }
+            row.add(h("label", "check", kids = listOf(plants, h("span", text = "Tall plants cast shade"))))
+            legend.add(row)
+            val hour = Store.shadeHour
+            if (hour != null) {
+                val sun = com.example.smartgardenplanner.core.SunlightEngine.position(lat, day, hour)
+                val slider = h("input", attrs = mapOf("type" to "range", "min" to rise.toString(), "max" to set.toString(), "step" to "0.25", "aria-label" to "Time of day")) as HTMLInputElement
+                slider.value = hour.toString()
+                val readout = h("span", text = "")
+                fun describe(hh: Double) {
+                    val sp = com.example.smartgardenplanner.core.SunlightEngine.position(lat, day, hh)
+                    readout.textContent = "${com.example.smartgardenplanner.core.ShadeTools.clock(hh)} solar time · sun ${compassName(sp.azimuthDeg.toFloat())}, ${sp.elevationDeg.toInt()}° up · dark = shade now"
+                }
+                describe(sun.let { hour })
+                slider.on("input") { Store.shadeHour = slider.value.toDouble(); describe(Store.shadeHour!!); Canvas.render() }
+                legend.add(h("div", "legend-row", kids = listOf(h("span", text = "🌅 ${com.example.smartgardenplanner.core.ShadeTools.clock(rise)}"), slider, h("span", text = "🌇 ${com.example.smartgardenplanner.core.ShadeTools.clock(set)}"))))
+                legend.add(h("div", "legend-row", kids = listOf(readout)))
+            } else {
+                val bands = h("div", "legend-row")
+                bands.add(h("b", text = "Direct sun over the day:"))
+                com.example.smartgardenplanner.core.SunBand.entries.forEach { b ->
+                    val sw = h("span", "sw", attrs = mapOf("style" to "background:linear-gradient(${cssRgba(b.overlayArgb)},${cssRgba(b.overlayArgb)}),#f5f1e6"))
+                    bands.add(h("span", kids = listOf(sw, h("span", text = b.label))))
+                }
+                legend.add(bands)
+                legend.add(para("Point at a spot to see when it gets sun. Choose “At a time of day” to watch the shade move.", "hint"))
+            }
+        }
+        if (Store.showWater) {
+            val row = h("div", "legend-row")
+            row.add(h("b", text = "Water:"))
+            com.example.smartgardenplanner.core.WaterSource.entries.forEach { w ->
+                val sw = if (w == com.example.smartgardenplanner.core.WaterSource.MANUAL) h("span", "sw", attrs = mapOf("style" to "background:#f5f1e6;border:2px dashed #dc2626"))
+                    else h("span", "sw", attrs = mapOf("style" to "background:linear-gradient(${cssRgba(w.argb)},${cssRgba(w.argb)}),#f5f1e6"))
+                row.add(h("span", kids = listOf(sw, h("span", text = w.label))))
+            }
+            legend.add(row)
         }
     }
 
-        /** Points out plants matching [test] on the layout ("find"); null clears. */
+    /** Points out plants matching [test] on the layout ("find"); null clears. */
     fun find(label: String?, test: ((com.example.smartgardenplanner.core.PlantedNodeEntity) -> Boolean)?) {
         Canvas.find = test
         if (test != null && label != null) {

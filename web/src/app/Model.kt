@@ -20,6 +20,8 @@ import kotlinx.browser.window
 
 const val WEB_VERSION = "1.0"
 
+enum class PreviewMode { NORMAL, NEXT_SEASON, ROTATION }
+
 data class Snap(val plot: PlotEntity, val plants: List<PlantedNodeEntity>, val paths: List<PathZoneEntity>, val features: List<SiteFeatureEntity>, val history: List<PlantingHistoryEntity>)
 
 /** One plot being edited, with its own undo/redo history (every change is one step, as on the phone). */
@@ -84,8 +86,21 @@ object Store {
     var previewArea: List<PlotPoint>? = null
     /** The rows of the plan being edited (variety code, count); kept when a proposal is discarded (FR-034). */
     val planRows = mutableListOf<Pair<String, Int>>()
-    /** Past season shown on the layout (null = none). */
+        /** Past season shown faintly under this season's plants (null = none). */
     var historyYear: Int? = null
+    /** Past season shown instead of this season, read-only (FR-037); null = the season being planned. */
+    var viewSeason: Int? = null
+    /** What "Keep this plan" does with the proposal (FR-037). */
+    var previewMode = PreviewMode.NORMAL
+    /** A multi-season rotation plan being looked at, and which year is on the layout. */
+    var rotation: List<com.example.smartgardenplanner.core.SeasonPlan> = emptyList()
+    var rotationIndex = 0
+    /** Shade display (FR-038): which day, whole day (null) or a solar hour, and whether plants cast shade. */
+    var shadeDay = com.example.smartgardenplanner.core.ShadeDay.TODAY
+    var shadeHour: Double? = null
+    var shadePlants = true
+    /** Irrigation overlay (FR-039). */
+    var showWater = false
     private var nextId = 1L
 
     fun newId(): Long = nextId++
@@ -166,9 +181,10 @@ object Store {
         }
         if (unknown > 0) messages += "$unknown plant(s) use varieties this planner doesn't know and were skipped."
         current = if (plots.isEmpty()) -1 else 0
-        fileName = name
+                fileName = name
         dirty = false
         preview = null
+        previewMode = PreviewMode.NORMAL; rotation = emptyList(); viewSeason = null; historyYear = null
         autosave()
         return messages
     }

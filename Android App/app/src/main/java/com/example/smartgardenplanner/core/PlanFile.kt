@@ -128,8 +128,10 @@ object PlanFileCodec {
                     mapOf(
                         "type" to f.featureType, "points" to points(f.pointsJson), "label" to f.label.ifBlank { null },
                         "heightM" to f.heightM.takeIf { it > 0f }, "radiusM" to f.radiusM.takeIf { it > 0f },
-                        "slopeDirectionDeg" to f.slopeDirectionDeg.takeIf { f.featureType == SiteFeatureType.SLOPE.name },
+                                                "slopeDirectionDeg" to f.slopeDirectionDeg.takeIf { f.featureType == SiteFeatureType.SLOPE.name },
                         "slopeGradePct" to f.slopeGradePct.takeIf { f.featureType == SiteFeatureType.SLOPE.name },
+                        "arcCentreDeg" to f.slopeDirectionDeg.takeIf { f.featureType == SiteFeatureType.SPRINKLER.name },
+                        "arcWidthDeg" to f.slopeGradePct.takeIf { f.featureType == SiteFeatureType.SPRINKLER.name },
                         "floodMonths" to f.floodMonths.split(",").mapNotNull { it.trim().toIntOrNull() }.takeIf { it.isNotEmpty() }
                     )
                 },
@@ -303,7 +305,7 @@ object PlanFileCodec {
                 val fm = fv as? Map<*, *> ?: return@mapNotNull null
                 val type = SiteFeatureType.of(fm.text("type", 20) ?: "") ?: return@mapNotNull null
                 val pts = readPoints(fm["points"]) ?: return@mapNotNull null
-                val needed = when { type.isArea -> 3; type == SiteFeatureType.TREE -> 1; else -> 2 }
+                                val needed = when { type.isArea -> 3; type == SiteFeatureType.TREE || type == SiteFeatureType.SPRINKLER || type == SiteFeatureType.HOSE_BIB -> 1; else -> 2 }
                 if (pts.size < needed) return@mapNotNull null
                 val height = fm.num("heightM")?.toFloat() ?: 0f
                 if (type.isBarrier && (height <= 0f || height > 100f)) return@mapNotNull null
@@ -311,9 +313,10 @@ object PlanFileCodec {
                     plotId = 0, featureType = type.name, pointsJson = PlotGeometry.serializePoints(pts),
                     label = fm.text("label", 40) ?: "",
                     heightM = height.coerceIn(0f, 100f),
-                    radiusM = (fm.num("radiusM")?.toFloat() ?: 0f).coerceIn(0f, 30f),
-                    slopeDirectionDeg = ((fm.num("slopeDirectionDeg")?.toFloat() ?: 0f) % 360f + 360f) % 360f,
-                    slopeGradePct = (fm.num("slopeGradePct")?.toFloat() ?: 0f).coerceIn(0f, 100f),
+                                        radiusM = (fm.num("radiusM")?.toFloat() ?: 0f).coerceIn(0f, 60f),
+                    slopeDirectionDeg = (((if (type == SiteFeatureType.SPRINKLER) fm.num("arcCentreDeg") else fm.num("slopeDirectionDeg"))?.toFloat() ?: 0f) % 360f + 360f) % 360f,
+                    slopeGradePct = if (type == SiteFeatureType.SPRINKLER) (fm.num("arcWidthDeg")?.toFloat() ?: 360f).coerceIn(10f, 360f)
+                        else (fm.num("slopeGradePct")?.toFloat() ?: 0f).coerceIn(0f, 100f),
                     floodMonths = (fm["floodMonths"] as? List<*>).orEmpty().mapNotNull { (it as? Number)?.toInt()?.takeIf { mo -> mo in 1..12 } }.joinToString(",")
                 )
             }

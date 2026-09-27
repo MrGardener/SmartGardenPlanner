@@ -81,7 +81,8 @@ object Panels {
         )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))
 
-        seasons(body, wp)
+                seasons(body, wp)
+        irrigation(body, wp)
 
         body.add(heading("Draw what's on the site"))
         body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.FENCE, SiteFeatureType.WALL, SiteFeatureType.BUILDING).map { t ->
@@ -114,29 +115,52 @@ object Panels {
         body.add(check("Organic care advice", Prefs.organic) { Prefs.organic = it })
     }
 
-    /** Seasons and crop rotation (FR-032, FR-033). */
+    /** Seasons and crop rotation (FR-032, FR-033, FR-037). */
     private fun seasons(body: HTMLElement, wp: WebPlot) {
         val season = wp.season()
-        body.add(heading("Seasons & crop rotation"))
-        body.add(kv("Planning season", season.toString()))
-        body.add(para("Fences, buildings, trees, paths and areas carry over from year to year. When this season ends, start a new one: the plants move to history and next year's plan uses them for rotation.", "hint"))
-        body.add(h("div", "row wrap", kids = listOf(
-            button("Start a new season…", "btn") { Dialogs.newSeason() }.also { if (wp.plants.isEmpty()) it.setAttribute("disabled", "") }
-        )))
         val years = com.example.smartgardenplanner.core.Seasons.years(wp.history)
+        body.add(heading("Seasons & crop rotation"))
+        body.add(label("Season shown on the layout", select(
+            listOf("" to "$season — planning (you can edit)") + years.map { it.toString() to "$it — look back (read only, ${wp.history.count { h -> h.seasonYear == it }} plants)" },
+            Store.viewSeason?.toString() ?: ""
+        ) { v -> Store.viewSeason = v.toIntOrNull(); Canvas.selection = null; Store.preview = null; App.render(); App.status(if (Store.viewSeason != null) "Looking back at season ${Store.viewSeason} (read only)." else "Back to planning season $season.") }))
+        if (Store.viewSeason != null) {
+            body.add(para("You are looking at ${Store.viewSeason}. Nothing can be changed here; choose $season above to plan.", "warn"))
+        }
+        body.add(para("Fences, buildings, trees, paths, areas and irrigation stay with the plot from year to year. Each finished season is kept as history and used for crop rotation.", "hint"))
+        body.add(h("div", "row wrap", kids = listOf(
+            button("Plan next season (rotate)…", "btn primary", "Re-plan the whole plot for next year with the same crops, rotated so nothing goes where its family grew") {
+                Dialogs.planForMe(com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot), PreviewMode.NEXT_SEASON)
+            },
+            button("Rotation plan for 5 seasons…", "btn", "See the next seasons' layouts, one year at a time") { Dialogs.rotationPlan() },
+            button("Start a new season (empty)…", "btn", "Move this season's plants into the history and start with an empty plot") { Dialogs.newSeason() }.also { if (wp.plants.isEmpty()) it.setAttribute("disabled", "") }
+        )))
         if (years.isNotEmpty()) {
-            body.add(label("Show a past season on the layout", select(listOf("" to "None") + years.map { it.toString() to "$it (${wp.history.count { h -> h.seasonYear == it }} plants)" }, Store.historyYear?.toString() ?: "") {
+            body.add(label("Also show a past season faintly while planning", select(listOf("" to "None") + years.map { it.toString() to it.toString() }, Store.historyYear?.toString() ?: "") {
                 Store.historyYear = it.toIntOrNull(); App.render()
             }))
             years.forEach { y ->
                 val list = wp.history.filter { it.seasonYear == y }
                 body.add(h("details", "pest", kids = listOf(
                     h("summary", text = "$y — ${list.size} plants"),
-                    para(list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }, "hint")
+                    para(list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }, "hint"),
+                    *com.example.smartgardenplanner.core.RotationPlanner.summary(wp.plot, list).map { para("• $it", "hint") }.toTypedArray()
                 )))
             }
         }
         CropRotation.advice(wp.plot, wp.history, wp.plants, { Catalog.get(it) }, season).forEach { body.add(para(it, if (it.startsWith("⚠")) "warn" else "hint")) }
+        body.add(heading("Templates"))
+        body.add(para("Duplicate this plot to try another plan or keep a clean template: the copy carries the site and, if you like, the plants and history.", "hint"))
+        body.add(button("Duplicate plot…", "btn") { Dialogs.duplicatePlot() })
+    }
+
+    /** Irrigation tools and summary (FR-039). */
+    private fun irrigation(body: HTMLElement, wp: WebPlot) {
+        body.add(heading("Irrigation"))
+        body.add(h("div", "row wrap", kids = listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).map { t ->
+            button(t.label, if (Canvas.tool == Tool.WATER && Canvas.waterType == t) "btn on" else "btn") { Canvas.waterType = t; Canvas.setTool(Tool.WATER) }
+        } + button(if (Store.showWater) "Water map: on" else "Water map: off", if (Store.showWater) "btn on" else "btn") { Store.showWater = !Store.showWater; App.render() }))
+        body.add(para("Draw where your sprinklers, drip lines or soaker hoses and hose taps are. The water map shows what each reaches; plants circled in red need a watering can.", "hint"))
     }
 
     private fun check(text: String, value: Boolean, onChange: (Boolean) -> Unit): HTMLElement {
@@ -160,7 +184,8 @@ object Panels {
         }
         body.add(h("div", "row", kids = listOf(
             button("Plant tool", if (Canvas.tool == Tool.PLANT) "btn on" else "btn") { Canvas.setTool(Tool.PLANT) },
-            button("Plan an area for me", if (Canvas.tool == Tool.PLAN) "btn on" else "btn primary") { Canvas.setTool(Tool.PLAN) }
+                        button("Plan an area for me", if (Canvas.tool == Tool.PLAN) "btn on" else "btn primary") { Canvas.setTool(Tool.PLAN) },
+            button("Fill the whole plot…", "btn", "List what you want this year; the planner fills the plot (use How many fit? for the numbers)") { Dialogs.planForMe(com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot)) }
         )))
         val search = input(query, "search", "Search ${Catalog.seeds.size} varieties…")
         search.on("input") { query = search.value; keepFocus = true; App.render() }
@@ -219,6 +244,8 @@ object Panels {
         val ctx = Store.context(wp)
         val pref = if (Prefs.organic) CarePreference.ORGANIC else CarePreference.CONVENTIONAL
         if (wp.plants.isEmpty()) { body.add(para("Plant something to see watering, feeding and pest advice.", "hint")); return }
+                body.add(heading("How each plant gets water"))
+        com.example.smartgardenplanner.core.Irrigation.report(wp.plot, wp.plants, wp.features, { Catalog.get(it) }).forEach { body.add(para(it, if (it.startsWith("⚠")) "warn" else "hint")) }
         body.add(heading("Watering"))
         val days = CarePlanner.wateringIntervalDays(ctx)
         body.add(para("Deep-water about every $days day${if (days == 1) "" else "s"} (thirstiest crop, adjusted for your soil). Water at the base in the morning; skip after a good rain.", "p"))

@@ -14,7 +14,8 @@ import androidx.room.PrimaryKey
  *  - TREE / FENCE / WALL / BUILDING barriers with a height, which cast shade (FR-006)
  *
  * Areas are polygons (3+ points). A TREE is one point (the trunk) with [radiusM] as its crown radius.
- * FENCE / WALL / BUILDING are polylines of 2+ points.
+  * FENCE / WALL / BUILDING are polylines of 2+ points.
+ * SPRINKLER / DRIP_LINE / HOSE_BIB are irrigation (FR-039); see [SiteFeatureType] for how their columns are used.
  */
 @Entity(
     tableName = "site_features",
@@ -49,7 +50,7 @@ data class SiteFeatureEntity(
 )
 
 /** Feature types stored in [SiteFeatureEntity.featureType]. */
-enum class SiteFeatureType(val label: String, val isArea: Boolean, val isBarrier: Boolean) {
+enum class SiteFeatureType(val label: String, val isArea: Boolean, val isBarrier: Boolean, val isIrrigation: Boolean = false) {
     FULL_SUN("Full sun (6+ h)", true, false),
     PART_SHADE("Part shade (3–6 h)", true, false),
     FULL_SHADE("Full shade (< 3 h)", true, false),
@@ -58,7 +59,14 @@ enum class SiteFeatureType(val label: String, val isArea: Boolean, val isBarrier
     TREE("Tree", false, true),
     FENCE("Fence / hedge", false, true),
     WALL("Wall", false, true),
-    BUILDING("Building", false, true);
+        BUILDING("Building", false, true),
+    // Irrigation (FR-039). Stored in the same columns: SPRINKLER is one point with radiusM = throw radius,
+    // slopeDirectionDeg = compass bearing of the middle of its arc and slopeGradePct = arc width in degrees (360 = full
+    // circle); DRIP_LINE is a polyline with radiusM = wetted half-width; HOSE_BIB is one point (the tap) with
+    // radiusM = hose length.
+    SPRINKLER("Sprinkler", false, false, true),
+    DRIP_LINE("Drip line / soaker hose", false, false, true),
+    HOSE_BIB("Hose tap", false, false, true);
 
     companion object {
         fun of(name: String): SiteFeatureType? = entries.firstOrNull { it.name == name }

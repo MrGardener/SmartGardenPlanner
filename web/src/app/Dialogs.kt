@@ -165,6 +165,18 @@ object Dialogs {
         }
         val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
         val body = mutableListOf(label("Label", labelIn))
+                val arcWidth = select(listOf("360" to "Full circle", "270" to "Three quarters (270°)", "180" to "Half circle (180°)", "90" to "Quarter circle (90°)"),
+            (if (entity.slopeGradePct <= 0f || entity.slopeGradePct >= 360f) 360 else entity.slopeGradePct.toInt()).toString()) {}
+        when (t) {
+            SiteFeatureType.SPRINKLER -> {
+                body += label("How far it throws water (radius), m", radius)
+                body += label("Pattern", arcWidth)
+                body += h("div", "field", kids = listOf(h("span", "lbl", "For a part circle: which way the middle of the spray points"), compassPicker(downhill) { downhill = it }))
+            }
+            SiteFeatureType.DRIP_LINE -> body += label("Wetted strip each side of the line, m (drip about 0.3, soaker hose 0.2)", radius)
+            SiteFeatureType.HOSE_BIB -> body += label("Hose length, m", radius)
+            else -> {}
+        }
         if (t.isBarrier) body += label("Height, m (roughly is fine: fence 1.8, 1-storey house 5, 2-storey 8)", height)
         if (t == SiteFeatureType.TREE) body += label("Crown radius, m", radius)
         if (t == SiteFeatureType.SLOPE) {
@@ -180,8 +192,14 @@ object Dialogs {
             if (t.isBarrier && (hgt <= 0f || hgt > 150f)) { App.status("Height must be between 0 and 150 m."); return@save false }
             val updated = entity.copy(
                 label = labelIn.value.trim(), heightM = if (t.isBarrier) hgt else 0f,
-                radiusM = if (t == SiteFeatureType.TREE) (radius.value.toFloatOrNull() ?: 1f).coerceIn(0.2f, 40f) else entity.radiusM,
-                slopeGradePct = grade.value.toFloatOrNull() ?: 0f, slopeDirectionDeg = downhill,
+                                radiusM = when {
+                    t == SiteFeatureType.TREE -> (radius.value.toFloatOrNull() ?: 1f).coerceIn(0.2f, 40f)
+                    t == SiteFeatureType.SPRINKLER -> (radius.value.toFloatOrNull() ?: 3f).coerceIn(0.5f, 30f)
+                    t == SiteFeatureType.DRIP_LINE -> (radius.value.toFloatOrNull() ?: 0.3f).coerceIn(0.05f, 2f)
+                    t == SiteFeatureType.HOSE_BIB -> (radius.value.toFloatOrNull() ?: 15f).coerceIn(1f, 60f)
+                    else -> entity.radiusM
+                },
+                slopeGradePct = if (t == SiteFeatureType.SPRINKLER) arcWidth.value.toFloat() else grade.value.toFloatOrNull() ?: 0f, slopeDirectionDeg = downhill,
                 floodMonths = months.filter { it.second.checked }.joinToString(",") { it.first.toString() }
             )
             Store.change { wp ->
@@ -202,16 +220,22 @@ object Dialogs {
      * rows being edited (after "Change selections"), else the last list used, else the usual plants, else suggestions
      * (FR-034). Clumps or rows is chosen here (FR-032).
      */
-    fun planForMe(area: List<PlotPoint>) {
+        fun planForMe(area: List<PlotPoint>, mode: PreviewMode = PreviewMode.NORMAL) {
         val wp = Store.plot() ?: return
-        val ctx = Store.context(wp)
+        val nextSeason = mode == PreviewMode.NEXT_SEASON
+        // Next season: an empty plot, with this season's plants counted as history for the rotation (FR-037).
+        val archivedNow = if (nextSeason && wp.plants.isNotEmpty()) com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }) else emptyList()
+        val planHistory = wp.history + archivedNow
+        val planYear = if (nextSeason && wp.plants.isNotEmpty()) wp.season() + 1 else wp.season()
+        val ctx = if (nextSeason) Store.context(wp).copy(nodes = emptyList()) else Store.context(wp)
         val rows = mutableListOf<Row>()
-        val start = Store.planRows.ifEmpty { Prefs.lastPlan }
+        val start = if (nextSeason) com.example.smartgardenplanner.core.RotationPlanner.lastList(wp.plants, wp.history, { Catalog.get(it) }).map { it.seed.botanicalCode to it.count }
+            else Store.planRows.ifEmpty { Prefs.lastPlan }
         start.forEach { (code, n) -> Catalog.get(code)?.let { rows += Row(it, n) } }
         if (rows.isEmpty()) Store.usual(4).forEach { rows += Row(it.first, 3) }
         if (rows.isEmpty()) RecommendationEngine.recommend(Catalog.seeds, ctx, area, limit = 3, foodOnly = true).forEach { rows += Row(it.seed, 3) }
         if (rows.isEmpty()) rows += Row(null, 3)
-        fun remember() { Store.planRows.clear(); Store.planRows += rows.mapNotNull { r -> r.seed?.let { it.botanicalCode to r.count } } }
+                fun remember() { if (nextSeason) return; Store.planRows.clear(); Store.planRows += rows.mapNotNull { r -> r.seed?.let { it.botanicalCode to r.count } } }
         Store.previewArea = area
         val list = h("div", "plan-rows")
         val areaM2 = com.example.smartgardenplanner.core.PlotGeometry.polygonArea(area)
@@ -240,7 +264,17 @@ object Dialogs {
                     button("✕", "btn icon", "Remove") { rows.removeAt(i); remember(); draw() }
                 )))
             }
-            list.add(button("+ Add a plant", "btn") { rows += Row(null, 3); draw() })
+                        list.add(h("div", "row wrap", kids = listOf(
+                button("+ Add a plant", "btn") { rows += Row(null, 3); draw() },
+                button("How many fit?", "btn", "Keep the proportions of your list and fill the area with as many as fit in organised clumps") {
+                    val reqs = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count.coerceAtLeast(1)) } }
+                    if (reqs.isEmpty()) { App.status("Add at least one plant first."); return@button }
+                    val fit = com.example.smartgardenplanner.core.RotationPlanner.howManyFit(ctx, area, reqs, { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin)
+                    fit.forEach { f -> rows.firstOrNull { it.seed?.botanicalCode == f.seed.botanicalCode }?.count = f.count }
+                    remember(); draw()
+                    App.status("About ${fit.sumOf { it.count }} plants fit here: " + fit.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ". Change any number, then Plan it.")
+                }
+            )))
         }
         draw()
         val usual = Store.usual()
@@ -268,8 +302,9 @@ object Dialogs {
         val warn = mutableListOf<HTMLElement>()
         if (!wp.plot.orientationSet) warn += para("The plot's direction isn't set, so the planner assumes the top edge faces north. Set it in Plot details for accurate shade and tall-plants-at-the-back.", "warn")
         if (wp.plot.latitude == null) warn += para("No ZIP/latitude: sun angles use 40° N.", "hint")
-        if (wp.history.isNotEmpty()) warn += para("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently.", "hint")
-        modal("Plan this area for me", listOfNotNull(
+                if (planHistory.isNotEmpty()) warn += para("Past seasons on this plot are used for crop rotation: no crop goes where its family grew last season, and families stay away from their recent spots.", "hint")
+        if (nextSeason) warn += para(if (wp.plants.isNotEmpty()) "Planning $planYear for the whole plot. When you keep the plan, this season's ${wp.plants.size} plants move to history (season ${wp.season()}) and the new layout is planted. Fences, buildings, trees, paths, areas and irrigation stay." else "Planning $planYear for the whole plot from your last season's list.", "p")
+        modal(if (nextSeason) "Plan next season ($planYear) with crop rotation" else if (area == com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot)) "Fill the whole plot" else "Plan this area for me", listOfNotNull(
             para("Area: ${areaM2.fmt(1)} m². List what you want and how many; the planner places them for sun, pollination and watering, with tall plants at the back.", "hint"),
             usualBox
         ) + warn + list + layoutBox, listOf(
@@ -279,13 +314,13 @@ object Dialogs {
                 if (requests.isEmpty()) { App.status("Add at least one plant with a count."); return@plan false }
                 remember()
                 Prefs.lastPlan = Store.planRows.toList()
-                val result = AutoPlanner.plan(
+                                val result = AutoPlanner.plan(
                     ctx, area, requests,
                     isBlocked = { x, y, r -> Canvas.blockedByPath(wp, x, y, r) },
                     marginMultiplier = Prefs.margin, orientationKnown = wp.plot.orientationSet,
-                    layout = layout, history = wp.history, seasonYear = wp.season()
+                    layout = layout, history = planHistory, seasonYear = planYear
                 )
-                Store.preview = result; Store.previewArea = area
+                Store.preview = result; Store.previewArea = area; Store.previewMode = mode
                 previewCard()
                 App.render(); true
             }
@@ -307,26 +342,43 @@ object Dialogs {
         val card = byId("sgp-preview")
         fun hide() { card.clear(); card.classList.add("hidden") }
         card.clear()
-        card.add(h("h3", "h", "Proposed planting (not planted yet)"))
+                val wpNow = Store.plot()
+        val rotation = Store.previewMode == PreviewMode.ROTATION
+        card.add(h("h3", "h", when (Store.previewMode) {
+            PreviewMode.NEXT_SEASON -> "Next season's plan (not planted yet)"
+            PreviewMode.ROTATION -> "Rotation plan: ${Store.rotation.getOrNull(Store.rotationIndex)?.year} (${Store.rotationIndex + 1} of ${Store.rotation.size})"
+            else -> "Proposed planting (not planted yet)"
+        }))
+        if (rotation) Store.rotation.getOrNull(Store.rotationIndex)?.summary?.forEach { card.add(para("• $it", "hint")) }
         body.forEach { card.add(it) }
-        card.add(h("div", "row wrap", kids = listOf(
-            button("Keep this plan", "btn primary") {
+        card.add(h("div", "row wrap", kids = listOfNotNull(
+                        button(when (Store.previewMode) { PreviewMode.NEXT_SEASON -> "Start next season with this plan"; PreviewMode.ROTATION -> "Use ${Store.rotation.firstOrNull()?.year} now"; else -> "Keep this plan" }, "btn primary") {
                 val now = PlatformClock.nowMillis()
+                val plan = if (rotation) Store.rotation.firstOrNull()?.result ?: r else r
+                val newSeason = Store.previewMode != PreviewMode.NORMAL
                 Store.change { wp ->
-                    wp.plants = wp.plants + r.placed.map { PlantedNodeEntity(id = Store.newId(), plotId = wp.plot.id, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y, datePlantedEpochMillis = now) }
+                    val fresh = plan.placed.map { PlantedNodeEntity(id = Store.newId(), plotId = wp.plot.id, seedCode = it.seed.botanicalCode, coordinateXM = it.x, coordinateYM = it.y, datePlantedEpochMillis = now) }
+                    if (newSeason) {
+                        // Close this season (plants → history), then plant the new one: one undo step.
+                        if (wp.plants.isNotEmpty()) wp.history = wp.history + com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }).map { it.copy(id = Store.newId()) }
+                        wp.plants = fresh
+                    } else wp.plants = wp.plants + fresh
                 }
-                Store.preview = null; Store.previewArea = null
+                Store.preview = null; Store.previewArea = null; Store.previewMode = PreviewMode.NORMAL; Store.rotation = emptyList()
                 hide()
-                App.status("Added ${r.placed.size} plants. Undo removes them all in one step.")
+                App.status(if (newSeason) "New season ${wpNow?.season()} started with ${plan.placed.size} plants; last season is in the history. Undo reverses this." else "Added ${plan.placed.size} plants. Undo removes them all in one step.")
                 App.render()
             },
-            button("Change selections", "btn", "Back to your list for the same area") {
+                        if (rotation) button("◀ Year", "btn", "Previous year of the plan") { showRotationYear(Store.rotationIndex - 1) } else null,
+            if (rotation) button("Year ▶", "btn", "Next year of the plan") { showRotationYear(Store.rotationIndex + 1) } else null,
+            if (rotation) null else button("Change selections", "btn", "Back to your list for the same area") {
+                val mode = Store.previewMode
                 Store.preview = null; hide()
-                if (area != null) planForMe(area)
+                if (area != null) planForMe(area, mode)
                 App.render()
             },
-            button("Discard", "btn", "Drop this proposal. Your plants and your list stay as they are.") {
-                Store.preview = null; Store.previewArea = null; hide()
+                        button(if (rotation) "Close" else "Discard", "btn", "Drop this proposal. Your plants and your list stay as they are.") {
+                Store.preview = null; Store.previewArea = null; Store.previewMode = PreviewMode.NORMAL; Store.rotation = emptyList(); hide()
                 App.status("Proposal discarded. Nothing on the plot changed, and your list is kept for next time.")
                 App.render()
             }
@@ -394,6 +446,78 @@ object Dialogs {
                 Store.historyYear = year
                 Canvas.selection = null
                 App.status("Season $year closed: ${archived.size} plant(s) kept in history (shown faded). Plan ${year + 1} with crop rotation in mind. Undo reverses this.")
+                App.render(); true
+            }
+        ))
+    }
+
+    // ------------------------------------------------------------------ several seasons (FR-037)
+
+    /** Plans the plot for several seasons in a row with strict rotation, and shows one year at a time on the layout. */
+    fun rotationPlan() {
+        val wp = Store.plot() ?: return
+        val base = com.example.smartgardenplanner.core.RotationPlanner.lastList(wp.plants, wp.history, { Catalog.get(it) })
+        if (base.isEmpty()) { message("Nothing to rotate yet", listOf("Plant this season first (or close a season). The rotation plan re-uses that list every year.")); return }
+        val seasonsIn = select((2..10).map { it.toString() to "$it seasons" }, "5") {}
+        val firstYear = if (wp.plants.isNotEmpty()) wp.season() + 1 else wp.season()
+        modal("Rotation plan for the next seasons", listOf(
+            para("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before. Fences, buildings, trees, paths, areas and irrigation stay the same.", "p"),
+            label("How many seasons, starting $firstYear", seasonsIn),
+            para("This is a plan to look at: nothing changes until you choose “Use $firstYear now”. It is worked out again from your plot each time, so it follows any changes you make.", "hint")
+        ), listOf(
+            "Cancel" to { true },
+            "Make the plan" to {
+                val history = wp.history + (if (wp.plants.isNotEmpty()) com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }) else emptyList())
+                Store.rotation = com.example.smartgardenplanner.core.RotationPlanner.planSeasons(
+                    Store.context(wp), com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot), base, history, firstYear, seasonsIn.value.toInt(),
+                    { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin, wp.plot.orientationSet
+                )
+                showRotationYear(0); true
+            }
+        ))
+    }
+
+    fun showRotationYear(i: Int) {
+        val wp = Store.plot() ?: return
+        if (Store.rotation.isEmpty()) return
+        Store.rotationIndex = i.coerceIn(0, Store.rotation.lastIndex)
+        Store.preview = Store.rotation[Store.rotationIndex].result
+        Store.previewArea = com.example.smartgardenplanner.core.PlotShape.effectiveOutline(wp.plot)
+        Store.previewMode = PreviewMode.ROTATION
+        previewCard()
+        App.render()
+    }
+
+    // ------------------------------------------------------------------ templates (FR-041)
+
+    /** Copies the plot, like duplicating a browser tab: same site, optionally the plants and the history. */
+    fun duplicatePlot() {
+        val wp = Store.plot() ?: return
+        val name = input(wp.plot.name + " (copy)")
+        fun cb(on: Boolean) = (h("input", attrs = mapOf("type" to "checkbox")) as HTMLInputElement).also { it.checked = on }
+        val plants = cb(true); val history = cb(true)
+        modal("Duplicate “${wp.plot.name}”", listOf(
+            para("The copy keeps the plot's size, direction, ZIP, soil, outline, fences, buildings, trees, paths, areas and irrigation, so you can try another plan without touching the original.", "p"),
+            label("Name of the copy", name),
+            h("label", "check", kids = listOf(plants, h("span", text = "Copy this season's ${wp.plants.size} plants"))),
+            h("label", "check", kids = listOf(history, h("span", text = "Copy the history (${com.example.smartgardenplanner.core.Seasons.years(wp.history).size} past seasons), so crop rotation continues")))
+        ), listOf(
+            "Cancel" to { true },
+            "Duplicate" to dup@{
+                if (name.value.isBlank()) { App.status("Give the copy a name."); return@dup false }
+                val id = Store.newId()
+                val copy = WebPlot(
+                    wp.plot.copy(id = id, name = name.value.trim(), createdTimestamp = PlatformClock.nowMillis(), lastModifiedTimestamp = PlatformClock.nowMillis()),
+                    if (plants.checked) wp.plants.map { it.copy(id = Store.newId(), plotId = id) } else emptyList(),
+                    wp.paths.map { it.copy(id = Store.newId(), plotId = id) },
+                    wp.features.map { it.copy(id = Store.newId(), plotId = id) },
+                    if (history.checked) wp.history.map { it.copy(id = Store.newId(), plotId = id) } else emptyList()
+                )
+                Store.plots += copy
+                Store.current = Store.plots.lastIndex
+                Store.viewSeason = null; Store.historyYear = null; Canvas.selection = null
+                Store.touched()
+                App.status("Made “${copy.plot.name}”. The original is unchanged; switch between them with the plot list at the top.")
                 App.render(); true
             }
         ))

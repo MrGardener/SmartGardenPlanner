@@ -68,8 +68,9 @@ object BlockPlanner {
         isBlocked: (x: Float, y: Float, radiusM: Float) -> Boolean,
         marginMultiplier: Float,
         orientationKnown: Boolean,
-        history: List<PlantingHistoryEntity>,
-        seasonYear: Int
+                history: List<PlantingHistoryEntity>,
+        seasonYear: Int,
+        strictRotation: Boolean = true
     ): AutoPlanResult {
         val plot = context.plot
         val notes = mutableListOf<String>()
@@ -119,7 +120,8 @@ object BlockPlanner {
         val blockNotes = mutableListOf<String>()
         val insectCentres = mutableListOf<PlotPoint>()
         val validator = CompanionPlantingValidator()
-        var rotationAvoided = 0; var rotationStuck = 0
+                var rotationAvoided = 0; var rotationStuck = 0
+        val relaxedFor = mutableSetOf<String>()
 
         for (req in order) {
             val seed = req.seed
@@ -131,7 +133,11 @@ object BlockPlanner {
             val target = targetDepth(seed)
             val group = RotationGroup.forSeed(seed)
             val past = group?.let { pastByGroup[it] }.orEmpty()
-            var remaining = req.count
+                        var remaining = req.count
+            // FR-037: with strict rotation, no plant goes where its family (or, for plants without a family, the same
+            // species) grew last season. Only if nothing else fits is the rule relaxed for the rest, and reported.
+            var strictNow = strictRotation
+            val lastSeason = history.filter { seasonYear - it.seasonYear == 1 && (if (group != null) it.group == group else it.speciesName.equals(CropReference.speciesName(seed), true)) }
             var blocks = 0
             val shapes = mutableListOf<List<Int>>()
 
@@ -151,7 +157,8 @@ object BlockPlanner {
                 if (!PlotGeometry.pointInPolygon(p.x, p.y, area) || !PlotShape.contains(plot, p.x, p.y)) return false
                 if (isBlocked(p.x, p.y, r)) return false
                 if (context.floodZoneAt(p.x, p.y) != null && !crop.floodTolerant) return false
-                if (reserved.any { it.contains(u, v) }) return false
+                                if (reserved.any { it.contains(u, v) }) return false
+                if (strictNow && lastSeason.any { h -> val dx = p.x - h.coordinateXM; val dy = p.y - h.coordinateYM; dx * dx + dy * dy < (CropRotation.reach(h) + r * 0.5f).let { it * it } }) return false
                 for (o in existing) {
                     val need = (r + o.r) * marginMultiplier
                     val dx = p.x - o.x; val dy = p.y - o.y
@@ -218,7 +225,10 @@ object BlockPlanner {
                     }
                     v0 -= step
                 }
-                if (best == null) break
+                                if (best == null) {
+                    if (strictNow && lastSeason.isNotEmpty()) { strictNow = false; relaxedFor += CropReference.speciesName(seed); continue }
+                    break
+                }
                 // Full rule check on the chosen block; keep the cells that pass.
                 val kept = mutableListOf<PlotPoint>()
                 for (p in best.second) {
@@ -265,6 +275,7 @@ object BlockPlanner {
             val habit = order.first { CropReference.speciesName(it.seed) == species }.seed.let { VineHabits.of(it) }
             notes += "$species vines run toward the sun: the clump is at the sunny ($sunName) edge with about ${habit?.runwayM?.fmt(1) ?: "1"} m kept free toward the $sunName (arrow on the plan). Guide the runners that way so they don't grow into other crops looking for light."
         }
+                if (relaxedFor.isNotEmpty()) notes += "Not enough room to keep ${relaxedFor.joinToString(", ")} off last season's spots, so some went back where the same family grew last year. Try a bigger area or fewer plants."
         if (rotationAvoided > 0 || rotationStuck > 0) {
             notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
             else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."

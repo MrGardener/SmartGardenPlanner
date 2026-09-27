@@ -126,12 +126,13 @@ object AutoPlanner {
         orientationKnown: Boolean = true,
         maxCandidates: Int = 3000,
         layout: PlantingLayout = PlantingLayout.CLUMPS,
-        history: List<PlantingHistoryEntity> = emptyList(),
-        seasonYear: Int = Seasons.thisYear()
+                history: List<PlantingHistoryEntity> = emptyList(),
+        seasonYear: Int = Seasons.thisYear(),
+        strictRotation: Boolean = true
     ): AutoPlanResult {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return AutoPlanResult(emptyList(), emptyMap(), listOf("Nothing to plan."))
-        if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear)
+        if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear, strictRotation)
         val notes = mutableListOf<String>()
         val plot = context.plot
 

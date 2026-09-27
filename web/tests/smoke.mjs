@@ -165,7 +165,7 @@ await page.getByPlaceholder(/Search .* varieties/).fill('');
 
 // Seasons: close this season, history kept and shown, undo works, rotation note when planting in the same spot.
 await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
-await btn('Start a new season…').click();
+await btn('Start a new season (empty)…').click();
 await page.locator('.modal').waitFor();
 const closing = await page.locator('.modal input').inputValue();
 await btn('Start new season').click();
@@ -174,7 +174,7 @@ check(d.plots[0].plants.length === 0 && d.plots[0].history.length === plantsBefo
 check(d.plots[0].siteFeatures.length === 1, 'tree kept for next season');
 check(await page.locator('#sgp-svg g.history circle').count() === plantsBefore, 'past season shown faded on the layout');
 await page.screenshot({ path: path.join(shots, 'sgp-web-seasons.png') });
-check((await page.locator('.panel-body').innerText()).includes('Planning season'), 'seasons section shown');
+check((await page.locator('.panel-body').innerText()).includes('Seasons & crop rotation'), 'seasons section shown');
 check((await page.locator('.panel-body').innerText()).includes('nightshades'), 'rotation advice names last year\'s families');
 await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
 await page.getByPlaceholder(/Search .* varieties/).fill('Brandywine');
@@ -188,7 +188,7 @@ check(d.plots[0].plants.length === plantsBefore && (d.plots[0].history || []).le
 await page.keyboard.press('Control+y');
 d = await draft();
 check(d.plots[0].history.length === plantsBefore, 'redo closes it again');
-const historyCount = d.plots[0].history.length;
+let historyCount = d.plots[0].history.length;
 
 // Organised clumps, legend + find, plant editor, outline editing, compass.
 check(await page.locator('#sgp-svg g.compass polygon').count() === 8, 'compass has four arrowheads');
@@ -248,6 +248,86 @@ d = await draft();
 check(d.plots[0].outline && d.plots[0].outline.length === 4, 'undo restores the outline');
 await page.screenshot({ path: path.join(shots, 'sgp-web-legend.png') });
 await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+
+// Seasons: look back at a past season (read only), plan next season with rotation, a 5-season rotation plan.
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+const seasonSelect = page.locator('.panel-body label.field', { hasText: 'Season shown on the layout' }).locator('select');
+const pastYear = await seasonSelect.locator('option').nth(1).getAttribute('value');
+await seasonSelect.selectOption(pastYear);
+d = await draft();
+check(await page.locator('#sgp-svg g.plant').count() === d.plots[0].history.filter(h => String(h.season) === pastYear).length, `season ${pastYear} shown read-only`);
+await clickMetres(1.5, 4.5);
+check((await page.locator('.status').innerText()).includes('read only'), 'past season cannot be edited');
+await page.locator('.legend').getByRole('button', { name: /^Back to/ }).click();
+d = await draft();
+const cornBefore = d.plots[0].plants.map(p => [p.x, p.y]);
+const historyBefore = (d.plots[0].history || []).length;
+await btn('Plan next season (rotate)…').click();
+await page.locator('.modal').waitFor();
+check((await page.locator('.modal-title').innerText()).startsWith('Plan next season'), 'plan next season dialog');
+check(await page.locator('.plan-row input.count').first().inputValue() === '20', 'next season starts from this season\'s list');
+await btn('Plan it').click();
+await page.locator('#sgp-preview:not(.hidden)').waitFor();
+await btn('Start next season with this plan').click();
+d = await draft();
+check(d.plots[0].history.length === historyBefore + 20 && d.plots[0].plants.length === 20, 'this season archived, next season planted');
+const tooClose = d.plots[0].plants.filter(p => cornBefore.some(([x, y]) => Math.hypot(p.x - x, p.y - y) < 0.69));
+check(tooClose.length === 0, `no corn where corn grew last season (${tooClose.length} too close)`);
+await btn('Rotation plan for 5 seasons…').click();
+await page.locator('.modal').waitFor();
+await btn('Make the plan').click();
+await page.locator('#sgp-preview:not(.hidden)').waitFor();
+check((await page.locator('#sgp-preview h3').innerText()).includes('(1 of 5)'), 'rotation plan shows year 1 of 5');
+await btn('Year ▶').click();
+check((await page.locator('#sgp-preview h3').innerText()).includes('(2 of 5)'), 'rotation plan steps to year 2');
+await page.screenshot({ path: path.join(shots, 'sgp-web-rotation.png') });
+await btn('Close').click();
+d = await draft();
+check(d.plots[0].plants.length === 20, 'looking at the rotation plan changes nothing');
+historyCount = d.plots[0].history.length;
+
+// Fill the whole plot: How many fit?
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
+await btn('Fill the whole plot…').click();
+await page.locator('.modal').waitFor();
+await btn('How many fit?').click();
+check((await page.locator('.status').innerText()).startsWith('About'), 'how many fit estimates the numbers');
+await page.locator('.modal').getByRole('button', { name: 'Cancel', exact: true }).click();
+
+// Shade at a time of day, with plants casting shade.
+if (!(await page.getByRole('button', { name: 'Shade: on' }).count())) await page.getByRole('button', { name: /Shade:/ }).click();
+await page.locator('.legend select[aria-label="Shade mode"]').selectOption('time');
+check(await page.locator('.legend input[type=range]').count() === 1, 'time-of-day slider shown');
+check(await page.locator('#sgp-svg g.shade rect[data-shadow]').count() > 0, 'shade at the chosen time drawn');
+await page.locator('.legend select[aria-label="Shade mode"]').selectOption('day');
+await page.getByRole('button', { name: 'Shade: on' }).click();
+
+// Irrigation: a sprinkler and the water map.
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+await page.locator('.panel-body').getByRole('button', { name: 'Sprinkler', exact: true }).click();
+await clickMetres(7.5, 1);
+await page.locator('.modal').waitFor();
+await btn('Add').click();
+d = await draft();
+check(d.plots[0].siteFeatures.some(f => f.type === 'SPRINKLER'), 'sprinkler added');
+await page.getByRole('button', { name: 'Water: off' }).click();
+check(await page.locator('#sgp-svg g.water rect[data-water="SPRINKLER"]').count() > 0, 'water map shows the sprinkler\'s wet area');
+check(await page.locator('#sgp-svg .dry-ring').count() > 0, 'plants out of reach are circled');
+await page.screenshot({ path: path.join(shots, 'sgp-web-water.png') });
+await page.getByRole('button', { name: 'Water: on' }).click();
+await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+
+// Duplicate the plot (with its history), then delete the copy.
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+await btn('Duplicate plot…').click();
+await page.locator('.modal').waitFor();
+await btn('Duplicate').click();
+d = await draft();
+check(d.plots.length === 2 && d.plots[1].history.length === historyCount && d.plots[1].name.endsWith('(copy)'), 'duplicate carries the site and history');
+await btn('Delete plot').click();
+await page.locator('.modal').getByRole('button', { name: 'Delete', exact: true }).click();
+d = await draft();
+check(d.plots.length === 1, 'copy deleted, original kept');
 
 // Tabs render without errors.
 for (const t of ['Plot', 'Harmony', 'Care', 'Food', 'Plants']) {

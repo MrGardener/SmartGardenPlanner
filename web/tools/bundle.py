@@ -94,6 +94,11 @@ summary{cursor:pointer}
 @keyframes sgp-pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.25}}
 .legend{position:absolute;left:10px;top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.92);color:#292524;border:1px solid #d6d3d1;border-radius:8px;padding:5px 10px;font-size:12px;max-width:calc(100% - 20px)}
 .legend b{margin-right:2px}
+.legend{flex-direction:column;align-items:flex-start;gap:4px;max-width:min(640px,calc(100% - 20px))}
+.legend-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.legend .inp{padding:2px 4px;font-size:12px;background:#fff;color:#292524;border-color:#d6d3d1}
+.legend input[type=range]{width:220px}
+.legend .hint{color:#57534e}
 .legend .sw{display:inline-block;width:14px;height:14px;border:1px solid #57534e;vertical-align:-3px;margin-right:4px}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(480px,100%);max-height:100%;display:flex;flex-direction:column}
