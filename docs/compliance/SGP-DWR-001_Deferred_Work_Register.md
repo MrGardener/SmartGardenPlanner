@@ -279,31 +279,31 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | ID | Roadmap item | Status there | Phase |
 |---|---|---|---|
 | DW-1601 | FR-001 Polygon area-select | Implemented, awaiting confirmation → needs requirements/tests (DW-0302) | 3 |
-| DW-1602 | FR-002 Polygon plot shapes (major data-model change) | Not started | after 10 |
-| DW-1603 | FR-003 Slope configuration | Not started | after 10 |
-| DW-1604 | FR-004 Seasonal flooding zones | Not started | after 10 |
-| DW-1605 | FR-005 Sun/shade zones | Not started | after 10 |
-| DW-1606 | FR-006 Sunlight barriers + shading estimate | Not started | after 10 |
-| DW-1607 | FR-007 Historical sunlight (needs FR-026) | Not started | after 10 |
+| DW-1602 | FR-002 Polygon plot shapes (major data-model change) | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1603 | FR-003 Slope configuration | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1604 | FR-004 Seasonal flooding zones | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1605 | FR-005 Sun/shade zones | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1606 | FR-006 Sunlight barriers + shading estimate | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1607 | FR-007 Historical sunlight (needs FR-026) | Implemented (PR #2), awaiting owner confirmation | after 10 |
 | DW-1608 | FR-008 Companion names | Implemented, awaiting confirmation (see DW-0809) | 4 |
-| DW-1609 | FR-009 Interplanting guilds | Not started | after 10 |
-| DW-1610 | FR-010 Grey out incompatible varieties | Not started | after 10 |
-| DW-1611 | FR-011 Garden harmony report | Not started | after 10 |
+| DW-1609 | FR-009 Interplanting guilds | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1610 | FR-010 Grey out incompatible varieties | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1611 | FR-011 Garden harmony report | Implemented (PR #2), awaiting owner confirmation | after 10 |
 | DW-1612 | FR-012 Companion toggle Pro-only | Implemented, awaiting confirmation; resolve RQ-07 | 3 |
-| DW-1613 | FR-013 Soil test input | Not started | after 10 |
-| DW-1614 | FR-014 Zone-aware recommendations | Not started (see DW-1107) | 7 |
-| DW-1615 | FR-015 Recommend & auto-populate | Not started | after 10 |
-| DW-1616 | FR-016 Homestead starter list | Not started | after 10 |
-| DW-1617 | FR-017 Fertilizing plan | Not started | after 10 |
-| DW-1618 | FR-018 Pest-management plan | Not started | after 10 |
-| DW-1619 | FR-019 Rain-aware reminders (needs FR-026; notifications permission) | Not started | after 10 |
-| DW-1620 | FR-020 Nutrition guide (USDA data; refresh needs FR-026) | Not started | after 10 |
-| DW-1621 | FR-021 Recipes | Not started | after 10 |
-| DW-1622 | FR-022 Yield per plant | Not started | after 10 |
-| DW-1623 | FR-023 Vendor links (placeholder) | Not started | after 10 |
-| DW-1624 | FR-024 Vendor targeting | Not started | after 10 |
+| DW-1613 | FR-013 Soil test input | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1614 | FR-014 Zone-aware recommendations | Implemented (PR #2), awaiting owner confirmation | 7 |
+| DW-1615 | FR-015 Recommend & auto-populate | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1616 | FR-016 Homestead starter list | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1617 | FR-017 Fertilizing plan | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1618 | FR-018 Pest-management plan | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1619 | FR-019 Rain-aware reminders (needs FR-026; notifications permission) | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1620 | FR-020 Nutrition guide (USDA data; refresh needs FR-026) | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1621 | FR-021 Recipes | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1622 | FR-022 Yield per plant | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1623 | FR-023 Vendor links (placeholder) | Implemented (PR #2), awaiting owner confirmation | after 10 |
+| DW-1624 | FR-024 Vendor targeting | Implemented (PR #2), awaiting owner confirmation | after 10 |
 | DW-1625 | FR-025 Tier feature flags | Implemented, awaiting confirmation; deactivated-code design (DW-0311) | 3 |
-| DW-1626 | FR-026 Toggleable network layer — **conflicts with T2-CON-010 (zero network dependencies)**; needs a system requirement change + safety/security assessment before any work | Blocked on decision | after 10 |
+| DW-1626 | FR-026 Toggleable network layer — **conflicts with T2-CON-010 (zero network dependencies)**; needs a system requirement change + safety/security assessment before any work | Implemented (PR #2), awaiting owner confirmation | after 10 |
 
 ### WP-17 — Documentation
 
@@ -387,3 +387,8 @@ Details are in `Android App/FEATURE_ROADMAP.md`.
 | 2026-09-27 | NEW (T2-VAL-040) | Implemented (PR #2) | Spacing check in double precision with 0.1 mm tolerance (touching circles allowed); unsaved auto-populate candidates now compared with each other; fill spacing uses the spacing margin. Regression tests added. |
 | 2026-09-27 | DW-0901 | Implemented (PR #2); test pending | Found by the owner on the Pixel 10 Pro emulator: in landscape, plants overlapped because X and Y used different scales. The plot is now drawn at one scale for both axes and centred, with rulers matching. The automated test moves to Phase 3, when the scale calculation becomes a `:core` function. Stored coordinates are unchanged (metres). |
 | 2026-09-27 | DW-0905 | Partial (PR #2) | Landscape: canvas on the left, plot info and variety button in a side panel. Top-bar title shows the plot name on one line. The bottom sheet and toolbar follow in Phase 5. |
+| 2026-09-27 | DW-1602…DW-1626 | Implemented (PR #2), awaiting confirmation | Owner instruction: implement all pending roadmap features now. FR-002 to FR-026 built (see FEATURE_ROADMAP change log). Core logic in `core/` (PlotGeometry, SunlightEngine, GardenAdvisor, CarePlanner, FoodPlanner, CropReference, Guilds, OnlineData, Vendors) with 30 host tests; UI in the canvas Site tools and the new Plot insights screen. |
+| 2026-09-27 | DW-1626 / DW-1910 | Decided by owner instruction; assessment open | FR-026 built as option A: master switch, off by default, HTTPS to 3 allow-listed hosts, visible indicator. T2-CON-010, HLR-PROT-050 and LLR-BKP-020 revised to "offline first / zero network dependencies". Still needed: security/safety assessment of the network path (SSA, threat model). |
+| 2026-09-27 | NEW (schema 8) | Implemented (PR #2); migration test pending | MIGRATION_7_8 adds plot outline/zone/location/orientation/soil columns and the site_features, care_log and nutrition_facts tables. Needs an instrumented migration test from a real v7 database (LLR-MIG-*), and the owner's emulator check that an existing plot still opens. |
+| 2026-09-27 | NEW (requirements) | Open | T2/HLR/LLR entries for FR-002…FR-024 are not written yet (the code carries FR ids). Write them from the roadmap descriptions and link the tests in RoadmapFeaturesTest. |
+| 2026-09-27 | NEW (reference data) | Open | CropReference nutrition/yield/pH values and the pest table are approximate, from general references; verify against USDA FDC and extension-service sources before relying on them (PDI review). |

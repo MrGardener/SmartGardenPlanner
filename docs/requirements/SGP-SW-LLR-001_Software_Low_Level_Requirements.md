@@ -746,8 +746,10 @@ Settings shall offer "Delete unreadable data", which deletes the renamed files a
 exclude the `root`, `file`, `database`, `sharedpref` and `external` domains from both `<cloud-backup>` and
 `<device-transfer>`. `full_backup_content.xml` shall exclude the same domains. ↑ HLR-PROT-030
 
-**LLR-BKP-020** A build check shall fail if the merged manifest declares `android.permission.INTERNET`, or if
-the dependency graph contains a group on the blocked list: `com.google.firebase`,
+**LLR-BKP-020** All network access shall go through `NetworkGateway.getText`, which returns without connecting
+when the Online features setting is off and refuses any URL not accepted by `OnlineData.isAllowed` (HTTPS and
+an allow-listed host); the manifest shall set `android:usesCleartextTraffic="false"`. A build check shall fail
+if any other class opens a URL connection or socket, or if the dependency graph contains a group on the blocked list: `com.google.firebase`,
 `com.google.android.gms:play-services-analytics`, `com.crashlytics`, `io.sentry`, `com.google.android.gms:play-services-ads`.
 ↑ HLR-PROT-050
 

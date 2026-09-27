@@ -57,61 +57,61 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
 | FR-001 | Polygon area-select for auto-populate | Replace rectangle-only area selection with the same point-based approach used for curved paths: tap points, "Finish Area" button available once 3+ points exist, then fills the drawn shape (not its bounding box) using point-in-polygon filtering on top of the existing rectangle-fill engine. | Standard | Existing curved-path point-drawing code (reusable) | **Implemented — Awaiting Your Confirmation** |
-| FR-002 | Polygon (non-rectangular) plot shapes | Let the user draw the actual plot boundary from real measurements instead of only length×width rectangles — irregular/L-shaped/multi-sided plots. This is a significant data-model change (PlotEntity currently assumes a rectangle everywhere: ruler, scaleX/scaleY, node-placement bounds, path/area tools). | Pro | None, but touches most of the Canvas | Not Started |
-| FR-003 | Slope configuration | Let the user mark slope direction/grade on areas of the plot, for drainage/planting guidance. | Pro | FR-002 (more useful with irregular plots, but not strictly blocked by it) | Not Started |
-| FR-004 | Seasonal flooding zones | Mark areas that flood seasonally; factor into planting recommendations/warnings. | Pro | None | Not Started |
-| FR-005 | Sunny/shaded area delineation | Let the user mark sun-exposure zones directly on the canvas. | Standard | None | Not Started |
-| FR-006 | Sunlight barriers (trees, fences, walls) | Place barrier objects with an estimated height; estimate shading effect on nearby plants over the course of a day. | Pro | FR-005 (barriers inform shade zones) | Not Started |
-| FR-007 | Historical sunlight hours per plot | Estimate daily/seasonal sun hours for the plot location from historical data. **Answered:** use an external source, structure now for a togglable future connection. | Pro | FR-026 (toggleable network layer) | Not Started |
+| FR-002 | Polygon (non-rectangular) plot shapes | Let the user draw the actual plot boundary from real measurements instead of only length×width rectangles — irregular/L-shaped/multi-sided plots. This is a significant data-model change (PlotEntity currently assumes a rectangle everywhere: ruler, scaleX/scaleY, node-placement bounds, path/area tools). | Pro | None, but touches most of the Canvas | **Implemented — Awaiting Your Confirmation** |
+| FR-003 | Slope configuration | Let the user mark slope direction/grade on areas of the plot, for drainage/planting guidance. | Pro | FR-002 (more useful with irregular plots, but not strictly blocked by it) | **Implemented — Awaiting Your Confirmation** |
+| FR-004 | Seasonal flooding zones | Mark areas that flood seasonally; factor into planting recommendations/warnings. | Pro | None | **Implemented — Awaiting Your Confirmation** |
+| FR-005 | Sunny/shaded area delineation | Let the user mark sun-exposure zones directly on the canvas. | Standard | None | **Implemented — Awaiting Your Confirmation** |
+| FR-006 | Sunlight barriers (trees, fences, walls) | Place barrier objects with an estimated height; estimate shading effect on nearby plants over the course of a day. | Pro | FR-005 (barriers inform shade zones) | **Implemented — Awaiting Your Confirmation** |
+| FR-007 | Historical sunlight hours per plot | Estimate daily/seasonal sun hours for the plot location from historical data. **Answered:** use an external source, structure now for a togglable future connection. | Pro | FR-026 (toggleable network layer) | **Implemented — Awaiting Your Confirmation** |
 
 ### B2. Plant Selection, Companion Planning & Compatibility
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
 | FR-008 | Companion plants shown by name, not code | The companion/antagonist fields currently display raw codes (e.g. "BAS,MAR,CAR"). Resolve these to full common names everywhere they're shown. | All | None — contained display fix | **Implemented — Awaiting Your Confirmation** |
-| FR-009 | Named interplanting guilds (Three Sisters and others) | **Answered:** generalize beyond Three Sisters to other well-established real companion-guild groupings; must be explicitly deactivatable with a highly visible indicator when off. | Pro | Validator architecture change — needs care not to break normal overlap protection | Not Started |
-| FR-010 | Grey out incompatible varieties in the picker | In the Category → Species → Cultivar picker, visually disable/grey out cultivars that would conflict with something already planted on the current plot. | Standard | 3-step picker (exists) | Not Started |
-| FR-011 | Garden harmony report | A report screen: what's planted, what's incompatible with what, and recommendations to fix it. | Standard | FR-008 | Not Started |
+| FR-009 | Named interplanting guilds (Three Sisters and others) | **Answered:** generalize beyond Three Sisters to other well-established real companion-guild groupings; must be explicitly deactivatable with a highly visible indicator when off. | Pro | Validator architecture change — needs care not to break normal overlap protection | **Implemented — Awaiting Your Confirmation** |
+| FR-010 | Grey out incompatible varieties in the picker | In the Category → Species → Cultivar picker, visually disable/grey out cultivars that would conflict with something already planted on the current plot. | Standard | 3-step picker (exists) | **Implemented — Awaiting Your Confirmation** |
+| FR-011 | Garden harmony report | A report screen: what's planted, what's incompatible with what, and recommendations to fix it. | Standard | FR-008 | **Implemented — Awaiting Your Confirmation** |
 | FR-012 | Companion-rule toggle restricted to Pro | Below Pro, the toggle now shows locked-on with an explanation instead of being editable. | Pro (toggle) | FR-025 (tier-gating system) | **Implemented — Awaiting Your Confirmation** |
 
 ### B3. Soil, Zone & Site-Aware Recommendations
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
-| FR-013 | Soil test / soil composition input | Let the user record or estimate soil composition (e.g. sand/silt/clay/organic matter, pH), with guidance on how to improve it over time. | Pro | None | Not Started |
-| FR-014 | Soil- and zone-aware plant recommendations | Recommend varieties based on the plot's hardiness zone and (if entered) soil profile; block or warn against perennials that won't survive the zone. This is the first feature that makes the catalog's `hardinessZoneMin/Max` fields actually functional — they're stored today but nothing reads them yet. | Standard | Catalog zone data (exists), FR-013 for the soil half | Not Started |
-| FR-015 | "Recommend & auto-populate" button | One-tap suggestion: given the plot's soil/zone/existing paths, propose what to plant in a selected area and auto-populate it. | Pro | FR-013, FR-014, existing auto-populate engine | Not Started |
-| FR-016 | "Homestead" starter list | A recommended minimum set of crops for the plot's hardiness zone, aimed at basic balanced nutrition for a household. | Standard | FR-014, FR-020 (nutrition data) | Not Started |
+| FR-013 | Soil test / soil composition input | Let the user record or estimate soil composition (e.g. sand/silt/clay/organic matter, pH), with guidance on how to improve it over time. | Pro | None | **Implemented — Awaiting Your Confirmation** |
+| FR-014 | Soil- and zone-aware plant recommendations | Recommend varieties based on the plot's hardiness zone and (if entered) soil profile; block or warn against perennials that won't survive the zone. This is the first feature that makes the catalog's `hardinessZoneMin/Max` fields actually functional — they're stored today but nothing reads them yet. | Standard | Catalog zone data (exists), FR-013 for the soil half | **Implemented — Awaiting Your Confirmation** |
+| FR-015 | "Recommend & auto-populate" button | One-tap suggestion: given the plot's soil/zone/existing paths, propose what to plant in a selected area and auto-populate it. | Pro | FR-013, FR-014, existing auto-populate engine | **Implemented — Awaiting Your Confirmation** |
+| FR-016 | "Homestead" starter list | A recommended minimum set of crops for the plot's hardiness zone, aimed at basic balanced nutrition for a household. | Standard | FR-014, FR-020 (nutrition data) | **Implemented — Awaiting Your Confirmation** |
 
 ### B4. Care Planning (Fertilizing, Pest Management, Reminders)
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
-| FR-017 | Fertilizing plan | Generate a fertilizing schedule based on what's actually planted. | Standard | None | Not Started |
-| FR-018 | Pesticide/pest-management plan | Generate a pest-management plan based on what's planted, with an organic vs. conventional preference toggle. | Standard | None | Not Started |
-| FR-019 | Fertilize/water reminders, rain-aware | **Answered:** live weather data deferred; build on the toggleable network layer (FR-026) once that exists. | Pro | FR-026 | Not Started |
+| FR-017 | Fertilizing plan | Generate a fertilizing schedule based on what's actually planted. | Standard | None | **Implemented — Awaiting Your Confirmation** |
+| FR-018 | Pesticide/pest-management plan | Generate a pest-management plan based on what's planted, with an organic vs. conventional preference toggle. | Standard | None | **Implemented — Awaiting Your Confirmation** |
+| FR-019 | Fertilize/water reminders, rain-aware | **Answered:** live weather data deferred; build on the toggleable network layer (FR-026) once that exists. | Pro | FR-026 | **Implemented — Awaiting Your Confirmation** |
 
 ### B5. Reference & Educational Content
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
-| FR-020 | Nutritional value guide | **Answered:** USDA FoodData Central confirmed as the source. Must support on-demand refresh, not just a one-time bake-in — needs FR-026's network layer to actually refresh, but can ship with a static bundled snapshot before that exists. | All | FR-026 for the refresh capability specifically | Not Started |
-| FR-021 | Recipe suggestions | Recipes usable with what the user is growing. | Standard | FR-020 useful as a companion, not a hard dependency | Not Started |
-| FR-022 | Approximate yield per plant | Expected production weight per plant, to help size a garden for a household's needs. | Standard | None | Not Started |
+| FR-020 | Nutritional value guide | **Answered:** USDA FoodData Central confirmed as the source. Must support on-demand refresh, not just a one-time bake-in — needs FR-026's network layer to actually refresh, but can ship with a static bundled snapshot before that exists. | All | FR-026 for the refresh capability specifically | **Implemented — Awaiting Your Confirmation** |
+| FR-021 | Recipe suggestions | Recipes usable with what the user is growing. | Standard | FR-020 useful as a companion, not a hard dependency | **Implemented — Awaiting Your Confirmation** |
+| FR-022 | Approximate yield per plant | Expected production weight per plant, to help size a garden for a household's needs. | Standard | None | **Implemented — Awaiting Your Confirmation** |
 
 ### B6. Vendor / Commerce Integration
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
-| FR-023 | Vendor purchase links | **Answered:** placeholder/inert structure only for now — data model and UI slots built so a real vendor integration can be dropped in later without restructuring, but no live vendor site linked yet. | All (links), Pro (customization) | None architecturally | Not Started |
-| FR-024 | Vendor targeting/preference | Let the user pick one preferred vendor so all purchase links point there consistently. | Pro | FR-023 | Not Started |
+| FR-023 | Vendor purchase links | **Answered:** placeholder/inert structure only for now — data model and UI slots built so a real vendor integration can be dropped in later without restructuring, but no live vendor site linked yet. | All (links), Pro (customization) | None architecturally | **Implemented — Awaiting Your Confirmation** |
+| FR-024 | Vendor targeting/preference | Let the user pick one preferred vendor so all purchase links point there consistently. | Pro | FR-023 | **Implemented — Awaiting Your Confirmation** |
 
 ### B7. Platform Infrastructure
 
 | ID | Feature | Description | Proposed Tier | Depends On | Status |
 |---|---|---|---|---|---|
 | FR-025 | Tier feature-flag system | The mechanism this whole document leans on: a central registry (`Feature` enum + `AppTier`) of which features are active for Basic/Standard/Pro, checked at the relevant screens/actions — reuses the existing catalog-tier setting as the source of truth for "what tier is this user on," no separate subscription concept added. | Infrastructure (not user-facing) | None | **Implemented — Awaiting Your Confirmation** |
-| FR-026 | Toggleable network connection layer | **New, from your answer on FR-019/FR-007.** A user-controlled, non-permanent network capability that future live-data features (weather, sunlight history, nutrition refresh) route through. See "Toggleable Network Connection — Options" above — **not started pending your choice of Option A/B/C/D (or another design).** | Infrastructure (not user-facing) | Your decision on which option to use | Not Started — blocked on your decision |
+| FR-026 | Toggleable network connection layer | **New, from your answer on FR-019/FR-007.** A user-controlled, non-permanent network capability that future live-data features (weather, sunlight history, nutrition refresh) route through. See "Toggleable Network Connection — Options" above — **not started pending your choice of Option A/B/C/D (or another design).** | Infrastructure (not user-facing) | Your decision on which option to use | **Implemented — Awaiting Your Confirmation** (option A) |
 
 ---
 
@@ -215,6 +215,20 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (all remaining items)**: On your instruction to implement every pending feature now, FR-002
+  to FR-026 were implemented and moved to "Implemented — Awaiting Your Confirmation". Where to find them:
+  canvas menu → **Site tools** (plot outline FR-002; sun/shade, flood and slope areas FR-003/004/005;
+  trees, fences, walls, buildings FR-006; shade overlay) and **Plot insights** (Site: zone, location,
+  orientation, soil FR-013, sunlight FR-007; Harmony FR-011; Suggest FR-014; Care FR-017/018/019;
+  Food FR-016/020/021/022). The area tool has **Recommend for this area** (FR-015); the variety picker greys
+  out clashing varieties (FR-010); the canvas shows a **GUILDS ON/OFF** badge (FR-009); plant details show
+  the vendor slot (FR-023/024). **FR-026:** built as option A (my recommendation above): one master switch
+  in Settings → Online features, **off by default**, HTTPS only to Open-Meteo and USDA FoodData Central,
+  with a "Connecting…" bar whenever a call is made. System requirement T2-CON-010 was revised from
+  "no network connections" back to its original intent, "zero network dependencies" (every feature works
+  offline); please review that change. Tier gating stays as proposed: the Pro catalog tier unlocks all of
+  them. Yield, nutrition and pest data are bundled reference values (approximate), not lab data.
 
 - **This round**: Answered all 5 open questions (see above). Implemented and delivered: FR-025
   (tier feature-flag system), FR-012 (companion-rule toggle restricted to Pro, with defense-in-depth

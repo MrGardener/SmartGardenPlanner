@@ -400,14 +400,18 @@ Parent: review finding (GAP §4.5); PSSA · Safety: FC-09 · Verify: Analysis (a
 
 ## 4. Constraints (CON)
 
-### T2-CON-010 — Offline only
-**Statement:** The system shall perform all storage, calculation and image processing on the device, shall
-make no network connections, and shall not request the Internet permission.
-Parent: ConOps §1.2 · Verify: Analysis (merged manifest/dependencies) + Test (airplane mode) · Status: Proposed
-**Was:** "…locally on the device with zero network dependencies."
-**Why changed:** Made verifiable. Note: roadmap item FR-026 (optional network features) conflicts with this
-requirement and needs a decision before any work (DW-1626).
-**Now:** IMPL.
+### T2-CON-010 — Offline first
+**Statement:** The system shall perform all storage, calculation and image processing on the device and
+shall provide every function without a network connection. Network connections shall be made only while
+the user has switched on "Online features" (off by default), only over HTTPS to the approved data services
+listed in the design, and only to fetch optional data (weather, sunshine history, nutrition updates); every
+such feature shall fall back to offline behaviour when the switch is off or the connection fails.
+Parent: ConOps §1.2 · Verify: Analysis (merged manifest, network code, allow-list) + Test (airplane mode; switch off) · Status: Proposed (revised 2026-09-27)
+**Was (Rev A):** "…shall make no network connections, and shall not request the Internet permission." Original: "…locally on the device with zero network dependencies."
+**Why changed:** The owner asked for all roadmap features to be implemented, including FR-026 (optional
+network layer). The revised text keeps the original intent, zero network *dependencies*, while allowing
+the user-controlled switch (roadmap option A). Needs the safety/security assessment noted in DW-1626.
+**Now:** IMPL (NetworkGateway + OnlineData allow-list; switch in Settings → Online features).
 
 ### T2-CON-020 — No tracking
 **Statement:** The system shall contain no analytics, telemetry, crash-reporting or advertising components,
