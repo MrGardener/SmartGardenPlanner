@@ -926,6 +926,8 @@ fun CanvasWorkspaceScreen(
         val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
         // FR-043: varieties marked "most important" in that list.
         val planPriority = remember { mutableStateListOf<String>() }
+        // FR-047: clump arrangement chosen per variety (plants per row).
+        val planShapes = remember { mutableStateMapOf<String, List<Int>>() }
     // FR-033 season history of this plot; FR-034 variety codes planted on any plot or season ("what you usually plant").
     var historyState by remember { mutableStateOf<List<PlantingHistoryEntity>>(emptyList()) }
     var historyYear by remember { mutableStateOf<Int?>(null) }
@@ -938,11 +940,19 @@ fun CanvasWorkspaceScreen(
     var nextSeasonMode by remember { mutableStateOf(false) }
     var rotationPlans by remember { mutableStateOf<List<SeasonPlan>>(emptyList()) }
     var rotationIndex by remember { mutableStateOf(0) }
+    // FR-048: what the rotation plan was made from, and variety changes (year → from code → to seed).
+    var rotationBase by remember { mutableStateOf<List<PlantRequest>>(emptyList()) }
+    var rotationFirst by remember { mutableStateOf(0) }
+    var rotationCount by remember { mutableStateOf(5) }
+    var rotationChanges by remember { mutableStateOf<Map<Int, Map<String, SeedEntity>>>(emptyMap()) }
+    var showRotationChange by remember { mutableStateOf(false) }
     var showRotationDialog by remember { mutableStateOf(false) }
     // FR-041: duplicate the plot as a template.
     var showDuplicateDialog by remember { mutableStateOf(false) }
     // FR-046: satellite photo under the plot.
     var showPhotoDialog by remember { mutableStateOf(false) }
+    // FR-051: legend "Replace…" — every plant of this variety to another variety in one step.
+    var replaceFromCode by remember { mutableStateOf<String?>(null) }
     var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var photoVersion by remember { mutableIntStateOf(0) }
     var photoCalibrating by remember { mutableStateOf(false) }
@@ -1034,6 +1044,19 @@ fun CanvasWorkspaceScreen(
     // FR-046: the photo is loaded from the app's files; its placement lives on the plot row.
     LaunchedEffect(plotId, photoVersion) {
         photoBitmap = withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.load(canvasContext.filesDir, plotId) }
+    }
+    // FR-050: open the plot's address (or its coordinates) in Google Maps; a typed address is kept with the plot.
+    fun openInMaps(query: String) {
+        val plot = activePlot ?: return
+        val q = query.trim()
+        val url = com.example.smartgardenplanner.core.Backdrop.googleMapsUrl(plot.latitude, plot.longitude, q.ifBlank { null })
+        if (url == null) { snackbarMessage = "Type the plot's address first (menu → Satellite photo…)."; return }
+        if (q.isNotEmpty() && q != plot.address && !q.all { it.isDigit() }) {
+            val updated = plot.copy(address = q.take(200))
+            launchSafely { withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }; activePlot = updated }
+        }
+        try { canvasContext.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) }
+        catch (e: Exception) { snackbarMessage = "No app can open Google Maps on this device." }
     }
     fun savePhotoPlacement(update: (com.example.smartgardenplanner.core.Backdrop) -> com.example.smartgardenplanner.core.Backdrop?) {
         val plot = activePlot ?: return
@@ -1129,6 +1152,25 @@ fun CanvasWorkspaceScreen(
     }
 
     fun toPlotPoints(points: List<Offset>) = points.map { PlotPoint(it.x, it.y) }
+
+    // FR-048: (re)works out the rotation plan from its list and the user's variety changes, then shows year [index].
+    fun replanRotation(index: Int) {
+        val plot = activePlot ?: return
+        val now = Seasons.currentSeason(nodesState, historyState)
+        val history = historyState + (if (nodesState.isNotEmpty()) Seasons.archive(plotId, nodesState, now) { seedFor(it) } else emptyList())
+        val ctx = plotContext(plot, emptyList())
+        val base = rotationBase; val first = rotationFirst; val count = rotationCount; val changes = rotationChanges
+        planRunning = true
+        launchSafely {
+            val plans = try { withContext(Dispatchers.Default) {
+                RotationPlanner.planSeasons(ctx, PlotShape.effectiveOutline(plot), base, history, first, count, marginMultiplier = settings.spacingMarginMultiplier, orientationKnown = plot.orientationSet, changes = changes)
+            } } finally { planRunning = false }
+            rotationPlans = plans
+            rotationIndex = index.coerceIn(0, (plans.size - 1).coerceAtLeast(0))
+            autoPlanArea = PlotShape.effectiveOutline(plot)
+            planPreview = plans.getOrNull(rotationIndex)?.result
+        }
+    }
 
     // Moves an obstacle or area so its anchor (a tree's trunk, otherwise the centre of its points) lands on
     // (x, y), keeping every point inside the plot. Undoable.
@@ -1467,6 +1509,11 @@ fun CanvasWorkspaceScreen(
                             DropdownMenuItem(text = { Text("Duplicate this plot…") }, onClick = { showOptionsMenu = false; showDuplicateDialog = true })
                             // FR-046: a satellite photo under the plot, to trace trees, fences and buildings.
                             DropdownMenuItem(text = { Text((if (canvasMode == CanvasMode.PHOTO) "✓ " else "") + "Satellite photo…") }, onClick = { showOptionsMenu = false; showPhotoDialog = true })
+                            DropdownMenuItem(text = { Text("Open in Google Maps" + (activePlot?.address?.let { " ($it)" } ?: "")) }, onClick = {
+                                showOptionsMenu = false
+                                val a = activePlot?.address
+                                if (a.isNullOrBlank() && activePlot?.latitude == null) showPhotoDialog = true else openInMaps(a.orEmpty())
+                            })
                             // FR-039: irrigation.
                             Text("Irrigation", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).forEach { type ->
@@ -1552,6 +1599,10 @@ fun CanvasWorkspaceScreen(
                                         findCode = if (findCode == seed.botanicalCode) null else seed.botanicalCode
                                         showOptionsMenu = false
                                         if (findCode != null) snackbarMessage = "Showing $count × ${seed.commonName} (circled in orange)."
+                                    },
+                                    // FR-051: change all plants of this variety at once.
+                                    trailingIcon = {
+                                        TextButton(onClick = { showOptionsMenu = false; replaceFromCode = seed.botanicalCode }, contentPadding = PaddingValues(horizontal = 6.dp)) { Text("Replace…", fontSize = 11.sp) }
                                     }
                                 )
                             }
@@ -2582,6 +2633,7 @@ fun CanvasWorkspaceScreen(
                                                     if (rotationPlans.isNotEmpty()) {
                                                         OutlinedButton(onClick = { rotationIndex = (rotationIndex - 1).coerceAtLeast(0); planPreview = rotationPlans[rotationIndex].result }) { Text("◀", fontSize = 12.sp) }
                                                         OutlinedButton(onClick = { rotationIndex = (rotationIndex + 1).coerceAtMost(rotationPlans.lastIndex); planPreview = rotationPlans[rotationIndex].result }) { Text("▶", fontSize = 12.sp) }
+                                                        OutlinedButton(onClick = { showRotationChange = true }) { Text("Change a variety…", fontSize = 12.sp) }
                                                     }
                                                                                                         // Back to the list for the same area, with everything as it was chosen.
                                                                                                         if (rotationPlans.isEmpty()) OutlinedButton(onClick = { planPreview = null }) { Text("Change selections", fontSize = 12.sp) }
@@ -2754,6 +2806,7 @@ fun CanvasWorkspaceScreen(
                 seedDictionary = seedDictionary,
                                 rows = planRows,
                 priority = planPriority,
+                shapes = planShapes,
                 checksFor = { reqs ->
                     val plot = activePlot
                     if (plot == null) emptyList() else {
@@ -2834,7 +2887,7 @@ fun CanvasWorkspaceScreen(
 
             // FR-037: plan several seasons in a row and look at them one year at a time.
     if (showRotationDialog) {
-        var seasonsCount by remember { mutableStateOf(5) }
+        var seasonsText by remember { mutableStateOf("5") }
         val base = RotationPlanner.lastList(nodesState, historyState) { seedFor(it) }
         AlertDialog(
             onDismissRequest = { showRotationDialog = false },
@@ -2842,37 +2895,73 @@ fun CanvasWorkspaceScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before.", fontSize = 13.sp)
-                    Text("How many seasons", fontSize = 12.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        listOf(3, 5, 7, 10).forEach { n -> FilterChip(selected = seasonsCount == n, onClick = { seasonsCount = n }, label = { Text("$n") }) }
-                    }
-                    Text("Nothing changes until you choose to use the first year.", fontSize = 11.sp, color = Color.Gray)
+                    OutlinedTextField(value = seasonsText, onValueChange = { seasonsText = it.filter(Char::isDigit).take(2) }, singleLine = true,
+                        label = { Text("How many seasons (1–${RotationPlanner.MAX_SEASONS})") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                    Text("Nothing changes until you choose to use the first year. While looking at the plan, “Change a variety…” swaps a variety from that year on.", fontSize = 11.sp, color = Color.Gray)
                 }
             },
             confirmButton = {
-                TextButton(enabled = base.isNotEmpty() && !planRunning, onClick = {
-                    val plot = activePlot ?: return@TextButton
+                TextButton(enabled = base.isNotEmpty() && !planRunning && (seasonsText.toIntOrNull() ?: 0) in 1..RotationPlanner.MAX_SEASONS, onClick = {
                     showRotationDialog = false
-                    planRunning = true
-                    launchSafely {
-                        val now = Seasons.currentSeason(nodesState, historyState)
-                        val history = historyState + (if (nodesState.isNotEmpty()) Seasons.archive(plotId, nodesState, now) { seedFor(it) } else emptyList())
-                        val first = if (nodesState.isNotEmpty()) now + 1 else now
-                        val ctx = plotContext(plot, emptyList())
-                        val count = seasonsCount
-                        val plans = try { withContext(Dispatchers.Default) {
-                            RotationPlanner.planSeasons(ctx, PlotShape.effectiveOutline(plot), base, history, first, count, marginMultiplier = settings.spacingMarginMultiplier, orientationKnown = plot.orientationSet)
-                        } } finally { planRunning = false }
-                        rotationPlans = plans
-                        rotationIndex = 0
-                        autoPlanArea = PlotShape.effectiveOutline(plot)
-                        planPreview = plans.firstOrNull()?.result
-                    }
+                    val now = Seasons.currentSeason(nodesState, historyState)
+                    rotationBase = base
+                    rotationFirst = if (nodesState.isNotEmpty()) now + 1 else now
+                    rotationCount = seasonsText.toInt()
+                    rotationChanges = emptyMap()
+                    replanRotation(0)
                 }) { Text(if (planRunning) "Planning…" else "Make the plan") }
             },
             dismissButton = { TextButton(onClick = { showRotationDialog = false }) { Text("Cancel") } },
             containerColor = MaterialTheme.colorScheme.surface
         )
+    }
+
+    // FR-048: swap a variety from the year being shown onward.
+    if (showRotationChange) {
+        val year = rotationPlans.getOrNull(rotationIndex)?.year ?: rotationFirst
+        val listNow = RotationPlanner.requestsFor(rotationBase, rotationChanges, year)
+        var fromCode by remember { mutableStateOf(listNow.firstOrNull()?.seed?.botanicalCode) }
+        var picking by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { showRotationChange = false },
+            title = { Text("Change a variety from $year on") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Tap the variety to replace, then choose the new one. $year and every later year use it (same number of plants), and the plan is worked out again with crop rotation.", fontSize = 12.sp)
+                    listNow.forEach { r ->
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { fromCode = r.seed.botanicalCode }) {
+                            RadioButton(selected = fromCode == r.seed.botanicalCode, onClick = { fromCode = r.seed.botanicalCode })
+                            Text("${r.count} × ${r.seed.commonName}", fontSize = 13.sp)
+                        }
+                    }
+                    if (rotationChanges.isNotEmpty()) Text("Changes so far: " + rotationChanges.entries.sortedBy { it.key }.flatMap { (y, m) -> m.map { (f, t) -> "from $y ${seedFor(f)?.commonName ?: f} → ${t.commonName}" } }.joinToString("; "), fontSize = 11.sp, color = Color.Gray)
+                }
+            },
+            confirmButton = { TextButton(enabled = fromCode != null, onClick = { picking = true }) { Text("Choose new variety…") } },
+            dismissButton = {
+                Row {
+                    if (rotationChanges.isNotEmpty()) TextButton(onClick = { showRotationChange = false; rotationChanges = emptyMap(); replanRotation(rotationIndex) }) { Text("Clear changes") }
+                    TextButton(onClick = { showRotationChange = false }) { Text("Cancel") }
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+        if (picking) {
+            VarietyPickerDialog(
+                seedDictionary = seedDictionary,
+                conflictFor = pickerConflict,
+                onSelect = { toCode ->
+                    picking = false; showRotationChange = false
+                    val from = fromCode; val to = seedFor(toCode)
+                    if (from != null && to != null) {
+                        rotationChanges = rotationChanges + (year to ((rotationChanges[year] ?: emptyMap()) + (from to to)))
+                        replanRotation(rotationIndex)
+                        snackbarMessage = "From $year: ${seedFor(from)?.commonName} → ${to.commonName}. The plan was worked out again."
+                    }
+                },
+                onDismiss = { picking = false }
+            )
+        }
     }
 
     // FR-041: duplicate this plot (site, and optionally plants and history), like duplicating a browser tab.
@@ -2919,11 +3008,35 @@ fun CanvasWorkspaceScreen(
         )
     }
 
+    replaceFromCode?.let { fromCode ->
+        VarietyPickerDialog(
+            seedDictionary = seedDictionary,
+            conflictFor = pickerConflict,
+            onSelect = { toCode ->
+                replaceFromCode = null
+                val to = seedFor(toCode) ?: return@VarietyPickerDialog
+                val r = com.example.smartgardenplanner.core.PlantSwap.replaceAll(nodesState, fromCode, to, { seedFor(it) }, activePlot?.hardinessZone,
+                    settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
+                if (r.changed == 0) { snackbarMessage = r.messages.joinToString(" "); return@VarietyPickerDialog }
+                val changed = r.nodes.filter { n -> nodesState.any { it.id == n.id && it.seedCode != n.seedCode } }
+                launchSafely {
+                    withContext(SgpExecutors.dbDispatcher) { database.withTransaction { changed.forEach { database.plantedNodeDao().update(it) } } }
+                    reloadNodes()
+                    undoStack.push(snapshotNow())
+                    redoStack.clear()
+                    findCode = null
+                    snackbarMessage = r.messages.joinToString(" ") + " Undo reverses it."
+                }
+            },
+            onDismiss = { replaceFromCode = null }
+        )
+    }
+
     // FR-046: satellite photo — find the yard on Google Maps, add a screenshot, set scale, move, turn, see-through.
     if (showPhotoDialog) {
         val plot = activePlot
         val placement = plot?.let { com.example.smartgardenplanner.core.Backdrop.parse(it.backdropJson) }?.takeIf { photoBitmap != null }
-        if (photoAddress.isBlank()) photoAddress = plot?.locationZip.orEmpty()
+        if (photoAddress.isBlank()) photoAddress = plot?.address ?: plot?.locationZip.orEmpty()
         AlertDialog(
             onDismissRequest = { showPhotoDialog = false },
             title = { Text("Satellite photo") },
@@ -2932,11 +3045,7 @@ fun CanvasWorkspaceScreen(
                     if (placement == null) {
                         Text("See your real trees, fences and buildings under the plot: open Google Maps in satellite view, zoom in on your yard, take a screenshot, then choose it here.", fontSize = 13.sp)
                         OutlinedTextField(value = photoAddress, onValueChange = { photoAddress = it.take(200) }, label = { Text("Your address") }, singleLine = true)
-                        OutlinedButton(onClick = {
-                            val url = com.example.smartgardenplanner.core.Backdrop.googleMapsUrl(plot?.latitude, plot?.longitude, photoAddress.ifBlank { null })
-                            if (url == null) snackbarMessage = "Type your address first."
-                            else try { canvasContext.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } catch (e: Exception) { snackbarMessage = "No app can open Google Maps on this device." }
-                        }) { Text("Open Google Maps (satellite)") }
+                        OutlinedButton(onClick = { openInMaps(photoAddress) }) { Text("Open Google Maps (satellite)") }
                         Button(onClick = { showPhotoDialog = false; photoPicker.launch("image/*") }) { Text("Choose photo…") }
                     } else {
                         Text("Photo: ${"%.1f".format(placement.widthM)} m wide.", fontSize = 13.sp)
@@ -3943,6 +4052,7 @@ private fun AutoPlanRequestDialog(
     seedDictionary: List<SeedEntity>,
         rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
     priority: androidx.compose.runtime.snapshots.SnapshotStateList<String>,
+    shapes: androidx.compose.runtime.snapshots.SnapshotStateMap<String, List<Int>>,
     checksFor: (List<PlantRequest>) -> List<com.example.smartgardenplanner.core.PlanCheck>,
     usual: List<Pair<SeedEntity, Int>>,
     layout: PlantingLayout,
@@ -3959,7 +4069,7 @@ private fun AutoPlanRequestDialog(
 ) {
     var picking by remember { mutableStateOf(false) }
     val byCode = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
-    fun requests() = rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n, c in priority) } }
+    fun requests() = rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n, c in priority, shapes[c]?.takeIf { sh -> sh.sum() == n }) } }
     // FR-043: checks before planning, recomputed (off the main thread) as the list changes.
     var checks by remember { mutableStateOf<List<com.example.smartgardenplanner.core.PlanCheck>>(emptyList()) }
     val rowsKey = rows.toList(); val priorityKey = priority.toList()
@@ -4015,6 +4125,27 @@ private fun AutoPlanRequestDialog(
                             Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = { rows[i] = code to (count + 1).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+", fontSize = 16.sp) }
                             TextButton(onClick = { rows[i] = code to (count + 5).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+5", fontSize = 11.sp) }
+                        }
+                        // FR-047: how this clump is laid out, chosen before planting.
+                        if (layout == PlantingLayout.CLUMPS && seed != null && count > 1) {
+                            var open by remember(code) { mutableStateOf(false) }
+                            val chosen = shapes[code]?.takeIf { it.sum() == count }
+                            Box(modifier = Modifier.padding(start = 48.dp)) {
+                                TextButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
+                                    Text("Arrange: " + (chosen?.let { com.example.smartgardenplanner.core.ClumpShapes.label(it) } ?: "planner chooses") + " ▾", fontSize = 11.sp)
+                                }
+                                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                                    val opts = com.example.smartgardenplanner.core.ClumpShapes.options(count)
+                                    DropdownMenuItem(text = { Text("Let the planner choose (${opts.first().label})", fontSize = 12.sp) }, onClick = { shapes.remove(code); open = false })
+                                    opts.forEach { o -> DropdownMenuItem(text = { Text((if (chosen == o.rows) "✓ " else "") + o.label, fontSize = 12.sp) }, onClick = { shapes[code] = o.rows; open = false }) }
+                                    val tidy = com.example.smartgardenplanner.core.ClumpShapes.nearbyTidy(count).take(3)
+                                    if (tidy.isNotEmpty()) {
+                                        Divider()
+                                        Text("Neater counts", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 12.dp))
+                                        tidy.forEach { t -> DropdownMenuItem(text = { Text("${t.count} = ${t.label}", fontSize = 12.sp) }, onClick = { rows[i] = code to t.count; shapes[code] = t.rows; open = false }) }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
