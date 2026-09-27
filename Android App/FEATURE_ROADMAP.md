@@ -226,6 +226,12 @@ This is a proposal, not a commitment — reorder however matters most to you.
 
 ## Change Log for This Document
 
+- **2026-09-27 (shade visibility)**: From your report that shade couldn't be seen: the plot layout is now drawn on a
+  light "paper" background in light and dark mode on both the phone and the computer, and the shade display colours
+  each spot by today's sun (yellow = full sun 6+ h, blue = part shade 3–6 h, indigo = shade under 3 h) with a legend.
+  Tree crowns are drawn as outlines while shade is shown. The computer page also has a light theme (Auto / Light /
+  Dark button). The phone's other screens are still dark; a full light theme for them is a separate item.
+
 - **2026-09-27 (computer planner)**: FR-030 built as option A: one portable HTML file (`web/dist/smart-garden-planner.html`)
   that runs in any modern browser, offline, with no install. It uses the same planning code as the phone (compiled
   to JavaScript) and opens/saves the same `.sgp.json` files. Includes plots, planting, paths, obstacles and areas

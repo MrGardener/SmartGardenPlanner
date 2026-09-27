@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
 <title>Smart Garden Planner</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
 <!-- Smart Garden Planner (portable). One file, no install, works offline.  -->
 <style>
-:root{--bg:#0f172a;--panel:#111827;--card:#1f2937;--line:#334155;--text:#e5e7eb;--muted:#94a3b8;--accent:#10b981;--accent2:#059669;--warn:#f59e0b;--danger:#ef4444;--sel:#f97316}
+:root{--bg:#eef1ec;--panel:#ffffff;--card:#f3f4f6;--line:#cbd5e1;--text:#1f2937;--muted:#5b6474;--accent:#059669;--accent2:#10b981;--on-bg:#d1fae5;--on-text:#064e3b;--input:#ffffff;--soft:#f8fafc;--rule:#e5e7eb;--stage:#e4e7e0;--warn:#b45309;--danger:#b91c1c;--danger-text:#991b1b;--badge-bg:#e0e7ff;--badge-text:#3730a3;--sel:#f97316;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f172a;--panel:#111827;--card:#1f2937;--line:#334155;--text:#e5e7eb;--muted:#94a3b8;--accent:#10b981;--accent2:#059669;--on-bg:#064e3b;--on-text:#ecfdf5;--input:#0b1220;--soft:#0b1220;--rule:#1f2937;--stage:#0b1220;--warn:#f59e0b;--danger:#ef4444;--danger-text:#fecaca;--badge-bg:#312e81;--badge-text:#c7d2fe;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f172a;--panel:#111827;--card:#1f2937;--line:#334155;--text:#e5e7eb;--muted:#94a3b8;--accent:#10b981;--accent2:#059669;--on-bg:#064e3b;--on-text:#ecfdf5;--input:#0b1220;--soft:#0b1220;--rule:#1f2937;--stage:#0b1220;--warn:#f59e0b;--danger:#ef4444;--danger-text:#fecaca;--badge-bg:#312e81;--badge-text:#c7d2fe;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
@@ -19,9 +21,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .main{flex:1;display:grid;grid-template-columns:150px 1fr 360px;min-height:0}
 .tools{display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--panel);border-right:1px solid var(--line);overflow:auto}
 .tools .sep{height:8px}
-.stage{position:relative;min-width:0;min-height:0}
+.stage{position:relative;min-width:0;min-height:0;background:var(--stage)}
 .canvas{position:absolute;inset:0}
-#sgp-svg{width:100%;height:100%;display:block;touch-action:none;user-select:none;cursor:crosshair}
+#sgp-svg{width:100%;height:100%;display:block;color:var(--muted);touch-action:none;user-select:none;cursor:crosshair}
 .panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
 .tabs{display:flex;border-bottom:1px solid var(--line)}
 .tab{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:10px 4px;cursor:pointer;font:inherit}
@@ -31,13 +33,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .btn,.tool,.chip{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit;text-align:left}
 .btn:hover,.tool:hover,.chip:hover{border-color:var(--muted)}
 .btn:disabled{opacity:.4;cursor:default}
-.btn.primary,.tool.primary{background:var(--accent2);border-color:var(--accent)}
-.btn.on,.tool.on,.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:#064e3b}
-.btn.danger,.tool.danger{border-color:#7f1d1d;color:#fecaca}
+.btn.primary,.tool.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on,.tool.on,.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--on-bg);color:var(--on-text)}
+.btn.danger,.tool.danger{border-color:var(--danger);color:var(--danger-text)}
 .btn.icon,.tool.icon{min-width:34px;text-align:center}
 .btn.small{padding:2px 8px;font-size:12px}
 .tool{font-size:13px}
-.inp{background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;width:100%}
+.inp{background:var(--input);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;width:100%}
 select.inp{width:auto;max-width:100%}
 .actions select.inp{max-width:200px}
 .field{display:flex;flex-direction:column;gap:3px;margin:4px 0}
@@ -49,30 +51,33 @@ select.inp{width:auto;max-width:100%}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .chips{display:flex;gap:4px;flex-wrap:wrap}
 .chip{padding:4px 10px;min-width:44px;text-align:center}
-.h{margin:10px 0 2px;font-size:14px;color:#f8fafc}
+.h{margin:10px 0 2px;font-size:14px;color:var(--text)}
 .p{margin:2px 0}
 .hint{color:var(--muted);font-size:12px;margin:1px 0;display:block}
 .warn{color:var(--warn);font-size:13px;margin:4px 0}
 .ok{color:var(--accent);margin:4px 0}
-.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #1f2937;padding:2px 0}
+.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--rule);padding:2px 0}
 .kv .k{color:var(--muted)}
-.list-item{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid #1f2937}
+.list-item{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule)}
 .list-item.col{flex-direction:column;align-items:flex-start}
 .grow{flex:1;min-width:0;display:flex;flex-direction:column}
 .seed{display:flex;gap:8px;align-items:flex-start;width:100%;background:none;border:1px solid transparent;border-radius:6px;padding:5px 6px;color:var(--text);cursor:pointer;font:inherit;text-align:left}
 .seed:hover{background:var(--card)}
-.seed.on{border-color:var(--accent);background:#064e3b}
+.seed.on{border-color:var(--accent);background:var(--on-bg)}
 .seed.dim{opacity:.55}
 .seed .name{font-weight:600}
 .dot{width:12px;height:12px;border-radius:50%;flex:none;margin-top:4px}
-.badge{display:inline-block;background:#312e81;color:#c7d2fe;border-radius:10px;padding:0 8px;font-size:11px;margin-top:2px;width:max-content}
+.badge{display:inline-block;background:var(--badge-bg);color:var(--badge-text);border-radius:10px;padding:0 8px;font-size:11px;margin-top:2px;width:max-content}
 .active{display:flex;gap:8px;background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:8px}
-.issue{padding:4px 6px;border-left:3px solid var(--muted);background:#0b1220;margin:2px 0}
+.issue{padding:4px 6px;border-left:3px solid var(--muted);background:var(--soft);margin:2px 0}
 .issue.high{border-color:var(--danger)}.issue.medium{border-color:var(--warn)}
-details.pest,details.soil{background:#0b1220;border:1px solid var(--line);border-radius:6px;padding:4px 8px;margin:2px 0}
+details.pest,details.soil{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:4px 8px;margin:2px 0}
 summary{cursor:pointer}
 .preview{position:absolute;right:12px;bottom:12px;max-width:420px;max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .hidden{display:none}
+.legend{position:absolute;left:10px;top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.92);color:#292524;border:1px solid #d6d3d1;border-radius:8px;padding:5px 10px;font-size:12px;max-width:calc(100% - 20px)}
+.legend b{margin-right:2px}
+.legend .sw{display:inline-block;width:14px;height:14px;border:1px solid #57534e;vertical-align:-3px;margin-right:4px}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(480px,100%);max-height:100%;display:flex;flex-direction:column}
 .modal.wide{width:min(680px,100%)}
@@ -85844,6 +85849,12 @@ if (typeof Math.clz32 === 'undefined') {
     };
   }(Math.log, Math.LN2);
 }
+if (typeof String.prototype.startsWith === 'undefined') {
+  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
+    position = position || 0;
+    return this.lastIndexOf(searchString, position) === position;
+  }});
+}
 if (typeof String.prototype.endsWith === 'undefined') {
   Object.defineProperty(String.prototype, 'endsWith', {value: function (searchString, position) {
     var subjectString = this.toString();
@@ -85853,12 +85864,6 @@ if (typeof String.prototype.endsWith === 'undefined') {
     position -= searchString.length;
     var lastIndex = subjectString.indexOf(searchString, position);
     return lastIndex !== -1 && lastIndex === position;
-  }});
-}
-if (typeof String.prototype.startsWith === 'undefined') {
-  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
-    position = position || 0;
-    return this.lastIndexOf(searchString, position) === position;
   }});
 }
 //endregion
@@ -85969,6 +85974,12 @@ class Long extends Number_0 {
   }
   unaryMinus_6uz0qp_k$() {
     return this.inv_28kx_k$().plus_gdf42y_k$(new Long(1, 0));
+  }
+  shr_9fl3wl_k$(bitCount) {
+    return shiftRight(this, bitCount);
+  }
+  and_5hkqyb_k$(other) {
+    return new Long(this.low_1 & other.low_1, this.high_1 & other.high_1);
   }
   inv_28kx_k$() {
     return new Long(~this.low_1, ~this.high_1);
@@ -91000,7 +91011,7 @@ class PlotContext {
     this.dayOfYear_1 = dayOfYear;
   }
   get_soil_woufuw_k$() {
-    return Companion_instance_12.of_1k5mgh_k$(this.plot_1);
+    return Companion_instance_13.of_1k5mgh_k$(this.plot_1);
   }
   get_zone_woywvp_k$() {
     return this.plot_1.hardinessZone_1;
@@ -91018,7 +91029,7 @@ class PlotContext {
     var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var element = _iterator__ex2g4s.next_20eer_k$();
-      var tmp0_safe_receiver = Companion_instance_13.from_4jlvwy_k$(element);
+      var tmp0_safe_receiver = Companion_instance_14.from_4jlvwy_k$(element);
       if (tmp0_safe_receiver == null)
         null;
       else {
@@ -91036,7 +91047,7 @@ class PlotContext {
     var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var element = _iterator__ex2g4s.next_20eer_k$();
-      var tmp0_safe_receiver = Companion_instance_11.of_5gnbr7_k$(element.featureType_1);
+      var tmp0_safe_receiver = Companion_instance_12.of_5gnbr7_k$(element.featureType_1);
       if ((tmp0_safe_receiver == null ? null : tmp0_safe_receiver.isArea_1) === true) {
         destination.add_utx5q5_k$(element);
       }
@@ -92214,6 +92225,59 @@ class GuildCatalog {
     return destination;
   }
 }
+class Companion_11 {
+  of_hl3oov_k$(hours) {
+    return hours >= SunBand_FULL_SUN_getInstance().minHours_1 ? SunBand_FULL_SUN_getInstance() : hours >= SunBand_PART_SHADE_getInstance().minHours_1 ? SunBand_PART_SHADE_getInstance() : SunBand_FULL_SHADE_getInstance();
+  }
+}
+class SunBand extends Enum {
+  constructor(name, ordinal, label, minHours, overlayArgb) {
+    super(name, ordinal);
+    this.label_1 = label;
+    this.minHours_1 = minHours;
+    this.overlayArgb_1 = overlayArgb;
+  }
+}
+class LayoutPalette {
+  constructor() {
+    LayoutPalette_instance = this;
+    this.PAPER_1 = new Long(-658970, 0);
+    this.GRID_1 = new Long(-2239037, 0);
+    this.BORDER_1 = new Long(-11054258, 0);
+    this.INK_1 = new Long(-14080732, 0);
+    this.OUTSIDE_OUTLINE_1 = new Long(-1720159892, 0);
+    this.PATH_FILL_1 = new Long(-1717001570, 0);
+    this.PATH_EDGE_1 = new Long(-8883860, 0);
+    this.FENCE_1 = new Long(-7192562, 0);
+    this.WALL_1 = new Long(-9735552, 0);
+    this.BUILDING_FILL_1 = new Long(-2136431970, 0);
+    this.BUILDING_EDGE_1 = new Long(-12304324, 0);
+    this.TREE_FILL_1 = new Long(1293329226, 0);
+    this.TREE_EDGE_1 = new Long(-15368131, 0);
+    this.TRUNK_1 = new Long(-8899313, 0);
+  }
+  area_6ibq3f_k$(type) {
+    switch (type.ordinal_1) {
+      case 0:
+        return to(new Long(1090178069, 0), new Long(-3503612, 0));
+      case 1:
+        return to(new Long(1717609978, 0), new Long(-14326805, 0));
+      case 2:
+        return to(new Long(-1506726271, 0), new Long(-13554047, 0));
+      case 3:
+        return to(new Long(1292805609, 0), new Long(-16553567, 0));
+      default:
+        return to(new Long(1306097414, 0), new Long(-4959479, 0));
+    }
+  }
+  hex_4eca15_k$(argb) {
+    return '#' + padStart(toString_2(argb.and_5hkqyb_k$(new Long(16777215, 0)), 16), 6, _Char___init__impl__6a9atx(48));
+  }
+  alpha_k2esrq_k$(argb) {
+    // Inline function 'kotlin.Long.div' call
+    return argb.shr_9fl3wl_k$(24).and_5hkqyb_k$(new Long(255, 0)).toDouble_ygsx0s_k$() / 255.0;
+  }
+}
 class Parser {
   constructor(s) {
     this.s_1 = s;
@@ -92480,7 +92544,7 @@ class W {
       else if (Char__compareTo_impl_ypi4mb(c, _Char___init__impl__6a9atx(32)) < 0) {
         // Inline function 'kotlin.code' call
         var tmp$ret$0 = Char__toInt_impl_vasixd(c);
-        this.sb_1.append_22ad7x_k$('\\u' + padStart(toString_2(tmp$ret$0, 16), 4, _Char___init__impl__6a9atx(48)));
+        this.sb_1.append_22ad7x_k$('\\u' + padStart(toString_3(tmp$ret$0, 16), 4, _Char___init__impl__6a9atx(48)));
       } else
         this.sb_1.append_58al37_k$(c);
     }
@@ -93536,7 +93600,7 @@ class PlanFileCodec {
               tmp_69 = tmp0_elvis_lhs_8;
             }
             var fm = tmp_69;
-            var tmp_70 = Companion_instance_11;
+            var tmp_70 = Companion_instance_12;
             var tmp1_elvis_lhs_0 = text(PlanFileCodec_instance, fm, 'type', 20);
             var tmp2_elvis_lhs_2 = tmp_70.of_5gnbr7_k$(tmp1_elvis_lhs_0 == null ? '' : tmp1_elvis_lhs_0);
             var tmp_71;
@@ -94483,9 +94547,9 @@ class SiteFeatureEntity {
     return true;
   }
 }
-class Companion_11 {
+class Companion_12 {
   of_5gnbr7_k$(name) {
-    var tmp0 = get_entries_0();
+    var tmp0 = get_entries_1();
     var tmp$ret$1;
     $l$block: {
       // Inline function 'kotlin.collections.firstOrNull' call
@@ -94510,7 +94574,7 @@ class SiteFeatureType extends Enum {
     this.isBarrier_1 = isBarrier;
   }
 }
-class Companion_12 {
+class Companion_13 {
   of_1k5mgh_k$(plot) {
     return new SoilProfile(plot.soilSandPct_1, plot.soilSiltPct_1, plot.soilClayPct_1, plot.soilOrganicPct_1, plot.soilPh_1);
   }
@@ -94770,9 +94834,9 @@ class HardinessZones {
     return tmp;
   }
 }
-class Companion_13 {
+class Companion_14 {
   from_4jlvwy_k$(feature) {
-    var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(feature.featureType_1);
+    var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(feature.featureType_1);
     var tmp;
     if (tmp0_elvis_lhs == null) {
       return null;
@@ -94966,7 +95030,7 @@ class SunlightEngine {
     var _iterator__ex2g4s = zones.iterator_jk1svi_k$();
     $l$loop_1: while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var z = _iterator__ex2g4s.next_20eer_k$();
-      var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(z.featureType_1);
+      var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(z.featureType_1);
       var tmp;
       if (tmp0_elvis_lhs == null) {
         continue $l$loop_1;
@@ -95289,7 +95353,7 @@ class Canvas {
       _get_svg__e6gxbh(this).setAttribute('viewBox', '0 0 10 6');
       var tmp = _get_svg__e6gxbh(this);
       // Inline function 'kotlin.also' call
-      var this_0 = s('text', [to('x', 5), to('y', 3), to('text-anchor', 'middle'), to('font-size', 0.45), to('fill', '#94a3b8')]);
+      var this_0 = s('text', [to('x', 5), to('y', 3), to('text-anchor', 'middle'), to('font-size', 0.45), to('fill', 'currentColor')]);
       this_0.textContent = 'Create a plot or open a plan file to start.';
       add_0(tmp, [this_0]);
       return Unit_instance;
@@ -95304,7 +95368,7 @@ class Canvas {
     var b = p.widthM_1;
     var fs = Math.max(tmp0, b) / 38.0;
     var outline = PlotShape_instance.outline_ieyvk6_k$(p);
-    add_0(_get_svg__e6gxbh(this), [s('rect', [to('x', 0), to('y', 0), to('width', p.lengthM_1), to('height', p.widthM_1), to('fill', '#0b1220'), to('stroke', '#475569'), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(_get_svg__e6gxbh(this), [s('rect', [to('x', 0), to('y', 0), to('width', p.lengthM_1), to('height', p.widthM_1), to('fill', col(this, new Long(-658970, 0))), to('stroke', col(this, new Long(-11054258, 0))), to('stroke-width', 1.5), to('vector-effect', 'non-scaling-stroke')])]);
     var tmp_0;
     var tmp0_0 = p.lengthM_1;
     // Inline function 'kotlin.math.max' call
@@ -95317,12 +95381,12 @@ class Canvas {
     var step = tmp_0;
     var g = step;
     while (g < p.lengthM_1) {
-      add_0(_get_svg__e6gxbh(this), [line(this, g, 0.0, g, p.widthM_1, '#1e293b', 1.0)]);
+      add_0(_get_svg__e6gxbh(this), [line(this, g, 0.0, g, p.widthM_1, col(this, new Long(-2239037, 0)), 1.0)]);
       g = g + step;
     }
     g = step;
     while (g < p.widthM_1) {
-      add_0(_get_svg__e6gxbh(this), [line(this, 0.0, g, p.lengthM_1, g, '#1e293b', 1.0)]);
+      add_0(_get_svg__e6gxbh(this), [line(this, 0.0, g, p.lengthM_1, g, col(this, new Long(-2239037, 0)), 1.0)]);
       g = g + step;
     }
     drawRulers(this, p.lengthM_1, p.widthM_1, fs, step);
@@ -95345,8 +95409,8 @@ class Canvas {
       var poly = joinToString_0(outline, ' ', VOID, VOID, VOID, VOID, Canvas$render$lambda);
       var tmp_1 = _get_svg__e6gxbh(this);
       var tmp_2 = 'M0,0 H' + p.lengthM_1 + ' V' + p.widthM_1 + ' H0 Z M';
-      add_0(tmp_1, [s('path', [to('d', tmp_2 + joinToString_0(outline, ' L', VOID, VOID, VOID, VOID, Canvas$render$lambda_0) + ' Z'), to('fill', 'rgba(0,0,0,0.6)'), to('fill-rule', 'evenodd')])]);
-      add_0(_get_svg__e6gxbh(this), [s('polygon', [to('points', poly), to('fill', 'none'), to('stroke', '#f8fafc'), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
+      add_0(tmp_1, [s('path', [to('d', tmp_2 + joinToString_0(outline, ' L', VOID, VOID, VOID, VOID, Canvas$render$lambda_0) + ' Z'), to('fill', col(this, new Long(-1720159892, 0))), to('fill-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-1720159892, 0))), to('fill-rule', 'evenodd')])]);
+      add_0(_get_svg__e6gxbh(this), [s('polygon', [to('points', poly), to('fill', 'none'), to('stroke', col(this, new Long(-11054258, 0))), to('stroke-width', 2), to('vector-effect', 'non-scaling-stroke')])]);
     }
     // Inline function 'kotlin.collections.forEach' call
     var _iterator__ex2g4s_1 = wp.plants_1.iterator_jk1svi_k$();
@@ -95930,7 +95994,7 @@ class Colors {
         hue = hash % 360 | 0;
         break;
     }
-    return 'hsl(' + (hue % 360 | 0) + ', 65%, 58%)';
+    return 'hsl(' + (hue % 360 | 0) + ', 75%, 40%)';
   }
 }
 class Row {
@@ -96118,7 +96182,7 @@ class Dialogs {
     this.modal$default_uwejiz_k$(tmp_10, body, listOf_0([tmp_11, to(tmp_12, Dialogs$plotDetails$lambda_3(length, width, name, sand, silt, clay, existing, zip, zone, lat, lon, bearing, organic, ph))]));
   }
   feature_8lo7ub_k$(entity, isNew) {
-    var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(entity.featureType_1);
+    var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(entity.featureType_1);
     var tmp;
     if (tmp0_elvis_lhs == null) {
       return Unit_instance;
@@ -96356,7 +96420,23 @@ class App {
       _get_statusLine__ostjyd(this).textContent = text;
     }
   }
+  applyTheme_b9hanf_k$() {
+    var tmp0_elvis_lhs = document.documentElement;
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return Unit_instance;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var root = tmp;
+    if (Prefs_instance.get_theme_iz24rk_k$() === 'auto') {
+      root.removeAttribute('data-theme');
+    } else {
+      root.setAttribute('data-theme', Prefs_instance.get_theme_iz24rk_k$());
+    }
+  }
   start_fyv442_k$() {
+    this.applyTheme_b9hanf_k$();
     var root = byId('app');
     clear(root);
     this.header_1 = h('header', 'top');
@@ -96365,7 +96445,8 @@ class App {
     var preview = h('div', 'preview hidden', VOID, mapOf(to('id', 'sgp-preview')));
     this.panel_1 = h('aside', 'panel');
     this.statusLine_1 = h('footer', 'status', VOID, mapOf_0([to('role', 'status'), to('aria-live', 'polite')]));
-    var stage = h('div', 'stage', VOID, VOID, listOf_0([canvasHost, preview]));
+    this.legend_1 = h('div', 'legend hidden', VOID, mapOf_0([to('id', 'sgp-legend'), to('aria-label', 'Shade legend')]));
+    var stage = h('div', 'stage', VOID, VOID, listOf_0([canvasHost, _get_legend__wb6gde(this), preview]));
     add_0(root, [_get_header__k2z46a(this), h('main', 'main', VOID, VOID, listOf_0([_get_tools__aufwyy(this), stage, _get_panel__cycb77(this)])), _get_statusLine__ostjyd(this)]);
     var tmp = mapOf(to('id', 'sgp-seed-names'));
     // Inline function 'kotlin.collections.map' call
@@ -96415,6 +96496,7 @@ class App {
   render_dje1iy_k$() {
     renderHeader(this);
     renderTools(this);
+    renderLegend(this);
     Panels_getInstance().render_to8o5s_k$(_get_panel__cycb77(this));
     Canvas_getInstance().render_dje1iy_k$();
   }
@@ -96600,6 +96682,27 @@ class Prefs {
     var tmp0_safe_receiver = get(this, 'household');
     var tmp1_elvis_lhs = tmp0_safe_receiver == null ? null : toIntOrNull(tmp0_safe_receiver);
     return tmp1_elvis_lhs == null ? 4 : tmp1_elvis_lhs;
+  }
+  set_theme_peuiym_k$(v) {
+    return set(this, 'theme', v);
+  }
+  get_theme_iz24rk_k$() {
+    var tmp0_safe_receiver = get(this, 'theme');
+    var tmp;
+    if (tmp0_safe_receiver == null) {
+      tmp = null;
+    } else {
+      // Inline function 'kotlin.takeIf' call
+      var tmp_0;
+      if (tmp0_safe_receiver === 'light' || tmp0_safe_receiver === 'dark') {
+        tmp_0 = tmp0_safe_receiver;
+      } else {
+        tmp_0 = null;
+      }
+      tmp = tmp_0;
+    }
+    var tmp1_elvis_lhs = tmp;
+    return tmp1_elvis_lhs == null ? 'auto' : tmp1_elvis_lhs;
   }
   set_organic_m0m1kp_k$(v) {
     return set(this, 'care', v ? 'ORGANIC' : 'CONVENTIONAL');
@@ -96901,7 +97004,7 @@ class Panels {
     clear(host);
     var tmp = mapOf(to('role', 'tablist'));
     // Inline function 'kotlin.collections.map' call
-    var this_0 = get_entries_2();
+    var this_0 = get_entries_3();
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(this_0, 10));
     var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
@@ -99499,6 +99602,9 @@ function isDigit(_this__u8e3s4) {
 function isWhitespace(_this__u8e3s4) {
   return isWhitespaceImpl(_this__u8e3s4);
 }
+function toString_2(_this__u8e3s4, radix) {
+  return toStringImpl(_this__u8e3s4, checkRadix(radix));
+}
 function checkRadix(radix) {
   if (!(2 <= radix ? radix <= 36 : false)) {
     throw IllegalArgumentException.new_kotlin_IllegalArgumentException_sfqr8_k$('radix ' + radix + ' was not in valid range 2..36');
@@ -99535,7 +99641,7 @@ function toDouble(_this__u8e3s4) {
   }
   return this_0;
 }
-function toString_2(_this__u8e3s4, radix) {
+function toString_3(_this__u8e3s4, radix) {
   // Inline function 'kotlin.js.asDynamic' call
   return _this__u8e3s4.toString(checkRadix(radix));
 }
@@ -99715,10 +99821,10 @@ var Companion_instance_4;
 function Companion_getInstance_4() {
   return Companion_instance_4;
 }
-function toString_3($this, entry) {
-  return toString_4($this, entry.get_key_18j28a_k$()) + '=' + toString_4($this, entry.get_value_j01efc_k$());
+function toString_4($this, entry) {
+  return toString_5($this, entry.get_key_18j28a_k$()) + '=' + toString_5($this, entry.get_value_j01efc_k$());
 }
-function toString_4($this, o) {
+function toString_5($this, o) {
   return o === $this ? '(this Map)' : toString_0(o);
 }
 function implFindEntry($this, key) {
@@ -99744,7 +99850,7 @@ function Companion_getInstance_5() {
 }
 function AbstractMap$toString$lambda(this$0) {
   return function (it) {
-    return toString_3(this$0, it);
+    return toString_4(this$0, it);
   };
 }
 var Companion_instance_6;
@@ -100319,13 +100425,13 @@ function substringBefore(_this__u8e3s4, delimiter, missingDelimiterValue) {
 function lines(_this__u8e3s4) {
   return toList_0(lineSequence(_this__u8e3s4));
 }
-function contains_1(_this__u8e3s4, char, ignoreCase) {
-  ignoreCase = ignoreCase === VOID ? false : ignoreCase;
-  return indexOf_3(_this__u8e3s4, char, VOID, ignoreCase) >= 0;
-}
 function padStart(_this__u8e3s4, length, padChar) {
   padChar = padChar === VOID ? _Char___init__impl__6a9atx(32) : padChar;
   return toString_1(padStart_0(isCharSequence(_this__u8e3s4) ? _this__u8e3s4 : THROW_CCE(), length, padChar));
+}
+function contains_1(_this__u8e3s4, char, ignoreCase) {
+  ignoreCase = ignoreCase === VOID ? false : ignoreCase;
+  return indexOf_3(_this__u8e3s4, char, VOID, ignoreCase) >= 0;
 }
 function split_0(_this__u8e3s4, delimiters, ignoreCase, limit) {
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
@@ -100466,6 +100572,25 @@ function lineSequence(_this__u8e3s4) {
   // Inline function 'kotlin.sequences.Sequence' call
   return new lineSequence$$inlined$Sequence$1(_this__u8e3s4);
 }
+function padStart_0(_this__u8e3s4, length, padChar) {
+  padChar = padChar === VOID ? _Char___init__impl__6a9atx(32) : padChar;
+  if (length < 0)
+    throw IllegalArgumentException.new_kotlin_IllegalArgumentException_sfqr8_k$('Desired length ' + length + ' is less than zero.');
+  if (length <= charSequenceLength(_this__u8e3s4))
+    return charSequenceSubSequence(_this__u8e3s4, 0, charSequenceLength(_this__u8e3s4));
+  var sb = StringBuilder.new_kotlin_text_StringBuilder_wcb3z_k$(length);
+  var inductionVariable = 1;
+  var last = length - charSequenceLength(_this__u8e3s4) | 0;
+  if (inductionVariable <= last)
+    do {
+      var i = inductionVariable;
+      inductionVariable = inductionVariable + 1 | 0;
+      sb.append_58al37_k$(padChar);
+    }
+     while (!(i === last));
+  sb.append_jgojdo_k$(_this__u8e3s4);
+  return sb;
+}
 function indexOf_3(_this__u8e3s4, char, startIndex, ignoreCase) {
   startIndex = startIndex === VOID ? 0 : startIndex;
   ignoreCase = ignoreCase === VOID ? false : ignoreCase;
@@ -100488,25 +100613,6 @@ function indexOf_3(_this__u8e3s4, char, startIndex, ignoreCase) {
     tmp = _this__u8e3s4.indexOf(str, startIndex);
   }
   return tmp;
-}
-function padStart_0(_this__u8e3s4, length, padChar) {
-  padChar = padChar === VOID ? _Char___init__impl__6a9atx(32) : padChar;
-  if (length < 0)
-    throw IllegalArgumentException.new_kotlin_IllegalArgumentException_sfqr8_k$('Desired length ' + length + ' is less than zero.');
-  if (length <= charSequenceLength(_this__u8e3s4))
-    return charSequenceSubSequence(_this__u8e3s4, 0, charSequenceLength(_this__u8e3s4));
-  var sb = StringBuilder.new_kotlin_text_StringBuilder_wcb3z_k$(length);
-  var inductionVariable = 1;
-  var last = length - charSequenceLength(_this__u8e3s4) | 0;
-  if (inductionVariable <= last)
-    do {
-      var i = inductionVariable;
-      inductionVariable = inductionVariable + 1 | 0;
-      sb.append_58al37_k$(padChar);
-    }
-     while (!(i === last));
-  sb.append_jgojdo_k$(_this__u8e3s4);
-  return sb;
 }
 function rangesDelimitedBy_0(_this__u8e3s4, delimiters, startIndex, ignoreCase, limit) {
   startIndex = startIndex === VOID ? 0 : startIndex;
@@ -101247,6 +101353,49 @@ function GuildCatalog_getInstance() {
     new GuildCatalog();
   return GuildCatalog_instance;
 }
+var SunBand_FULL_SUN_instance;
+var SunBand_PART_SHADE_instance;
+var SunBand_FULL_SHADE_instance;
+var Companion_instance_11;
+function Companion_getInstance_11() {
+  return Companion_instance_11;
+}
+function values_0() {
+  return [SunBand_FULL_SUN_getInstance(), SunBand_PART_SHADE_getInstance(), SunBand_FULL_SHADE_getInstance()];
+}
+function get_entries_0() {
+  if ($ENTRIES_0 == null)
+    $ENTRIES_0 = enumEntries(values_0());
+  return $ENTRIES_0;
+}
+var SunBand_entriesInitialized;
+function SunBand_initEntries() {
+  if (SunBand_entriesInitialized)
+    return Unit_instance;
+  SunBand_entriesInitialized = true;
+  SunBand_FULL_SUN_instance = new SunBand('FULL_SUN', 0, 'Full sun (6+ h)', 6.0, new Long(1090178069, 0));
+  SunBand_PART_SHADE_instance = new SunBand('PART_SHADE', 1, 'Part shade (3\u20136 h)', 3.0, new Long(1717609978, 0));
+  SunBand_FULL_SHADE_instance = new SunBand('FULL_SHADE', 2, 'Shade (under 3 h)', 0.0, new Long(-1506726271, 0));
+}
+var $ENTRIES_0;
+var LayoutPalette_instance;
+function LayoutPalette_getInstance() {
+  if (LayoutPalette_instance === VOID)
+    new LayoutPalette();
+  return LayoutPalette_instance;
+}
+function SunBand_FULL_SUN_getInstance() {
+  SunBand_initEntries();
+  return SunBand_FULL_SUN_instance;
+}
+function SunBand_PART_SHADE_getInstance() {
+  SunBand_initEntries();
+  return SunBand_PART_SHADE_instance;
+}
+function SunBand_FULL_SHADE_getInstance() {
+  SunBand_initEntries();
+  return SunBand_FULL_SHADE_instance;
+}
 function literal($this, word, v) {
   // Inline function 'kotlin.require' call
   if (!startsWith($this.s_1, word, $this.pos_1)) {
@@ -101581,17 +101730,17 @@ var SiteFeatureType_TREE_instance;
 var SiteFeatureType_FENCE_instance;
 var SiteFeatureType_WALL_instance;
 var SiteFeatureType_BUILDING_instance;
-var Companion_instance_11;
-function Companion_getInstance_11() {
-  return Companion_instance_11;
+var Companion_instance_12;
+function Companion_getInstance_12() {
+  return Companion_instance_12;
 }
-function values_0() {
+function values_1() {
   return [SiteFeatureType_FULL_SUN_getInstance(), SiteFeatureType_PART_SHADE_getInstance(), SiteFeatureType_FULL_SHADE_getInstance(), SiteFeatureType_FLOOD_getInstance(), SiteFeatureType_SLOPE_getInstance(), SiteFeatureType_TREE_getInstance(), SiteFeatureType_FENCE_getInstance(), SiteFeatureType_WALL_getInstance(), SiteFeatureType_BUILDING_getInstance()];
 }
-function get_entries_0() {
-  if ($ENTRIES_0 == null)
-    $ENTRIES_0 = enumEntries(values_0());
-  return $ENTRIES_0;
+function get_entries_1() {
+  if ($ENTRIES_1 == null)
+    $ENTRIES_1 = enumEntries(values_1());
+  return $ENTRIES_1;
 }
 var SiteFeatureType_entriesInitialized;
 function SiteFeatureType_initEntries() {
@@ -101608,7 +101757,7 @@ function SiteFeatureType_initEntries() {
   SiteFeatureType_WALL_instance = new SiteFeatureType('WALL', 7, 'Wall', false, true);
   SiteFeatureType_BUILDING_instance = new SiteFeatureType('BUILDING', 8, 'Building', false, true);
 }
-var $ENTRIES_0;
+var $ENTRIES_1;
 function SiteFeatureType_FULL_SUN_getInstance() {
   SiteFeatureType_initEntries();
   return SiteFeatureType_FULL_SUN_instance;
@@ -101645,9 +101794,9 @@ function SiteFeatureType_BUILDING_getInstance() {
   SiteFeatureType_initEntries();
   return SiteFeatureType_BUILDING_instance;
 }
-var Companion_instance_12;
-function Companion_getInstance_12() {
-  return Companion_instance_12;
+var Companion_instance_13;
+function Companion_getInstance_13() {
+  return Companion_instance_13;
 }
 var SoilTexture_SAND_instance;
 var SoilTexture_LOAMY_SAND_instance;
@@ -101737,9 +101886,9 @@ function SoilTexture_CLAY_getInstance() {
   SoilTexture_initEntries();
   return SoilTexture_CLAY_instance;
 }
-var Companion_instance_13;
-function Companion_getInstance_13() {
-  return Companion_instance_13;
+var Companion_instance_14;
+function Companion_getInstance_14() {
+  return Companion_instance_14;
 }
 function rayDistanceToBarrier($this, x, y, dx, dy, b) {
   if (b.type_1.equals(SiteFeatureType_TREE_getInstance())) {
@@ -101850,13 +101999,13 @@ var Tool_LINE_OBSTACLE_instance;
 var Tool_AREA_instance;
 var Tool_OUTLINE_instance;
 var Tool_PLAN_instance;
-function values_1() {
+function values_2() {
   return [Tool_SELECT_getInstance(), Tool_PLANT_getInstance(), Tool_PATH_getInstance(), Tool_TREE_getInstance(), Tool_LINE_OBSTACLE_getInstance(), Tool_AREA_getInstance(), Tool_OUTLINE_getInstance(), Tool_PLAN_getInstance()];
 }
-function get_entries_1() {
-  if ($ENTRIES_1 == null)
-    $ENTRIES_1 = enumEntries(values_1());
-  return $ENTRIES_1;
+function get_entries_2() {
+  if ($ENTRIES_2 == null)
+    $ENTRIES_2 = enumEntries(values_2());
+  return $ENTRIES_2;
 }
 var Tool_entriesInitialized;
 function Tool_initEntries() {
@@ -101872,7 +102021,7 @@ function Tool_initEntries() {
   Tool_OUTLINE_instance = new Tool('OUTLINE', 6, 'Plot outline', "Click the plot's corners in order (3+), then press Enter or click Finish.");
   Tool_PLAN_instance = new Tool('PLAN', 7, 'Plan an area for me', 'Drag over the area you want planted; then list what to plant.');
 }
-var $ENTRIES_1;
+var $ENTRIES_2;
 function _get_svg__e6gxbh($this) {
   var tmp = $this.svg_1;
   if (!(tmp == null))
@@ -101898,7 +102047,7 @@ function drawRulers($this, l, w, fs, step) {
   while (m <= l + 1.0E-6) {
     var tmp = _get_svg__e6gxbh($this);
     // Inline function 'kotlin.also' call
-    var this_0 = s('text', [to('x', m), to('y', -fs * 0.5), to('font-size', fs), to('fill', '#94a3b8'), to('text-anchor', 'middle')]);
+    var this_0 = s('text', [to('x', m), to('y', -fs * 0.5), to('font-size', fs), to('fill', 'currentColor'), to('text-anchor', 'middle')]);
     this_0.textContent = '' + numberToInt(m) + ' m';
     add_0(tmp, [this_0]);
     m = m + step;
@@ -101907,7 +102056,7 @@ function drawRulers($this, l, w, fs, step) {
   while (m <= w + 1.0E-6) {
     var tmp_0 = _get_svg__e6gxbh($this);
     // Inline function 'kotlin.also' call
-    var this_1 = s('text', [to('x', -fs * 0.4), to('y', m + fs * 0.35), to('font-size', fs), to('fill', '#94a3b8'), to('text-anchor', 'end')]);
+    var this_1 = s('text', [to('x', -fs * 0.4), to('y', m + fs * 0.35), to('font-size', fs), to('fill', 'currentColor'), to('text-anchor', 'end')]);
     this_1.textContent = '' + numberToInt(m);
     add_0(tmp_0, [this_1]);
     m = m + step;
@@ -101922,7 +102071,7 @@ function drawCompass($this, l, fs, bearing, set) {
   var tx = cx + Math.sin(a) * r;
   // Inline function 'kotlin.math.cos' call
   var ty = cy - Math.cos(a) * r;
-  add_0(_get_svg__e6gxbh($this), [s('circle', [to('cx', cx), to('cy', cy), to('r', r * 2.2), to('fill', '#0f172a'), to('stroke', '#334155'), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
+  add_0(_get_svg__e6gxbh($this), [s('circle', [to('cx', cx), to('cy', cy), to('r', r * 2.2), to('fill', 'var(--card)'), to('stroke', 'var(--line)'), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
   var tmp = _get_svg__e6gxbh($this);
   // Inline function 'kotlin.math.sin' call
   var tmp$ret$2 = Math.sin(a);
@@ -101937,7 +102086,7 @@ function drawCompass($this, l, fs, bearing, set) {
   // Inline function 'kotlin.math.cos' call
   var tmp$ret$5 = Math.cos(a);
   // Inline function 'kotlin.also' call
-  var this_0 = s('text', [tmp_2, to('y', cy - tmp$ret$5 * r * 1.75 + fs * 0.32), to('font-size', fs * 0.9), to('fill', '#f8fafc'), to('text-anchor', 'middle'), to('font-weight', 'bold')]);
+  var this_0 = s('text', [tmp_2, to('y', cy - tmp$ret$5 * r * 1.75 + fs * 0.32), to('font-size', fs * 0.9), to('fill', 'currentColor'), to('text-anchor', 'middle'), to('font-weight', 'bold')]);
   this_0.textContent = set ? 'N' : 'N?';
   add_0(tmp_1, [this_0]);
 }
@@ -101951,7 +102100,7 @@ function drawShade($this, wp) {
   var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
   while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
     var element = _iterator__ex2g4s.next_20eer_k$();
-    var tmp0_safe_receiver = Companion_instance_13.from_4jlvwy_k$(element);
+    var tmp0_safe_receiver = Companion_instance_14.from_4jlvwy_k$(element);
     if (tmp0_safe_receiver == null)
       null;
     else {
@@ -101993,6 +102142,7 @@ function drawShade($this, wp) {
   var grid = tmp_1;
   var cw = p.lengthM_1 / cols;
   var ch = p.widthM_1 / rows;
+  var g = s('g', [to('class', 'shade')]);
   var inductionVariable = 0;
   if (inductionVariable < rows)
     do {
@@ -102003,54 +102153,42 @@ function drawShade($this, wp) {
         do {
           var c = inductionVariable_0;
           inductionVariable_0 = inductionVariable_0 + 1 | 0;
-          var hrs = grid[imul_0(r, cols) + c | 0];
-          var alpha = hrs < 3.0 ? 0.55 : hrs < 6.0 ? 0.3 : 0.0;
-          if (alpha > 0) {
-            add_0(_get_svg__e6gxbh($this), [s('rect', [to('x', c * cw), to('y', r * ch), to('width', cw + 0.01), to('height', ch + 0.01), to('fill', '#000'), to('fill-opacity', alpha)])]);
-          }
+          var band = Companion_instance_11.of_hl3oov_k$(grid[imul_0(r, cols) + c | 0]);
+          // Inline function 'kotlin.also' call
+          var this_1 = s('rect', [to('x', c * cw), to('y', r * ch), to('width', cw + 0.01), to('height', ch + 0.01), to('fill', col($this, band.overlayArgb_1)), to('fill-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(band.overlayArgb_1)), to('data-band', band.name_1)]);
+          // Inline function 'kotlin.also' call
+          var this_2 = s('title', []);
+          this_2.textContent = band.label_1 + ': about ' + fmt_0(grid[imul_0(r, cols) + c | 0], 1) + ' h of direct sun today';
+          add_0(this_1, [this_2]);
+          add_0(g, [this_1]);
         }
          while (inductionVariable_0 < cols);
     }
      while (inductionVariable < rows);
+  add_0(_get_svg__e6gxbh($this), [g]);
+}
+function col($this, argb) {
+  return LayoutPalette_getInstance().hex_4eca15_k$(argb);
 }
 function featureColours($this, t) {
   var tmp;
-  switch (t.ordinal_1) {
-    case 0:
-      tmp = to('#facc15', '#facc15');
-      break;
-    case 1:
-      tmp = to('#94a3b8', '#94a3b8');
-      break;
-    case 2:
-      tmp = to('#334155', '#64748b');
-      break;
-    case 3:
-      tmp = to('#3b82f6', '#3b82f6');
-      break;
-    case 4:
-      tmp = to('#a16207', '#d97706');
-      break;
-    case 5:
-      tmp = to('#22c55e', '#15803d');
-      break;
-    case 6:
-      tmp = to('#a16207', '#a16207');
-      break;
-    case 7:
-      tmp = to('#9ca3af', '#9ca3af');
-      break;
-    case 8:
-      tmp = to('#e5e7eb', '#e5e7eb');
-      break;
-    default:
-      noWhenBranchMatchedException();
-      break;
+  if (t.isArea_1) {
+    // Inline function 'kotlin.let' call
+    var it = LayoutPalette_getInstance().area_6ibq3f_k$(t);
+    tmp = new Triple(col(Canvas_getInstance(), it.first_1), LayoutPalette_getInstance().alpha_k2esrq_k$(it.first_1), col(Canvas_getInstance(), it.second_1));
+  } else if (t.equals(SiteFeatureType_TREE_getInstance())) {
+    tmp = new Triple(col($this, new Long(1293329226, 0)), LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(1293329226, 0)), col($this, new Long(-15368131, 0)));
+  } else if (t.equals(SiteFeatureType_FENCE_getInstance())) {
+    tmp = new Triple('none', 0.0, col($this, new Long(-7192562, 0)));
+  } else if (t.equals(SiteFeatureType_WALL_getInstance())) {
+    tmp = new Triple('none', 0.0, col($this, new Long(-9735552, 0)));
+  } else {
+    tmp = new Triple(col($this, new Long(-2136431970, 0)), LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-2136431970, 0)), col($this, new Long(-12304324, 0)));
   }
   return tmp;
 }
 function drawFeature($this, f, fs) {
-  var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(f.featureType_1);
+  var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(f.featureType_1);
   var tmp;
   if (tmp0_elvis_lhs == null) {
     return Unit_instance;
@@ -102066,11 +102204,13 @@ function drawFeature($this, f, fs) {
   var sel = equals(tmp1_safe_receiver == null ? null : tmp1_safe_receiver.id_1, f.id_1);
   var _destruct__k2r9zo = featureColours($this, t);
   var fill = _destruct__k2r9zo.component1_7eebsc_k$();
-  var edge = _destruct__k2r9zo.component2_7eebsb_k$();
+  var fillAlpha = _destruct__k2r9zo.component2_7eebsb_k$();
+  var edge = _destruct__k2r9zo.component3_7eebsa_k$();
+  var ink = col($this, new Long(-14080732, 0));
   var stroke = sel ? '#f97316' : edge;
   var g = s('g', [to('data-feature', f.id_1)]);
   if (t.isArea_1 && pts.get_size_woubt6_k$() >= 3) {
-    add_0(g, [s('polygon', [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawFeature$lambda)), to('fill', fill), to('fill-opacity', 0.22), to('stroke', stroke), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(g, [s('polygon', [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawFeature$lambda)), to('fill', fill), to('fill-opacity', fillAlpha), to('stroke', stroke), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
@@ -102092,7 +102232,7 @@ function drawFeature($this, f, fs) {
     }
     var cy = average(destination_0);
     // Inline function 'kotlin.also' call
-    var this_0 = s('text', [to('x', cx), to('y', cy), to('font-size', fs * 0.8), to('fill', edge), to('text-anchor', 'middle')]);
+    var this_0 = s('text', [to('x', cx), to('y', cy), to('font-size', fs * 0.8), to('fill', ink), to('text-anchor', 'middle'), to('font-weight', '600')]);
     // Inline function 'kotlin.text.ifBlank' call
     var this_1 = f.label_1;
     var tmp_1;
@@ -102122,16 +102262,26 @@ function drawFeature($this, f, fs) {
     // Inline function 'kotlin.math.max' call
     var a_0 = f.radiusM_1;
     var r = Math.max(a_0, 0.2);
-    add_0(g, [s('circle', [to('cx', pts.get_c1px32_k$(0).x_1), to('cy', pts.get_c1px32_k$(0).y_1), to('r', r), to('fill', fill), to('fill-opacity', 0.3), to('stroke', stroke), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
-    add_0(g, [s('circle', [to('cx', pts.get_c1px32_k$(0).x_1), to('cy', pts.get_c1px32_k$(0).y_1), to('r', r * 0.12), to('fill', '#78350f')])]);
+    add_0(g, [s('circle', [to('cx', pts.get_c1px32_k$(0).x_1), to('cy', pts.get_c1px32_k$(0).y_1), to('r', r), to('fill', fill), to('fill-opacity', $this.showShade_1 ? 0.0 : fillAlpha), to('stroke', stroke), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(g, [s('circle', [to('cx', pts.get_c1px32_k$(0).x_1), to('cy', pts.get_c1px32_k$(0).y_1), to('r', r * 0.12), to('fill', col($this, new Long(-8899313, 0)))])]);
   } else {
     var closed = t.equals(SiteFeatureType_BUILDING_getInstance()) && pts.get_size_woubt6_k$() >= 3;
     var tmp_6 = closed ? 'polygon' : 'polyline';
-    add_0(g, [s(tmp_6, [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawFeature$lambda_0)), to('fill', closed ? fill : 'none'), to('fill-opacity', 0.25), to('stroke', stroke), to('stroke-width', sel ? 8 : 6), to('stroke-linecap', 'round'), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(g, [s(tmp_6, [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawFeature$lambda_0)), to('fill', closed ? fill : 'none'), to('fill-opacity', fillAlpha), to('stroke', stroke), to('stroke-width', sel ? 8 : 6), to('stroke-linecap', 'round'), to('vector-effect', 'non-scaling-stroke')])]);
   }
   if (t.isBarrier_1) {
+    var tmp_7 = to('x', pts.get_c1px32_k$(0).x_1);
+    var tmp_8 = pts.get_c1px32_k$(0).y_1 - fs * 0.3;
+    var tmp_9;
+    if (t.equals(SiteFeatureType_TREE_getInstance())) {
+      // Inline function 'kotlin.math.max' call
+      var a_1 = f.radiusM_1;
+      tmp_9 = Math.max(a_1, 0.2) * 0.12;
+    } else {
+      tmp_9 = 0.0;
+    }
     // Inline function 'kotlin.also' call
-    var this_2 = s('text', [to('x', pts.get_c1px32_k$(0).x_1), to('y', pts.get_c1px32_k$(0).y_1 - fs * 0.3), to('font-size', fs * 0.7), to('fill', '#e2e8f0'), to('text-anchor', 'middle')]);
+    var this_2 = s('text', [tmp_7, to('y', tmp_8 - tmp_9), to('font-size', fs * 0.7), to('fill', ink), to('text-anchor', 'middle'), to('font-weight', '600')]);
     this_2.textContent = fmt_0(f.heightM_1, 1) + ' m';
     add_0(g, [this_2]);
   }
@@ -102144,9 +102294,9 @@ function drawPath($this, z) {
   if (z.pathType_1 === 'POLYLINE') {
     var pts = PlotGeometry_instance.parsePoints_qx11wv_k$(z.pointsJson_1);
     var tmp_0 = _get_svg__e6gxbh($this);
-    add_0(tmp_0, [s('polyline', [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawPath$lambda)), to('fill', 'none'), to('stroke', sel ? '#f97316' : '#64748b'), to('stroke-opacity', 0.6), to('stroke-width', z.widthM_1), to('stroke-linecap', 'round')])]);
+    add_0(tmp_0, [s('polyline', [to('points', joinToString_0(pts, ' ', VOID, VOID, VOID, VOID, Canvas$drawPath$lambda)), to('fill', 'none'), to('stroke', sel ? '#f97316' : col($this, new Long(-1717001570, 0))), to('stroke-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-1717001570, 0))), to('stroke-width', z.widthM_1), to('stroke-linecap', 'round')])]);
   } else {
-    add_0(_get_svg__e6gxbh($this), [s('rect', [to('x', z.xM_1), to('y', z.yM_1), to('width', z.widthM_1), to('height', z.heightM_1), to('fill', '#2d3748'), to('fill-opacity', 0.6), to('stroke', sel ? '#f97316' : '#64748b'), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+    add_0(_get_svg__e6gxbh($this), [s('rect', [to('x', z.xM_1), to('y', z.yM_1), to('width', z.widthM_1), to('height', z.heightM_1), to('fill', col($this, new Long(-1717001570, 0))), to('fill-opacity', LayoutPalette_getInstance().alpha_k2esrq_k$(new Long(-1717001570, 0))), to('stroke', sel ? '#f97316' : col($this, new Long(-8883860, 0))), to('stroke-width', sel ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
   }
 }
 function drawPlant($this, n, selected) {
@@ -102154,14 +102304,14 @@ function drawPlant($this, n, selected) {
   var c = Colors_instance.of_l9lkdk_k$(seed);
   var tmp1_elvis_lhs = seed == null ? null : seed.exclusionRadiusM_1;
   var r = tmp1_elvis_lhs == null ? 0.3 : tmp1_elvis_lhs;
-  add_0(_get_svg__e6gxbh($this), [s('circle', [to('cx', n.coordinateXM_1), to('cy', n.coordinateYM_1), to('r', r), to('fill', c), to('fill-opacity', 0.18), to('stroke', selected ? '#f97316' : c), to('stroke-width', selected ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
+  add_0(_get_svg__e6gxbh($this), [s('circle', [to('cx', n.coordinateXM_1), to('cy', n.coordinateYM_1), to('r', r), to('fill', c), to('fill-opacity', 0.16), to('stroke', selected ? '#f97316' : c), to('stroke-width', selected ? 3 : 1.5), to('vector-effect', 'non-scaling-stroke')])]);
   var tmp = _get_svg__e6gxbh($this);
   var tmp_0 = to('cx', n.coordinateXM_1);
   var tmp_1 = to('cy', n.coordinateYM_1);
   // Inline function 'kotlin.math.min' call
   var a = r * 0.25;
   var tmp$ret$0 = Math.min(a, 0.08);
-  add_0(tmp, [s('circle', [tmp_0, tmp_1, to('r', tmp$ret$0), to('fill', c)])]);
+  add_0(tmp, [s('circle', [tmp_0, tmp_1, to('r', tmp$ret$0), to('fill', c), to('stroke', col($this, new Long(-14080732, 0))), to('stroke-width', 1), to('vector-effect', 'non-scaling-stroke')])]);
 }
 function drawInProgress($this) {
   // Inline function 'kotlin.collections.isNotEmpty' call
@@ -102258,7 +102408,7 @@ function hitFeature($this, wp, pt) {
       var element = _iterator__ex2g4s.next_20eer_k$();
       var tmp$ret$0;
       $l$block: {
-        var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(element.featureType_1);
+        var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(element.featureType_1);
         var tmp;
         if (tmp0_elvis_lhs == null) {
           tmp$ret$0 = false;
@@ -103992,6 +104142,14 @@ function _get_statusLine__ostjyd($this) {
     throwUninitializedPropertyAccessException('statusLine');
   }
 }
+function _get_legend__wb6gde($this) {
+  var tmp = $this.legend_1;
+  if (!(tmp == null))
+    return tmp;
+  else {
+    throwUninitializedPropertyAccessException('legend');
+  }
+}
 function renderHeader($this) {
   clear(_get_header__k2z46a($this));
   add_0(_get_header__k2z46a($this), [h('div', 'brand', VOID, VOID, listOf_0([h('span', 'logo', '\uD83C\uDF31'), h('span', VOID, 'Smart Garden Planner')]))]);
@@ -104046,12 +104204,47 @@ function renderHeader($this) {
   var tmp_9 = Canvas_getInstance().showShade_1 ? 'Shade: on' : 'Shade: off';
   var tmp_10 = Canvas_getInstance().showShade_1 ? 'btn on' : 'btn';
   var tmp_11 = button(tmp_9, tmp_10, 'Show estimated shade from trees, fences and buildings today', App$renderHeader$lambda_6);
-  add_0(tmp_2, [h('div', 'actions', VOID, VOID, listOfNotNull([tmp_3, tmp_4, tmp_5, tmp_6, plotPicker, tmp_7, tmp_8, tmp_11, button('?', 'btn icon', 'Help', App$renderHeader$lambda_7), file]))]);
+  var tmp_12;
+  switch (Prefs_instance.get_theme_iz24rk_k$()) {
+    case 'light':
+      tmp_12 = '\u2600 Light';
+      break;
+    case 'dark':
+      tmp_12 = '\u263E Dark';
+      break;
+    default:
+      tmp_12 = '\u25D0 Auto';
+      break;
+  }
+  var tmp_13 = button(tmp_12, 'btn', 'Page colours: follow the system, light or dark. The layout itself stays light so shade is easy to see.', App$renderHeader$lambda_7);
+  add_0(tmp_2, [h('div', 'actions', VOID, VOID, listOfNotNull([tmp_3, tmp_4, tmp_5, tmp_6, plotPicker, tmp_7, tmp_8, tmp_11, tmp_13, button('?', 'btn icon', 'Help', App$renderHeader$lambda_8), file]))]);
+}
+function renderLegend($this) {
+  clear(_get_legend__wb6gde($this));
+  if (!Canvas_getInstance().showShade_1 || Store_getInstance().plot_21tcx_k$() == null) {
+    _get_legend__wb6gde($this).classList.add('hidden');
+    return Unit_instance;
+  }
+  _get_legend__wb6gde($this).classList.remove('hidden');
+  add_0(_get_legend__wb6gde($this), [h('b', VOID, 'Sun today:')]);
+  // Inline function 'kotlin.collections.forEach' call
+  var _iterator__ex2g4s = get_entries_0().iterator_jk1svi_k$();
+  while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+    var element = _iterator__ex2g4s.next_20eer_k$();
+    var sw = h('span', 'sw', VOID, mapOf(to('style', 'background:linear-gradient(' + cssRgba(App_instance, element.overlayArgb_1) + ',' + cssRgba(App_instance, element.overlayArgb_1) + '),#f5f1e6')));
+    add_0(_get_legend__wb6gde(App_instance), [h('span', VOID, VOID, VOID, listOf_0([sw, h('span', VOID, element.label_1)]))]);
+  }
+}
+function cssRgba($this, argb) {
+  var r = argb.shr_9fl3wl_k$(16).and_5hkqyb_k$(new Long(255, 0));
+  var g = argb.shr_9fl3wl_k$(8).and_5hkqyb_k$(new Long(255, 0));
+  var b = argb.and_5hkqyb_k$(new Long(255, 0));
+  return 'rgba(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ',' + LayoutPalette_getInstance().alpha_k2esrq_k$(argb) + ')';
 }
 function renderTools($this) {
   clear(_get_tools__aufwyy($this));
   // Inline function 'kotlin.collections.forEach' call
-  var _iterator__ex2g4s = get_entries_1().iterator_jk1svi_k$();
+  var _iterator__ex2g4s = get_entries_2().iterator_jk1svi_k$();
   while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
     var element = _iterator__ex2g4s.next_20eer_k$();
     var tmp = _get_tools__aufwyy(App_instance);
@@ -104212,6 +104405,14 @@ function App$renderHeader$lambda_6() {
   return Unit_instance;
 }
 function App$renderHeader$lambda_7() {
+  var tmp = Prefs_instance;
+  var tmp0_subject = Prefs_instance.get_theme_iz24rk_k$();
+  tmp.set_theme_peuiym_k$(tmp0_subject === 'auto' ? 'light' : tmp0_subject === 'light' ? 'dark' : 'auto');
+  App_instance.applyTheme_b9hanf_k$();
+  App_instance.render_dje1iy_k$();
+  return Unit_instance;
+}
+function App$renderHeader$lambda_8() {
   Dialogs_instance.help_3u9isx_k$();
   return Unit_instance;
 }
@@ -104483,13 +104684,13 @@ var Tab_PLANTS_instance;
 var Tab_HARMONY_instance;
 var Tab_CARE_instance;
 var Tab_FOOD_instance;
-function values_2() {
+function values_3() {
   return [Tab_PLOT_getInstance(), Tab_PLANTS_getInstance(), Tab_HARMONY_getInstance(), Tab_CARE_getInstance(), Tab_FOOD_getInstance()];
 }
-function get_entries_2() {
-  if ($ENTRIES_2 == null)
-    $ENTRIES_2 = enumEntries(values_2());
-  return $ENTRIES_2;
+function get_entries_3() {
+  if ($ENTRIES_3 == null)
+    $ENTRIES_3 = enumEntries(values_3());
+  return $ENTRIES_3;
 }
 var Tab_entriesInitialized;
 function Tab_initEntries() {
@@ -104502,7 +104703,7 @@ function Tab_initEntries() {
   Tab_CARE_instance = new Tab('CARE', 3, 'Care');
   Tab_FOOD_instance = new Tab('FOOD', 4, 'Food');
 }
-var $ENTRIES_2;
+var $ENTRIES_3;
 function kv($this, k, v) {
   return h('div', 'kv', VOID, VOID, listOf_0([h('span', 'k', k), h('span', 'v', v)]));
 }
@@ -104561,7 +104762,7 @@ function plot($this, body, wp) {
   var tmp_4 = Canvas_getInstance().tool_1.equals(Tool_TREE_getInstance()) ? 'btn on' : 'btn';
   add_0(body, [h('div', 'row wrap', VOID, VOID, plus_0(tmp_3, button('Tree', tmp_4, VOID, Panels$plot$lambda_2)))]);
   // Inline function 'kotlin.collections.filter' call
-  var tmp0 = get_entries_0();
+  var tmp0 = get_entries_1();
   // Inline function 'kotlin.collections.filterTo' call
   var destination_0 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
   var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
@@ -104593,7 +104794,7 @@ function plot($this, body, wp) {
     while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
       var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
       $l$block: {
-        var tmp0_elvis_lhs = Companion_instance_11.of_5gnbr7_k$(element_0.featureType_1);
+        var tmp0_elvis_lhs = Companion_instance_12.of_5gnbr7_k$(element_0.featureType_1);
         var tmp_8;
         if (tmp0_elvis_lhs == null) {
           break $l$block;
@@ -104617,7 +104818,7 @@ function plot($this, body, wp) {
   }
   add_0(body, [heading('Soil')]);
   // Inline function 'kotlin.collections.forEach' call
-  var _iterator__ex2g4s_3 = SoilAnalyzer_instance.guidance_bp4do8_k$(Companion_instance_12.of_1k5mgh_k$(p)).iterator_jk1svi_k$();
+  var _iterator__ex2g4s_3 = SoilAnalyzer_instance.guidance_bp4do8_k$(Companion_instance_13.of_1k5mgh_k$(p)).iterator_jk1svi_k$();
   while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
     var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
     add_0(body, [para(element_1, 'hint')]);
@@ -105311,6 +105512,9 @@ initMetadataForClass(HarmonyAnalyzer$analyze$$inlined$groupingBy$1);
 initMetadataForObject(HarmonyAnalyzer, 'HarmonyAnalyzer');
 initMetadataForClass(Guild, 'Guild');
 initMetadataForObject(GuildCatalog, 'GuildCatalog');
+initMetadataForCompanion(Companion_11);
+initMetadataForClass(SunBand, 'SunBand');
+initMetadataForObject(LayoutPalette, 'LayoutPalette');
 initMetadataForClass(Parser, 'Parser');
 initMetadataForObject(MiniJson, 'MiniJson');
 initMetadataForClass(PathZoneEntity, 'PathZoneEntity');
@@ -105327,14 +105531,14 @@ initMetadataForObject(PlotShape, 'PlotShape');
 initMetadataForObject(CivilDate, 'CivilDate');
 initMetadataForClass(SeedEntity, 'SeedEntity');
 initMetadataForClass(SiteFeatureEntity, 'SiteFeatureEntity');
-initMetadataForCompanion(Companion_11);
-initMetadataForClass(SiteFeatureType, 'SiteFeatureType');
 initMetadataForCompanion(Companion_12);
+initMetadataForClass(SiteFeatureType, 'SiteFeatureType');
+initMetadataForCompanion(Companion_13);
 initMetadataForClass(SoilProfile, 'SoilProfile');
 initMetadataForClass(SoilTexture, 'SoilTexture');
 initMetadataForObject(SoilAnalyzer, 'SoilAnalyzer');
 initMetadataForObject(HardinessZones, 'HardinessZones');
-initMetadataForCompanion(Companion_13);
+initMetadataForCompanion(Companion_14);
 initMetadataForClass(Barrier, 'Barrier');
 initMetadataForClass(SunPosition, 'SunPosition');
 initMetadataForObject(SunlightEngine, 'SunlightEngine');
@@ -105379,14 +105583,15 @@ Companion_instance_10 = new Companion_10();
 Relationships_instance = new Relationships();
 RecommendationEngine_instance = new RecommendationEngine();
 HarmonyAnalyzer_instance = new HarmonyAnalyzer();
+Companion_instance_11 = new Companion_11();
 MiniJson_instance = new MiniJson();
 PlanFileCodec_instance = new PlanFileCodec();
 PlotGeometry_instance = new PlotGeometry();
 PlotShape_instance = new PlotShape();
-Companion_instance_11 = new Companion_11();
 Companion_instance_12 = new Companion_12();
-SoilAnalyzer_instance = new SoilAnalyzer();
 Companion_instance_13 = new Companion_13();
+SoilAnalyzer_instance = new SoilAnalyzer();
+Companion_instance_14 = new Companion_14();
 SunlightEngine_instance = new SunlightEngine();
 ZipTable_instance = new ZipTable();
 Embedded_instance = new Embedded();

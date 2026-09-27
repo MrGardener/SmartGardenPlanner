@@ -100,7 +100,14 @@ check(d.plots[0].siteFeatures.length === 1, 'redo brings it back');
 
 // Shade overlay renders.
 await page.getByRole('button', { name: /Shade:/ }).click();
-check(await page.locator('#sgp-svg rect[fill="#000"]').count() > 0, 'shade overlay drawn');
+check(await page.locator('#sgp-svg g.shade rect').count() > 0, 'shade overlay drawn');
+check(await page.locator('#sgp-svg g.shade rect[data-band="FULL_SHADE"], #sgp-svg g.shade rect[data-band="PART_SHADE"]').count() > 0, 'tree casts part shade or shade');
+check(await page.locator('#sgp-svg g.shade rect[data-band="FULL_SUN"]').count() > 0, 'open ground shows as full sun');
+check(await page.locator('#sgp-legend:not(.hidden)').count() === 1, 'shade legend shown');
+await page.emulateMedia({ colorScheme: 'dark' });
+await page.screenshot({ path: path.join(shots, 'sgp-web-shade-dark.png') });
+await page.emulateMedia({ colorScheme: 'light' });
+await page.screenshot({ path: path.join(shots, 'sgp-web-shade-light.png') });
 
 // Plan an area for me.
 await page.locator('nav.tools').getByRole('button', { name: 'Plan an area for me' }).click();

@@ -46,6 +46,10 @@ object Prefs {
     var household: Int
         get() = get("household")?.toIntOrNull() ?: 4
         set(v) = set("household", v.toString())
+    /** "auto" (follow the system), "light" or "dark". */
+    var theme: String
+        get() = get("theme")?.takeIf { it == "light" || it == "dark" } ?: "auto"
+        set(v) = set("theme", v)
     var organic: Boolean
         get() = get("care") != "CONVENTIONAL"
         set(v) = set("care", if (v) "ORGANIC" else "CONVENTIONAL")

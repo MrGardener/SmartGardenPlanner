@@ -4,6 +4,7 @@ import com.example.smartgardenplanner.core.Barrier
 import com.example.smartgardenplanner.core.CompanionPlantingValidator
 import com.example.smartgardenplanner.core.CropReference
 import com.example.smartgardenplanner.core.HardinessZones
+import com.example.smartgardenplanner.core.LayoutPalette
 import com.example.smartgardenplanner.core.PathZoneEntity
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlatformClock
@@ -13,6 +14,7 @@ import com.example.smartgardenplanner.core.PlotShape
 import com.example.smartgardenplanner.core.SeedEntity
 import com.example.smartgardenplanner.core.SiteFeatureEntity
 import com.example.smartgardenplanner.core.SiteFeatureType
+import com.example.smartgardenplanner.core.SunBand
 import com.example.smartgardenplanner.core.SunlightEngine
 import com.example.smartgardenplanner.core.fmt
 import org.w3c.dom.Element
@@ -103,7 +105,7 @@ object Canvas {
         val wp = Store.plot()
         if (wp == null) {
             svg.setAttribute("viewBox", "0 0 10 6")
-            svg.add(s("text", "x" to 5, "y" to 3, "text-anchor" to "middle", "font-size" to 0.45, "fill" to "#94a3b8").also { it.textContent = "Create a plot or open a plan file to start." })
+            svg.add(s("text", "x" to 5, "y" to 3, "text-anchor" to "middle", "font-size" to 0.45, "fill" to "currentColor").also { it.textContent = "Create a plot or open a plan file to start." })
             return
         }
         val p = wp.plot
@@ -112,13 +114,13 @@ object Canvas {
         val fs = max(p.lengthM, p.widthM) / 38.0
         val outline = PlotShape.outline(p)
 
-        svg.add(s("rect", "x" to 0, "y" to 0, "width" to p.lengthM, "height" to p.widthM, "fill" to "#0b1220", "stroke" to "#475569", "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
+        svg.add(s("rect", "x" to 0, "y" to 0, "width" to p.lengthM, "height" to p.widthM, "fill" to col(LayoutPalette.PAPER), "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 1.5, "vector-effect" to "non-scaling-stroke"))
         // Grid every metre (every 5 m on big plots).
         val step = if (max(p.lengthM, p.widthM) > 40) 5.0 else 1.0
         var g = step
-        while (g < p.lengthM) { svg.add(line(g, 0.0, g, p.widthM.toDouble(), "#1e293b", 1.0)); g += step }
+        while (g < p.lengthM) { svg.add(line(g, 0.0, g, p.widthM.toDouble(), col(LayoutPalette.GRID), 1.0)); g += step }
         g = step
-        while (g < p.widthM) { svg.add(line(0.0, g, p.lengthM.toDouble(), g, "#1e293b", 1.0)); g += step }
+        while (g < p.widthM) { svg.add(line(0.0, g, p.lengthM.toDouble(), g, col(LayoutPalette.GRID), 1.0)); g += step }
         drawRulers(p.lengthM.toDouble(), p.widthM.toDouble(), fs, step)
 
         if (showShade) drawShade(wp)
@@ -127,8 +129,8 @@ object Canvas {
         if (outline.size >= 3) {
             val poly = outline.joinToString(" ") { "${num(it.x.toDouble())},${num(it.y.toDouble())}" }
             svg.add(s("path", "d" to "M0,0 H${p.lengthM} V${p.widthM} H0 Z M" + outline.joinToString(" L") { "${num(it.x.toDouble())},${num(it.y.toDouble())}" } + " Z",
-                "fill" to "rgba(0,0,0,0.6)", "fill-rule" to "evenodd"))
-            svg.add(s("polygon", "points" to poly, "fill" to "none", "stroke" to "#f8fafc", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
+                "fill" to col(LayoutPalette.OUTSIDE_OUTLINE), "fill-opacity" to LayoutPalette.alpha(LayoutPalette.OUTSIDE_OUTLINE), "fill-rule" to "evenodd"))
+            svg.add(s("polygon", "points" to poly, "fill" to "none", "stroke" to col(LayoutPalette.BORDER), "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
         }
         wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id) }
         Store.preview?.placed?.forEach { pl ->
@@ -146,12 +148,12 @@ object Canvas {
     private fun drawRulers(l: Double, w: Double, fs: Double, step: Double) {
         var m = 0.0
         while (m <= l + 1e-6) {
-            svg.add(s("text", "x" to m, "y" to -fs * 0.5, "font-size" to fs, "fill" to "#94a3b8", "text-anchor" to "middle").also { it.textContent = "${m.toInt()} m" })
+            svg.add(s("text", "x" to m, "y" to -fs * 0.5, "font-size" to fs, "fill" to "currentColor", "text-anchor" to "middle").also { it.textContent = "${m.toInt()} m" })
             m += step
         }
         m = step
         while (m <= w + 1e-6) {
-            svg.add(s("text", "x" to -fs * 0.4, "y" to m + fs * 0.35, "font-size" to fs, "fill" to "#94a3b8", "text-anchor" to "end").also { it.textContent = "${m.toInt()}" })
+            svg.add(s("text", "x" to -fs * 0.4, "y" to m + fs * 0.35, "font-size" to fs, "fill" to "currentColor", "text-anchor" to "end").also { it.textContent = "${m.toInt()}" })
             m += step
         }
     }
@@ -160,9 +162,9 @@ object Canvas {
         val cx = l + fs * 3.4; val cy = -fs * 1.6; val r = fs * 1.1
         val a = -bearing * kotlin.math.PI / 180.0
         val tx = cx + sin(a) * r; val ty = cy - cos(a) * r
-        svg.add(s("circle", "cx" to cx, "cy" to cy, "r" to r * 2.2, "fill" to "#0f172a", "stroke" to "#334155", "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
+        svg.add(s("circle", "cx" to cx, "cy" to cy, "r" to r * 2.2, "fill" to "var(--card)", "stroke" to "var(--line)", "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
         svg.add(s("line", "x1" to cx - sin(a) * r * 0.6, "y1" to cy + cos(a) * r * 0.6, "x2" to tx, "y2" to ty, "stroke" to if (set) "#ef4444" else "#64748b", "stroke-width" to 3, "stroke-linecap" to "round", "vector-effect" to "non-scaling-stroke"))
-        svg.add(s("text", "x" to cx + sin(a) * r * 1.75, "y" to cy - cos(a) * r * 1.75 + fs * 0.32, "font-size" to fs * 0.9, "fill" to "#f8fafc", "text-anchor" to "middle", "font-weight" to "bold").also { it.textContent = if (set) "N" else "N?" })
+        svg.add(s("text", "x" to cx + sin(a) * r * 1.75, "y" to cy - cos(a) * r * 1.75 + fs * 0.32, "font-size" to fs * 0.9, "fill" to "currentColor", "text-anchor" to "middle", "font-weight" to "bold").also { it.textContent = if (set) "N" else "N?" })
     }
 
     private fun drawShade(wp: WebPlot) {
@@ -176,23 +178,25 @@ object Canvas {
             SunlightEngine.dayOfYear(PlatformClock.nowMillis()), p.northBearingDeg, barriers
         ).also { shadeCache = key to it }
         val cw = p.lengthM.toDouble() / cols; val ch = p.widthM.toDouble() / rows
+        // Shared SunBand colours: yellow = full sun, blue = part shade, indigo = shade (same as the phone).
+        val g = s("g", "class" to "shade")
         for (r in 0 until rows) for (c in 0 until cols) {
-            val hrs = grid[r * cols + c]
-            val alpha = if (hrs < 3f) 0.55 else if (hrs < 6f) 0.3 else 0.0
-            if (alpha > 0) svg.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to "#000", "fill-opacity" to alpha))
+            val band = SunBand.of(grid[r * cols + c])
+            g.add(s("rect", "x" to c * cw, "y" to r * ch, "width" to cw + 0.01, "height" to ch + 0.01, "fill" to col(band.overlayArgb),
+                "fill-opacity" to LayoutPalette.alpha(band.overlayArgb), "data-band" to band.name).also { it.add(s("title").also { t -> t.textContent = "${band.label}: about ${grid[r * cols + c].fmt(1)} h of direct sun today" }) })
         }
+        svg.add(g)
     }
 
-    private fun featureColours(t: SiteFeatureType): Pair<String, String> = when (t) {
-        SiteFeatureType.FULL_SUN -> "#facc15" to "#facc15"
-        SiteFeatureType.PART_SHADE -> "#94a3b8" to "#94a3b8"
-        SiteFeatureType.FULL_SHADE -> "#334155" to "#64748b"
-        SiteFeatureType.FLOOD -> "#3b82f6" to "#3b82f6"
-        SiteFeatureType.SLOPE -> "#a16207" to "#d97706"
-        SiteFeatureType.TREE -> "#22c55e" to "#15803d"
-        SiteFeatureType.FENCE -> "#a16207" to "#a16207"
-        SiteFeatureType.WALL -> "#9ca3af" to "#9ca3af"
-        SiteFeatureType.BUILDING -> "#e5e7eb" to "#e5e7eb"
+    private fun col(argb: Long) = LayoutPalette.hex(argb)
+
+    /** Fill (with its opacity) and edge colour for a site feature, from the shared palette. */
+    private fun featureColours(t: SiteFeatureType): Triple<String, Double, String> = when {
+        t.isArea -> LayoutPalette.area(t).let { Triple(col(it.first), LayoutPalette.alpha(it.first), col(it.second)) }
+        t == SiteFeatureType.TREE -> Triple(col(LayoutPalette.TREE_FILL), LayoutPalette.alpha(LayoutPalette.TREE_FILL), col(LayoutPalette.TREE_EDGE))
+        t == SiteFeatureType.FENCE -> Triple("none", 0.0, col(LayoutPalette.FENCE))
+        t == SiteFeatureType.WALL -> Triple("none", 0.0, col(LayoutPalette.WALL))
+        else -> Triple(col(LayoutPalette.BUILDING_FILL), LayoutPalette.alpha(LayoutPalette.BUILDING_FILL), col(LayoutPalette.BUILDING_EDGE))
     }
 
     private fun drawFeature(f: SiteFeatureEntity, fs: Double) {
@@ -200,14 +204,15 @@ object Canvas {
         val pts = PlotGeometry.parsePoints(f.pointsJson)
         if (pts.isEmpty()) return
         val sel = (selection as? Selection.Feature)?.id == f.id
-        val (fill, edge) = featureColours(t)
+        val (fill, fillAlpha, edge) = featureColours(t)
+        val ink = col(LayoutPalette.INK)
         val stroke = if (sel) "#f97316" else edge
         val g = s("g", "data-feature" to f.id)
         when {
             t.isArea && pts.size >= 3 -> {
-                g.add(s("polygon", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to fill, "fill-opacity" to 0.22, "stroke" to stroke, "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+                g.add(s("polygon", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to fill, "fill-opacity" to fillAlpha, "stroke" to stroke, "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
                 val cx = pts.map { it.x }.average(); val cy = pts.map { it.y }.average()
-                g.add(s("text", "x" to cx, "y" to cy, "font-size" to fs * 0.8, "fill" to edge, "text-anchor" to "middle").also { it.textContent = f.label.ifBlank { t.label } })
+                g.add(s("text", "x" to cx, "y" to cy, "font-size" to fs * 0.8, "fill" to ink, "text-anchor" to "middle", "font-weight" to "600").also { it.textContent = f.label.ifBlank { t.label } })
                 if (t == SiteFeatureType.SLOPE) {
                     val a = (f.slopeDirectionDeg - (Store.plot()?.plot?.northBearingDeg ?: 0f)) * kotlin.math.PI / 180.0
                     g.add(s("line", "x1" to cx, "y1" to cy + fs, "x2" to cx + sin(a) * fs * 2, "y2" to cy + fs - cos(a) * fs * 2, "stroke" to edge, "stroke-width" to 3, "vector-effect" to "non-scaling-stroke"))
@@ -215,15 +220,15 @@ object Canvas {
             }
             t == SiteFeatureType.TREE -> {
                 val r = max(f.radiusM, 0.2f)
-                g.add(s("circle", "cx" to pts[0].x, "cy" to pts[0].y, "r" to r, "fill" to fill, "fill-opacity" to 0.3, "stroke" to stroke, "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
-                g.add(s("circle", "cx" to pts[0].x, "cy" to pts[0].y, "r" to r * 0.12, "fill" to "#78350f"))
+                g.add(s("circle", "cx" to pts[0].x, "cy" to pts[0].y, "r" to r, "fill" to fill, "fill-opacity" to if (showShade) 0.0 else fillAlpha, "stroke" to stroke, "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+                g.add(s("circle", "cx" to pts[0].x, "cy" to pts[0].y, "r" to r * 0.12, "fill" to col(LayoutPalette.TRUNK)))
             }
             else -> {
                 val closed = t == SiteFeatureType.BUILDING && pts.size >= 3
-                g.add(s(if (closed) "polygon" else "polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to if (closed) fill else "none", "fill-opacity" to 0.25, "stroke" to stroke, "stroke-width" to if (sel) 8 else 6, "stroke-linecap" to "round", "vector-effect" to "non-scaling-stroke"))
+                g.add(s(if (closed) "polygon" else "polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to if (closed) fill else "none", "fill-opacity" to fillAlpha, "stroke" to stroke, "stroke-width" to if (sel) 8 else 6, "stroke-linecap" to "round", "vector-effect" to "non-scaling-stroke"))
             }
         }
-        if (t.isBarrier) g.add(s("text", "x" to pts[0].x, "y" to pts[0].y - fs * 0.3, "font-size" to fs * 0.7, "fill" to "#e2e8f0", "text-anchor" to "middle").also { it.textContent = "${f.heightM.fmt(1)} m" })
+        if (t.isBarrier) g.add(s("text", "x" to pts[0].x, "y" to pts[0].y - fs * 0.3 - (if (t == SiteFeatureType.TREE) max(f.radiusM, 0.2f) * 0.12f else 0f), "font-size" to fs * 0.7, "fill" to ink, "text-anchor" to "middle", "font-weight" to "600").also { it.textContent = "${f.heightM.fmt(1)} m" })
         svg.add(g)
     }
 
@@ -231,9 +236,9 @@ object Canvas {
         val sel = (selection as? Selection.Path)?.id == z.id
         if (z.pathType == "POLYLINE") {
             val pts = PlotGeometry.parsePoints(z.pointsJson)
-            svg.add(s("polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to if (sel) "#f97316" else "#64748b", "stroke-opacity" to 0.6, "stroke-width" to z.widthM, "stroke-linecap" to "round"))
+            svg.add(s("polyline", "points" to pts.joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to if (sel) "#f97316" else col(LayoutPalette.PATH_FILL), "stroke-opacity" to LayoutPalette.alpha(LayoutPalette.PATH_FILL), "stroke-width" to z.widthM, "stroke-linecap" to "round"))
         } else {
-            svg.add(s("rect", "x" to z.xM, "y" to z.yM, "width" to z.widthM, "height" to z.heightM, "fill" to "#2d3748", "fill-opacity" to 0.6, "stroke" to if (sel) "#f97316" else "#64748b", "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+            svg.add(s("rect", "x" to z.xM, "y" to z.yM, "width" to z.widthM, "height" to z.heightM, "fill" to col(LayoutPalette.PATH_FILL), "fill-opacity" to LayoutPalette.alpha(LayoutPalette.PATH_FILL), "stroke" to if (sel) "#f97316" else col(LayoutPalette.PATH_EDGE), "stroke-width" to if (sel) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
         }
     }
 
@@ -241,8 +246,8 @@ object Canvas {
         val seed = Catalog.get(n.seedCode)
         val c = Colors.of(seed)
         val r = seed?.exclusionRadiusM ?: 0.3f
-        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r, "fill" to c, "fill-opacity" to 0.18, "stroke" to if (selected) "#f97316" else c, "stroke-width" to if (selected) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
-        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to min(r * 0.25f, 0.08f), "fill" to c))
+        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to r, "fill" to c, "fill-opacity" to 0.16, "stroke" to if (selected) "#f97316" else c, "stroke-width" to if (selected) 3 else 1.5, "vector-effect" to "non-scaling-stroke"))
+        svg.add(s("circle", "cx" to n.coordinateXM, "cy" to n.coordinateYM, "r" to min(r * 0.25f, 0.08f), "fill" to c, "stroke" to col(LayoutPalette.INK), "stroke-width" to 1, "vector-effect" to "non-scaling-stroke"))
     }
 
     private fun drawInProgress() {

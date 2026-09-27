@@ -14,10 +14,17 @@ object App {
     private lateinit var tools: HTMLElement
     private lateinit var panel: HTMLElement
     private lateinit var statusLine: HTMLElement
+    private lateinit var legend: HTMLElement
 
     fun status(text: String) { if (::statusLine.isInitialized) statusLine.textContent = text }
 
+    fun applyTheme() {
+        val root = document.documentElement ?: return
+        if (Prefs.theme == "auto") root.removeAttribute("data-theme") else root.setAttribute("data-theme", Prefs.theme)
+    }
+
     fun start() {
+        applyTheme()
         val root = byId("app")
         root.clear()
         header = h("header", "top")
@@ -26,7 +33,8 @@ object App {
         val preview = h("div", "preview hidden", attrs = mapOf("id" to "sgp-preview"))
         panel = h("aside", "panel")
         statusLine = h("footer", "status", attrs = mapOf("role" to "status", "aria-live" to "polite"))
-        val stage = h("div", "stage", kids = listOf(canvasHost, preview))
+        legend = h("div", "legend hidden", attrs = mapOf("id" to "sgp-legend", "aria-label" to "Shade legend"))
+        val stage = h("div", "stage", kids = listOf(canvasHost, legend, preview))
         root.add(header, h("main", "main", kids = listOf(tools, stage, panel)), statusLine)
         root.add(h("datalist", attrs = mapOf("id" to "sgp-seed-names"), kids = Catalog.seeds.map { h("option", attrs = mapOf("value" to it.commonName)) }))
         Canvas.mount(canvasHost)
@@ -54,6 +62,7 @@ object App {
     fun render() {
         renderHeader()
         renderTools()
+        renderLegend()
         Panels.render(panel)
         Canvas.render()
     }
@@ -75,9 +84,29 @@ object App {
             button("↶", "btn icon", "Undo (Ctrl+Z)") { if (Store.undo()) render() }.also { if (wp?.undo?.isEmpty() != false) it.setAttribute("disabled", "") },
             button("↷", "btn icon", "Redo (Ctrl+Y)") { if (Store.redo()) render() }.also { if (wp?.redo?.isEmpty() != false) it.setAttribute("disabled", "") },
             button(if (Canvas.showShade) "Shade: on" else "Shade: off", if (Canvas.showShade) "btn on" else "btn", "Show estimated shade from trees, fences and buildings today") { Canvas.showShade = !Canvas.showShade; render() },
+            button(when (Prefs.theme) { "light" -> "☀ Light"; "dark" -> "☾ Dark"; else -> "◐ Auto" }, "btn", "Page colours: follow the system, light or dark. The layout itself stays light so shade is easy to see.") {
+                Prefs.theme = when (Prefs.theme) { "auto" -> "light"; "light" -> "dark"; else -> "auto" }
+                applyTheme(); render()
+            },
             button("?", "btn icon", "Help") { Dialogs.help() },
             file
         )))
+    }
+
+    private fun renderLegend() {
+        legend.clear()
+        if (!Canvas.showShade || Store.plot() == null) { legend.classList.add("hidden"); return }
+        legend.classList.remove("hidden")
+        legend.add(h("b", text = "Sun today:"))
+        com.example.smartgardenplanner.core.SunBand.entries.forEach { b ->
+            val sw = h("span", "sw", attrs = mapOf("style" to "background:linear-gradient(${cssRgba(b.overlayArgb)},${cssRgba(b.overlayArgb)}),#f5f1e6"))
+            legend.add(h("span", kids = listOf(sw, h("span", text = b.label))))
+        }
+    }
+
+    private fun cssRgba(argb: Long): String {
+        val r = (argb shr 16) and 0xFF; val g = (argb shr 8) and 0xFF; val b = argb and 0xFF
+        return "rgba($r,$g,$b,${com.example.smartgardenplanner.core.LayoutPalette.alpha(argb)})"
     }
 
     private fun renderTools() {

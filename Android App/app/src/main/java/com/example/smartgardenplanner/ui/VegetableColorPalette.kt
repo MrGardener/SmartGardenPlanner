@@ -48,13 +48,14 @@ object VegetableColorPalette {
     fun colorFor(botanicalCode: String): Color {
         val hash = abs(botanicalCode.hashCode())
         val hue = (hash % 360).toFloat()
-        // Fixed saturation/value keeps every color readable against the dark canvas background.
-        return Color.hsv(hue = hue, saturation = 0.65f, value = 0.90f)
+        // Fixed saturation/value keeps every color readable on the light layout background (LayoutPalette.PAPER)
+        // and on the dark screens around it.
+        return Color.hsv(hue = hue, saturation = 0.75f, value = 0.72f)
     }
 
-    fun exclusionRingColorFor(seed: SeedEntity?): Color = colorFor(seed).copy(alpha = 0.35f)
+    fun exclusionRingColorFor(seed: SeedEntity?): Color = colorFor(seed).copy(alpha = 0.22f)
 
-    fun exclusionRingColorFor(botanicalCode: String): Color = colorFor(botanicalCode).copy(alpha = 0.35f)
+    fun exclusionRingColorFor(botanicalCode: String): Color = colorFor(botanicalCode).copy(alpha = 0.22f)
 
     fun toHex(color: Color): String {
         val r = (color.red * 255).toInt().coerceIn(0, 255)

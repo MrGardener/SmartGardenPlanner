@@ -60,7 +60,7 @@ object Zips {
     fun location(zip: String): ZipLocation? = ZipTable.find(locations, zip.trim())
 }
 
-/** A stable colour per species (or the variety's own colour), readable on the dark background. */
+/** A stable colour per species (or the variety's own colour), readable on the light layout background. */
 object Colors {
     fun of(seed: SeedEntity?): String {
         if (seed == null) return "#9ca3af"
@@ -75,6 +75,6 @@ object Colors {
             "ORNAMENTAL" -> 170 + hash % 50
             else -> hash % 360
         }
-        return "hsl(${hue % 360}, 65%, 58%)"
+        return "hsl(${hue % 360}, 75%, 40%)"
     }
 }

@@ -42,6 +42,8 @@ import kotlin.math.roundToInt
 
 // --- EXPLICIT COMPLIANCE IMPORTS: PREVENT COUPLING RESOLUTION FAILURES ---
 import com.example.smartgardenplanner.core.PlotEntity
+import com.example.smartgardenplanner.core.LayoutPalette
+import com.example.smartgardenplanner.core.SunBand
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PathZoneEntity
 import com.example.smartgardenplanner.core.SeedEntity
@@ -1513,7 +1515,7 @@ fun CanvasWorkspaceScreen(
                                     .weight(1f)
                                     .fillMaxHeight()
                                     .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF070B14))
+                                    .background(Color(LayoutPalette.PAPER))
                                     // [FIXED] Real bug: the scroll modifiers used to live directly on
                                     // THIS BoxWithConstraints — the same one whose maxWidth/maxHeight
                                     // are used to compute the zoomed canvas size. Scrollable layouts
@@ -1826,12 +1828,12 @@ fun CanvasWorkspaceScreen(
 
                                     var gridX = 0f
                                     while (gridX < canvasW) {
-                                        drawLine(color = Color(0xFF1E293B), start = Offset(gridX, 0f), end = Offset(gridX, canvasH), strokeWidth = 1f)
+                                        drawLine(color = Color(LayoutPalette.GRID), start = Offset(gridX, 0f), end = Offset(gridX, canvasH), strokeWidth = 1f)
                                         gridX += scaleX
                                     }
                                     var gridY = 0f
                                     while (gridY < canvasH) {
-                                        drawLine(color = Color(0xFF1E293B), start = Offset(0f, gridY), end = Offset(canvasW, gridY), strokeWidth = 1f)
+                                        drawLine(color = Color(LayoutPalette.GRID), start = Offset(0f, gridY), end = Offset(canvasW, gridY), strokeWidth = 1f)
                                         gridY += scaleY
                                     }
 
@@ -1842,33 +1844,27 @@ fun CanvasWorkspaceScreen(
                                             val strokeWidthPx = zone.widthM * scaleX
                                             for (i in 0 until points.size - 1) {
                                                 drawLine(
-                                                    color = Color(0x8864748B), start = points[i], end = points[i + 1],
+                                                    color = Color(LayoutPalette.PATH_FILL), start = points[i], end = points[i + 1],
                                                     strokeWidth = strokeWidthPx, cap = androidx.compose.ui.graphics.StrokeCap.Round
                                                 )
                                             }
                                         } else {
                                             val rectTopLeft = Offset(zone.xM * scaleX, zone.yM * scaleY)
                                             val rectSize = androidx.compose.ui.geometry.Size(zone.widthM * scaleX, zone.heightM * scaleY)
-                                            drawRect(color = Color(0x552D3748), topLeft = rectTopLeft, size = rectSize)
-                                            drawRect(color = Color(0xFF64748B), topLeft = rectTopLeft, size = rectSize, style = Stroke(width = 2f))
+                                            drawRect(color = Color(LayoutPalette.PATH_FILL), topLeft = rectTopLeft, size = rectSize)
+                                            drawRect(color = Color(LayoutPalette.PATH_EDGE), topLeft = rectTopLeft, size = rectSize, style = Stroke(width = 2f))
                                         }
                                     }
 
-                                    // FR-006 overlay: estimated direct sun today. Darker = less sun.
+                                    // FR-006 overlay: estimated direct sun today, in the shared SunBand colours
+                                    // (yellow = full sun, blue = part shade, indigo = shade) on the light layout.
                                     shadeGrid?.let { (cols, grid) ->
                                         val rows = grid.size / cols
                                         val cellW = canvasW / cols
                                         val cellH = canvasH / rows
                                         for (r in 0 until rows) for (c in 0 until cols) {
-                                            val hours = grid[r * cols + c]
-                                            val alpha = when {
-                                                hours < 3f -> 0.55f
-                                                hours < 6f -> 0.3f
-                                                else -> 0f
-                                            }
-                                            if (alpha > 0f) {
-                                                drawRect(Color.Black.copy(alpha = alpha), topLeft = Offset(c * cellW, r * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
-                                            }
+                                            val band = SunBand.of(grid[r * cols + c])
+                                            drawRect(Color(band.overlayArgb), topLeft = Offset(c * cellW, r * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
                                         }
                                     }
 
@@ -1879,13 +1875,7 @@ fun CanvasWorkspaceScreen(
                                             val pts = PlotGeometry.parsePoints(f.pointsJson).map { Offset(it.x * scaleX, it.y * scaleY) }
                                             if (pts.isEmpty()) return@forEach
                                             if (type.isArea && pts.size >= 3) {
-                                                val (fill, edge) = when (type) {
-                                                    SiteFeatureType.FULL_SUN -> Color(0x33FACC15) to Color(0xFFFACC15)
-                                                    SiteFeatureType.PART_SHADE -> Color(0x3394A3B8) to Color(0xFF94A3B8)
-                                                    SiteFeatureType.FULL_SHADE -> Color(0x66334155) to Color(0xFF64748B)
-                                                    SiteFeatureType.FLOOD -> Color(0x443B82F6) to Color(0xFF3B82F6)
-                                                    else -> Color(0x33A16207) to Color(0xFFD97706)
-                                                }
+                                                val (fill, edge) = LayoutPalette.area(type).let { Color(it.first) to Color(it.second) }
                                                 val areaPath = androidx.compose.ui.graphics.Path().apply {
                                                     moveTo(pts[0].x, pts[0].y)
                                                     for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
@@ -1904,16 +1894,24 @@ fun CanvasWorkspaceScreen(
                                                     drawCircle(edge, radius = 6f, center = tip)
                                                 }
                                             } else if (type == SiteFeatureType.TREE) {
-                                                drawCircle(Color(0x5522C55E), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0])
-                                                drawCircle(Color(0xFF15803D), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0], style = Stroke(width = 2f))
-                                                drawCircle(Color(0xFF78350F), radius = 7f, center = pts[0])
+                                                if (shadeGrid == null) drawCircle(Color(LayoutPalette.TREE_FILL), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0])
+                                                drawCircle(Color(LayoutPalette.TREE_EDGE), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0], style = Stroke(width = 2f))
+                                                drawCircle(Color(LayoutPalette.TRUNK), radius = 7f, center = pts[0])
                                             } else if (type.isBarrier) {
                                                 val barrierColor = when (type) {
-                                                    SiteFeatureType.FENCE -> Color(0xFFA16207)
-                                                    SiteFeatureType.WALL -> Color(0xFF9CA3AF)
-                                                    else -> Color(0xFFE5E7EB)
+                                                    SiteFeatureType.FENCE -> Color(LayoutPalette.FENCE)
+                                                    SiteFeatureType.WALL -> Color(LayoutPalette.WALL)
+                                                    else -> Color(LayoutPalette.BUILDING_EDGE)
                                                 }
                                                 val closed = type == SiteFeatureType.BUILDING && pts.size >= 3
+                                                if (closed) {
+                                                    val body = androidx.compose.ui.graphics.Path().apply {
+                                                        moveTo(pts[0].x, pts[0].y)
+                                                        for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
+                                                        close()
+                                                    }
+                                                    drawPath(body, Color(LayoutPalette.BUILDING_FILL))
+                                                }
                                                 val segments = pts.size - 1 + (if (closed) 1 else 0)
                                                 for (i in 0 until segments) {
                                                     drawLine(barrierColor, pts[i], pts[(i + 1) % pts.size], strokeWidth = 7f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
@@ -1936,8 +1934,8 @@ fun CanvasWorkspaceScreen(
                                                 addRect(androidx.compose.ui.geometry.Rect(0f, 0f, canvasW, canvasH))
                                                 addPath(outlinePath)
                                             }
-                                            drawPath(outside, Color(0xAA000000))
-                                            drawPath(outlinePath, Color.White, style = Stroke(width = 3f))
+                                            drawPath(outside, Color(LayoutPalette.OUTSIDE_OUTLINE))
+                                            drawPath(outlinePath, Color(LayoutPalette.BORDER), style = Stroke(width = 3f))
                                         }
                                     }
 
@@ -2055,6 +2053,21 @@ fun CanvasWorkspaceScreen(
                                 }
                                 } // closes the inner scrollable Box wrapping the Canvas
 
+                                if (shadeGrid != null) {
+                                    // Legend for the shade overlay (FR-006), same bands as the web planner.
+                                    Row(
+                                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
+                                            .background(Color(0xE6FFFFFF), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("Sun today:", fontSize = 11.sp, color = Color(LayoutPalette.INK), fontWeight = FontWeight.Bold)
+                                        SunBand.entries.forEach { band ->
+                                            Box(Modifier.size(12.dp).background(Color(LayoutPalette.PAPER)).background(Color(band.overlayArgb)).border(1.dp, Color(LayoutPalette.BORDER)))
+                                            Text(band.label, fontSize = 11.sp, color = Color(LayoutPalette.INK))
+                                        }
+                                    }
+                                }
                                 Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
                                     planPreview?.let { preview ->
                                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
