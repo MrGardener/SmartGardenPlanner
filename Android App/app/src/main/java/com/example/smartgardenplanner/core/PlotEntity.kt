@@ -34,5 +34,17 @@ data class PlotEntity(
     @ColumnInfo(defaultValue = "0")
     val createdTimestamp: Long = System.currentTimeMillis(),
     @ColumnInfo(defaultValue = "0")
-    val lastModifiedTimestamp: Long = System.currentTimeMillis()
+    val lastModifiedTimestamp: Long = System.currentTimeMillis(),
+    // --- Schema 8 (MIGRATION_7_8): roadmap features ---
+    val boundaryJson: String? = null,            // FR-002: custom outline "x1,y1;x2,y2;..." inside the length x width box
+    val hardinessZone: String? = null,           // FR-014: USDA zone, e.g. "7a"
+    val latitude: Double? = null,                // FR-006/007/019: site location for sun and weather
+    val longitude: Double? = null,
+    @ColumnInfo(defaultValue = "0")
+    val northBearingDeg: Float = 0f,             // FR-006: compass bearing of the plot's top edge (0 = top faces north)
+    val soilSandPct: Float? = null,              // FR-013: soil composition, percent
+    val soilSiltPct: Float? = null,
+    val soilClayPct: Float? = null,
+    val soilOrganicPct: Float? = null,
+    val soilPh: Float? = null
 )

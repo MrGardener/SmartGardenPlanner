@@ -41,8 +41,21 @@ data class AppSettings(
     val tiltAbortDegrees: Float = 5.0f,
     val lowLightLuxThreshold: Float = 10f,
     val gpsAccuracyGateMeters: Float = 15f,
-    val storageFloorPercent: Float = 5f
+    val storageFloorPercent: Float = 5f,
+
+    // --- Roadmap features ---
+    val guildsEnabled: Boolean = false,          // FR-009 (Pro): interplanting guilds, off by default
+    val householdSize: Int = 4,                  // FR-016/022: people the garden should feed
+    val carePreference: String = "ORGANIC",      // FR-017/018: "ORGANIC" | "CONVENTIONAL"
+    val careRemindersEnabled: Boolean = false,   // FR-019 (Pro): daily watering/fertilizing notifications
+    val rainSkipThresholdMm: Float = 5f,         // FR-019: this much rain counts as a watering
+    val onlineFeaturesEnabled: Boolean = false,  // FR-026: master switch for network access, off by default
+    val usdaApiKey: String = "DEMO_KEY",         // FR-020: FoodData Central key (DEMO_KEY is rate-limited)
+    val preferredVendorId: String = ""           // FR-024 (Pro)
 ) {
+    val carePreferenceEnum: CarePreference
+        get() = if (carePreference == CarePreference.CONVENTIONAL.name) CarePreference.CONVENTIONAL else CarePreference.ORGANIC
+
     companion object {
         val DEFAULT = AppSettings()
     }

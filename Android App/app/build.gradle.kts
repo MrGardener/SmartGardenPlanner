@@ -72,6 +72,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.sqlcipher.android)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

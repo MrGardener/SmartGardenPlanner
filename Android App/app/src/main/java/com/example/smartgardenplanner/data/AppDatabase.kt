@@ -5,7 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.smartgardenplanner.core.ClimateZoneEntity
+import com.example.smartgardenplanner.core.CareLogEntity
+import com.example.smartgardenplanner.core.NutritionEntity
 import com.example.smartgardenplanner.core.PathZoneEntity
+import com.example.smartgardenplanner.core.SiteFeatureEntity
 import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlotEntity
 import com.example.smartgardenplanner.core.SeedEntity
@@ -34,9 +37,12 @@ import java.io.File
         PlantedNodeEntity::class,
         SeedEntity::class,
         ClimateZoneEntity::class,
-        PathZoneEntity::class
+        PathZoneEntity::class,
+        SiteFeatureEntity::class,
+        CareLogEntity::class,
+        NutritionEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -47,6 +53,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun seedDao(): SeedDao
     abstract fun climateZoneDao(): ClimateZoneDao
     abstract fun pathZoneDao(): PathZoneDao
+    abstract fun siteFeatureDao(): SiteFeatureDao
+    abstract fun careLogDao(): CareLogDao
+    abstract fun nutritionDao(): NutritionDao
 
     companion object {
         private const val DB_NAME = "smart_garden_secure_vault.db"

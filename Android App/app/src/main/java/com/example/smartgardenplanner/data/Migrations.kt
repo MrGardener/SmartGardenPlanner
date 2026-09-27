@@ -157,4 +157,46 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 
 // [FIXED] Same class of ordering mistake caught and fixed in earlier rounds — keep
 // ALL_MIGRATIONS below every migration it references, always.
-val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+/**
+ * Schema 8: roadmap features. Adds plot outline, hardiness zone, location, orientation and soil columns
+ * to plots, and the site_features (FR-003 to FR-006), care_log (FR-019) and nutrition_facts (FR-020)
+ * tables. The SQL matches what Room generates for the entities, including defaults, foreign keys and
+ * indices, so Room's schema check passes after the migration.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN boundaryJson TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN hardinessZone TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN latitude REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN longitude REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN northBearingDeg REAL NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilSandPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilSiltPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilClayPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilOrganicPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilPh REAL")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `site_features` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `featureType` TEXT NOT NULL, `pointsJson` TEXT NOT NULL DEFAULT '', " +
+                "`label` TEXT NOT NULL DEFAULT '', `heightM` REAL NOT NULL DEFAULT 0, `radiusM` REAL NOT NULL DEFAULT 0, " +
+                "`slopeDirectionDeg` REAL NOT NULL DEFAULT 0, `slopeGradePct` REAL NOT NULL DEFAULT 0, " +
+                "`floodMonths` TEXT NOT NULL DEFAULT '', " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_site_features_plotId` ON `site_features` (`plotId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `care_log` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `taskType` TEXT NOT NULL, `doneAtEpochMillis` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_care_log_plotId` ON `care_log` (`plotId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `nutrition_facts` (`speciesKey` TEXT NOT NULL, `energyKcal` REAL NOT NULL, " +
+                "`proteinG` REAL NOT NULL, `carbsG` REAL NOT NULL, `fiberG` REAL NOT NULL, `vitaminAUg` REAL NOT NULL, " +
+                "`vitaminCMg` REAL NOT NULL, `potassiumMg` REAL NOT NULL, `ironMg` REAL NOT NULL, `calciumMg` REAL NOT NULL, " +
+                "`source` TEXT NOT NULL, `updatedEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`speciesKey`))"
+        )
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)

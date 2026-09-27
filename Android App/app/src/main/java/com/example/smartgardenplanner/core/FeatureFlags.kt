@@ -14,10 +14,7 @@ package com.example.smartgardenplanner.core
 enum class AppTier { BASIC, STANDARD, PRO }
 
 enum class Feature(val minimumTier: AppTier, val roadmapId: String) {
-    // --- Already real, gated features ---
     COMPANION_RULE_TOGGLE(AppTier.PRO, "FR-012"), // Settings -> Spacing & Placement -> Enforce companion/antagonist rules
-
-    // --- Roadmap items, not yet implemented — flags reserved now so gating is ready when built ---
     POLYGON_AREA_SELECT(AppTier.STANDARD, "FR-001"),
     POLYGON_PLOT_SHAPE(AppTier.PRO, "FR-002"),
     SLOPE_CONFIGURATION(AppTier.PRO, "FR-003"),
@@ -39,7 +36,11 @@ enum class Feature(val minimumTier: AppTier, val roadmapId: String) {
     RECIPE_SUGGESTIONS(AppTier.STANDARD, "FR-021"),
     YIELD_ESTIMATES(AppTier.STANDARD, "FR-022"),
     VENDOR_LINKS(AppTier.BASIC, "FR-023"),
-    VENDOR_TARGETING(AppTier.PRO, "FR-024");
+    VENDOR_TARGETING(AppTier.PRO, "FR-024"),
+    ONLINE_FEATURES(AppTier.BASIC, "FR-026"); // the switch itself is available to everyone; off by default
+
+    /** Tier name for "needs Standard" style messages. */
+    val tierLabel: String get() = minimumTier.name.lowercase().replaceFirstChar { it.uppercase() }
 
     companion object {
         private val tierRank = mapOf(AppTier.BASIC to 0, AppTier.STANDARD to 1, AppTier.PRO to 2)

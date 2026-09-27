@@ -30,6 +30,8 @@ class CompanionPlantingValidator {
      *   original unconditional rule; lower values allow tighter placement.
      * @param enforceCompanionRules when false, antagonist-proximity conflicts are never raised
      *   (spacing is still enforced regardless).
+     * @param guilds active interplanting guilds (FR-009); empty when the feature is off. Two members of the
+     *   same guild only need the larger radius between centres, and skip the antagonist check.
      */
     fun validatePlacement(
         candidate: PlantedNodeEntity,
@@ -37,7 +39,8 @@ class CompanionPlantingValidator {
         existingNodes: List<PlantedNodeEntity>,
         seedLookup: (String) -> SeedEntity?,
         marginMultiplier: Float = 1.0f,
-        enforceCompanionRules: Boolean = true
+        enforceCompanionRules: Boolean = true,
+        guilds: List<Guild> = emptyList()
     ): ValidationResult {
         val spacingViolations = mutableListOf<Long>()
         val antagonistViolations = mutableListOf<Long>()
@@ -54,12 +57,18 @@ class CompanionPlantingValidator {
             val dy = candidate.coordinateYM.toDouble() - existing.coordinateYM.toDouble()
             val distance = sqrt(dx * dx + dy * dy)
 
-            val requiredSpacing = (candidateSeed.exclusionRadiusM.toDouble() + existingSeed.exclusionRadiusM.toDouble()) * marginMultiplier
+            val inSameGuild = guilds.isNotEmpty() && GuildCatalog.sharedGuilds(candidateSeed, existingSeed, guilds).isNotEmpty()
+            val fullSpacing = (candidateSeed.exclusionRadiusM.toDouble() + existingSeed.exclusionRadiusM.toDouble()) * marginMultiplier
+            val requiredSpacing = if (inSameGuild) {
+                maxOf(candidateSeed.exclusionRadiusM.toDouble(), existingSeed.exclusionRadiusM.toDouble()) * marginMultiplier
+            } else {
+                fullSpacing
+            }
             if (distance < requiredSpacing - SPACING_TOLERANCE_M) {
                 spacingViolations.add(existing.id)
             }
 
-            if (enforceCompanionRules) {
+            if (enforceCompanionRules && !inSameGuild) {
                 // [UPDATED] Companion/antagonist codes are matched by SPECIES PREFIX (the part of
                 // a botanicalCode before its cultivar suffix, e.g. "MAR" for any "MAR-###"
                 // cultivar of Marigold), not exact botanicalCode. This is actually the more
@@ -74,7 +83,7 @@ class CompanionPlantingValidator {
                 val existingAntagonists = existingSeed.antagonistCodes.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 if (existingPrefix in candidateAntagonists || candidatePrefix in existingAntagonists) {
                     // Antagonist conflicts matter within a wider "nearby" radius, not just the spacing circle.
-                    val nearbyRadius = requiredSpacing * 2.0
+                    val nearbyRadius = fullSpacing * 2.0
                     if (distance < nearbyRadius - SPACING_TOLERANCE_M) {
                         antagonistViolations.add(existing.id)
                     }

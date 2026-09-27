@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -58,6 +59,20 @@ import com.example.smartgardenplanner.core.Feature
 import com.example.smartgardenplanner.core.currentAppTier
 import com.example.smartgardenplanner.core.GerminationContingencyEngine
 import com.example.smartgardenplanner.ui.VegetableColorPalette
+import com.example.smartgardenplanner.core.CropReference
+import com.example.smartgardenplanner.core.GuildCatalog
+import com.example.smartgardenplanner.core.HardinessZones
+import com.example.smartgardenplanner.core.PlotContext
+import com.example.smartgardenplanner.core.PlotGeometry
+import com.example.smartgardenplanner.core.PlotPoint
+import com.example.smartgardenplanner.core.PlotShape
+import com.example.smartgardenplanner.core.Recommendation
+import com.example.smartgardenplanner.core.RecommendationEngine
+import com.example.smartgardenplanner.core.SiteFeatureEntity
+import com.example.smartgardenplanner.core.SiteFeatureType
+import com.example.smartgardenplanner.core.SunlightEngine
+import com.example.smartgardenplanner.core.VendorRegistry
+import com.example.smartgardenplanner.data.PlotInsightsLoader
 
 import com.example.smartgardenplanner.data.AppDatabase
 import com.example.smartgardenplanner.data.DataUnreadableException
@@ -77,7 +92,8 @@ enum class SgpScreen {
     CREATOR,
     CANVAS,
     ENCYCLOPEDIA,
-    SETTINGS
+    SETTINGS,
+    INSIGHTS // plot insights: site, harmony, suggestions, care, food (roadmap features)
 }
 
 class MainActivity : ComponentActivity() {
@@ -138,6 +154,18 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
     }
     if (database.climateZoneDao().count() == 0) {
         database.climateZoneDao().insertAll(com.example.smartgardenplanner.data.SeedDataset.starterClimateZones)
+    }
+
+    // Keep the daily reminder job in step with the setting (FR-019).
+    try {
+        val startupSettings = com.example.smartgardenplanner.data.SettingsRepository(
+            com.example.smartgardenplanner.data.SecurityRepositoryImpl(database.configDao())
+        ).load()
+        com.example.smartgardenplanner.data.CareReminderWorker.schedule(context, startupSettings.careRemindersEnabled)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        auditLogger.appendLog("REMINDERS: could not schedule (${e.javaClass.simpleName}).")
     }
 
     AppServices(database, auditLogger, SensorMeasurementEngine(context))
@@ -251,7 +279,7 @@ fun AppNavigationContainer(
 
     // The system Back action returns to the plot list; on the plot list it leaves the app (T2-ENV-040).
     BackHandler(enabled = currentScreen != SgpScreen.DASHBOARD) {
-        currentScreen = SgpScreen.DASHBOARD
+        currentScreen = if (currentScreen == SgpScreen.INSIGHTS) SgpScreen.CANVAS else SgpScreen.DASHBOARD
     }
 
     when (currentScreen) {
@@ -283,7 +311,15 @@ fun AppNavigationContainer(
                 plotId = selectedPlotId,
                 database = database,
                 sensorEngine = sensorEngine,
-                onNavigateBack = { currentScreen = SgpScreen.DASHBOARD }
+                onNavigateBack = { currentScreen = SgpScreen.DASHBOARD },
+                onOpenInsights = { currentScreen = SgpScreen.INSIGHTS }
+            )
+        }
+        SgpScreen.INSIGHTS -> {
+            com.example.smartgardenplanner.ui.PlotInsightsScreen(
+                plotId = selectedPlotId,
+                database = database,
+                onNavigateBack = { currentScreen = SgpScreen.CANVAS }
             )
         }
         SgpScreen.ENCYCLOPEDIA -> {
@@ -319,10 +355,16 @@ fun DashboardScreen(
 ) {
     var plotList by remember { mutableStateOf<List<PlotEntity>>(emptyList()) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var onlineOn by remember { mutableStateOf(false) }
 
     // Reads through the DAO. The previous version guessed table and column names with raw SQL (DW-0704).
     LaunchedEffect(Unit) {
         try {
+            onlineOn = withContext(SgpExecutors.dbDispatcher) {
+                com.example.smartgardenplanner.data.SettingsRepository(
+                    com.example.smartgardenplanner.data.SecurityRepositoryImpl(database.configDao())
+                ).load().onlineFeaturesEnabled
+            }
             plotList = withContext(SgpExecutors.dbDispatcher) { database.plotDao().getAllPlots() }
         } catch (e: CancellationException) {
             throw e
@@ -337,6 +379,7 @@ fun DashboardScreen(
                 title = { Text("Smart Garden Planner", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
+                    com.example.smartgardenplanner.ui.OnlineBadge(onlineOn)
                     IconButton(onClick = onNavigateToEncyclopedia) {
                         Icon(Icons.Default.Search, contentDescription = "Botanical Encyclopedia", tint = MaterialTheme.colorScheme.primary)
                     }
@@ -396,7 +439,9 @@ fun DashboardScreen(
                                 Text(plot.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m",
+                                    "Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m" +
+                                        (if (com.example.smartgardenplanner.core.PlotShape.outline(plot).isNotEmpty()) " • custom outline" else "") +
+                                        (plot.hardinessZone?.let { " • zone $it" } ?: ""),
                                     fontSize = 12.sp,
                                     color = Color.LightGray
                                 )
@@ -627,7 +672,7 @@ private fun pointInPolygon(px: Float, py: Float, polygon: List<Offset>): Boolean
     return inside
 }
 
-enum class CanvasMode { PLACE_NODE, DRAW_PATH, SELECT_AREA }
+enum class CanvasMode { PLACE_NODE, DRAW_PATH, SELECT_AREA, OUTLINE, SITE_AREA, BARRIER } // OUTLINE: FR-002, SITE_AREA: FR-003/004/005, BARRIER: FR-006
 enum class AreaSelectSubMode { RECTANGLE, POLYGON } // [NEW — FR-001]
 enum class PathDrawSubMode { RECTANGLE, POINTS }
 
@@ -688,7 +733,8 @@ fun CanvasWorkspaceScreen(
     plotId: Long,
     database: AppDatabase,
     sensorEngine: SensorMeasurementEngine,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenInsights: () -> Unit = {}
 ) {
     // [REWRITTEN] This screen previously drove every read/write through hand-rolled raw SQL that
     // re-guessed table/column names on every single operation. This uses the real Room DAOs
@@ -721,6 +767,16 @@ fun CanvasWorkspaceScreen(
     var editingPathZone by remember { mutableStateOf<PathZoneEntity?>(null) } // [NEW] tap-to-edit existing path
     var showVarietyPicker by remember { mutableStateOf(false) } // [NEW] 3-step Category -> Species -> Cultivar picker
     var showDiscardDialog by remember { mutableStateOf(false) }
+
+    // Site conditions and outline (FR-002 to FR-006).
+    var siteFeatures by remember { mutableStateOf<List<SiteFeatureEntity>>(emptyList()) }
+    var siteAreaType by remember { mutableStateOf(SiteFeatureType.FULL_SUN) }
+    var barrierType by remember { mutableStateOf(SiteFeatureType.TREE) }
+    var pendingSiteShape by remember { mutableStateOf<List<Offset>?>(null) }
+    var editingSiteFeature by remember { mutableStateOf<SiteFeatureEntity?>(null) }
+    var showSiteFeatures by remember { mutableStateOf(true) }
+    var showShade by remember { mutableStateOf(false) }
+    var shadeGrid by remember { mutableStateOf<Pair<Int, FloatArray>?>(null) }
 
     // Back while path/area points are being drawn asks before discarding them (T2-ENV-040).
     BackHandler(enabled = inProgressPoints.isNotEmpty()) { showDiscardDialog = true }
@@ -793,7 +849,65 @@ fun CanvasWorkspaceScreen(
     val germinationEngine = remember { GerminationContingencyEngine() }
     val autoPopulateEngine = remember { AutoPopulateEngine() }
 
-    fun seedFor(code: String): SeedEntity? = seedDictionary.find { it.botanicalCode == code }
+    val seedMap = remember(seedDictionary) { seedDictionary.associateBy { it.botanicalCode } }
+    fun seedFor(code: String): SeedEntity? = seedMap[code]
+
+    // Guilds apply only when switched on and the tier allows it (FR-009).
+    val activeGuilds = PlotInsightsLoader.activeGuilds(settings)
+
+    fun plotContext(plot: PlotEntity, nodes: List<PlantedNodeEntity> = nodesState): PlotContext =
+        PlotContext(plot, nodes, siteFeatures, { code -> seedFor(code) }, activeGuilds, effectiveEnforceCompanionRules,
+            SunlightEngine.dayOfYear(System.currentTimeMillis()))
+
+    // FR-010: grey out varieties that clash with what's planted, or won't survive the zone (Standard).
+    val pickerConflict: (SeedEntity) -> String? = { candidate ->
+        val plot = activePlot
+        if (plot != null && Feature.isEnabled(Feature.GREY_OUT_INCOMPATIBLE, settings.currentAppTier())) {
+            // One node per species is enough for the check and keeps the picker fast.
+            RecommendationEngine.conflictReason(candidate, plotContext(plot, nodesState.distinctBy { it.seedCode.substringBefore("-") }))
+        } else null
+    }
+
+    suspend fun reloadFeatures() {
+        val list = database.siteFeatureDao().getByPlotId(plotId)
+        withContext(Dispatchers.Main) { siteFeatures = list }
+    }
+
+    fun featureHit(f: SiteFeatureEntity, x: Float, y: Float): Boolean {
+        val type = SiteFeatureType.of(f.featureType) ?: return false
+        val pts = PlotGeometry.parsePoints(f.pointsJson)
+        return when {
+            type.isArea -> PlotGeometry.pointInPolygon(x, y, pts)
+            type == SiteFeatureType.TREE -> PlotGeometry.distanceToPolyline(x, y, pts) < maxOf(f.radiusM, 0.4f)
+            else -> PlotGeometry.distanceToPolyline(x, y, pts) < 0.4f
+        }
+    }
+
+    fun toPlotPoints(points: List<Offset>) = points.map { PlotPoint(it.x, it.y) }
+
+    fun saveOutline(points: List<Offset>?) {
+        val plot = activePlot ?: return
+        val outline = points?.let { toPlotPoints(it) }
+        if (outline != null) {
+            val problem = PlotGeometry.validateOutline(outline)
+            if (problem != null) {
+                snackbarMessage = problem
+                return
+            }
+        }
+        val updated = plot.copy(
+            boundaryJson = outline?.let { PlotGeometry.serializePoints(it) },
+            lastModifiedTimestamp = System.currentTimeMillis()
+        )
+        launchSafely {
+            withContext(SgpExecutors.dbDispatcher) { database.plotDao().update(updated) }
+            activePlot = updated
+            val outside = nodesState.count { !PlotShape.contains(updated, it.coordinateXM, it.coordinateYM) }
+            snackbarMessage = if (outline == null) "Outline reset to the full rectangle."
+            else if (outside > 0) "Outline saved. $outside plant(s) are now outside it — see Plot insights → Harmony."
+            else "Outline saved."
+        }
+    }
 
     suspend fun reloadNodes() {
         val list = database.plantedNodeDao().getByPlotId(plotId)
@@ -821,6 +935,7 @@ fun CanvasWorkspaceScreen(
             activePlot = database.plotDao().getById(plotId)
             val list = database.plantedNodeDao().getByPlotId(plotId)
             val paths = database.pathZoneDao().getByPlotId(plotId)
+            val features = database.siteFeatureDao().getByPlotId(plotId)
             seedDictionary = database.seedDao().getAllSeeds()
             val loadedSettings = settingsRepository.load() // [NEW]
 
@@ -830,11 +945,28 @@ fun CanvasWorkspaceScreen(
                 redoStack.updateLimit(loadedSettings.undoHistoryDepth) // [NEW]
                 nodesState = list
                 pathZonesState = paths
+                siteFeatures = features
                 undoStack.clear()
                 redoStack.clear()
                 undoStack.push(CanvasSnapshot(list, paths))
             }
         }
+    }
+
+    // Estimated direct sun today across the plot (FR-006), computed off the main thread.
+    LaunchedEffect(showShade, siteFeatures, activePlot) {
+        val plot = activePlot
+        shadeGrid = if (showShade && plot != null) {
+            withContext(Dispatchers.Default) {
+                val cols = 30
+                val rows = (cols * plot.widthM / plot.lengthM).toInt().coerceIn(4, 60)
+                val barriers = siteFeatures.mapNotNull { com.example.smartgardenplanner.core.Barrier.from(it) }
+                cols to SunlightEngine.sunHoursGrid(
+                    plot.lengthM, plot.widthM, cols, rows, plot.latitude ?: SunlightEngine.DEFAULT_LATITUDE,
+                    SunlightEngine.dayOfYear(System.currentTimeMillis()), plot.northBearingDeg, barriers
+                )
+            }
+        } else null
     }
 
     LaunchedEffect(snackbarMessage) {
@@ -939,9 +1071,83 @@ fun CanvasWorkspaceScreen(
                                 )
                             }
                             Divider()
+                            // Site tools (FR-002 to FR-006) and plot insights.
+                            Text("Site tools", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            val tierNow = settings.currentAppTier()
+                            fun lockLabel(f: Feature) = if (Feature.isEnabled(f, tierNow)) "" else " (${f.tierLabel}+)"
+                            DropdownMenuItem(
+                                text = { Text((if (canvasMode == CanvasMode.OUTLINE) "✓ " else "") + "Draw plot outline" + lockLabel(Feature.POLYGON_PLOT_SHAPE)) },
+                                onClick = {
+                                    if (Feature.isEnabled(Feature.POLYGON_PLOT_SHAPE, tierNow)) {
+                                        canvasMode = CanvasMode.OUTLINE; inProgressPoints = emptyList()
+                                        snackbarMessage = "Tap the plot's corners in order, then Finish Outline."
+                                    } else snackbarMessage = "Custom plot outlines need the Pro catalog tier (Settings → Catalog)."
+                                    showOptionsMenu = false
+                                }
+                            )
+                            if (activePlot?.boundaryJson != null) {
+                                DropdownMenuItem(text = { Text("Reset outline to rectangle") }, onClick = { saveOutline(null); showOptionsMenu = false })
+                            }
+                            DropdownMenuItem(
+                                text = { Text((if (canvasMode == CanvasMode.SITE_AREA) "✓ " else "") + "Mark sun / shade / flood / slope area" + lockLabel(Feature.SUN_SHADE_ZONES)) },
+                                onClick = {
+                                    if (Feature.isEnabled(Feature.SUN_SHADE_ZONES, tierNow)) {
+                                        canvasMode = CanvasMode.SITE_AREA; inProgressPoints = emptyList()
+                                    } else snackbarMessage = "Site areas need the Standard catalog tier (Settings → Catalog)."
+                                    showOptionsMenu = false
+                                }
+                            )
+                            if (canvasMode == CanvasMode.SITE_AREA) {
+                                SiteFeatureType.entries.filter { it.isArea }.forEach { type ->
+                                    val needed = when (type) {
+                                        SiteFeatureType.FLOOD -> Feature.FLOODING_ZONES
+                                        SiteFeatureType.SLOPE -> Feature.SLOPE_CONFIGURATION
+                                        else -> Feature.SUN_SHADE_ZONES
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("   " + (if (siteAreaType == type) "✓ " else "") + type.label + lockLabel(needed), fontSize = 13.sp) },
+                                        onClick = {
+                                            if (Feature.isEnabled(needed, tierNow)) { siteAreaType = type; inProgressPoints = emptyList() }
+                                            else snackbarMessage = "${type.label} areas need the ${needed.tierLabel} catalog tier."
+                                            showOptionsMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                            DropdownMenuItem(
+                                text = { Text((if (canvasMode == CanvasMode.BARRIER) "✓ " else "") + "Place tree / fence / wall / building" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
+                                onClick = {
+                                    if (Feature.isEnabled(Feature.SUNLIGHT_BARRIERS, tierNow)) {
+                                        canvasMode = CanvasMode.BARRIER; inProgressPoints = emptyList()
+                                    } else snackbarMessage = "Sunlight barriers need the Pro catalog tier (Settings → Catalog)."
+                                    showOptionsMenu = false
+                                }
+                            )
+                            if (canvasMode == CanvasMode.BARRIER) {
+                                SiteFeatureType.entries.filter { it.isBarrier }.forEach { type ->
+                                    DropdownMenuItem(
+                                        text = { Text("   " + (if (barrierType == type) "✓ " else "") + type.label, fontSize = 13.sp) },
+                                        onClick = { barrierType = type; inProgressPoints = emptyList(); showOptionsMenu = false }
+                                    )
+                                }
+                            }
+                            DropdownMenuItem(text = { Text("Plot insights (site, harmony, care, food)…") }, onClick = { showOptionsMenu = false; onOpenInsights() })
+                            Divider()
                             // [NEW] Wires WeedMaskGeometryEngine and IrrigationRouteCalculator into the
                             // UI for the first time — both existed as tested engines with nothing calling them.
                             Text("Overlays", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            DropdownMenuItem(
+                                text = { Text(if (showSiteFeatures) "✓ Show site areas and barriers" else "Show site areas and barriers") },
+                                onClick = { showSiteFeatures = !showSiteFeatures; showOptionsMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text((if (showShade) "✓ " else "") + "Show estimated shade (today)" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
+                                onClick = {
+                                    if (Feature.isEnabled(Feature.SUNLIGHT_BARRIERS, tierNow)) showShade = !showShade
+                                    else snackbarMessage = "Shade estimates need the Pro catalog tier (Settings → Catalog)."
+                                    showOptionsMenu = false
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text(if (showWeedMask) "✓ Show weed-risk mask" else "Show weed-risk mask") },
                                 onClick = { showWeedMask = !showWeedMask; showOptionsMenu = false }
@@ -1037,6 +1243,25 @@ fun CanvasWorkspaceScreen(
                             )
                         }
                         Text("Active Plantings: ${nodesState.size} nodes placed", color = Color.Gray, fontSize = 11.sp)
+                        // FR-009: highly visible guild state; tap to switch (Pro).
+                        if (Feature.isEnabled(Feature.INTERPLANTING_GUILDS, settings.currentAppTier())) {
+                            val guildColor = if (settings.guildsEnabled) Color(0xFF10B981) else Color(0xFFF97316)
+                            Text(
+                                if (settings.guildsEnabled) "GUILDS ON — partners may be planted closer" else "GUILDS OFF — tap to turn on",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = guildColor,
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .border(1.dp, guildColor, RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        val updated = settings.copy(guildsEnabled = !settings.guildsEnabled)
+                                        settings = updated
+                                        launchSafely { withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(updated) } }
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                         // [NEW] Prominent, unambiguous indicator of exactly what will be placed next —
                         // a real report showed the picker's highlight alone wasn't noticeable enough,
                         // leading to placements against the wrong (unintended) variety.
@@ -1052,8 +1277,11 @@ fun CanvasWorkspaceScreen(
                                 when (canvasMode) {
                                     CanvasMode.PLACE_NODE -> "Placing plants"
                                     CanvasMode.DRAW_PATH -> if (pathSubMode == PathDrawSubMode.RECTANGLE) "Drawing straight path" else "Drawing curved path"
-                                    CanvasMode.SELECT_AREA -> "Selecting area"
-                                },
+                                        CanvasMode.SELECT_AREA -> "Selecting area"
+                                        CanvasMode.OUTLINE -> "Drawing plot outline"
+                                        CanvasMode.SITE_AREA -> "Marking: ${siteAreaType.label}"
+                                        CanvasMode.BARRIER -> "Placing: ${barrierType.label}"
+                                    },
                                 fontSize = 11.sp
                             )
                         }
@@ -1161,6 +1389,17 @@ fun CanvasWorkspaceScreen(
                                                             return@detectTapGestures
                                                         }
 
+                                                        if (!PlotShape.contains(state, realXM, realYM)) {
+                                                            snackbarMessage = "That spot is outside the plot outline."
+                                                            return@detectTapGestures
+                                                        }
+
+                                                        // FR-014: perennials that won't survive the zone are blocked.
+                                                        if (HardinessZones.blocksPlacement(candidateSeed, state.hardinessZone)) {
+                                                            snackbarMessage = HardinessZones.describe(candidateSeed, state.hardinessZone) ?: "Not hardy in this zone."
+                                                            return@detectTapGestures
+                                                        }
+
                                                         if (isInsidePath(realXM, realYM, candidateSeed.exclusionRadiusM)) {
                                                             snackbarMessage = "That spot overlaps a no-plant path."
                                                             return@detectTapGestures
@@ -1172,7 +1411,7 @@ fun CanvasWorkspaceScreen(
                                                             coordinateXM = realXM,
                                                             coordinateYM = realYM
                                                         )
-                                                        val result = validator.validatePlacement(candidateNode, candidateSeed, nodesState, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                                                        val result = validator.validatePlacement(candidateNode, candidateSeed, nodesState, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
 
                                                         if (!result.isValid) {
                                                             val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
@@ -1259,6 +1498,27 @@ fun CanvasWorkspaceScreen(
                                                         inProgressPoints = inProgressPoints + Offset(realXM, realYM)
                                                     }
                                                 )
+                                            } else if ((canvasMode == CanvasMode.OUTLINE || canvasMode == CanvasMode.SITE_AREA || canvasMode == CanvasMode.BARRIER) && !zoomPanModeEnabled) {
+                                                // FR-002 to FR-006: tap corners/points. Tapping an existing area or barrier (before starting a new one) edits it.
+                                                detectTapGestures(
+                                                    onTap = { offset ->
+                                                        val realXM = (offset.x / size.width) * state.lengthM
+                                                        val realYM = (offset.y / size.height) * state.widthM
+                                                        if (inProgressPoints.isEmpty() && canvasMode != CanvasMode.OUTLINE) {
+                                                            val wantBarrier = canvasMode == CanvasMode.BARRIER
+                                                            val hit = siteFeatures.firstOrNull { f -> SiteFeatureType.of(f.featureType)?.isBarrier == wantBarrier && featureHit(f, realXM, realYM) }
+                                                            if (hit != null) {
+                                                                editingSiteFeature = hit
+                                                                return@detectTapGestures
+                                                            }
+                                                        }
+                                                        if (canvasMode == CanvasMode.BARRIER && barrierType == SiteFeatureType.TREE) {
+                                                            pendingSiteShape = listOf(Offset(realXM, realYM))
+                                                        } else {
+                                                            inProgressPoints = inProgressPoints + Offset(realXM, realYM)
+                                                        }
+                                                    }
+                                                )
                                             } else if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.RECTANGLE && !zoomPanModeEnabled) {
                                                 detectTapGestures(
                                                     onTap = { offset ->
@@ -1342,14 +1602,14 @@ fun CanvasWorkspaceScreen(
                                                             if (node != null && seed != null) {
                                                                 val realXM = (preview.x / size.width) * state.lengthM
                                                                 val realYM = (preview.y / size.height) * state.widthM
-                                                                if (realXM < 0f || realXM > state.lengthM || realYM < 0f || realYM > state.widthM) {
+                                                                if (!PlotShape.contains(state, realXM, realYM)) {
                                                                     snackbarMessage = "Can't move there — outside the plot."
                                                                 } else if (isInsidePath(realXM, realYM, seed.exclusionRadiusM)) {
                                                                     snackbarMessage = "Can't move there — overlaps a no-plant path."
                                                                 } else {
                                                                     val candidate = node.copy(coordinateXM = realXM, coordinateYM = realYM)
                                                                     val neighbors = nodesState.filter { it.id != id }
-                                                                    val result = validator.validatePlacement(candidate, seed, neighbors, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                                                                    val result = validator.validatePlacement(candidate, seed, neighbors, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
                                                                     if (!result.isValid) {
                                                                         snackbarMessage = "Can't move there — too close to another plant."
                                                                     } else {
@@ -1406,6 +1666,93 @@ fun CanvasWorkspaceScreen(
                                             val rectSize = androidx.compose.ui.geometry.Size(zone.widthM * scaleX, zone.heightM * scaleY)
                                             drawRect(color = Color(0x552D3748), topLeft = rectTopLeft, size = rectSize)
                                             drawRect(color = Color(0xFF64748B), topLeft = rectTopLeft, size = rectSize, style = Stroke(width = 2f))
+                                        }
+                                    }
+
+                                    // FR-006 overlay: estimated direct sun today. Darker = less sun.
+                                    shadeGrid?.let { (cols, grid) ->
+                                        val rows = grid.size / cols
+                                        val cellW = canvasW / cols
+                                        val cellH = canvasH / rows
+                                        for (r in 0 until rows) for (c in 0 until cols) {
+                                            val hours = grid[r * cols + c]
+                                            val alpha = when {
+                                                hours < 3f -> 0.55f
+                                                hours < 6f -> 0.3f
+                                                else -> 0f
+                                            }
+                                            if (alpha > 0f) {
+                                                drawRect(Color.Black.copy(alpha = alpha), topLeft = Offset(c * cellW, r * cellH), size = androidx.compose.ui.geometry.Size(cellW + 1f, cellH + 1f))
+                                            }
+                                        }
+                                    }
+
+                                    // FR-003/004/005/006: marked site areas and shade-casting barriers.
+                                    if (showSiteFeatures) {
+                                        siteFeatures.forEach { f ->
+                                            val type = SiteFeatureType.of(f.featureType) ?: return@forEach
+                                            val pts = PlotGeometry.parsePoints(f.pointsJson).map { Offset(it.x * scaleX, it.y * scaleY) }
+                                            if (pts.isEmpty()) return@forEach
+                                            if (type.isArea && pts.size >= 3) {
+                                                val (fill, edge) = when (type) {
+                                                    SiteFeatureType.FULL_SUN -> Color(0x33FACC15) to Color(0xFFFACC15)
+                                                    SiteFeatureType.PART_SHADE -> Color(0x3394A3B8) to Color(0xFF94A3B8)
+                                                    SiteFeatureType.FULL_SHADE -> Color(0x66334155) to Color(0xFF64748B)
+                                                    SiteFeatureType.FLOOD -> Color(0x443B82F6) to Color(0xFF3B82F6)
+                                                    else -> Color(0x33A16207) to Color(0xFFD97706)
+                                                }
+                                                val areaPath = androidx.compose.ui.graphics.Path().apply {
+                                                    moveTo(pts[0].x, pts[0].y)
+                                                    for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
+                                                    close()
+                                                }
+                                                drawPath(areaPath, fill)
+                                                drawPath(areaPath, edge, style = Stroke(width = 2f))
+                                                if (type == SiteFeatureType.SLOPE) {
+                                                    // Arrow pointing downhill, relative to the plot's orientation.
+                                                    val cx = pts.map { it.x }.average().toFloat()
+                                                    val cy = pts.map { it.y }.average().toFloat()
+                                                    val rel = Math.toRadians((f.slopeDirectionDeg - (activePlot?.northBearingDeg ?: 0f)).toDouble())
+                                                    val len = 40f
+                                                    val tip = Offset(cx + (kotlin.math.sin(rel) * len).toFloat(), cy - (kotlin.math.cos(rel) * len).toFloat())
+                                                    drawLine(edge, Offset(cx, cy), tip, strokeWidth = 4f)
+                                                    drawCircle(edge, radius = 6f, center = tip)
+                                                }
+                                            } else if (type == SiteFeatureType.TREE) {
+                                                drawCircle(Color(0x5522C55E), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0])
+                                                drawCircle(Color(0xFF15803D), radius = f.radiusM.coerceAtLeast(0.2f) * scaleX, center = pts[0], style = Stroke(width = 2f))
+                                                drawCircle(Color(0xFF78350F), radius = 7f, center = pts[0])
+                                            } else if (type.isBarrier) {
+                                                val barrierColor = when (type) {
+                                                    SiteFeatureType.FENCE -> Color(0xFFA16207)
+                                                    SiteFeatureType.WALL -> Color(0xFF9CA3AF)
+                                                    else -> Color(0xFFE5E7EB)
+                                                }
+                                                val closed = type == SiteFeatureType.BUILDING && pts.size >= 3
+                                                val segments = pts.size - 1 + (if (closed) 1 else 0)
+                                                for (i in 0 until segments) {
+                                                    drawLine(barrierColor, pts[i], pts[(i + 1) % pts.size], strokeWidth = 7f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // FR-002: dim everything outside a custom outline.
+                                    activePlot?.let { plot ->
+                                        val outline = PlotShape.outline(plot).map { Offset(it.x * scaleX, it.y * scaleY) }
+                                        if (outline.size >= 3) {
+                                            val outlinePath = androidx.compose.ui.graphics.Path().apply {
+                                                moveTo(outline[0].x, outline[0].y)
+                                                for (i in 1 until outline.size) lineTo(outline[i].x, outline[i].y)
+                                                close()
+                                            }
+                                            val outside = androidx.compose.ui.graphics.Path().apply {
+                                                fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+                                                addRect(androidx.compose.ui.geometry.Rect(0f, 0f, canvasW, canvasH))
+                                                addPath(outlinePath)
+                                            }
+                                            drawPath(outside, Color(0xAA000000))
+                                            drawPath(outlinePath, Color.White, style = Stroke(width = 3f))
                                         }
                                     }
 
@@ -1494,6 +1841,10 @@ fun CanvasWorkspaceScreen(
                                             canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS -> "Tap to add points • tap an existing path to edit it"
                                             canvasMode == CanvasMode.DRAW_PATH -> "Drag to mark a no-plant path • tap an existing path to edit it"
                                             canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON -> "Tap to add points (need at least 3) to outline a custom area"
+                                            canvasMode == CanvasMode.OUTLINE -> "Tap the plot's corners in order (${inProgressPoints.size} so far, need 3+), then Finish Outline"
+                                            canvasMode == CanvasMode.SITE_AREA -> "${siteAreaType.label}: tap corners (need 3+), then Finish • tap an existing area to edit it"
+                                            canvasMode == CanvasMode.BARRIER && barrierType == SiteFeatureType.TREE -> "Tap where the tree trunk is • tap an existing barrier to edit it"
+                                            canvasMode == CanvasMode.BARRIER -> "${barrierType.label}: tap points along it (2+), then Finish • tap an existing barrier to edit it"
                                             else -> "Drag to select an area to auto-populate"
                                         },
                                         color = if (zoomPanModeEnabled) Color(0xFF0EA5E9) else if (moveModeEnabled) Color(0xFFEF4444) else Color.LightGray, fontSize = 11.sp
@@ -1512,6 +1863,35 @@ fun CanvasWorkspaceScreen(
                                     // pattern's own described behavior: a 3rd point doesn't auto-close by
                                     // itself (a 4th+ tap keeps adding points instead), but the button is
                                     // available from that point on to close the loop whenever the user is done.
+                                    val siteFinishReady = when (canvasMode) {
+                                        CanvasMode.OUTLINE, CanvasMode.SITE_AREA -> inProgressPoints.size >= 3
+                                        CanvasMode.BARRIER -> barrierType != SiteFeatureType.TREE && inProgressPoints.size >= 2
+                                        else -> false
+                                    }
+                                    if (siteFinishReady) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Button(
+                                                onClick = {
+                                                    if (canvasMode == CanvasMode.OUTLINE) {
+                                                        saveOutline(inProgressPoints)
+                                                        if (PlotGeometry.validateOutline(toPlotPoints(inProgressPoints)) == null) {
+                                                            inProgressPoints = emptyList()
+                                                            canvasMode = CanvasMode.PLACE_NODE
+                                                        }
+                                                    } else {
+                                                        pendingSiteShape = inProgressPoints
+                                                        inProgressPoints = emptyList()
+                                                    }
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                            ) {
+                                                Text(if (canvasMode == CanvasMode.OUTLINE) "Finish Outline" else "Finish (${inProgressPoints.size} points)", fontSize = 11.sp)
+                                            }
+                                            OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                                                Text("Cancel", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
                                     if (canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON && inProgressPoints.size >= 3) {
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Button(
@@ -1598,6 +1978,51 @@ fun CanvasWorkspaceScreen(
             confirmButton = { TextButton(onClick = { inProgressPoints = emptyList(); showDiscardDialog = false }) { Text("Discard") } },
             dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text("Keep drawing") } },
             containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+
+    // FR-003 to FR-006: details for a new area/barrier, or edit/delete an existing one.
+    pendingSiteShape?.let { shape ->
+        val type = if (canvasMode == CanvasMode.BARRIER) barrierType else siteAreaType
+        SiteFeatureDialog(
+            initial = SiteFeatureEntity(
+                plotId = plotId,
+                featureType = type.name,
+                pointsJson = PlotGeometry.serializePoints(toPlotPoints(shape)),
+                heightM = if (type == SiteFeatureType.TREE) 6f else if (type.isBarrier) 1.8f else 0f,
+                radiusM = if (type == SiteFeatureType.TREE) 2f else 0f
+            ),
+            isNew = true,
+            onSave = { feature ->
+                launchSafely {
+                    withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().insert(feature) }
+                    reloadFeatures()
+                }
+                pendingSiteShape = null
+            },
+            onDelete = null,
+            onDismiss = { pendingSiteShape = null }
+        )
+    }
+    editingSiteFeature?.let { feature ->
+        SiteFeatureDialog(
+            initial = feature,
+            isNew = false,
+            onSave = { updated ->
+                launchSafely {
+                    withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().update(updated) }
+                    reloadFeatures()
+                }
+                editingSiteFeature = null
+            },
+            onDelete = {
+                launchSafely {
+                    withContext(SgpExecutors.dbDispatcher) { database.siteFeatureDao().delete(feature) }
+                    reloadFeatures()
+                }
+                editingSiteFeature = null
+            },
+            onDismiss = { editingSiteFeature = null }
         )
     }
 
@@ -1766,6 +2191,17 @@ fun CanvasWorkspaceScreen(
                         val harvestDate = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(harvestMillis))
                         Text("Expected harvest: ~$harvestDate")
                         Text("Spacing: ${seed.exclusionRadiusM}m")
+                        val crop = CropReference.forSeed(seed)
+                        if (crop.yieldKgPerPlant > 0f) Text("Typical yield: ~${"%.2f".format(crop.yieldKgPerPlant)} kg per plant")
+                        crop.nutrients?.let { n -> Text("Per 100 g: ${n.energyKcal.toInt()} kcal, vit C ${n.vitaminCMg} mg, protein ${n.proteinG} g", fontSize = 12.sp) }
+                        Text("${crop.feeding.label} • ${crop.sun.label} • pH ${crop.phMin}–${crop.phMax}", fontSize = 12.sp, color = Color.Gray)
+                        HardinessZones.describe(seed, activePlot?.hardinessZone)?.let { Text(it, fontSize = 12.sp, color = Color(0xFFEAB308)) }
+                        val guilds = GuildCatalog.guildsFor(seed, activeGuilds)
+                        if (guilds.isNotEmpty()) Text("Guild: ${guilds.joinToString { it.name }}", fontSize = 12.sp, color = Color(0xFF10B981))
+                        // FR-023/024: vendor slot (placeholder until a real vendor is linked).
+                        val vendor = VendorRegistry.effectiveVendor(settings.preferredVendorId, Feature.isEnabled(Feature.VENDOR_TARGETING, settings.currentAppTier()))
+                        val link = VendorRegistry.purchaseLink(seed, vendor)
+                        Text(if (link != null) "Buy seeds: ${vendor.displayName}" else "Buy seeds: ${vendor.displayName} — links not available yet", fontSize = 11.sp, color = Color.Gray)
                     }
                 }
             },
@@ -1795,6 +2231,7 @@ fun CanvasWorkspaceScreen(
     if (showVarietyPicker) {
         VarietyPickerDialog(
             seedDictionary = seedDictionary,
+            conflictFor = pickerConflict,
             onSelect = { code ->
                 activeSeedCode = code
                 showVarietyPicker = false
@@ -1810,6 +2247,7 @@ fun CanvasWorkspaceScreen(
         // list item's click handler.
         VarietyPickerDialog(
             seedDictionary = seedDictionary,
+            conflictFor = pickerConflict,
             onSelect = { code ->
                 val seed = seedFor(code) ?: return@VarietyPickerDialog
                 // [FIXED] Previously committed a variety change with ZERO spacing/companion
@@ -1819,7 +2257,7 @@ fun CanvasWorkspaceScreen(
                 // for new placements before allowing the change.
                 val candidate = node.copy(seedCode = seed.botanicalCode)
                 val neighbors = nodesState.filter { it.id != node.id }
-                val result = validator.validatePlacement(candidate, seed, neighbors, { c -> seedFor(c) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                val result = validator.validatePlacement(candidate, seed, neighbors, { c -> seedFor(c) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
 
                 if (!result.isValid) {
                     val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
@@ -1874,6 +2312,19 @@ fun CanvasWorkspaceScreen(
                     OutlinedButton(onClick = { showAutoPopVarietyPicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Text(chosenSeed?.commonName ?: "Choose a Variety")
                     }
+                    RecommendForArea(
+                        enabled = Feature.isEnabled(Feature.RECOMMEND_AND_AUTOPOPULATE, settings.currentAppTier()),
+                        compute = {
+                            activePlot?.let { plot ->
+                                RecommendationEngine.recommend(
+                                    seedDictionary, plotContext(plot),
+                                    listOf(PlotPoint(area.left, area.top), PlotPoint(area.right, area.top), PlotPoint(area.right, area.bottom), PlotPoint(area.left, area.bottom)),
+                                    limit = 5
+                                )
+                            } ?: emptyList()
+                        },
+                        onPick = { code -> chosenSeedCode = code }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Pattern", fontSize = 12.sp, color = Color.Gray)
                     Row {
@@ -1896,6 +2347,10 @@ fun CanvasWorkspaceScreen(
                     enabled = chosenSeed != null,
                     onClick = {
                         val seed = chosenSeed ?: return@TextButton
+                        if (HardinessZones.blocksPlacement(seed, activePlot?.hardinessZone)) {
+                            snackbarMessage = HardinessZones.describe(seed, activePlot?.hardinessZone) ?: "Not hardy in this zone."
+                            return@TextButton
+                        }
                         val localPoints = autoPopulateEngine.generatePositions(area.width, area.height, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
                         // [FIXED] Real bug: this previously only checked generated points against
                         // no-plant paths, never against plants that already existed OUTSIDE the
@@ -1907,11 +2362,11 @@ fun CanvasWorkspaceScreen(
                         val newNodes = localPoints.fold(emptyList<PlantedNodeEntity>()) { accepted, point ->
                             val absX = area.left + point.xM
                             val absY = area.top + point.yM
-                            if (isInsidePath(absX, absY, seed.exclusionRadiusM)) {
+                            if ((activePlot?.let { !PlotShape.contains(it, absX, absY) } ?: false) || isInsidePath(absX, absY, seed.exclusionRadiusM)) {
                                 accepted
                             } else {
                                 val candidate = PlantedNodeEntity(plotId = plotId, seedCode = seed.botanicalCode, coordinateXM = absX, coordinateYM = absY)
-                                val result = validator.validatePlacement(candidate, seed, nodesState + accepted, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                                val result = validator.validatePlacement(candidate, seed, nodesState + accepted, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
                                 if (result.isValid) accepted + candidate else accepted
                             }
                         }
@@ -1942,6 +2397,7 @@ fun CanvasWorkspaceScreen(
         if (showAutoPopVarietyPicker) {
             VarietyPickerDialog(
                 seedDictionary = seedDictionary,
+                conflictFor = pickerConflict,
                 onSelect = { code -> chosenSeedCode = code; showAutoPopVarietyPicker = false },
                 onDismiss = { showAutoPopVarietyPicker = false }
             )
@@ -1984,6 +2440,13 @@ fun CanvasWorkspaceScreen(
                     OutlinedButton(onClick = { showAutoPopVarietyPicker2 = true }, modifier = Modifier.fillMaxWidth()) {
                         Text(chosenSeed?.commonName ?: "Choose a Variety")
                     }
+                    RecommendForArea(
+                        enabled = Feature.isEnabled(Feature.RECOMMEND_AND_AUTOPOPULATE, settings.currentAppTier()),
+                        compute = {
+                            activePlot?.let { plot -> RecommendationEngine.recommend(seedDictionary, plotContext(plot), toPlotPoints(polygon), limit = 5) } ?: emptyList()
+                        },
+                        onPick = { code -> chosenSeedCode = code }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Pattern", fontSize = 12.sp, color = Color.Gray)
                     Row {
@@ -2006,16 +2469,20 @@ fun CanvasWorkspaceScreen(
                     enabled = chosenSeed != null,
                     onClick = {
                         val seed = chosenSeed ?: return@TextButton
+                        if (HardinessZones.blocksPlacement(seed, activePlot?.hardinessZone)) {
+                            snackbarMessage = HardinessZones.describe(seed, activePlot?.hardinessZone) ?: "Not hardy in this zone."
+                            return@TextButton
+                        }
                         val localPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
                             .filter { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
                         val newNodes = localPoints.fold(emptyList<PlantedNodeEntity>()) { accepted, point ->
                             val absX = minX + point.xM
                             val absY = minY + point.yM
-                            if (isInsidePath(absX, absY, seed.exclusionRadiusM)) {
+                            if ((activePlot?.let { !PlotShape.contains(it, absX, absY) } ?: false) || isInsidePath(absX, absY, seed.exclusionRadiusM)) {
                                 accepted
                             } else {
                                 val candidate = PlantedNodeEntity(plotId = plotId, seedCode = seed.botanicalCode, coordinateXM = absX, coordinateYM = absY)
-                                val result = validator.validatePlacement(candidate, seed, nodesState + accepted, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules)
+                                val result = validator.validatePlacement(candidate, seed, nodesState + accepted, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
                                 if (result.isValid) accepted + candidate else accepted
                             }
                         }
@@ -2042,6 +2509,7 @@ fun CanvasWorkspaceScreen(
         if (showAutoPopVarietyPicker2) {
             VarietyPickerDialog(
                 seedDictionary = seedDictionary,
+                conflictFor = pickerConflict,
                 onSelect = { code -> chosenSeedCode = code; showAutoPopVarietyPicker2 = false },
                 onDismiss = { showAutoPopVarietyPicker2 = false }
             )
@@ -2061,7 +2529,8 @@ fun CanvasWorkspaceScreen(
 private fun VarietyPickerDialog(
     seedDictionary: List<SeedEntity>,
     onSelect: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    conflictFor: (SeedEntity) -> String? = { null } // FR-010: reason a variety is greyed out, or null
 ) {
     var step by remember { mutableStateOf(0) } // 0 = category, 1 = species, 2 = cultivar
     var selectedCategory by remember { mutableStateOf<String?>(null) }
@@ -2146,10 +2615,12 @@ private fun VarietyPickerDialog(
                             }
                         }
                         else -> items(cultivarsInSpecies.filter { cultivarNameOf(it).contains(searchQuery, ignoreCase = true) }) { seed ->
+                            val conflict = conflictFor(seed)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onSelect(seed.botanicalCode) }
+                                    .clickable(enabled = conflict == null) { onSelect(seed.botanicalCode) }
+                                    .alpha(if (conflict == null) 1f else 0.4f)
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -2157,6 +2628,7 @@ private fun VarietyPickerDialog(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
                                     Text(cultivarNameOf(seed), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    conflict?.let { Text(it, fontSize = 10.sp, color = Color(0xFFEF4444)) }
                                     Text(
                                         "spacing ${seed.exclusionRadiusM}m • germinates ~${seed.germinationDays}d • harvest ~${seed.daysToHarvest}d",
                                         fontSize = 10.sp, color = Color.Gray
@@ -2208,4 +2680,116 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRuler(
         }
         meter += tickIntervalM
     }
+}
+
+
+/** FR-015: "Recommend for this area" inside the auto-populate dialogs (Pro). */
+@Composable
+private fun RecommendForArea(enabled: Boolean, compute: () -> List<Recommendation>, onPick: (String) -> Unit) {
+    var recs by remember { mutableStateOf<List<Recommendation>?>(null) }
+    if (!enabled) {
+        Text("Recommend for this area: Pro tier", fontSize = 11.sp, color = Color.Gray)
+        return
+    }
+    TextButton(onClick = { recs = compute() }, contentPadding = PaddingValues(0.dp)) { Text("Recommend for this area", fontSize = 12.sp) }
+    recs?.let { list ->
+        if (list.isEmpty()) Text("Nothing in the catalog suits this spot.", fontSize = 11.sp, color = Color.Gray)
+        list.forEach { r ->
+            Column(modifier = Modifier.fillMaxWidth().clickable { onPick(r.seed.botanicalCode) }.padding(vertical = 3.dp)) {
+                Text(r.seed.commonName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(r.reasons.take(2).joinToString(" • "), fontSize = 10.sp, color = Color.Gray)
+            }
+        }
+    }
+}
+
+/** Details for a site area or barrier (FR-003 to FR-006): label, slope, flood months, height, crown radius. */
+@Composable
+private fun SiteFeatureDialog(
+    initial: SiteFeatureEntity,
+    isNew: Boolean,
+    onSave: (SiteFeatureEntity) -> Unit,
+    onDelete: (() -> Unit)?,
+    onDismiss: () -> Unit
+) {
+    val type = SiteFeatureType.of(initial.featureType) ?: SiteFeatureType.FULL_SUN
+    var label by remember(initial.id) { mutableStateOf(initial.label) }
+    var height by remember(initial.id) { mutableStateOf(if (initial.heightM > 0f) initial.heightM.toString() else "") }
+    var radius by remember(initial.id) { mutableStateOf(if (initial.radiusM > 0f) initial.radiusM.toString() else "") }
+    var grade by remember(initial.id) { mutableStateOf(if (initial.slopeGradePct > 0f) initial.slopeGradePct.toString() else "") }
+    var direction by remember(initial.id) { mutableStateOf(initial.slopeDirectionDeg) }
+    var months by remember(initial.id) { mutableStateOf(initial.floodMonths) }
+    var error by remember(initial.id) { mutableStateOf<String?>(null) }
+    val directions = listOf("N" to 0f, "NE" to 45f, "E" to 90f, "SE" to 135f, "S" to 180f, "SW" to 225f, "W" to 270f, "NW" to 315f)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text((if (isNew) "New: " else "") + type.label) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedTextField(value = label, onValueChange = { label = it.take(40) }, label = { Text("Label (optional)") }, singleLine = true)
+                if (type.isBarrier) {
+                    OutlinedTextField(value = height, onValueChange = { height = it }, label = { Text("Height (m)") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
+                if (type == SiteFeatureType.TREE) {
+                    OutlinedTextField(value = radius, onValueChange = { radius = it }, label = { Text("Crown radius (m)") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
+                if (type == SiteFeatureType.SLOPE) {
+                    OutlinedTextField(value = grade, onValueChange = { grade = it }, label = { Text("Grade (%) — 1 m drop over 10 m is 10 %") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                    Text("Downhill direction (compass)", fontSize = 12.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        directions.forEach { (name, deg) ->
+                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(name, fontSize = 10.sp) })
+                        }
+                    }
+                }
+                if (type == SiteFeatureType.FLOOD) {
+                    OutlinedTextField(value = months, onValueChange = { months = it }, label = { Text("Months it floods, e.g. 3,4,5") }, singleLine = true)
+                }
+                if (type == SiteFeatureType.FULL_SUN || type == SiteFeatureType.PART_SHADE || type == SiteFeatureType.FULL_SHADE) {
+                    Text("Plants that need more sun than this area gets are flagged in the harmony report and left out of suggestions for it.", fontSize = 11.sp, color = Color.Gray)
+                }
+                error?.let { Text(it, color = Color(0xFFEF4444), fontSize = 12.sp) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val h = height.toFloatOrNull()
+                val r = radius.toFloatOrNull()
+                val g = grade.toFloatOrNull()
+                val monthList = months.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                error = when {
+                    type.isBarrier && (h == null || h <= 0f || h > 100f) -> "Enter a height between 0 and 100 m."
+                    type == SiteFeatureType.TREE && (r == null || r <= 0f || r > 30f) -> "Enter a crown radius between 0 and 30 m."
+                    type == SiteFeatureType.SLOPE && (g == null || g < 0f || g > 100f) -> "Enter a grade between 0 and 100 %."
+                    type == SiteFeatureType.FLOOD && monthList.any { it.toIntOrNull() == null || it.toInt() !in 1..12 } -> "Months are numbers 1–12, separated by commas."
+                    else -> null
+                }
+                if (error == null) {
+                    onSave(
+                        initial.copy(
+                            label = label.trim(),
+                            heightM = h ?: 0f,
+                            radiusM = r ?: 0f,
+                            slopeGradePct = g ?: 0f,
+                            slopeDirectionDeg = direction,
+                            floodMonths = monthList.joinToString(",")
+                        )
+                    )
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text("Delete") }
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
 }
