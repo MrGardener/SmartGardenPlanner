@@ -28,10 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// --- RESOLVED COMPLIANCE IMPORTS: SQLCIPHER BASELINE ENGINE ---
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
-
 /*
  * CHANGE LOG (this revision):
  *  - [FIX / DEBT-SEC-005, was silent] generateHmac() no longer falls back to a hardcoded key when
@@ -185,7 +181,6 @@ class RealSecurityKeyManager : SecurityKeyManager {
         val iv = cipher.iv
         file.writeBytes(iv + ciphertext)
 
-        SQLiteDatabase.loadLibs(context)
         return rawPass
     }
 }

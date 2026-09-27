@@ -1,3 +1,5 @@
+> **SUPERSEDED — NOT VALID AS LIFE CYCLE DATA.** Withdrawn by SGP-GAP-001 (docs/compliance/). Replaced by SGP-SQAP-001 (audits/records) and SGP-SVP-001 §4 (review records). The reviews, sign-offs or test cases described below have no supporting records, and no compliance credit is taken from this document. It is kept for history only.
+
 # 11-Perspective Review Board Audit
 **Version:** 20.18
 

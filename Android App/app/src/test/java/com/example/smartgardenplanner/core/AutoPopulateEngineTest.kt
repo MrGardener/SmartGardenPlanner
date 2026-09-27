@@ -42,8 +42,11 @@ class AutoPopulateEngineTest {
 
     @Test
     fun hexGrid_packsMoreOrEqualPointsThanLineGrid() {
-        val lineCount = engine.estimateCount(6f, 6f, 1f, AutoPopulateEngine.PackingPattern.LINE)
-        val hexCount = engine.estimateCount(6f, 6f, 1f, AutoPopulateEngine.PackingPattern.HEXAGON)
+        // Hex packing only beats a square grid once the area is large enough for the extra rows
+        // (pitch √3/2 · s) to outweigh the shorter offset rows. At 6 m × 6 m with 1 m spacing the
+        // engine correctly gives 36 (rows) vs 33 (hex), so this test uses 10 m × 10 m (100 vs 105).
+        val lineCount = engine.estimateCount(10f, 10f, 1f, AutoPopulateEngine.PackingPattern.LINE)
+        val hexCount = engine.estimateCount(10f, 10f, 1f, AutoPopulateEngine.PackingPattern.HEXAGON)
 
         assertTrue("Hex packing ($hexCount) should fit at least as many points as line packing ($lineCount)", hexCount >= lineCount)
     }

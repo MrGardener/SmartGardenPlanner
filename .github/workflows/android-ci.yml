@@ -1,0 +1,45 @@
+name: Android build and unit tests
+
+# Runs when app code or build files change (SGP-SVP-001 §9: build + host tests on every PR).
+# Toolchain: AGP 9.2 / Kotlin 2.2 / Gradle 9.8; the Gradle daemon runs on JDK 21
+# (gradle/gradle-daemon-jvm.properties), the app compiles to Java 17 bytecode.
+on:
+  pull_request:
+    paths:
+      - "Android App/**"
+  push:
+    branches: [main]
+    paths:
+      - "Android App/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Assemble, unit tests, lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "Android App"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build debug APK, run unit tests and lint
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            Android App/app/build/reports/
+            Android App/app/build/test-results/
+          if-no-files-found: ignore

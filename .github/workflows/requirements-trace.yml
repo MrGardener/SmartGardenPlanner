@@ -1,0 +1,21 @@
+name: Requirements trace
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    name: Requirements trace check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check T2 -> HLR -> LLR trace
+        run: python3 tools/req_trace.py --check
