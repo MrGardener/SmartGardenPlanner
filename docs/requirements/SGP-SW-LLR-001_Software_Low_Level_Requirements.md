@@ -1339,7 +1339,7 @@ number field 1–30, ◀ ▶, "Change a variety…" (radio list + variety picker
 is switched off for the remaining plants of that request, and the note "Not enough room to keep <species> off last
 season's spots…" is added. `AutoPlanner.plan` passes `strictRotation` (default true). ↑ HLR-ROT-040
 
-**LLR-SHD-010** `ShadeDay.dayOfYear(lat, today)`: TODAY → today, SPRING → 79, AUTUMN → 265, MIDSUMMER → 172 (north) /
+**LLR-SHD-010** `ShadeDay.dayOfYear(lat, today, midSeason)`: SEASON (first, default) → midSeason, TODAY → today, SPRING → 79, AUTUMN → 265, MIDSUMMER → 172 (north) /
 355 (south), MIDWINTER → 355 / 172. `ShadeTools.sunriseSunset` = 12 ∓ dayLength / 2. `ShadeTools.shadowGridAt` marks a
 cell shaded when `SunlightEngine.isShaded` at that solar hour (true below the horizon). Web: legend selects for day and
 mode, a range input (sunrise..sunset, step 0.25 h) with the time, the sun's compass direction and elevation; shaded
@@ -1385,6 +1385,42 @@ the context's current plants in place, and returns the placed counts, which repl
 (default "<name> (copy)") and two options (plants, history; both on); it copies the plot with new ids and timestamps and
 copies paths, site features, the satellite photo and, as chosen, plants and history to the new plot (Android: one
 transaction, then the photo file is copied). ↑ HLR-TPL-010
+
+**LLR-FROST-010** `frost_stations.txt` (asset, embedded in the web page as `sgp-frost`): "name|lat|lon|elev_ft|lastSpring50|
+lastSpring10|firstFall50|firstFall10", day-of-year; `GrowingSeason.parseStation` rejects bad numbers or days outside
+0–366. `seasonAt(stations, lat, lon, 250 km)` = nearest by equirectangular distance. `Season.firstFrost` adds 365 when the
+fall date is before the spring date; all-zero = frost-free (365 days). `describe` gives the three dates lines, the
+tender/hardy line and the station line (`stationName`: title case, state code kept). Web `Frost.season(plot)` (cached per
+lat/lon); Android `FrostLookup.stations/season`, `PlotSnapshot.season`, canvas `growingSeason`. ↑ HLR-FROST-010
+
+**LLR-FROST-020** `GrowingSeason.window(seed, season)`: hardy weeks table (e.g. pea/spinach 6, onion/lettuce/carrot 3–4)
+and start-indoors weeks table (e.g. pepper 9, tomato 7, brassicas 5–6); plant out from last frost − hardy weeks, else
+last frost + 7; last plant-out = first frost (+14 for hardy) − growing days − 7, growing days = days to harvest (minus
+half the indoor weeks for transplants, at least 30); start indoors = last frost − weeks … +14 days; fall sowing for
+hardy annuals when first frost − dth − 28 is 20+ days after the last plant-out; note "…short for <crop>…" when the
+window is empty. `describeWindow` formats the dates. Web: "Planting calendar…" modal (planted crops or 14 common ones)
+and Care "When to plant"; Android: Site → "Planting calendar" toggle. ↑ HLR-FROST-020
+
+**LLR-SUN-010** `PlotContext.sunDays` (default empty): when set, `sunHoursAt` averages `effectiveSunHours` over those days.
+`forPlanning()` fills `GrowingSeason.sunDays(lat, null)` when empty; `AutoPlanner.plan` and `PlanChecks.check` call it.
+`sunDays(lat, season)` = a quarter, half and three quarters from last to first frost, else [135, 172, 213] (+182 south).
+Web `Store.context` and Android `plotContext` / `PlotInsightsLoader` pass the season's days. ↑ HLR-SUN-010
+
+**LLR-SUN-020** `BlockPlanner` order: priority, rank, `SunNeed` ordinal, height. Score: sun shortfall × 10 (× 20 when
+starred); FULL or starred: + mean sun / 4 (/ 2 starred); PARTIAL/SHADE: − mean(max(0, sun − (need + 3))) / 2.
+`GrowingSeason.midSeasonDay` is the middle of `sunDays`, used for `ShadeDay.SEASON` (web select shows its date). ↑ HLR-SUN-020
+
+**LLR-PLANB-060** `BackupPlanner.options(original, plantedDay, today, catalog, season, 6)`: target = plantedDay + days to
+harvest; candidates exclude the original and perennials, and (with frost data) anything ready after the first frost
+(+21 days for hardy crops); same species sorted by |today + dth − target| then dth, then same-family food crops, else
+food crops ready within 25–60 days; reason "N days: ready with the others (around D) / X days before/after the others
+(after the usual first frost: protect it)". `planAhead` = per planted species, up to 3 faster non-perennial varieties
+within the frost-free days. Web: plant card "Plan B…" → modal (options as buttons, "Replace all N planted the same day",
+"Plant Plan B" = one `Store.change`); Care "Plan B: if a plant dies". Android: plant details "Plan B", germination
+dialog link, `planBNode` dialog (transaction + undo snapshot); Care section. ↑ HLR-PLANB-010
+
+**LLR-RULER-010** Web `drawRulers`: ticks `class="ruler-tick"` with the number only, one `class="ruler-unit"` "(m)" left of
+the origin. Android `drawRuler`: the number via `DistanceFormatter.metersToDisplay`, the unit suffix only at 0. ↑ HLR-RULER-010
 
 **LLR-SWAP-010** `PlantSwap.replaceAll(nodes, fromCode, to, lookup, zone, margin, companions, guilds)` shall return the
 nodes unchanged with a message when the variety is the same, none are planted, or `HardinessZones.blocksPlacement(to,
@@ -1781,6 +1817,12 @@ Generated by script from the `↑` links above.
 | HLR-IRR-030 | Active | LLR-WATER-030 |
 | HLR-FILL-010 | Active | LLR-FILLP-010 |
 | HLR-TPL-010 | Active | LLR-TPL-010 |
+| HLR-FROST-010 | Active | LLR-FROST-010 |
+| HLR-FROST-020 | Active | LLR-FROST-020 |
+| HLR-SUN-010 | Active | LLR-SUN-010 |
+| HLR-SUN-020 | Active | LLR-SUN-020 |
+| HLR-PLANB-010 | Active | LLR-PLANB-060 |
+| HLR-RULER-010 | Active | LLR-RULER-010 |
 | HLR-SWAP-010 | Active | LLR-SWAP-010 |
 | HLR-LEG-010 | Active | LLR-LEG-010 |
 | HLR-ARR-010 | Active | LLR-ARR-010 |
@@ -1810,8 +1852,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **284**. Duplicate LLR IDs: **0**.
-- HLRs: 197 (189 active, 7 future, 1 suspended).
+- LLRs: **290**. Duplicate LLR IDs: **0**.
+- HLRs: 203 (195 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

@@ -42,7 +42,7 @@ open the same plan files.
   2. Choose **Which way does the top edge of the plot face?** by tapping one of N, NE, E, SE, S, SW, W, NW. Stand
      at the bottom edge and look across the plot; the direction you face is the answer.
   3. Tick **What pests or animals do you see regularly in your yard?** (deer, rabbits, raccoons, squirrels,
-     groundhogs, birds, slugs, insects…). Plot insights → **Care** then shows how to keep them away (§8).
+     groundhogs, birds, slugs, insects…). Plot insights → **Care** then shows how to keep them away (§8a).
   4. Optionally enter the **ZIP code**. It fills in the USDA hardiness zone (2023 map) and the latitude, with no
      internet needed.
   5. Tap **Initialize Spatial Workspace**.
@@ -65,7 +65,8 @@ open the same plan files.
 ## 3. The layout
 
 The plot is drawn to scale on a light background in both light and dark mode, with a metre ruler along the top and
-left and a **compass** at the top right. The compass has four arrowheads (N, E, S, W) turned to your plot's
+left (the ticks show numbers only; the unit is written once: "(m)" where the two rulers meet on the computer, next to
+the 0 on the phone) and a **compass** at the top right. The compass has four arrowheads (N, E, S, W) turned to your plot's
 direction. North is red once the direction is set, and grey with "N?" until you set it.
 
 ### Placing, changing and moving plants
@@ -314,8 +315,10 @@ Turn it on:
 - **Computer:** **Shade** in the top bar.
 
 Choose:
-- **The day:** Today, spring equinox, midsummer (longest day), autumn equinox or midwinter (shortest day). The sun is
-  much lower in winter, so shade reaches further.
+- **The day:** **Growing season** (the default: the middle of your growing season, from your frost dates; the date is
+  shown), today, spring equinox, midsummer (longest day), autumn equinox or midwinter (shortest day). The sun is much
+  lower in autumn and winter, so shade reaches much further: a plot that is sunny all summer can look shady in late
+  September. That's why planning uses the growing season (below), not today.
 - **Whole day:** each spot is coloured by the hours of direct sun it gets from sunrise to sunset:
   - yellow = full sun (6 h or more)
   - blue = part shade (3 to 6 h)
@@ -332,6 +335,12 @@ Choose:
 
 Times are **solar time**: noon is when the sun is due south (due north in the southern hemisphere), which can be up
 to an hour or so from clock time. Clouds are not modelled.
+
+**How planning uses the sun.** "Plan an area for me", "Fill the whole plot", the rotation plan and the checks before
+planning judge sun over your **growing season**: the average of three days spread between your last spring frost and
+first fall frost (mid-May, midsummer and early August if the frost dates aren't known). Crops that need full sun choose
+first and get the sunniest spots that suit them; a lack of sun counts for more than keeping tall plants at the back;
+lettuce and other part-shade crops take the less sunny ground and leave the sunniest spots to the sun lovers.
 
 ---
 
@@ -372,7 +381,50 @@ Turn on the **water map** (phone menu → **Show water map**, or **Water** in th
 
 ---
 
-## 8. Pests and animals in your yard
+## 8. Growing season, planting calendar and Plan B
+
+### Your growing season
+From your plot's ZIP code the planner finds the nearest NOAA weather station (1991–2020 averages) and shows:
+- **Last spring frost:** the average date (half of years the last frost is earlier, half later) and the "1 year in 10"
+  late date.
+- **First fall frost:** the average date and the "1 year in 10" early date.
+- **Growing season:** the number of frost-free days between them.
+- Which station was used, how far away it is and its elevation (a station much higher or lower than your garden can be
+  a week or two off).
+
+Where: **Computer:** Plot tab → **Growing season**. **Phone:** Plot insights → **Site** → Growing season. The ZIP code
+is needed (Edit details… / Plot direction and ZIP…).
+
+### Planting calendar
+**Planting calendar…** (computer) or **Planting calendar** (phone) lists, for each crop on the plot (or common crops if
+nothing is planted yet):
+- **start indoors:** for crops usually grown from transplants (tomatoes, peppers, eggplant, cabbage family, onions,
+  basil…), the two weeks to sow seeds indoors;
+- **plant out from … (last chance …):** hardy crops (peas, spinach, onions, lettuce, carrots…) can go out several weeks
+  before the last frost; frost-tender crops (tomatoes, peppers, squash, beans, corn, basil) a week after it. The last
+  chance is the latest date that still ripens before the first fall frost;
+- **fall crop:** for hardy crops, a second sowing that matures in the cool of autumn, where there's room;
+- a note when a variety is too slow for your season, with what to do (faster variety, start indoors, cover).
+The Care tab repeats this for what's planted (**When to plant (your frost dates)**). The dates are averages: watch the
+forecast and cover tender plants on cold nights.
+
+### Plan B: when a plant dies
+Plants get eaten, rot or never come up. Plan B keeps the harvest on track:
+1. Open the plant that died (computer: double-click it or **Edit plant…**; phone: tap it → **Plan B**, or from the
+   germination alert).
+2. **Plan B** shows when the plants that survived should be ready, and lists varieties that, **planted today**, will be
+   ready at about the same time and before the first frost: other varieties of the same crop first (usually faster
+   ones), then quick crops of the same family. Each shows its days to harvest and when it would be ready ("ready with
+   the others", or how many days before or after).
+3. Choose one. It goes in the same spot with today's planting date. Tick **Replace all … planted the same day** to swap
+   every plant of that variety planted that day. **Undo** reverses it.
+
+The Care tab's **Plan B: if a plant dies** lists, for each crop you grow, the faster varieties worth keeping seed of,
+so you're ready before anything happens.
+
+---
+
+## 8a. Pests and animals in your yard
 
 Tell the planner which pests and animals visit your yard, and the **Care** section tells you how to keep them out.
 
@@ -412,7 +464,7 @@ was.
   satellite photo, seasons, templates and irrigation (computer).
 - **Harmony:** a score, clashes, good neighbours, ideas; and on the phone, **Seasons & crop rotation**.
 - **Suggest** (phone) / **Plants** (computer): varieties that suit the plot or an area.
-- **Care:** the disclaimer in short; **pests and animals in your yard** (§8); **watering and irrigation** (§7); the
+- **Care:** the disclaimer in short; **pests and animals in your yard** (§8a); **when to plant** and **Plan B** (§8); **watering and irrigation** (§7); the
   watering schedule; the feeding plan (organic or conventional); and plant pests and diseases to watch for.
 - **Food:** expected harvest, what it feeds, recipes from your garden, and a homestead starter list for your
   household size.
@@ -494,10 +546,19 @@ see.
   you add your own screenshot. On the phone the photo is clipped to the plot rectangle and its changes aren't
   undoable.
 - **Units on the computer:** metres only (the phone can show inches).
+- **Frost dates** are US-only (NOAA stations), from the nearest station within 250 km, without adjusting for elevation
+  or local frost pockets.
 
 ---
 
 ## Changelog
+
+- **2026-09-27 (season, sun and Plan B):**
+  - Planning judges sun over the **growing season** (it used to use today's date, so a plan made in autumn favoured the
+    wrong spots); sun lovers choose first and get the sunniest ground. The shade display defaults to "Growing season".
+  - **Growing season** and **planting calendar** from NOAA 1991–2020 frost dates for your ZIP's nearest station.
+  - **Plan B** for plants that die: varieties that catch up with the survivors before the first frost.
+  - Ruler ticks show numbers only; the unit is shown once.
 
 - **2026-09-27 (your feedback on the test plot):**
   - **Replace…** in the plot's list changes every plant of a variety at once.

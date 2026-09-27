@@ -161,7 +161,8 @@ Parent: ConOps §5.4 · Safety: FC-05, FC-06 · Verify: Test · Status: Proposed
 **Why changed:** "Comprehensive suite" replaced by the three defined options (your transcript §C) and the
 rules for choosing them. Today only (b) ever appears, because the catalog has no fast-track or catch-crop
 data. The rules above let the app compute (a) and (c) itself.
-**Now:** Alert + dialog; only the nursery option in practice (PART).
+**Now:** Alert + dialog; (a) and (c) are now computed from the catalog and the plot's frost dates by Plan B
+(T2-FUN-430), reached from the same dialog (IMPL on the phone; the computer offers Plan B from the plant card).
 
 ### T2-FUN-090 — Plot location
 **Statement:** The system shall let the user set a location for each plot, either as a 5-digit US ZIP code
@@ -212,7 +213,8 @@ Parent: existing functionality · Safety: — · Verify: Test · Status: Propose
 **Statement:** The system shall show a ruler along the top and left edges of the plot layout, in the display
 unit. Its marks shall line up with the plot at every zoom and pan position.
 Parent: existing functionality · Safety: FC-01 · Verify: Test · Status: Proposed
-**Now:** Ruler exists but doesn't follow zoom/pan (PART).
+**Now:** Ruler exists but doesn't follow zoom/pan on the phone (PART). Owner request 2026-09-27 (FR-057): the unit is
+shown once per ruler (at the origin), not on every tick (IMPL on both).
 
 ### T2-FUN-150 — Plot list (NEW)
 **Statement:** The system shall list all of the user's plots, with name and dimensions in the display unit,
@@ -388,6 +390,32 @@ Parent: owner request 2026-09-27 (FR-046, FR-049: turn up to 180° clockwise or 
 number box that stay in step) · Safety: FC-24 · Verify: Test · Status: Proposed
 **Now:** IMPL (phone: the photo is clipped to the plot rectangle; photo changes aren't undoable on the phone).
 
+### T2-FUN-410 — Growing season and planting calendar (NEW 2026-09-27)
+**Statement:** For a plot with a known location the system shall show its growing season from historical data (average
+last spring and first fall frost, with the 1-in-10-years late and early dates, frost-free days and the data source), and
+a planting calendar giving, for each planted crop (or common crops when nothing is planted), when to start seeds
+indoors, the window to plant out, and a fall sowing where it applies, warning when a crop is too slow for the season.
+Parent: owner request 2026-09-27 (FR-054) · Safety: FC-27 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-420 — Plan for the growing season's sun (NEW 2026-09-27)
+**Statement:** When the system places plants (T2-FUN-160) or checks a plan (T2-FUN-320), it shall judge sun and shade
+over the plot's growing season (not on the day the plan is made), put crops that need full sun in the sunniest spots
+that suit them before part-shade and shade-tolerant crops, and leave the sunniest ground to sun lovers. The shade
+display shall offer the growing season as a day, and use it by default.
+Parent: owner problem report 2026-09-27 (FR-055: "Fill the whole plot" favoured shady parts when planned in autumn) ·
+Safety: FC-19 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-430 — Plan B when a plant dies (NEW 2026-09-27)
+**Statement:** For any planted plant the user shall be able to ask for Plan B: varieties that, planted today, will be
+ready at about the same time as the plants that survived and before the first fall frost (other varieties of the same
+crop first, then quick crops of the same family), with their days to harvest and expected ready date; choosing one
+replaces that plant (optionally all of that variety planted the same day), planted today, in one undoable step. The
+Care section shall list, per planted crop, the faster varieties worth keeping as a backup.
+Parent: owner request 2026-09-27 (FR-056); extends T2-FUN-080 · Safety: FC-05, FC-06 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
 ### T2-FUN-360 — Replace all plants of a variety (NEW 2026-09-27)
 **Statement:** From the list of what's on the plot, the user shall be able to change every plant of one variety to
 another variety in one step, keeping their places and planting dates, be told how many now crowd a neighbour, and undo
@@ -501,7 +529,9 @@ of the data shall be recorded.
 Parent: ConOps §5.3 · Safety: FC-13 · Verify: Test + Analysis (data audit) · Status: Proposed
 **Was:** "…maintain an offline climatic database mapping location parameters to USDA Plant Hardiness Zones and historical frost-date models."
 **Why changed:** Coverage and provenance stated.
-**Now:** 5 sample ZIPs, unused (PART).
+**Now:** IMPL (2026-09-27): zones for 40,502 ZIPs (USDA/PRISM 2023) and frost dates from NOAA NCEI U.S. Climate
+Normals 1991–2020 for 6,500 stations, the plot's nearest station within 250 km (`frost_stations.txt`, with NOTICE).
+Coverage outside the US: none (TBC-09 open).
 
 ### T2-DAT-090 — Planting windows
 **Statement:** For a plot with a location, the system shall show for each variety the date window in which

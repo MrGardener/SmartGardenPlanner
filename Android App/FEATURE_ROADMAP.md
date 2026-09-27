@@ -143,6 +143,10 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-051 | Replace all of a variety | "Replace…" in the plot's list; one undo step; crowding reported. | All | FR-036 | **Implemented — Awaiting Your Confirmation** |
 | FR-052 | Move the plot list | Drag the "On this plot" box anywhere; remembered; double-click resets. | Computer | FR-036 | **Implemented — Awaiting Your Confirmation** |
 | FR-053 | Help and drawing fixes | Hover help on every button; tools turn off on a second click; drip line Finish/Cancel and stop after Finish. | Computer | FR-039 | **Implemented — Awaiting Your Confirmation** |
+| FR-054 | Growing season by ZIP | NOAA 1991–2020 frost dates (nearest station), frost-free days, planting calendar (start indoors, plant out, fall crop). | All | FR-014 | **Implemented — Awaiting Your Confirmation** |
+| FR-055 | Plan with growing-season sun | Planner and checks average sun over the growing season; sun lovers choose first and get the sunniest ground; shade display defaults to the growing season. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-056 | Plan B when a plant dies | Varieties ready with the survivors before frost; replace one or all planted that day; Care lists backups. | All | FR-021 | **Implemented — Awaiting Your Confirmation** |
+| FR-057 | Ruler units once | Numbers on ticks, unit shown once. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-046 | Satellite photo under the plot | Open Google Maps (satellite) for the address, add a screenshot, set scale from two points, move, turn, see-through, hide, remove; in plan files and duplicates. | All | FR-002, FR-006 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
@@ -248,6 +252,10 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (season, sun, Plan B)**: "Fill the whole plot" favoured shady parts because sun was measured on the
+  planning date (late September); it now uses the growing season (FR-055). Added frost dates and a planting calendar
+  from NOAA normals (FR-054), Plan B for lost plants (FR-056) and ruler units once (FR-057).
 
 - **2026-09-27 (feedback on the test plot)**: Your file was planned by an earlier version (before organised clumps),
   which is why crops were scattered; replaying your list in the current planner puts each crop in one block. Added:
