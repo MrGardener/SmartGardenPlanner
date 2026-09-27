@@ -136,6 +136,13 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-043 | Most important plants and checks before planning | ☆ marks plants placed first in the sunniest spots; "Checks before planning" (space, sun, neighbours, zone, rotation, water, pests) before anything is placed. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-044 | Disclaimer | "A guide, not a guarantee" before first use, in help/Settings, the Care tab and the manual. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-045 | Watering recommendations | Care → Watering and irrigation: tools, water map, unreached and thirsty plants, per-crop needs, tips, choosing a system. | All | FR-039 | **Implemented — Awaiting Your Confirmation** |
+| FR-047 | Choose clump arrangements | "Arrange as" per crop (e.g. 50 = 5 × 10, 10 × 5, 7 × 7 + 1, 6 × 8 + 2), neater nearby counts; crops kept in one block where possible, any split explained. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
+| FR-048 | Longer rotation plans with variety changes | 1–30 years; "Change a variety…" from any year on. | All | FR-037 | **Implemented — Awaiting Your Confirmation** |
+| FR-049 | Photo turn fix | Turn −180…+180 about the centre; slider and number box in step (the slider used to clamp at 0/100). | All | FR-046 | **Implemented — Awaiting Your Confirmation** |
+| FR-050 | Plot address → Google Maps | Address kept with the plot and in plan files; "Open in Google Maps". | All | FR-046 | **Implemented — Awaiting Your Confirmation** |
+| FR-051 | Replace all of a variety | "Replace…" in the plot's list; one undo step; crowding reported. | All | FR-036 | **Implemented — Awaiting Your Confirmation** |
+| FR-052 | Move the plot list | Drag the "On this plot" box anywhere; remembered; double-click resets. | Computer | FR-036 | **Implemented — Awaiting Your Confirmation** |
+| FR-053 | Help and drawing fixes | Hover help on every button; tools turn off on a second click; drip line Finish/Cancel and stop after Finish. | Computer | FR-039 | **Implemented — Awaiting Your Confirmation** |
 | FR-046 | Satellite photo under the plot | Open Google Maps (satellite) for the address, add a screenshot, set scale from two points, move, turn, see-through, hide, remove; in plan files and duplicates. | All | FR-002, FR-006 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
@@ -241,6 +248,12 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (feedback on the test plot)**: Your file was planned by an earlier version (before organised clumps),
+  which is why crops were scattered; replaying your list in the current planner puts each crop in one block. Added:
+  clump arrangement choices and split explanations (FR-047), 1–30-year rotation plans with variety changes (FR-048),
+  the photo turn fix (FR-049), plot address to Google Maps (FR-050), Replace all (FR-051), a movable plot list (FR-052),
+  hover help and drip-line fixes (FR-053).
 
 - **2026-09-27 (yard, checks, photo)**: From your requests: pests and animals in the yard, asked at plot creation,
   with prevention in Care (FR-042); ☆ most important plants and checks before planning (FR-043); a disclaimer (FR-044);

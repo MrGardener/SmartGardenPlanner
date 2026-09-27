@@ -313,7 +313,8 @@ Parent: owner problem report 2026-09-27 (FR-036) · Safety: FC-01 · Verify: Tes
 ### T2-FUN-260 — Plan season after season (NEW 2026-09-27)
 **Statement:** The user shall be able to choose which season of a plot is shown (past seasons read-only), to re-plan
 the whole plot for the next season from the current (or last) season's plant list with crop rotation, and to see a
-rotation plan for several seasons in a row (2 to 10) before committing to the first. When the system places plants
+rotation plan for several seasons in a row (1 to 30, chosen by the user; revised 2026-09-27 from 2 to 10 at the owner's
+request) before committing to the first, and to replace a variety with another from any year of that plan onward. When the system places plants
 (T2-FUN-160), no plant shall go where its rotation family grew in the previous season unless there is no other room,
 in which case the user shall be told.
 Parent: owner request 2026-09-27 (FR-037) · Safety: FC-17 · Verify: Test · Status: Proposed
@@ -383,8 +384,44 @@ Parent: owner request 2026-09-27 (FR-045) · Safety: FC-20 · Verify: Test · St
 a screenshot or aerial photo of the yard under the plot, set its scale from two points a known distance apart, move and
 turn it, change how see-through it is, hide or remove it, and trace obstacles on top of it. The photo shall be kept with
 the plot, travel in plan files and duplicates, and the system shall not fetch map imagery by itself.
-Parent: owner request 2026-09-27 (FR-046) · Safety: FC-24 · Verify: Test · Status: Proposed
+Parent: owner request 2026-09-27 (FR-046, FR-049: turn up to 180° clockwise or counter-clockwise with a slider and a
+number box that stay in step) · Safety: FC-24 · Verify: Test · Status: Proposed
 **Now:** IMPL (phone: the photo is clipped to the plot rectangle; photo changes aren't undoable on the phone).
+
+### T2-FUN-360 — Replace all plants of a variety (NEW 2026-09-27)
+**Statement:** From the list of what's on the plot, the user shall be able to change every plant of one variety to
+another variety in one step, keeping their places and planting dates, be told how many now crowd a neighbour, and undo
+it in one step.
+Parent: owner request 2026-09-27 (FR-051) · Safety: FC-26 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-370 — Plot list out of the way (NEW 2026-09-27)
+**Statement:** On the computer, the "On this plot" box shall be movable anywhere over the layout by dragging, remember
+where it was left, and return to its corner on request, so it never has to cover the part of the plot being reviewed.
+Parent: owner request 2026-09-27 (FR-052) · Safety: — · Verify: Test · Status: Proposed
+**Now:** IMPL (the phone shows the list in the layout menu, which doesn't cover the plot).
+
+### T2-FUN-380 — Choose how clumps are arranged (NEW 2026-09-27)
+**Statement:** Before planting, the user shall be able to choose for each crop how its clump is arranged (for example 50
+as 5 rows of 10, 10 rows of 5, 7 rows of 7 + 1, 6 rows of 8 + 2, or one row), be offered nearby counts that make a neat
+rectangle, and change the count. The planner shall keep each crop in one block where it can; when it has to split a crop
+into several groups it shall say so, with the group sizes and why, before anything is planted.
+Parent: owner request 2026-09-27 (FR-047) · Safety: FC-18 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-390 — Help on every control (NEW 2026-09-27)
+**Statement:** On the computer every button shall show how to use it when the pointer rests on it; tools that place
+things shall turn off when clicked again; drawing a line (drip line, fence, area, outline) shall offer Finish and Cancel,
+and finishing a drip line shall stop adding points.
+Parent: owner problem report 2026-09-27 (FR-053) · Safety: — · Verify: Test · Status: Proposed
+**Now:** IMPL (touch screens have no hover; the phone relies on labels and hints).
+
+### T2-FUN-400 — Plot address and Google Maps (NEW 2026-09-27)
+**Statement:** The user shall be able to keep the plot's street address with the plot and open it in Google Maps with one
+action (for example to take a satellite screenshot); the address shall travel in plan files and duplicates and shall be
+sent nowhere unless the user opens Google Maps.
+Parent: owner request 2026-09-27 (FR-050) · Safety: FC-24 · Verify: Test · Status: Proposed
+**Now:** IMPL.
 
 ### T2-FUN-230 — Keep the gardener's choices (NEW 2026-09-27)
 **Statement:** Discarding a "Plan an area for me" proposal shall not change the plot or lose the list of plants;

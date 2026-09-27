@@ -1,7 +1,7 @@
 # Smart Garden Planner — User Manual
 
 **Covers:** the Android app and the portable computer planner (`web/dist/smart-garden-planner.html`), as of
-2026-09-27 (database schema 11, plan file format 1).
+2026-09-27 (database schema 12, plan file format 1).
 **Status:** Living document, updated with every change. If something here doesn't match what you see, the manual is
 out of date: please flag it. The `manual-tester` subagent checks the computer planner against this manual on request.
 
@@ -107,6 +107,17 @@ direction. North is red once the direction is set, and grey with "N?" until you 
   circle its plants in orange. The button that appears ("Showing … — tap to clear") turns it off.
 - **Computer:** the **On this plot** box at the bottom left does the same. Click a line; click it again or press
   **Esc** to clear. Lines on the **Food** tab (expected harvest) and the **Harmony** tab also find their plants.
+  - **Move the box** out of the way by dragging its header (⠿) anywhere over the layout; it stays there next time.
+    Double-click the header to put it back in the corner. **−** folds it up.
+
+### Replacing a variety everywhere at once
+Changed your mind about a variety? **Replace…** next to it in the list (computer: **On this plot** box; phone: menu →
+**Legend (this plot)**) changes **every** plant of that variety to the one you choose, in one step:
+- They keep their places and planting dates. **Undo** puts them all back.
+- Other varieties of the same plant are offered first (computer), or use the usual variety picker (phone).
+- If the new variety needs more room or doesn't get along with a neighbour, the message says how many plants now crowd
+  a neighbour and the new spacing; Harmony lists them so you can move or remove some.
+- Perennials that won't survive your zone are refused.
 
 ### No-plant paths
 - **Phone:** menu → **Draw / edit no-plant path**. Drag a rectangle (Straight), or tap points and then **Finish
@@ -144,6 +155,8 @@ trace on top of it.
    - **Computer:** Plot tab → **Satellite photo** (or the **Satellite photo** tool on the left).
    - **Phone:** menu → **Satellite photo…**.
 2. Type your address and tap **Open Google Maps (satellite)**. Google Maps opens in your browser or the Maps app.
+   The address is kept with the plot, so next time **Open in Google Maps** (computer: Plot tab, under Edit details;
+   phone: menu) goes straight there. You can also type it in **Edit details…** (computer).
    Switch to **Satellite** if it isn't already, zoom in until your yard fills the screen, and take a screenshot
    (Windows: Win+Shift+S · Mac: Cmd+Shift+4 · phone: the usual screenshot buttons). Keep the Google Maps **scale bar**
    in the picture if you can.
@@ -153,7 +166,9 @@ trace on top of it.
    bar, or both ends of a fence you've measured), then enter that distance in metres (1 ft = 0.3048 m). The photo
    grows or shrinks to match; the first point stays where it is.
 5. **Move** it by dragging (the **Move photo** / **Move** button, or the Satellite photo tool) until it lines up with
-   your plot, and **Turn** it if your plot isn't square to the map. **See-through** makes the photo lighter so your
+   your plot, and **Turn** it if your plot isn't square to the map: drag the slider or type a number, from **−180**
+   (counter-clockwise) to **+180** (clockwise); **0** is not turned. The photo turns about its centre, and the slider
+   and the number always match. **See-through** makes the photo lighter so your
    drawing stays easy to see. **Hide** / **Show** and **Remove photo** do what they say.
 6. Now draw the trees, fences, buildings, outline and beds on top of what you see.
 
@@ -199,13 +214,18 @@ For when you know *what* you want but not *where*.
      last season), a wide **watering** mix, and **pests** from your yard that go for the plants on your list.
    - **Most important:** which plants you've starred.
    Use them to change counts, star different plants or pick another area before you decide.
-6. **How should each crop be arranged?**
+6. **Arrange as** (organised clumps): under each plant, choose how its clump is laid out before anything is planted,
+   for example 50 plants as **5 rows of 10**, **10 rows of 5**, **7 rows of 7 + 1 row of 1**, **6 rows of 8 + 1 row of
+   2** or **1 row of 50**; or **Let the planner choose**. **Neater counts** suggests nearby numbers that make a tidy
+   rectangle (48 = 6 rows of 8, 49 = 7 rows of 7): tap one to use it. (Phone: **Arrange: … ▾** under each plant.)
+   Rows run across the plot, and the first row is at the back (away from the sun).
+7. **How should each crop be arranged?**
    - **Organised clumps (recommended):** each crop is a small block of rows and columns at its own spacing (20 corn
      = 4 rows of 5; 7 tomatoes = a row of 4 and a row of 3), with a **45 cm walkway** between crops so you can walk
      round and water with a hose. Next year the blocks can swap places.
    - **Long rows:** crops lined up by height. Tidy, but harder to rotate: a long row of tomatoes at the back has
      nowhere to go next year without shading the rest.
-7. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
+8. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
    - Tall crops are on the side away from the midday sun (north in the northern hemisphere).
    - Sun lovers get the sunniest spots.
    - Pollinator flowers are next to crops that need bees.
@@ -213,11 +233,15 @@ For when you know *what* you want but not *where*.
    - Plants with similar watering needs are together.
    - Crops are kept off spots their family used recently.
    - The plants you starred went first, with their average sun hours.
+   - Each crop is kept in **one block** where it can be. If a block of the default shape doesn't fit, other tidy
+     shapes are tried first (and named). If a crop still has to be split, the card says so: which crop, how many in
+     each group, and why (for example "Tomato is in 2 groups (4 + 3): no single block of 7 fitted in the free ground").
+     Choose another arrangement, a bigger area or fewer plants to keep them together.
    - **Climbers** (pole beans, peas) are at the back, with a note to put up a trellis there.
    - **Sprawling vines** (watermelon, squash, pumpkin, cucumber, melon, sweet potato, gourds) are on the sunny side,
      with their runway toward the sun kept free (about 2 m for watermelon), shown by a **green arrow**. Guide the
      runners that way.
-8. Choose:
+9. Choose:
    - **Keep this plan** (**Plant them** on the phone) plants everything as one undo step.
    - **Change selections** goes back to your list for the same area.
    - **Discard** drops only the proposal. Your plot and your list stay as they are.
@@ -235,7 +259,8 @@ A plot keeps its fixed features every year and remembers every past season.
 | See last year faintly while planning | Menu → **Past season on layout** | Plot tab → **Also show a past season faintly** |
 | End this season and start empty | Menu → **Start a new season (empty)…** | Plot tab → **Start a new season (empty)…** |
 | Re-plan next year with the same crops, rotated | Menu → **Plan next season (rotate)…** | Plot tab → **Plan next season (rotate)…** |
-| See the next 3 to 10 years | Menu → **Rotation plan for several seasons…** | Plot tab → **Rotation plan for 5 seasons…** (choose 2–10) |
+| See the next 1 to 30 years | Menu → **Rotation plan for several seasons…** (type how many) | Plot tab → **Rotation plan for several seasons…** (type how many) |
+| Grow something different in some years | In the rotation plan: **Change a variety…** | In the rotation plan: **Change a variety…** |
 | Keep a template or try another plan | Menu → **Duplicate this plot…** | Plot tab → **Duplicate…** (top, next to Edit details) or **Duplicate plot…** under Templates |
 
 **Which season am I in?** The season being planned is the year this season's plants were planted (this year if
@@ -249,8 +274,13 @@ following in one undo step:
 2. Plants the new layout.
 
 **Rotation plan** plans several seasons in a row from the same list and shows one year at a time: ◀ / ▶, or
-**Year ▶** on the computer. Nothing changes until you choose **Use <first year> now**. The plan is worked out again
-each time from your plot, so it follows any changes you make.
+**Year ▶** on the computer. Type how many years you want, **1 to 30**. Nothing changes until you choose **Use <first
+year> now**. The plan is worked out again each time from your plot, so it follows any changes you make.
+
+**Change a variety…** (while looking at a year of the plan): pick a variety on the list and the one to grow instead.
+From that year on, every year uses the new one (same number of plants) and the plan is worked out again with crop
+rotation, for example when you're tired of a tomato or already have plenty of something. The years before stay as
+they were. **Clear all changes** goes back to your original list.
 
 **The rotation rules:**
 - Vegetables belong to rotation families, each with a waiting period:
@@ -313,8 +343,12 @@ Draw what you have and see what gets watered.
   - how far it throws water (metres);
   - its pattern: full, three-quarter, half or quarter circle;
   - for a part circle, which way the middle of the spray points.
-- **Drip line / soaker hose:** tap points along it and finish, then set the wetted strip either side (drip about
-  0.3 m, soaker about 0.2 m).
+- **Drip line / soaker hose:** tap or click points along it, then **Finish** (computer: the **Finish (Enter)** button
+  in the tool bar, Enter, or a double-click on the last point; phone: **Finish**). Then set the wetted strip either
+  side (drip about 0.3 m, soaker about 0.2 m). After Finish the tool goes back to Select / move; **Cancel (Esc)**
+  drops the points.
+- **Computer:** click a sprinkler, drip line or hose tap button again to stop placing; every button shows what it
+  does when you rest the pointer on it.
 - **Hose tap:** tap where the tap is and give the hose length. Anywhere within that distance counts as reachable
   (in a straight line; walls or beds in the way are not modelled).
 
@@ -464,6 +498,17 @@ see.
 ---
 
 ## Changelog
+
+- **2026-09-27 (your feedback on the test plot):**
+  - **Replace…** in the plot's list changes every plant of a variety at once.
+  - The computer's **On this plot** box can be dragged out of the way.
+  - **Arrange as**: choose rows × columns for each clump before planting, with neater counts suggested; crops are kept
+    in one block where possible, and any split is explained.
+  - **Rotation plan** for 1 to 30 years, with **Change a variety…** from any year on.
+  - Satellite photo **turn** fixed: −180…+180 about the photo's centre, with a number box that follows the slider.
+  - **Drip lines** have a Finish button and stop adding points after Finish; tool buttons turn off when clicked
+    again; every button on the computer shows what it does on hover.
+  - The plot's **address** is kept and **Open in Google Maps** goes straight there. Database schema 12.
 
 - **2026-09-27 (yard, checks and photo):**
   - A **disclaimer** before first use: the planner is a guide, not a guarantee.

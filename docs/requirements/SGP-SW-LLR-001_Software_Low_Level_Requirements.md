@@ -1322,12 +1322,16 @@ there are plants; seasonYear = season + 1 when there are plants, else season. Th
 (web `Store.change`; Android one `withTransaction`) archives the current plants with `Seasons.currentSeason`, deletes
 them and inserts the proposal; one undo snapshot. ↑ HLR-SEAS-040
 
-**LLR-SEAS-060** `RotationPlanner.planSeasons(context, area, requests, history, firstYear, seasons ∈ 1..10)` shall call
-`AutoPlanner.plan` (CLUMPS, strict) for each year with the context's nodes cleared and the history accumulated with each
+**LLR-SEAS-060** `RotationPlanner.planSeasons(context, area, requests, history, firstYear, seasons ∈ 1..MAX_SEASONS (30),
+…, changes)` shall call `AutoPlanner.plan` (CLUMPS, strict) with `requestsFor(requests, changes, year)` for each year with the context's nodes cleared and the history accumulated with each
 planned year (`Seasons.archive` of the placed plants), and return `SeasonPlan(year, result, summary)` where `summary`
 gives each rotation family (or species) with its species and `CropRotation.describeSpot` of its centroid. It is
-deterministic. Web: count 2–10 (default 5), preview card with "◀ Year", "Year ▶", "Use <first year> now", "Close";
-Android: 3/5/7/10 chips, ◀ ▶, "Use <year> now", "Discard". ↑ HLR-SEAS-050
+deterministic. `requestsFor` applies each change map (year → from code → to seed) whose year ≤ the planned year, in year
+order, keeping counts and priority (shape cleared), and merges requests that end up with the same variety. Web: a number
+box 1–30 (default 5), preview card with "◀ Year", "Year ▶", "Change a variety…", "Use <first year> now", "Close";
+`Store.rotationBase/FirstYear/Seasons/Changes` keep the inputs so a change re-plans and keeps the year shown. Android: a
+number field 1–30, ◀ ▶, "Change a variety…" (radio list + variety picker, "Clear changes"), "Use <year> now",
+"Discard"; planning runs on `Dispatchers.Default`. ↑ HLR-SEAS-050
 
 **LLR-ROT-030** `BlockPlanner.plan(strictRotation = true)` shall add to the cheap cell check: reject a cell within
 `CropRotation.reach(h)` + half the seed's radius of any history entry h from seasonYear − 1 with the same rotation group
@@ -1382,6 +1386,44 @@ the context's current plants in place, and returns the placed counts, which repl
 copies paths, site features, the satellite photo and, as chosen, plants and history to the new plot (Android: one
 transaction, then the photo file is copied). ↑ HLR-TPL-010
 
+**LLR-SWAP-010** `PlantSwap.replaceAll(nodes, fromCode, to, lookup, zone, margin, companions, guilds)` shall return the
+nodes unchanged with a message when the variety is the same, none are planted, or `HardinessZones.blocksPlacement(to,
+zone)`; otherwise every node of `fromCode` gets `to`'s code (ids, positions, dates kept), `changed` = their number,
+`crowded` = replaced nodes failing `validatePlacement` against all others, and messages: "Replaced n A with B.", the
+new spacing when larger, the crowding count, and `HardinessZones.describe`. Web: legend "Replace…" → dialog with the
+variety box and other varieties of the species as chips → one `Store.change`. Android: legend menu item trailing
+"Replace…" → `VarietyPickerDialog` → node updates in one transaction, undo snapshot. ↑ HLR-SWAP-010
+
+**LLR-LEG-010** Web: the `.pl-head` of `#sgp-plant-legend` handles pointerdown/move/up (ignoring its buttons), moves the
+box with `left/top` clamped to the stage, and saves `Prefs.legendPos` (localStorage `sgp.legendPos` "x,y") on release;
+double-click clears it. `placeLegend()` applies it on every render, clamped to the stage; `.stage` hides overflow. ↑ HLR-LEG-010
+
+**LLR-ARR-010** `ClumpShapes.options(n)`: `BlockPlanner.rowSizes(n)` first, then exact k × c rectangles (aspect ≤ 5,
+squarest first), then "k rows of c + 1 row of r" (r < c, aspect ≤ 3, up to 4), then one row of n; at most 10.
+`nearbyTidy(n)`: counts n−3…n+3 (≠ n) with a k × c factorisation, k ≤ c ≤ 2k (largest k). `label(rows)`: "1 row of n",
+"k rows of c", "k rows of c + 1 row of r", else "rows of a + b …". `PlantRequest.shape` (plants per row, back row first)
+is used for the first block when its sum equals the count. Web: "Arrange as" select and "Neater counts" chips under each
+row (`Store.planShapes`), refilled in place on count change; Android: "Arrange: … ▾" menu per row (`planShapes`). ↑ HLR-ARR-010
+
+**LLR-ARR-020** `BlockPlanner` searches a block with `search(rows)`; with no chosen shape, when the first block holds fewer
+than the remaining plants it also searches up to 6 other `ClumpShapes.options` and takes the best that fits them all,
+noting "To keep each crop in one block, these got a different arrangement: …". After a crop, blocks > 1 adds "<species> is
+in n groups (a + b …): <your arrangement (…) didn't fit in one piece of free ground | no single block of N fitted in the
+free ground>. To keep them together, choose another arrangement, a bigger area or fewer plants." ↑ HLR-ARR-020
+
+**LLR-HELP-010** `Tips.apply(root)` sets `title` on every `button:not([title])` from `Tips.forLabel` (exact label, compass
+letter, then prefix), else the label; called after every `App.render`, when a modal opens and after the plan list is
+redrawn. `renderTools` toggles an active tool other than SELECT/PLAN back to SELECT; `Canvas.toggleWater(type)` does the
+same for the irrigation buttons and states how to place each kind. Finish/Cancel show for LINE_OBSTACLE, AREA, OUTLINE
+and a DRIP_LINE in progress; `finishPoints` drops points within 5 cm of the previous one, needs 2, sets the tool to
+SELECT and opens the feature dialog. ↑ HLR-HELP-010
+
+**LLR-ADDR-010** `PlotEntity.address` (schema 12, MIGRATION_11_12 `ALTER TABLE plots ADD COLUMN address TEXT`); plan files
+`location.address` (≤ 200 characters, blank dropped). Web Plot details "Address" field; Plot tab row "Open in Google Maps"
+with the address shown; `Photo.openMaps` saves a typed non-numeric address to the plot (one undo step). Android: menu
+"Open in Google Maps (address)" (opens the photo dialog when there's no address or location); `openInMaps` saves a typed
+address with `plotDao().update`. URLs from `Backdrop.googleMapsUrl`. ↑ HLR-ADDR-010
+
 **LLR-YARD-010** `PlotEntity.pests` (schema 11, MIGRATION_10_11 `ALTER TABLE plots ADD COLUMN pests TEXT`) shall hold
 `Pest.encode` ("DEER,RABBIT", ordinal order, null when empty); `Pest.parse` ignores unknown names. The web plot dialog
 and the Android creator show the tick list (`PestChips` on Android); plan files write `"pests": ["DEER", …]` and read
@@ -1417,14 +1459,18 @@ count change; Android in a `LaunchedEffect` on `Dispatchers.Default`. ↑ HLR-CH
 **LLR-SAT-010** `Backdrop.googleMapsUrl(lat, lon, query)`: a non-blank query gives
 `https://www.google.com/maps/search/?api=1&query=<percent-encoded>`; otherwise coordinates give
 `…/maps/@?api=1&map_action=map&center=lat,lon&zoom=18&basemap=satellite`. Web opens it with `window.open` (Plot tab →
-Satellite photo); Android with `ACTION_VIEW` (menu → Satellite photo…). Picked images are scaled to ≤ 1600 px and stored
+Satellite photo); Android with `ACTION_VIEW` (menu → Satellite photo…). The address box starts from `PlotEntity.address`. Picked images are scaled to ≤ 1600 px and stored
 as JPEG 85 % (web: data URL, retried at 60 % if over 4 000 000 characters). `Backdrop.fresh` sets width = plot length,
 aspect = height/width. ↑ HLR-SAT-010
 
 **LLR-SAT-020** `Backdrop.calibrate(a, b, d)` returns null if |ab| < 0.01 m, d ∉ 0.1–2000 or the new width ∉ 1–2000 m;
-else scales by k = d/|ab| about a. `moved(dx, dy)`; rotation stored 0–360; opacity 0.1–1; `visible`. Web: Tool
+else scales by k = d/|ab| about a (the centre moves to a + k(c − a); the turn is kept). The photo turns about its centre;
+`turned(deg)` and `parse` normalise to −180…180 (`normalizeDeg`), `describeTurn` gives "n° clockwise / counter-clockwise".
+Web: a range and a number box (min/max set before the value) kept in step, applied on change; SVG `rotate(r cx cy)`.
+Android: `Slider` −180…180 and a number field with "Set"; `nativeCanvas.rotate(r, w/2, h/2)` after translating to the
+corner. `moved(dx, dy)`; opacity 0.1–1; `visible`. Web: Tool
 "Satellite photo" (drag to move; two clicks then a distance dialog while calibrating), SVG `<image>` with
-`rotate(r x y)` drawn after the paper, before the grid; sliders apply on change; every change is one undo step.
+`rotate(r cx cy)` (about the centre) drawn after the paper, before the grid; sliders apply on change; every change is one undo step.
 Android: `CanvasMode.PHOTO` with a tap detector (calibrating) or drag detector (moving), bitmap drawn with the plot's
 x/y scale, translate and rotate before the grid; placement saved with `plotDao().update`. ↑ HLR-SAT-020
 
@@ -1438,7 +1484,7 @@ is full, warning on the Plot tab. ↑ HLR-SAT-030
 
 **LLR-ORNT-010** `PlotEntity` shall store `northBearingDeg` (0–360, the compass bearing of the plot's top edge)
 and `orientationSet` (added in schema 9 by MIGRATION_8_9 as `orientationSet INTEGER NOT NULL DEFAULT 0`; the current
-schema is 11). The creator
+schema is 12). The creator
 shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° slider with 70 steps; saving sets
 `orientationSet = true`. ↑ HLR-ORNT-010
 
@@ -1735,6 +1781,12 @@ Generated by script from the `↑` links above.
 | HLR-IRR-030 | Active | LLR-WATER-030 |
 | HLR-FILL-010 | Active | LLR-FILLP-010 |
 | HLR-TPL-010 | Active | LLR-TPL-010 |
+| HLR-SWAP-010 | Active | LLR-SWAP-010 |
+| HLR-LEG-010 | Active | LLR-LEG-010 |
+| HLR-ARR-010 | Active | LLR-ARR-010 |
+| HLR-ARR-020 | Active | LLR-ARR-020 |
+| HLR-HELP-010 | Active | LLR-HELP-010 |
+| HLR-ADDR-010 | Active | LLR-ADDR-010 |
 | HLR-YARD-010 | Active | LLR-YARD-010 |
 | HLR-YARD-020 | Active | LLR-YARD-020 |
 | HLR-PRIO-010 | Active | LLR-PRIO-010 |
@@ -1758,8 +1810,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **278**. Duplicate LLR IDs: **0**.
-- HLRs: 191 (183 active, 7 future, 1 suspended).
+- LLRs: **284**. Duplicate LLR IDs: **0**.
+- HLRs: 197 (189 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

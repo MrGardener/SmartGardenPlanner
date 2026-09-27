@@ -47,6 +47,7 @@ device: the Android app today, and the browser planner for computers later (see 
 | `location.zip` | string | no | 5-digit US ZIP. |
 | `location.latitude`, `.longitude` | number | no | −90…90, −180…180. |
 | `location.hardinessZone` | string | no | USDA zone, `"1a"` … `"13b"`. |
+| `location.address` | string | no | Street address (≤ 200 characters), for "Open in Google Maps". Added 2026-09-27, still version 1. |
 | `soil.sandPct`, `.siltPct`, `.clayPct`, `.organicPct` | number | no | 0–100. |
 | `soil.ph` | number | no | 3–10. |
 | `createdAt`, `modifiedAt` | string (date) | no | |
@@ -55,7 +56,7 @@ device: the Android app today, and the browser planner for computers later (see 
 | `siteFeatures` | array of SiteFeature | no | Obstacles and marked areas, up to 2000. |
 | `history` | array of PastPlanting | no | Plants of finished seasons (FR-033), up to 20,000. Omitted when empty; readers that don't know it ignore it. |
 | `pests` | array of string | no | Pests seen in the yard (FR-042): `DEER`, `RABBIT`, `RACCOON`, `SQUIRREL`, `GROUNDHOG`, `GOPHER`, `VOLE`, `CHIPMUNK`, `SKUNK`, `ARMADILLO`, `FERAL_HOG`, `PETS`, `BIRDS`, `SLUGS`, `APHIDS`, `CABBAGE_WORMS`, `HORNWORMS`, `SQUASH_PESTS`, `BEETLES`, `MOLES`. Unknown names are ignored. Added 2026-09-27, still version 1. |
-| `backdrop` | object | no | Satellite photo (FR-046): `image` (data URL, `data:image/jpeg|png|webp;base64,…`, at most 4,000,000 characters), `x`, `y` (top-left corner, metres, within ±10 km), `widthM` (1–2000), `aspect` (height ÷ width, 0.05–20), `rotationDeg` (clockwise about the corner), `opacity` (0.1–1), `visible`. Dropped with a warning if the image or placement is invalid. Added 2026-09-27, still version 1. |
+| `backdrop` | object | no | Satellite photo (FR-046): `image` (data URL, `data:image/jpeg|png|webp;base64,…`, at most 4,000,000 characters), `x`, `y` (top-left corner, metres, within ±10 km), `widthM` (1–2000), `aspect` (height ÷ width, 0.05–20), `rotationDeg` (about the photo's centre, −180…180, + = clockwise; older values 0–360 are read as −180…180), `opacity` (0.1–1), `visible`. Dropped with a warning if the image or placement is invalid. Added 2026-09-27, still version 1. |
 
 ## 4. Plant
 
