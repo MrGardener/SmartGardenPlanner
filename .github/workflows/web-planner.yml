@@ -41,10 +41,12 @@ jobs:
         working-directory: web
         run: sh build.sh
       - name: Committed HTML matches the source
-        # The Kotlin/JS compiler emits the interface list in initMetadataForClass(...) in a nondeterministic
-        # order (it only feeds `is` checks, so behaviour is the same); those lines are left out of the comparison.
+        # The Kotlin/JS compiler's output varies in order between runs: the interface list inside
+        # initMetadataForClass(...) lines and the order of some top-level blocks (e.g. polyfills). Neither changes
+        # behaviour, so the comparison ignores those lines and compares the remaining lines as a sorted multiset:
+        # any added, removed or edited line (code or embedded data) still fails the check.
         run: |
-          norm() { grep -v '^initMetadataForClass(' "$1"; }
+          norm() { grep -v '^initMetadataForClass(' "$1" | LC_ALL=C sort; }
           git show HEAD:web/dist/smart-garden-planner.html > "$RUNNER_TEMP/committed.html"
           if ! diff -q <(norm "$RUNNER_TEMP/committed.html") <(norm web/dist/smart-garden-planner.html) > /dev/null; then
             echo "::error::web/dist/smart-garden-planner.html is out of date. Run web/build.sh and commit it."
