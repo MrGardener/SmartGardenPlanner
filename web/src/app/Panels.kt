@@ -77,6 +77,7 @@ object Panels {
         body.add(kv("Plants", wp.plants.size.toString()))
         body.add(h("div", "row", kids = listOf(
             button("Edit details…", "btn primary") { Dialogs.plotDetails(p) },
+            button("Duplicate…", "btn", "Copy this plot (like duplicating a browser tab), with or without its plants and history") { Dialogs.duplicatePlot() },
             button("Delete plot", "btn danger") { Dialogs.confirm("Delete plot", "Delete “${p.name}” from this plan? (Undo can't bring back a deleted plot, but your saved file still has it.)", "Delete") { Store.removeCurrent(); App.render() } }
         )))
         if (!p.orientationSet) body.add(para("Set which way the plot faces so shade and “plan for me” are accurate.", "warn"))

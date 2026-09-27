@@ -184,7 +184,7 @@ A plot keeps its fixed features every year and remembers every past season.
 | End this season and start empty | Menu → **Start a new season (empty)…** | Plot tab → **Start a new season (empty)…** |
 | Re-plan next year with the same crops, rotated | Menu → **Plan next season (rotate)…** | Plot tab → **Plan next season (rotate)…** |
 | See the next 3 to 10 years | Menu → **Rotation plan for several seasons…** | Plot tab → **Rotation plan for 5 seasons…** (choose 2–10) |
-| Keep a template or try another plan | Menu → **Duplicate this plot…** | Plot tab → **Duplicate plot…** |
+| Keep a template or try another plan | Menu → **Duplicate this plot…** | Plot tab → **Duplicate…** (top, next to Edit details) or **Duplicate plot…** under Templates |
 
 **Which season am I in?** The season being planned is the year this season's plants were planted (this year if
 there are none). It is always the year after the last season you closed. You plan that season; past seasons are for

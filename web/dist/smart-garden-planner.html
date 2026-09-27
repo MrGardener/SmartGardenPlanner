@@ -111812,7 +111812,8 @@ function plot($this, body, wp) {
   }
   add_0(body, [kv($this, 'Plants', wp.plants_1.get_size_woubt6_k$().toString())]);
   var tmp_1 = button('Edit details\u2026', 'btn primary', VOID, Panels$plot$lambda(p));
-  add_0(body, [h('div', 'row', VOID, VOID, listOf_0([tmp_1, button('Delete plot', 'btn danger', VOID, Panels$plot$lambda_0(p))]))]);
+  var tmp_2 = button('Duplicate\u2026', 'btn', 'Copy this plot (like duplicating a browser tab), with or without its plants and history', Panels$plot$lambda_0);
+  add_0(body, [h('div', 'row', VOID, VOID, listOf_0([tmp_1, tmp_2, button('Delete plot', 'btn danger', VOID, Panels$plot$lambda_1(p))]))]);
   if (!p.orientationSet_1) {
     add_0(body, [para('Set which way the plot faces so shade and \u201Cplan for me\u201D are accurate.', 'warn')]);
   }
@@ -111826,13 +111827,13 @@ function plot($this, body, wp) {
   var _iterator__ex2g4s = this_1.iterator_jk1svi_k$();
   while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
     var item = _iterator__ex2g4s.next_20eer_k$();
-    var tmp_2 = Canvas_getInstance().tool_1.equals(Tool_LINE_OBSTACLE_getInstance()) && Canvas_getInstance().obstacleType_1.equals(item) ? 'btn on' : 'btn';
-    var tmp$ret$6 = button(item.label_1, tmp_2, VOID, Panels$plot$lambda_1(item));
+    var tmp_3 = Canvas_getInstance().tool_1.equals(Tool_LINE_OBSTACLE_getInstance()) && Canvas_getInstance().obstacleType_1.equals(item) ? 'btn on' : 'btn';
+    var tmp$ret$6 = button(item.label_1, tmp_3, VOID, Panels$plot$lambda_2(item));
     destination.add_utx5q5_k$(tmp$ret$6);
   }
-  var tmp_3 = destination;
-  var tmp_4 = Canvas_getInstance().tool_1.equals(Tool_TREE_getInstance()) ? 'btn on' : 'btn';
-  add_0(body, [h('div', 'row wrap', VOID, VOID, plus_0(tmp_3, button('Tree', tmp_4, VOID, Panels$plot$lambda_2)))]);
+  var tmp_4 = destination;
+  var tmp_5 = Canvas_getInstance().tool_1.equals(Tool_TREE_getInstance()) ? 'btn on' : 'btn';
+  add_0(body, [h('div', 'row wrap', VOID, VOID, plus_0(tmp_4, button('Tree', tmp_5, VOID, Panels$plot$lambda_3)))]);
   // Inline function 'kotlin.collections.filter' call
   var tmp0 = get_entries_5();
   // Inline function 'kotlin.collections.filterTo' call
@@ -111850,14 +111851,14 @@ function plot($this, body, wp) {
   var _iterator__ex2g4s_1 = destination_0.iterator_jk1svi_k$();
   while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
     var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
-    var tmp_5 = Canvas_getInstance().tool_1.equals(Tool_AREA_getInstance()) && Canvas_getInstance().areaType_1.equals(item_0) ? 'btn on' : 'btn';
-    var tmp$ret$12 = button(item_0.label_1, tmp_5, VOID, Panels$plot$lambda_3(item_0));
+    var tmp_6 = Canvas_getInstance().tool_1.equals(Tool_AREA_getInstance()) && Canvas_getInstance().areaType_1.equals(item_0) ? 'btn on' : 'btn';
+    var tmp$ret$12 = button(item_0.label_1, tmp_6, VOID, Panels$plot$lambda_4(item_0));
     destination_1.add_utx5q5_k$(tmp$ret$12);
   }
   add_0(body, [h('div', 'row wrap', VOID, VOID, destination_1)]);
-  var tmp_6 = Canvas_getInstance().tool_1.equals(Tool_OUTLINE_getInstance()) ? 'btn on' : 'btn';
-  var tmp_7 = button('Outline (odd shape)', tmp_6, VOID, Panels$plot$lambda_4);
-  add_0(body, [h('div', 'row wrap', VOID, VOID, listOf_0([tmp_7, button('Delete outline', 'btn danger', VOID, Panels$plot$lambda_5)]))]);
+  var tmp_7 = Canvas_getInstance().tool_1.equals(Tool_OUTLINE_getInstance()) ? 'btn on' : 'btn';
+  var tmp_8 = button('Outline (odd shape)', tmp_7, VOID, Panels$plot$lambda_5);
+  add_0(body, [h('div', 'row wrap', VOID, VOID, listOf_0([tmp_8, button('Delete outline', 'btn danger', VOID, Panels$plot$lambda_6)]))]);
   // Inline function 'kotlin.collections.isNotEmpty' call
   if (!wp.features_1.isEmpty_y1axqb_k$()) {
     add_0(body, [heading('On this plot')]);
@@ -111867,24 +111868,24 @@ function plot($this, body, wp) {
       var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
       $l$block: {
         var tmp0_elvis_lhs = Companion_instance_13.of_5gnbr7_k$(element_0.featureType_1);
-        var tmp_8;
+        var tmp_9;
         if (tmp0_elvis_lhs == null) {
           break $l$block;
         } else {
-          tmp_8 = tmp0_elvis_lhs;
+          tmp_9 = tmp0_elvis_lhs;
         }
-        var t = tmp_8;
+        var t = tmp_9;
         // Inline function 'kotlin.text.ifBlank' call
         var this_2 = element_0.label_1;
-        var tmp_9;
+        var tmp_10;
         if (isBlank(this_2)) {
-          tmp_9 = t.label_1;
+          tmp_10 = t.label_1;
         } else {
-          tmp_9 = this_2;
+          tmp_10 = this_2;
         }
-        var tmp$ret$18 = tmp_9;
-        var tmp_10 = h('span', 'grow', tmp$ret$18 + (t.isBarrier_1 ? ' \xB7 ' + fmt_0(element_0.heightM_1, 1) + ' m' : ''));
-        add_0(body, [h('div', 'list-item', VOID, VOID, listOf_0([tmp_10, button('Edit', 'btn small', VOID, Panels$plot$lambda_6(element_0))]))]);
+        var tmp$ret$18 = tmp_10;
+        var tmp_11 = h('span', 'grow', tmp$ret$18 + (t.isBarrier_1 ? ' \xB7 ' + fmt_0(element_0.heightM_1, 1) + ' m' : ''));
+        add_0(body, [h('div', 'list-item', VOID, VOID, listOf_0([tmp_11, button('Edit', 'btn small', VOID, Panels$plot$lambda_7(element_0))]))]);
       }
     }
   }
@@ -111896,17 +111897,17 @@ function plot($this, body, wp) {
     add_0(body, [para(element_1, 'hint')]);
   }
   add_0(body, [heading('Settings (this browser)')]);
-  var tmp_11 = Prefs_instance.get_enforceCompanions_jksedc_k$();
-  add_0(body, [check($this, 'Enforce companion rules (keep antagonists apart)', tmp_11, Panels$plot$lambda_7)]);
-  var tmp_12 = Prefs_instance.get_guilds_dzkfs9_k$();
-  add_0(body, [check($this, 'Guild planting (lets guild members sit together)', tmp_12, Panels$plot$lambda_8)]);
-  var tmp_13 = listOf_0([to('0.8', 'Tight (\xD70.8)'), to('1.0', 'Standard (\xD71.0)'), to('1.2', 'Roomy (\xD71.2)')]);
+  var tmp_12 = Prefs_instance.get_enforceCompanions_jksedc_k$();
+  add_0(body, [check($this, 'Enforce companion rules (keep antagonists apart)', tmp_12, Panels$plot$lambda_8)]);
+  var tmp_13 = Prefs_instance.get_guilds_dzkfs9_k$();
+  add_0(body, [check($this, 'Guild planting (lets guild members sit together)', tmp_13, Panels$plot$lambda_9)]);
+  var tmp_14 = listOf_0([to('0.8', 'Tight (\xD70.8)'), to('1.0', 'Standard (\xD71.0)'), to('1.2', 'Roomy (\xD71.2)')]);
   // Inline function 'kotlin.let' call
   var it = Prefs_instance.get_margin_gizxkn_k$().toString();
-  var tmp_14 = it === '1' ? '1.0' : it;
-  add_0(body, [label('Spacing margin', select(tmp_13, tmp_14, Panels$plot$lambda_9))]);
-  var tmp_15 = Prefs_instance.get_organic_injuny_k$();
-  add_0(body, [check($this, 'Organic care advice', tmp_15, Panels$plot$lambda_10)]);
+  var tmp_15 = it === '1' ? '1.0' : it;
+  add_0(body, [label('Spacing margin', select(tmp_14, tmp_15, Panels$plot$lambda_10))]);
+  var tmp_16 = Prefs_instance.get_organic_injuny_k$();
+  add_0(body, [check($this, 'Organic care advice', tmp_16, Panels$plot$lambda_11)]);
 }
 function seasons($this, body, wp) {
   var season = wp.season_ezlwyl_k$();
@@ -112465,12 +112466,16 @@ function Panels$plot$lambda($p) {
     return Unit_instance;
   };
 }
+function Panels$plot$lambda_0() {
+  Dialogs_instance.duplicatePlot_kqhhh8_k$();
+  return Unit_instance;
+}
 function Panels$plot$lambda$lambda() {
   Store_getInstance().removeCurrent_qlc9z9_k$();
   App_instance.render_dje1iy_k$();
   return Unit_instance;
 }
-function Panels$plot$lambda_0($p) {
+function Panels$plot$lambda_1($p) {
   return function () {
     var tmp = Dialogs_instance;
     var tmp_0 = 'Delete \u201C' + $p.name_1 + "\u201D from this plan? (Undo can't bring back a deleted plot, but your saved file still has it.)";
@@ -112478,47 +112483,47 @@ function Panels$plot$lambda_0($p) {
     return Unit_instance;
   };
 }
-function Panels$plot$lambda_1($t) {
+function Panels$plot$lambda_2($t) {
   return function () {
     Canvas_getInstance().obstacleType_1 = $t;
     Canvas_getInstance().setTool_uvz0kx_k$(Tool_LINE_OBSTACLE_getInstance());
     return Unit_instance;
   };
 }
-function Panels$plot$lambda_2() {
+function Panels$plot$lambda_3() {
   Canvas_getInstance().setTool_uvz0kx_k$(Tool_TREE_getInstance());
   return Unit_instance;
 }
-function Panels$plot$lambda_3($t) {
+function Panels$plot$lambda_4($t) {
   return function () {
     Canvas_getInstance().areaType_1 = $t;
     Canvas_getInstance().setTool_uvz0kx_k$(Tool_AREA_getInstance());
     return Unit_instance;
   };
 }
-function Panels$plot$lambda_4() {
+function Panels$plot$lambda_5() {
   Canvas_getInstance().setTool_uvz0kx_k$(Tool_OUTLINE_getInstance());
   return Unit_instance;
 }
-function Panels$plot$lambda_5() {
+function Panels$plot$lambda_6() {
   Canvas_getInstance().deleteOutline_tw1iyv_k$();
   return Unit_instance;
 }
-function Panels$plot$lambda_6($f) {
+function Panels$plot$lambda_7($f) {
   return function () {
     Dialogs_instance.feature_8lo7ub_k$($f, false);
     return Unit_instance;
   };
 }
-function Panels$plot$lambda_7(it) {
+function Panels$plot$lambda_8(it) {
   Prefs_instance.set_enforceCompanions_8hvczt_k$(it);
   return Unit_instance;
 }
-function Panels$plot$lambda_8(it) {
+function Panels$plot$lambda_9(it) {
   Prefs_instance.set_guilds_xrvaqg_k$(it);
   return Unit_instance;
 }
-function Panels$plot$lambda_9(it) {
+function Panels$plot$lambda_10(it) {
   var tmp = Prefs_instance;
   // Inline function 'kotlin.text.toFloat' call
   // Inline function 'kotlin.js.unsafeCast' call
@@ -112528,7 +112533,7 @@ function Panels$plot$lambda_9(it) {
   App_instance.render_dje1iy_k$();
   return Unit_instance;
 }
-function Panels$plot$lambda_10(it) {
+function Panels$plot$lambda_11(it) {
   Prefs_instance.set_organic_m0m1kp_k$(it);
   return Unit_instance;
 }

@@ -319,6 +319,7 @@ await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).c
 
 // Duplicate the plot (with its history), then delete the copy.
 await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+check(await btn('Duplicate…').isVisible(), 'Duplicate… button at the top of the Plot tab');
 await btn('Duplicate plot…').click();
 await page.locator('.modal').waitFor();
 await btn('Duplicate').click();
