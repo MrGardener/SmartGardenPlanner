@@ -347,6 +347,45 @@ independently of the original.
 Parent: owner request 2026-09-27 (FR-041) · Safety: FC-21 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
+### T2-FUN-310 — Pests and wildlife in the yard (NEW 2026-09-27)
+**Statement:** When a plot is created, the system shall ask which pests and animals the user sees regularly in the yard
+(at least deer, rabbits, raccoons, squirrels, groundhogs, gophers, voles, chipmunks, skunks/opossums, armadillos, wild
+hogs, pets, birds, slugs and common insect pests), keep the answer with the plot, let the user change it, and in the Care
+section give for each one the signs of damage, ways to prevent it (for example fence height and type), and the plot's
+plants it is known to go for.
+Parent: owner request 2026-09-27 (FR-042) · Safety: FC-23 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-320 — Most important plants and checks before planning (NEW 2026-09-27)
+**Statement:** In "Plan an area for me" and "Fill the whole plot" the user shall be able to mark the plants that matter
+most; the system shall show checks before anything is placed (space needed, sun available for each sun need, plants that
+grow poorly together, hardiness, crop rotation, watering mix, the yard's pests, and which plants are marked), and shall
+place the marked plants first, in the sunniest spots that suit them.
+Parent: owner request 2026-09-27 (FR-043) · Safety: FC-18, FC-25 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-330 — Disclaimer (NEW 2026-09-27)
+**Statement:** Before first use, and afterwards from help (computer) or Settings (phone) and in the user manual, the
+system shall state that it is a planning aid, that it does not guarantee any result, and that its advice is guidance to
+help the user decide rather than mandatory instructions; the user shall acknowledge it once.
+Parent: owner request 2026-09-27 (FR-044) · Safety: FC-23, FC-25 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-340 — Watering recommendations (NEW 2026-09-27)
+**Statement:** The Care section shall give watering recommendations: general practice, how to choose between sprinklers,
+drip and hose, how much water each planted crop needs, which plants no sprinkler, drip line or hose reaches, and where
+drip is better than overhead watering; the tools to draw irrigation and the water map shall be reachable from there.
+Parent: owner request 2026-09-27 (FR-045) · Safety: FC-20 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-350 — Satellite photo under the plot (NEW 2026-09-27)
+**Statement:** The user shall be able to open a map service (Google Maps) in satellite view for the plot's address, add
+a screenshot or aerial photo of the yard under the plot, set its scale from two points a known distance apart, move and
+turn it, change how see-through it is, hide or remove it, and trace obstacles on top of it. The photo shall be kept with
+the plot, travel in plan files and duplicates, and the system shall not fetch map imagery by itself.
+Parent: owner request 2026-09-27 (FR-046) · Safety: FC-24 · Verify: Test · Status: Proposed
+**Now:** IMPL (phone: the photo is clipped to the plot rectangle; photo changes aren't undoable on the phone).
+
 ### T2-FUN-230 — Keep the gardener's choices (NEW 2026-09-27)
 **Statement:** Discarding a "Plan an area for me" proposal shall not change the plot or lose the list of plants;
 the user shall be able to go back from the proposal to the list, with the same area and choices, change it and plan

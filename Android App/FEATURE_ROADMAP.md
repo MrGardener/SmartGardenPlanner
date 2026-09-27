@@ -132,6 +132,11 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-039 | Irrigation | Sprinklers (radius, full/part circle, direction), drip lines / soaker hoses, hose taps (hose length); water map; plants needing a watering can ringed; leaf-wetting advice; in plan files. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-040 | Fill the plot | Fill the whole plot and "How many fit?" keeping the list's proportions. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
 | FR-041 | Plot templates | Duplicate a plot with its site and, optionally, plants and history. | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
+| FR-042 | Pests and wildlife in the yard | Asked when a plot is created (deer, rabbits, raccoons, squirrels, groundhogs, gophers, voles, chipmunks, skunks, armadillos, hogs, pets, birds, slugs, insects); Care shows signs, prevention (fence heights, netting, buried wire…) and the plants each goes for. | All | FR-018 | **Implemented — Awaiting Your Confirmation** |
+| FR-043 | Most important plants and checks before planning | ☆ marks plants placed first in the sunniest spots; "Checks before planning" (space, sun, neighbours, zone, rotation, water, pests) before anything is placed. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-044 | Disclaimer | "A guide, not a guarantee" before first use, in help/Settings, the Care tab and the manual. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-045 | Watering recommendations | Care → Watering and irrigation: tools, water map, unreached and thirsty plants, per-crop needs, tips, choosing a system. | All | FR-039 | **Implemented — Awaiting Your Confirmation** |
+| FR-046 | Satellite photo under the plot | Open Google Maps (satellite) for the address, add a screenshot, set scale from two points, move, turn, see-through, hide, remove; in plan files and duplicates. | All | FR-002, FR-006 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
 ---
@@ -236,6 +241,12 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-27 (yard, checks, photo)**: From your requests: pests and animals in the yard, asked at plot creation,
+  with prevention in Care (FR-042); ☆ most important plants and checks before planning (FR-043); a disclaimer (FR-044);
+  watering recommendations in Care with the irrigation tools (FR-045); a satellite photo under the plot to trace the
+  yard (FR-046). A live Google satellite layer was not used: it needs an API key and Google's terms don't allow its
+  imagery in an offline app, so you add your own screenshot instead.
 
 - **2026-09-27 (seasons, shade, water, templates)**: From your questions: you can now look back at any season,
   re-plan next season with rotation in one step, and preview a rotation plan for up to 10 seasons (FR-037); shade can be

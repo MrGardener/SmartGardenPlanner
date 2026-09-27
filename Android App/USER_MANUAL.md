@@ -1,12 +1,20 @@
 # Smart Garden Planner — User Manual
 
 **Covers:** the Android app and the portable computer planner (`web/dist/smart-garden-planner.html`), as of
-2026-09-27 (database schema 10, plan file format 1).
+2026-09-27 (database schema 11, plan file format 1).
 **Status:** Living document, updated with every change. If something here doesn't match what you see, the manual is
 out of date: please flag it. The `manual-tester` subagent checks the computer planner against this manual on request.
 
 Where the two versions differ, this manual says **Phone:** and **Computer:**. Both use the same planning rules and
 open the same plan files.
+
+> **Please read — a guide, not a guarantee.** Smart Garden Planner is a planning aid. Its layouts, sun, shade,
+> watering, pest and planting advice are general guidance based on typical conditions and published gardening
+> references. It does not guarantee any harvest or result: weather, soil, local pests, plant health and many other
+> things are outside its control. Use it to help you decide, not as mandatory instructions. Check local conditions,
+> planting dates and any local rules (for example about fences, trapping, water use or chemicals) yourself, and follow
+> product labels. You are responsible for what you plant and how. Both versions show this notice before first use
+> (**I understand**); read it again under **?** help (computer) or **Settings → About this planner** (phone).
 
 ---
 
@@ -33,15 +41,18 @@ open the same plan files.
   1. Enter a name, the length (left to right) and the width (top to bottom) in metres.
   2. Choose **Which way does the top edge of the plot face?** by tapping one of N, NE, E, SE, S, SW, W, NW. Stand
      at the bottom edge and look across the plot; the direction you face is the answer.
-  3. Optionally enter the **ZIP code**. It fills in the USDA hardiness zone (2023 map) and the latitude, with no
+  3. Tick **What pests or animals do you see regularly in your yard?** (deer, rabbits, raccoons, squirrels,
+     groundhogs, birds, slugs, insects…). Plot insights → **Care** then shows how to keep them away (§8).
+  4. Optionally enter the **ZIP code**. It fills in the USDA hardiness zone (2023 map) and the latitude, with no
      internet needed.
-  4. Tap **Initialize Spatial Workspace**.
+  5. Tap **Initialize Spatial Workspace**.
 - You can change the direction and ZIP later from the layout menu (☰) → **Plot direction and ZIP…**.
 
 ### Computer
 - Double-click `smart-garden-planner.html`. It runs in any modern browser (Chrome, Edge, Firefox, Safari), offline,
   with nothing to install.
-- **New plot** asks for the same details: name, size, ZIP, which way the top edge faces, and soil.
+- **New plot** asks for the same details: name, size, ZIP, which way the top edge faces, **the pests and animals you
+  see in your yard**, and soil. **Edit details…** on the Plot tab changes them later.
 - **Open…** opens a `.sgp.json` plan file. You can also drop one onto the page.
 - **Save** writes the plan file:
   - In Chrome and Edge, you pick where it goes and later saves update that same file.
@@ -125,6 +136,35 @@ direction. North is red once the direction is set, and grey with "N?" until you 
   - **Phone:** tap it with its tool active to **Edit**, **Delete** or **Move** it.
   - **Computer:** select it and drag it, or click **Edit selected…**.
 
+### Satellite photo: trace your real yard
+Instead of guessing where trees, fences and buildings are, put a satellite photo of your yard under the plot and
+trace on top of it.
+
+1. **Open the photo tools:**
+   - **Computer:** Plot tab → **Satellite photo** (or the **Satellite photo** tool on the left).
+   - **Phone:** menu → **Satellite photo…**.
+2. Type your address and tap **Open Google Maps (satellite)**. Google Maps opens in your browser or the Maps app.
+   Switch to **Satellite** if it isn't already, zoom in until your yard fills the screen, and take a screenshot
+   (Windows: Win+Shift+S · Mac: Cmd+Shift+4 · phone: the usual screenshot buttons). Keep the Google Maps **scale bar**
+   in the picture if you can.
+3. **Add photo…** (computer) or **Choose photo…** (phone) and pick the screenshot. It appears under the plot, as
+   wide as the plot to start with.
+4. **Set the scale:** click or tap two points on the photo whose real distance you know (the two ends of the scale
+   bar, or both ends of a fence you've measured), then enter that distance in metres (1 ft = 0.3048 m). The photo
+   grows or shrinks to match; the first point stays where it is.
+5. **Move** it by dragging (the **Move photo** / **Move** button, or the Satellite photo tool) until it lines up with
+   your plot, and **Turn** it if your plot isn't square to the map. **See-through** makes the photo lighter so your
+   drawing stays easy to see. **Hide** / **Show** and **Remove photo** do what they say.
+6. Now draw the trees, fences, buildings, outline and beds on top of what you see.
+
+Notes:
+- The planner never downloads map pictures itself: it only opens Google Maps when you ask, and uses your own
+  screenshot. The photo is a tracing aid; shade is still worked out from the obstacles you draw.
+- The photo is kept with the plot, goes into plan files and is copied by **Duplicate**.
+- **Computer:** every photo change can be undone. Large photos may not fit in the browser's draft; the Plot tab says
+  so, and **Save** keeps the photo in your file.
+- **Phone:** the photo shows inside the plot rectangle only, and photo changes can't be undone (just move it back).
+
 ### Other overlays (Phone menu → Overlays)
 - **Show site areas and barriers**
 - **Show sun and shade** (§6)
@@ -148,24 +188,36 @@ For when you know *what* you want but not *where*.
      also offered as one-tap buttons.
 3. **How many fit?** keeps the proportions of your list and fills the area: for example, 2 corn for every 1 lettuce
    becomes 24 corn and 12 lettuce. Change any number afterwards.
-4. **How should each crop be arranged?**
+4. **Mark what matters most:** tap **☆** next to the plants you care about most (it turns into an orange **★**). They
+   are placed first, in the sunniest spots that suit them, before anything else takes that space.
+5. **Checks before planning** appear under the list and update as you change it, most serious first (⚠ serious,
+   • worth a look, ✓ fine):
+   - **Space:** how much of the area your list needs, walkways included, and whether it will all fit.
+   - **Sun:** for full-sun, part-shade and shade plants, how much of the area gets enough sun compared with what
+     they need (only when trees, fences, buildings or sun/shade areas are drawn; otherwise it tells you so).
+   - **Neighbours** that grow poorly together, **zone** (hardiness) warnings, **rotation** (families that grew here
+     last season), a wide **watering** mix, and **pests** from your yard that go for the plants on your list.
+   - **Most important:** which plants you've starred.
+   Use them to change counts, star different plants or pick another area before you decide.
+6. **How should each crop be arranged?**
    - **Organised clumps (recommended):** each crop is a small block of rows and columns at its own spacing (20 corn
      = 4 rows of 5; 7 tomatoes = a row of 4 and a row of 3), with a **45 cm walkway** between crops so you can walk
      round and water with a hose. Next year the blocks can swap places.
    - **Long rows:** crops lined up by height. Tidy, but harder to rotate: a long row of tomatoes at the back has
      nowhere to go next year without shading the rest.
-5. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
+7. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
    - Tall crops are on the side away from the midday sun (north in the northern hemisphere).
    - Sun lovers get the sunniest spots.
    - Pollinator flowers are next to crops that need bees.
    - Sweet corn is planted as a block.
    - Plants with similar watering needs are together.
    - Crops are kept off spots their family used recently.
+   - The plants you starred went first, with their average sun hours.
    - **Climbers** (pole beans, peas) are at the back, with a note to put up a trellis there.
    - **Sprawling vines** (watermelon, squash, pumpkin, cucumber, melon, sweet potato, gourds) are on the sunny side,
      with their runway toward the sun kept free (about 2 m for watermelon), shown by a **green arrow**. Guide the
      runners that way.
-6. Choose:
+8. Choose:
    - **Keep this plan** (**Plant them** on the phone) plants everything as one undo step.
    - **Change selections** goes back to your list for the same area.
    - **Discard** drops only the proposal. Your plot and your list stay as they are.
@@ -270,37 +322,70 @@ Turn on the **water map** (phone menu → **Show water map**, or **Water** in th
 - Wet areas are coloured by source: drip, sprinkler, or hose reach.
 - **Plants no source reaches get a red dashed ring**: they need a watering can.
 
-The Care tab (**How each plant gets water**) counts plants per source and lists those needing hand watering. It
-also warns when a sprinkler wets the leaves of crops prone to blight or mildew (tomatoes, potatoes, squash,
-cucumbers, melons, peppers), where a drip line is better.
+### Watering recommendations (Care tab)
+**Care → Watering and irrigation** brings it all together:
+- **Computer:** buttons to add a **sprinkler**, **drip line** or **hose tap** and to turn the **water map** on, right
+  there. **Phone:** the section points to the layout menu → Irrigation and **Show water map**.
+- Once irrigation is drawn: plants per source, the plants **no sprinkler, drip line or hose reaches** (they need a
+  watering can), and a warning when a sprinkler wets the leaves of crops prone to blight or mildew (tomatoes,
+  potatoes, squash, cucumbers, melons, peppers), where a drip line is better.
+- Advice for your plot: which plants aren't reached and how to cover them, your **thirsty** plants to check first in
+  hot weather, and where drip or a soaker hose would help.
+- **How much water your plants need:** each crop's need (high, moderate or low, in cm and inches a week).
+- **Watering tips** (about 2.5 cm / 1 in a week, water deeply and less often, in the morning at the base, finger test,
+  mulch) and **Choosing sprinklers, drip or hose**.
+- Below that, the **watering schedule** for what's planted.
 
 ---
 
-## 8. Templates: duplicating a plot
+## 8. Pests and animals in your yard
+
+Tell the planner which pests and animals visit your yard, and the **Care** section tells you how to keep them out.
+
+- **Where:** when you create a plot, or later on **Care → Pests and animals in your yard** (tap to tick or untick);
+  computer: also **Edit details…**.
+- **The list:** deer; rabbits; raccoons; squirrels; groundhogs (woodchucks); gophers; voles and mice; chipmunks;
+  skunks and opossums; armadillos; wild boar / feral hogs; dogs and cats; birds; slugs and snails; aphids; cabbage
+  worms; tomato hornworms; squash bugs and vine borers; beetles (cucumber, flea, Japanese, potato); moles.
+- **For each one you tick:**
+  - which of **your** plants it goes for (for example "Raccoons — goes for your Sweet Corn, Tomato");
+  - the **signs** of damage to look for;
+  - **how to prevent it**, such as fence height and type (deer: 2.4 m / 8 ft, or two shorter fences about 1.5 m apart;
+    rabbits: 60–90 cm chicken wire buried 15 cm; groundhogs: 1–1.2 m fence with a floppy top and an L-shaped buried
+    footer; raccoons: a low two-wire electric fence around corn and melons), netting, row covers, hardware cloth,
+    raised beds, repellents and timing.
+- **General tips** for every garden are listed too.
+- **Plan an area for me** warns you when a pest you ticked goes for a plant on your list.
+- Check local rules before trapping or using an electric fence, and choose methods that are safe for pets, children
+  and wildlife. This is general guidance (see the notice at the top of this manual).
+
+---
+
+## 9. Templates: duplicating a plot
 
 **Duplicate** copies the plot, much like duplicating a browser tab. The copy keeps the size, direction, ZIP, soil,
-outline, fences, buildings, trees, paths, areas and irrigation. You choose whether it also takes this season's
+outline, fences, buildings, trees, paths, areas, irrigation, your yard's pests and the satellite photo. You choose whether it also takes this season's
 plants and the history, so crop rotation carries on in the copy. Change the copy freely; the original stays as it
 was.
 
 ---
 
-## 9. Plot insights (Phone) and the side tabs (Computer)
+## 10. Plot insights (Phone) and the side tabs (Computer)
 
 **Phone:** menu → **Plot insights**. **Computer:** the tabs on the right.
 
 - **Site** (phone) / **Plot** (computer): zone, location, direction, soil (with improvement tips), sunlight;
-  seasons, templates and irrigation (computer).
+  satellite photo, seasons, templates and irrigation (computer).
 - **Harmony:** a score, clashes, good neighbours, ideas; and on the phone, **Seasons & crop rotation**.
 - **Suggest** (phone) / **Plants** (computer): varieties that suit the plot or an area.
-- **Care:** how each plant gets water, the watering interval, the feeding plan (organic or conventional), and pests
-  to watch for.
+- **Care:** the disclaimer in short; **pests and animals in your yard** (§8); **watering and irrigation** (§7); the
+  watering schedule; the feeding plan (organic or conventional); and plant pests and diseases to watch for.
 - **Food:** expected harvest, what it feeds, recipes from your garden, and a homestead starter list for your
   household size.
 
 ---
 
-## 10. Encyclopedia and catalog
+## 11. Encyclopedia and catalog
 
 Reach it from the Dashboard's search icon.
 
@@ -318,10 +403,11 @@ Reach it from the Dashboard's search icon.
 
 ---
 
-## 11. Settings (Phone)
+## 12. Settings (Phone)
 
 Changes save immediately; the reset icon restores the defaults.
 
+- **About this planner:** the disclaimer.
 - **Catalog:** Basic, Standard or Pro.
 - **Units:** metres or inches. Also switchable from the "[in]/[m]" chip on the layout header.
 - **Spacing & placement:**
@@ -344,7 +430,7 @@ see.
 
 ---
 
-## 12. Moving plans between phone and computer
+## 13. Moving plans between phone and computer
 
 - **Computer → phone:**
   1. **Save** on the computer.
@@ -353,14 +439,14 @@ see.
 - **Phone → computer:**
   1. On the phone, use menu → **Save this plot as a file…** (or **Save all plots to a file** on the Dashboard).
   2. On the computer: **Open…**, or drop the file onto the page.
-- **What travels in the file:** plants, paths, obstacles, areas, irrigation, outline, direction, ZIP, soil and the
-  **season history**.
+- **What travels in the file:** plants, paths, obstacles, areas, irrigation, outline, direction, ZIP, soil, the
+  **season history**, your yard's **pests** and the **satellite photo**.
 - **Opening a file never overwrites anything.** The phone adds the file's plots as new plots. On the computer,
   opening a file replaces what's open, so save first.
 
 ---
 
-## 13. Known gaps
+## 14. Known gaps
 
 - **Camera capture and phone-sensor measuring** of plot size are not connected yet (use the typed size).
 - **Phone:** you can't drag outline corners (tap a corner, then its new place) or add corners. You can't change a
@@ -370,10 +456,23 @@ see.
 - **Shade:** clear-sky, solar time, and approximate plant heights.
 - **Variety details** (sweet or spicy, size, colour) cover peppers, tomatoes and onions only.
 - **Ownership and roles** on plots are not used yet.
+- **Satellite photo:** there is no live map layer (Google's map pictures can't be used offline or without an API key);
+  you add your own screenshot. On the phone the photo is clipped to the plot rectangle and its changes aren't
+  undoable.
+- **Units on the computer:** metres only (the phone can show inches).
 
 ---
 
 ## Changelog
+
+- **2026-09-27 (yard, checks and photo):**
+  - A **disclaimer** before first use: the planner is a guide, not a guarantee.
+  - **Pests and animals in your yard**: asked when you create a plot; Care shows signs, prevention (fencing and more)
+    and the plants at risk.
+  - **Watering and irrigation** on the Care tab, with the irrigation tools and water map, and per-plant water needs.
+  - **☆ Most important** plants, placed first in the sunniest spots, and **Checks before planning**.
+  - **Satellite photo** under the plot: open Google Maps, add a screenshot, set its scale, move and turn it, and
+    trace your yard. Database schema 11.
 
 - **2026-09-27 (seasons and water):**
   - Look back at any past season.

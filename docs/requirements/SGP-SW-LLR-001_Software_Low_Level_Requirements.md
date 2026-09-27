@@ -1370,7 +1370,7 @@ source is MANUAL get a red (#DC2626) dashed ring. ↑ HLR-IRR-020
 **LLR-WATER-030** `Irrigation.report` shall return: a hint when no irrigation exists; per source "Label: n plants (k
 Species, …)."; "✓ Every plant is reached…" or "⚠ n plant(s) can only be watered by hand…"; and "Sprinklers wet the
 leaves of …" for sprinkler-covered species in `LEAF_DISEASE_PRONE`. Shown on the web Care tab and in Android Plot
-insights → Care ("How each plant gets water"). ↑ HLR-IRR-030
+insights → Care (under "Watering and irrigation", when irrigation exists). ↑ HLR-IRR-030
 
 **LLR-FILLP-010** "Fill the whole plot…" (web Plants tab; Android button under "Plan an area for me") opens the plan
 dialog with the plot outline. `RotationPlanner.howManyFit(context, area, requests, isBlocked, margin)` estimates k =
@@ -1379,11 +1379,66 @@ the context's current plants in place, and returns the placed counts, which repl
 
 **LLR-TPL-010** Duplicate (web Plot tab → "Duplicate plot…"; Android menu → "Duplicate this plot…") shall ask for a name
 (default "<name> (copy)") and two options (plants, history; both on); it copies the plot with new ids and timestamps and
-copies paths, site features and, as chosen, plants and history to the new plot (Android: one transaction). ↑ HLR-TPL-010
+copies paths, site features, the satellite photo and, as chosen, plants and history to the new plot (Android: one
+transaction, then the photo file is copied). ↑ HLR-TPL-010
+
+**LLR-YARD-010** `PlotEntity.pests` (schema 11, MIGRATION_10_11 `ALTER TABLE plots ADD COLUMN pests TEXT`) shall hold
+`Pest.encode` ("DEER,RABBIT", ordinal order, null when empty); `Pest.parse` ignores unknown names. The web plot dialog
+and the Android creator show the tick list (`PestChips` on Android); plan files write `"pests": ["DEER", …]` and read
+only known names. ↑ HLR-YARD-010
+
+**LLR-YARD-020** `Pest` shall give each entry a label, kind, target species keys (empty = most crops), signs and tips;
+`PestAdvisor.risks(pests, seeds)` lists, per pest, the sorted planted species it targets. Web Care tab and Android Plot
+insights → Care show "Pests and animals in your yard" with chips to change the choice (saved on the plot) and
+`Pest.GENERAL_TIPS`. ↑ HLR-YARD-020
+
+**LLR-PRIO-010** `PlantRequest.priority` (default false). `BlockPlanner` orders priority requests first (then climbers,
+vines, height), weights the sun shortfall ×15 instead of ×5 and adds half the mean sun hours for priority blocks, and
+notes "Most important first: … (about h hours of sun on average)". `AutoPlanner` (rows) orders them first and multiplies
+its sun terms by 3. The web row shows ☆/★ (`Store.planPriority`); Android keeps `planPriority` codes. ↑ HLR-PRIO-010
+
+**LLR-CHK-010** `PlanChecks.check(context, area, requests, history, seasonYear, pests, margin)` shall return
+`PlanCheck(severity, text)` sorted HIGH, MEDIUM, LOW: Space (need = Σ count × (2r·margin + walkway/3)², HIGH over 110 %,
+MEDIUM over 85 %); Sun per `SunNeed` from samples on a grid of ≥ 0.25 m (HIGH for full sun when too little, or a note that
+no obstacles are marked); antagonist pairs; `HardinessZones.describe`; last season's families; a watering interval spread
+≥ 3 days; `PestAdvisor` risks with the pest's first tip; and the "Most important" line. Web recomputes 250 ms after a
+count change; Android in a `LaunchedEffect` on `Dispatchers.Default`. ↑ HLR-CHK-010
+
+**LLR-DISC-010** `Disclaimer.TITLE/TEXT/SHORT`. Web: shown on load while `Prefs.disclaimerAccepted` (localStorage
+`sgp.disclaimer`) is false, then help; help has a "Disclaimer" section; Care starts with `SHORT`. Android:
+`AppNavigationContainer` shows an undismissable dialog until `AppSettings.disclaimerAccepted` (key
+`settings.disclaimerAccepted`) is saved; Settings → "About this planner"; Care starts with `SHORT`. ↑ HLR-DISC-010
+
+**LLR-WADV-010** `WateringAdvice.GENERAL`, `SYSTEMS`, `needLabel(seed)` (from the crop's watering interval) and
+`forPlot(plot, nodes, features, lookup)`: nothing automatic yet; unreached plants (count and species); thirsty species
+(interval ≤ 2 days); leaf-disease-prone species when there's no drip line. Shown under "Watering and irrigation" with
+`Irrigation.report` when irrigation exists. ↑ HLR-WADV-010
+
+**LLR-SAT-010** `Backdrop.googleMapsUrl(lat, lon, query)`: a non-blank query gives
+`https://www.google.com/maps/search/?api=1&query=<percent-encoded>`; otherwise coordinates give
+`…/maps/@?api=1&map_action=map&center=lat,lon&zoom=18&basemap=satellite`. Web opens it with `window.open` (Plot tab →
+Satellite photo); Android with `ACTION_VIEW` (menu → Satellite photo…). Picked images are scaled to ≤ 1600 px and stored
+as JPEG 85 % (web: data URL, retried at 60 % if over 4 000 000 characters). `Backdrop.fresh` sets width = plot length,
+aspect = height/width. ↑ HLR-SAT-010
+
+**LLR-SAT-020** `Backdrop.calibrate(a, b, d)` returns null if |ab| < 0.01 m, d ∉ 0.1–2000 or the new width ∉ 1–2000 m;
+else scales by k = d/|ab| about a. `moved(dx, dy)`; rotation stored 0–360; opacity 0.1–1; `visible`. Web: Tool
+"Satellite photo" (drag to move; two clicks then a distance dialog while calibrating), SVG `<image>` with
+`rotate(r x y)` drawn after the paper, before the grid; sliders apply on change; every change is one undo step.
+Android: `CanvasMode.PHOTO` with a tap detector (calibrating) or drag detector (moving), bitmap drawn with the plot's
+x/y scale, translate and rotate before the grid; placement saved with `plotDao().update`. ↑ HLR-SAT-020
+
+**LLR-SAT-030** `PlotEntity.backdropJson` (schema 11) holds `Backdrop.encode()` "x;y;w;rot;opacity;aspect[;h]";
+`Backdrop.parse` rejects widths outside 1–2000 m, aspects outside 0.05–20 and offsets beyond 10 km. Plan files write
+`"backdrop": {image, x, y, widthM, rotationDeg, opacity, aspect, visible}` only with a valid image; readers accept only
+`data:image/(jpeg|png|webp);base64,…` up to 4 000 000 characters and drop the photo with a warning otherwise. Android
+`BackdropStore` keeps `files/backdrop_<plotId>.jpg`, re-encodes imported data URLs, copies on duplicate and deletes on
+remove; web keeps it on `WebPlot.backdropImage` (in undo snapshots) and saves the browser draft without photos if storage
+is full, warning on the Plot tab. ↑ HLR-SAT-030
 
 **LLR-ORNT-010** `PlotEntity` shall store `northBearingDeg` (0–360, the compass bearing of the plot's top edge)
 and `orientationSet` (added in schema 9 by MIGRATION_8_9 as `orientationSet INTEGER NOT NULL DEFAULT 0`; the current
-schema is 10). The creator
+schema is 11). The creator
 shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° slider with 70 steps; saving sets
 `orientationSet = true`. ↑ HLR-ORNT-010
 
@@ -1680,6 +1735,15 @@ Generated by script from the `↑` links above.
 | HLR-IRR-030 | Active | LLR-WATER-030 |
 | HLR-FILL-010 | Active | LLR-FILLP-010 |
 | HLR-TPL-010 | Active | LLR-TPL-010 |
+| HLR-YARD-010 | Active | LLR-YARD-010 |
+| HLR-YARD-020 | Active | LLR-YARD-020 |
+| HLR-PRIO-010 | Active | LLR-PRIO-010 |
+| HLR-CHK-010 | Active | LLR-CHK-010 |
+| HLR-DISC-010 | Active | LLR-DISC-010 |
+| HLR-WADV-010 | Active | LLR-WADV-010 |
+| HLR-SAT-010 | Active | LLR-SAT-010 |
+| HLR-SAT-020 | Active | LLR-SAT-020 |
+| HLR-SAT-030 | Active | LLR-SAT-030 |
 | HLR-ORNT-010 | Active | LLR-ORNT-010 |
 | HLR-ORNT-020 | Active | LLR-ORNT-020 |
 | HLR-ORNT-030 | Active | LLR-ORNT-030 |
@@ -1694,8 +1758,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **269**. Duplicate LLR IDs: **0**.
-- HLRs: 182 (174 active, 7 future, 1 suspended).
+- LLRs: **278**. Duplicate LLR IDs: **0**.
+- HLRs: 191 (183 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

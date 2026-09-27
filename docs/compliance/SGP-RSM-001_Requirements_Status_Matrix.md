@@ -228,7 +228,7 @@ requirement or is extraneous code to be removed. Found by inspection:
 ## 4. Requirements added since the baseline (Revision B, 2026-09-27)
 
 Revision B adds the system requirements written after the baseline commit, from the owner's requests of
-2026-09-27 (FEATURE_ROADMAP FR-027 … FR-041). Their status is the "Now" line of SGP-SYS-REQ-001, assessed by code
+2026-09-27 (FEATURE_ROADMAP FR-027 … FR-046). Their status is the "Now" line of SGP-SYS-REQ-001, assessed by code
 inspection and by the automated tests named in the Verification Plan and Test Specification (§ added-feature tests);
 source at commit `1f2a58a` plus the changes of that day. The HLR/LLR for each is listed in the trace tables of
 SGP-SW-HLR-001 / SGP-SW-LLR-001 (`python3 tools/req_trace.py --check`: no gaps).
@@ -255,6 +255,11 @@ SGP-SW-HLR-001 / SGP-SW-LLR-001 (`python3 tools/req_trace.py --check`: no gaps).
 | T2-FUN-280 | Irrigation coverage | **IMPL** |  Parent: owner request 2026-09-27 (FR-039). |
 | T2-FUN-290 | Fill the plot | **IMPL** |  Parent: owner request 2026-09-27 (FR-040). |
 | T2-FUN-300 | Plot templates | **IMPL** |  Parent: owner request 2026-09-27 (FR-041). |
+| T2-FUN-310 | Pests and wildlife in the yard | **IMPL** |  Parent: owner request 2026-09-27 (FR-042). Advice is general and non-lethal first (FC-23). |
+| T2-FUN-320 | Most important plants and checks before planning | **IMPL** |  Parent: owner request 2026-09-27 (FR-043). |
+| T2-FUN-330 | Disclaimer | **IMPL** |  Parent: owner request 2026-09-27 (FR-044). Wording to be confirmed by the owner (and legal review if the app is distributed). |
+| T2-FUN-340 | Watering recommendations | **IMPL** |  Parent: owner request 2026-09-27 (FR-045). |
+| T2-FUN-350 | Satellite photo under the plot | **IMPL** | IMPL (phone: photo clipped to the plot; not undoable). Parent: owner request 2026-09-27 (FR-046). No live map tiles (API key and terms). |
 | T2-FUN-230 | Keep the gardener's choices | **IMPL** |  Parent: owner request 2026-09-27 (FR-034). |
 | T2-DAT-150 | Encyclopedia | **IMPL** | IMPL (search by name/family only). Parent: existing functionality. |
 | T2-DAT-160 | Dates and time zones | **NONE** | Uses raw milliseconds; untested for time zone changes (PART). Parent: review finding (GAP §4.5). |
