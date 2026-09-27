@@ -1,6 +1,7 @@
 # Smart Garden Planner — Revamp Plan for Pixel 10 Pro (Emulator + Physical Device)
 
 **Scope:** planning only. No code has been changed.
+**Compliance planning:** see `docs/compliance/` (DO-178C / ARP4754A DAL A plans, deferred work register).
 **Inputs reviewed:** every document in the repo root (ConOps, IDD/ICD, Integration Plan, Verification Plan,
 Review Board record, Dev Log, Progress Journal, Test-Environment log, Master Plan, Transcript,
 traceability/risk/audit files, handoff script, restart prompt), plus `Android App/` (USER_MANUAL,
@@ -244,16 +245,10 @@ Each phase ends with a build that runs on **both** the Pixel 10 Pro emulator and
 Phases 1–3 must be done in order. Phases 4–7 can overlap once Phase 3 is done.
 
 ### Phase 0 — Repository & documentation reset (short, first)
-- Decide how to handle documents (D-01). Recommended:
-  - Keep the **requirements** (T2/HLR/LLR in `smart_garden_planner_master_plan.md` and KB Part 11) and
-    `FEATURE_ROADMAP.md` as the product definition.
-  - Move the template-generated Verification Plan (2.6 MB), the Review Board record, the 11-perspective
-    audit, the automated-handoff script, `session_restart_prompt.txt` and `rename_gemini_files.py` to
-    `docs/archive/`. They describe processes and approvals that did not happen, and they will mislead any
-    future reader (human or AI).
-  - Re-baseline the requirements to the real architecture: Compose + Navigation Compose, not
-    Fragments/NavHostFragment/LiveData/XML navigation. Mark each requirement
-    **Implemented / Partial / Not started / Dropped**.
+- D-01 is decided: keep DO-178C / ARP4754A DAL A. The rewritten plans and standards are in `docs/compliance/`.
+  Phase 0 now means reviewing and approving them (SGP-DWR-001 WP-01), setting up the Problem Report system
+  (WP-15), and starting the requirements re-baseline (WP-03) using SGP-RSM-001 as the status baseline.
+  Withdrawn documents already carry supersession notices and move to `docs/archive/` at the first baseline.
 - Delete dead files: `security/SecurityKeyManager.kt` (SEC-01), `test/.../StorageViewModelTest.kt` copy
   (TST-01), `SeedDataset.starterSeeds`, unused `WorkspaceUiState`, `.idea/` tracking.
 - Add a short `docs/DEVICE_SETUP.md` (how to create the Pixel 10 Pro AVD and deploy to the phone, see
@@ -355,7 +350,7 @@ re-baselined requirements, dev log, a CHANGELOG. Delete the `[NEW]/[FIXED]` hist
 
 | ID | Question | Recommendation |
 |---|---|---|
-| D-01 | Keep the DAL A / DO-178C framing and generated compliance documents, or re-baseline to "requirements + real tests"? | Re-baseline. Keep the requirement IDs (they're useful) and archive the template-generated documents. |
+| D-01 | Keep the DAL A / DO-178C framing and generated compliance documents, or re-baseline to "requirements + real tests"? | **DECIDED:** keep the DO-178C / ARP4754A DAL A framing. The unusable plans are rewritten in `docs/compliance/` (index: `docs/compliance/README.md`), and all outstanding work is tracked in `docs/compliance/SGP-DWR-001_Deferred_Work_Register.md`. |
 | D-02 | Minimum Android version: keep minSdk 29 (Android 10) or raise it? | Keep 29 unless it gets in the way. Target/compile at 36+. |
 | D-03 | Plot measurement with sensors: (a) drop it and keep manual entry; (b) replace with **ARCore** (works offline once installed; the Pixel 10 Pro supports it; the emulator only partially); (c) camera + reference-object scaling (e.g. place a known-size card in the photo); (d) GPS walk-the-perimeter (±3–5 m, only for large fields). | (a) now, then (b) or (c) as a roadmap item. Double-integration IMU should be dropped. |
 | D-04 | Orientation: lock the canvas to portrait, or support both? | Support both once the canvas is aspect-correct (CAN-01). |

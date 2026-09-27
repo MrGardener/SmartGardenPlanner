@@ -1,3 +1,5 @@
+> **SUPERSEDED — NOT VALID AS LIFE CYCLE DATA.** Withdrawn by SGP-GAP-001 (docs/compliance/). Replaced by SGP-SVP-001 (docs/compliance/software/SGP-SVP-001_Software_Verification_Plan.md). The reviews, sign-offs or test cases described below have no supporting records, and no compliance credit is taken from this document. It is kept for history only.
+
 # Smart Garden Planner Verification Plan and Test Specification
 **Document Identifier:** Smart_Garden_Planner_Verification_Plan_and_Test_Specification_v20_19.md  
 **System Baseline:** Smart Garden Planner (v20.19)  
