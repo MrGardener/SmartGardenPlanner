@@ -55478,9 +55478,6 @@ class AbstractList extends AbstractCollection {
   listIterator_70e65o_k$(index) {
     return new ListIteratorImpl_0(this, index);
   }
-  subList_xle3r2_k$(fromIndex, toIndex) {
-    return SubList_0.new_kotlin_collections_AbstractList_SubList_n10zp_k$(this, fromIndex, toIndex);
-  }
   equals(other) {
     if (other === this)
       return true;
@@ -55650,9 +55647,6 @@ class AbstractMutableList extends AbstractMutableCollection {
   listIterator_70e65o_k$(index) {
     return new ListIteratorImpl(this, index);
   }
-  subList_xle3r2_k$(fromIndex, toIndex) {
-    return SubList.new_kotlin_collections_AbstractMutableList_SubList_axtkfy_k$(this, fromIndex, toIndex);
-  }
   removeRange_sm1kzt_k$(fromIndex, toIndex) {
     var iterator = this.listIterator_70e65o_k$(fromIndex);
     // Inline function 'kotlin.repeat' call
@@ -55676,47 +55670,6 @@ class AbstractMutableList extends AbstractMutableCollection {
   }
   hashCode() {
     return Companion_instance_4.orderedHashCode_srkix_k$(this);
-  }
-}
-class RandomAccess {}
-class SubList extends AbstractMutableList {
-  static new_kotlin_collections_AbstractMutableList_SubList_axtkfy_k$(list, fromIndex, toIndex) {
-    var $this = this.new_kotlin_collections_AbstractMutableList_ddn594_k$();
-    $this.list_1 = list;
-    $this.fromIndex_1 = fromIndex;
-    $this._size_1 = 0;
-    Companion_instance_4.checkRangeIndexes_mmy49x_k$($this.fromIndex_1, toIndex, $this.list_1.get_size_woubt6_k$());
-    $this._size_1 = toIndex - $this.fromIndex_1 | 0;
-    return $this;
-  }
-  add_dl6gt3_k$(index, element) {
-    Companion_instance_4.checkPositionIndex_w4k0on_k$(index, this._size_1);
-    this.list_1.add_dl6gt3_k$(this.fromIndex_1 + index | 0, element);
-    this._size_1 = this._size_1 + 1 | 0;
-  }
-  get_c1px32_k$(index) {
-    Companion_instance_4.checkElementIndex_s0yg86_k$(index, this._size_1);
-    return this.list_1.get_c1px32_k$(this.fromIndex_1 + index | 0);
-  }
-  removeAt_6niowx_k$(index) {
-    Companion_instance_4.checkElementIndex_s0yg86_k$(index, this._size_1);
-    var result = this.list_1.removeAt_6niowx_k$(this.fromIndex_1 + index | 0);
-    this._size_1 = this._size_1 - 1 | 0;
-    return result;
-  }
-  set_82063s_k$(index, element) {
-    Companion_instance_4.checkElementIndex_s0yg86_k$(index, this._size_1);
-    return this.list_1.set_82063s_k$(this.fromIndex_1 + index | 0, element);
-  }
-  removeRange_sm1kzt_k$(fromIndex, toIndex) {
-    this.list_1.removeRange_sm1kzt_k$(this.fromIndex_1 + fromIndex | 0, this.fromIndex_1 + toIndex | 0);
-    this._size_1 = this._size_1 - (toIndex - fromIndex | 0) | 0;
-  }
-  get_size_woubt6_k$() {
-    return this._size_1;
-  }
-  checkIsMutable_jn1ih0_k$() {
-    return this.list_1.checkIsMutable_jn1ih0_k$();
   }
 }
 class AbstractMap {
@@ -55927,6 +55880,7 @@ class Companion_1 {
     tmp.Empty_1 = this_0;
   }
 }
+class RandomAccess {}
 class ArrayList extends AbstractMutableList {
   static new_kotlin_collections_ArrayList_qfbsh5_k$(array) {
     Companion_getInstance_1();
@@ -57293,28 +57247,6 @@ class sam$kotlin_Comparator$0 {
     return hashCode(this.getFunctionDelegate_jtodtf_k$());
   }
 }
-class SubList_0 extends AbstractList {
-  static new_kotlin_collections_AbstractList_SubList_n10zp_k$(list, fromIndex, toIndex) {
-    var $this = this.new_kotlin_collections_AbstractList_7zpyyf_k$();
-    $this.list_1 = list;
-    $this.fromIndex_1 = fromIndex;
-    $this._size_1 = 0;
-    Companion_instance_4.checkRangeIndexes_mmy49x_k$($this.fromIndex_1, toIndex, $this.list_1.get_size_woubt6_k$());
-    $this._size_1 = toIndex - $this.fromIndex_1 | 0;
-    return $this;
-  }
-  get_c1px32_k$(index) {
-    Companion_instance_4.checkElementIndex_s0yg86_k$(index, this._size_1);
-    return this.list_1.get_c1px32_k$(this.fromIndex_1 + index | 0);
-  }
-  get_size_woubt6_k$() {
-    return this._size_1;
-  }
-  subList_xle3r2_k$(fromIndex, toIndex) {
-    Companion_instance_4.checkRangeIndexes_mmy49x_k$(fromIndex, toIndex, this._size_1);
-    return SubList_0.new_kotlin_collections_AbstractList_SubList_n10zp_k$(this.list_1, this.fromIndex_1 + fromIndex | 0, this.fromIndex_1 + toIndex | 0);
-  }
-}
 class IteratorImpl_0 {
   constructor($outer, $box) {
     boxApply(this, $box);
@@ -57997,11 +57929,6 @@ class EmptyList {
     if (!(index === 0))
       throw IndexOutOfBoundsException.new_kotlin_IndexOutOfBoundsException_ddr8db_k$('Index: ' + index);
     return EmptyIterator_instance;
-  }
-  subList_xle3r2_k$(fromIndex, toIndex) {
-    if (fromIndex === 0 && toIndex === 0)
-      return this;
-    throw IndexOutOfBoundsException.new_kotlin_IndexOutOfBoundsException_ddr8db_k$('fromIndex: ' + fromIndex + ', toIndex: ' + toIndex);
   }
 }
 class EmptyIterator {
@@ -81381,7 +81308,8 @@ function fallback($this, t, depth) {
           inductionVariable_0 = inductionVariable_0 + -1 | 0;
           if (i === 0 && j === sentences.get_size_woubt6_k$())
             continue $l$loop_0;
-          var run = joinToString_0(sentences.subList_xle3r2_k$(i, j), ' ');
+          var tmp = until(i, j);
+          var run = joinToString_0(tmp, ' ', VOID, VOID, VOID, VOID, I18n$fallback$lambda(sentences));
           var tr = direct($this, run, depth + 1 | 0);
           if (!(tr == null)) {
             // Inline function 'kotlin.collections.plusAssign' call
@@ -81414,21 +81342,21 @@ function fallback($this, t, depth) {
   if (colonAt > 0) {
     var head = substring(t, 0, colonAt + 1 | 0);
     var tmp0_elvis_lhs = $this.exact_1.get_wei43m_k$(head);
-    var tmp;
+    var tmp_0;
     if (tmp0_elvis_lhs == null) {
       var tmp1_safe_receiver = $this.exact_1.get_wei43m_k$(dropLast(head, 1));
-      var tmp_0;
+      var tmp_1;
       if (tmp1_safe_receiver == null) {
-        tmp_0 = null;
+        tmp_1 = null;
       } else {
         // Inline function 'kotlin.let' call
-        tmp_0 = tmp1_safe_receiver + ':';
+        tmp_1 = tmp1_safe_receiver + ':';
       }
-      tmp = tmp_0;
+      tmp_0 = tmp_1;
     } else {
-      tmp = tmp0_elvis_lhs;
+      tmp_0 = tmp0_elvis_lhs;
     }
-    var th = tmp;
+    var th = tmp_0;
     if (!(th == null))
       return th + ' ' + part($this, substring_0(t, colonAt + 2 | 0), depth + 1 | 0);
   }
@@ -81448,13 +81376,13 @@ function fallback($this, t, depth) {
     var tmp$ret$10;
     $l$block_1: {
       // Inline function 'kotlin.collections.all' call
-      var tmp_1;
+      var tmp_2;
       if (isInterface(tmp0, Collection)) {
-        tmp_1 = tmp0.isEmpty_y1axqb_k$();
+        tmp_2 = tmp0.isEmpty_y1axqb_k$();
       } else {
-        tmp_1 = false;
+        tmp_2 = false;
       }
-      if (tmp_1) {
+      if (tmp_2) {
         tmp$ret$10 = true;
         break $l$block_1;
       }
@@ -81564,6 +81492,11 @@ function I18n$direct$lambda(a, b) {
   var tmp = b.literal_1;
   var tmp$ret$1 = a.literal_1;
   return compareValues(tmp, tmp$ret$1);
+}
+function I18n$fallback$lambda($sentences) {
+  return function (it) {
+    return $sentences.get_c1px32_k$(it);
+  };
 }
 function I18n$part$lambda($depth) {
   return function (it) {
@@ -90657,12 +90590,11 @@ initMetadataForClass(AbstractMutableCollection, 'AbstractMutableCollection', VOI
 initMetadataForClass(IteratorImpl, 'IteratorImpl');
 initMetadataForClass(ListIteratorImpl, 'ListIteratorImpl');
 initMetadataForClass(AbstractMutableList, 'AbstractMutableList', VOID, VOID, [AbstractMutableCollection, KtList, Collection, MutableIterable]);
-initMetadataForInterface(RandomAccess, 'RandomAccess');
-initMetadataForClass(SubList, 'SubList', VOID, VOID, [AbstractMutableList, RandomAccess]);
 initMetadataForClass(AbstractMap, 'AbstractMap', VOID, VOID, [KtMap]);
 initMetadataForClass(AbstractMutableMap, 'AbstractMutableMap', VOID, VOID, [AbstractMap, KtMap]);
 initMetadataForClass(AbstractMutableSet, 'AbstractMutableSet', VOID, VOID, [AbstractMutableCollection, KtSet, Collection, MutableIterable]);
 initMetadataForCompanion(Companion_1);
+initMetadataForInterface(RandomAccess, 'RandomAccess');
 initMetadataForClass(ArrayList, 'ArrayList', ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$, VOID, [AbstractMutableList, KtList, Collection, MutableIterable, RandomAccess]);
 initMetadataForClass(HashMap, 'HashMap', HashMap.new_kotlin_collections_HashMap_2a5kxx_k$, VOID, [AbstractMutableMap, KtMap]);
 initMetadataForClass(HashMapKeys, 'HashMapKeys', VOID, VOID, [KtSet, Collection, MutableIterable, AbstractMutableSet]);
@@ -90711,7 +90643,6 @@ initMetadataForInterface(MatchResult, 'MatchResult');
 protoOf(findNext$1).get_destructured_a9abdx_k$ = get_destructured;
 initMetadataForClass(findNext$1, VOID, VOID, VOID, [MatchResult]);
 initMetadataForClass(sam$kotlin_Comparator$0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
-initMetadataForClass(SubList_0, 'SubList', VOID, VOID, [AbstractList, RandomAccess]);
 initMetadataForClass(IteratorImpl_0, 'IteratorImpl');
 initMetadataForClass(ListIteratorImpl_0, 'ListIteratorImpl');
 initMetadataForCompanion(Companion_4);

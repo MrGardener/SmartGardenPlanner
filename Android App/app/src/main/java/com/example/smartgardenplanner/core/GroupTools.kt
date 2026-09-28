@@ -214,7 +214,7 @@ object I18n {
                 var done = false
                 for (j in sentences.size downTo i + 2) {
                     if (i == 0 && j == sentences.size) continue
-                    val run = sentences.subList(i, j).joinToString(" ")
+                    val run = (i until j).joinToString(" ") { sentences[it] }
                     val tr = direct(run, depth + 1)
                     if (tr != null) { out += tr; i = j; done = true; break }
                 }
