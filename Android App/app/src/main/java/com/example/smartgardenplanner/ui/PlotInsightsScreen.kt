@@ -1,5 +1,6 @@
 package com.example.smartgardenplanner.ui
 
+import com.example.smartgardenplanner.tr
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -151,19 +152,19 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text(snapshot?.context?.plot?.name?.let { "Insights: $it" } ?: "Plot insights", maxLines = 1) },
+                    title = { Text(tr(snapshot?.context?.plot?.name?.let { "Insights: $it" } ?: "Plot insights"), maxLines = 1) },
                     navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
                     actions = { OnlineBadge(settings.onlineFeaturesEnabled) },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
                 )
                 if (inFlight > 0) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    Text("Connecting to an online data service…", fontSize = 11.sp, color = Color(0xFF0EA5E9), modifier = Modifier.padding(horizontal = 16.dp))
+                    Text(tr("Connecting to an online data service…"), fontSize = 11.sp, color = Color(0xFF0EA5E9), modifier = Modifier.padding(horizontal = 16.dp))
                 }
                 @Suppress("DEPRECATION")
                 ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp, containerColor = MaterialTheme.colorScheme.background) {
                     listOf("Site", "Harmony", "Suggest", "Care", "Food").forEachIndexed { i, label ->
-                        Tab(selected = tab == i, onClick = { tab = i }, text = { Text(label) })
+                        Tab(selected = tab == i, onClick = { tab = i }, text = { Text(tr(label)) })
                     }
                 }
             }
@@ -178,7 +179,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            error?.let { Text(tr(it), color = MaterialTheme.colorScheme.error) }
             if (snap == null) {
                 if (error == null) CircularProgressIndicator()
                 return@Column
@@ -211,7 +212,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
 fun OnlineBadge(on: Boolean) {
     val color = if (on) Color(0xFF0EA5E9) else Color.Gray
     Text(
-        if (on) "ONLINE ON" else "OFFLINE",
+        tr(if (on) "ONLINE ON" else "OFFLINE"),
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
         color = color,
@@ -226,8 +227,8 @@ fun OnlineBadge(on: Boolean) {
 private fun Section(title: String, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
-            subtitle?.let { Text(it, fontSize = 11.sp, color = Color.Gray) }
+            Text(tr(title), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
+            subtitle?.let { Text(tr(it), fontSize = 11.sp, color = Color.Gray) }
             content()
         }
     }
@@ -240,7 +241,7 @@ private fun gate(feature: Feature, settings: AppSettings, what: String): Boolean
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
-        Text("$what needs the ${feature.tierLabel} tier. Change it in Settings → Catalog.", fontSize = 12.sp, color = Color.Gray)
+        Text(tr("$what needs the ${feature.tierLabel} tier. Change it in Settings → Catalog."), fontSize = 12.sp, color = Color.Gray)
     }
     return false
 }
@@ -250,7 +251,7 @@ private fun NumberField(label: String, value: String, onChange: (String) -> Unit
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        label = { Text(label, fontSize = 11.sp) },
+        label = { Text(tr(label), fontSize = 11.sp) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = modifier
@@ -284,24 +285,24 @@ private fun SiteTab(
     // FR-054: frost dates and growing season from the nearest NOAA station, with a planting calendar.
     Section("Growing season", "From NOAA 1991–2020 frost averages for the nearest weather station.") {
         val s = snap.season
-        if (s == null) Text(if (plot.latitude == null) "Set the plot's ZIP code below to see its frost dates and growing season." else "No NOAA weather station within 250 km of this plot.", fontSize = 12.sp, color = Color.Gray)
+        if (s == null) Text(tr(if (plot.latitude == null) "Set the plot's ZIP code below to see its frost dates and growing season." else "No NOAA weather station within 250 km of this plot."), fontSize = 12.sp, color = Color.Gray)
         else {
-            com.example.smartgardenplanner.core.GrowingSeason.describe(s).forEachIndexed { i, t -> Text(t, fontSize = if (i < 3) 13.sp else 11.sp, color = if (i < 3) Color.Unspecified else Color.Gray) }
+            com.example.smartgardenplanner.core.GrowingSeason.describe(s).forEachIndexed { i, t -> Text(tr(t), fontSize = if (i < 3) 13.sp else 11.sp, color = if (i < 3) Color.Unspecified else Color.Gray) }
             var showCalendar by remember { mutableStateOf(false) }
-            OutlinedButton(onClick = { showCalendar = !showCalendar }) { Text(if (showCalendar) "Hide planting calendar" else "Planting calendar") }
+            OutlinedButton(onClick = { showCalendar = !showCalendar }) { Text(tr(if (showCalendar) "Hide planting calendar" else "Planting calendar")) }
             if (showCalendar) {
                 val planted = snap.context.plantedSeeds().distinctBy { it.botanicalCode }
                 val list = planted.ifEmpty {
                     listOf("Tomato - Brandywine", "Pepper - California Wonder", "Sweet Corn - Silver Queen", "Bush Bean - Provider", "Zucchini - Black Beauty", "Lettuce - Buttercrunch", "Pea - Sugar Snap", "Carrot - Danvers", "Onion - Yellow Sweet Spanish", "Basil - Genovese")
                         .mapNotNull { n -> snap.catalog.firstOrNull { it.commonName == n } }
                 }
-                if (planted.isEmpty()) Text("Nothing planted yet, so here are common crops:", fontSize = 11.sp, color = Color.Gray)
+                if (planted.isEmpty()) Text(tr("Nothing planted yet, so here are common crops:"), fontSize = 11.sp, color = Color.Gray)
                 list.forEach { sd ->
                     val w = com.example.smartgardenplanner.core.GrowingSeason.window(sd, s)
                     Column {
-                        Text("${sd.commonName} (${sd.daysToHarvest} days)", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(com.example.smartgardenplanner.core.GrowingSeason.describeWindow(w), fontSize = 12.sp)
-                        Text(w.note, fontSize = 11.sp, color = Color.Gray)
+                        Text(tr("${sd.commonName} (${sd.daysToHarvest} days)"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(tr(com.example.smartgardenplanner.core.GrowingSeason.describeWindow(w)), fontSize = 12.sp)
+                        Text(tr(w.note), fontSize = 11.sp, color = Color.Gray)
                     }
                 }
             }
@@ -311,20 +312,20 @@ private fun SiteTab(
     Section("Location and climate", "Used for winter hardiness, sun angles and weather. Nothing leaves the phone unless online features are on.") {
         var zoneMenu by remember { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Hardiness zone: ", fontSize = 13.sp)
+            Text(tr("Hardiness zone: "), fontSize = 13.sp)
             Box {
-                OutlinedButton(onClick = { zoneMenu = true }) { Text(plot.hardinessZone ?: "Not set") }
+                OutlinedButton(onClick = { zoneMenu = true }) { Text(tr(plot.hardinessZone ?: "Not set")) }
                 DropdownMenu(expanded = zoneMenu, onDismissRequest = { zoneMenu = false }) {
-                    DropdownMenuItem(text = { Text("Not set") }, onClick = { zoneMenu = false; savePlot(plot.copy(hardinessZone = null), "Zone cleared.") })
+                    DropdownMenuItem(text = { Text(tr("Not set")) }, onClick = { zoneMenu = false; savePlot(plot.copy(hardinessZone = null), "Zone cleared.") })
                     HardinessZones.LABELS.forEach { z ->
-                        DropdownMenuItem(text = { Text("Zone $z") }, onClick = { zoneMenu = false; savePlot(plot.copy(hardinessZone = z), "Zone set to $z.") })
+                        DropdownMenuItem(text = { Text(tr("Zone $z")) }, onClick = { zoneMenu = false; savePlot(plot.copy(hardinessZone = z), "Zone set to $z.") })
                     }
                 }
             }
         }
         var zip by remember(plot.id) { mutableStateOf(plot.locationZip ?: "") }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = zip, onValueChange = { zip = it.take(10) }, label = { Text("ZIP code", fontSize = 11.sp) }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(value = zip, onValueChange = { zip = it.take(10) }, label = { Text(tr("ZIP code"), fontSize = 11.sp) }, singleLine = true, modifier = Modifier.weight(1f))
             TextButton(onClick = {
                 scope.launch {
                     val loc = com.example.smartgardenplanner.data.ZipLookup.location(context, zip)
@@ -340,7 +341,7 @@ private fun SiteTab(
                         append(if (zone != null) "Zone $zone (2023 USDA map)." else "This ZIP isn't in the zone table: pick the zone from the list.")
                     })
                 }
-            }) { Text("Look up") }
+            }) { Text(tr("Look up")) }
         }
 
         var lat by remember(plot.id, plot.latitude) { mutableStateOf(plot.latitude?.toString() ?: "") }
@@ -366,7 +367,7 @@ private fun SiteTab(
                 } else {
                     locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                 }
-            }) { Text("Use my location") }
+            }) { Text(tr("Use my location")) }
             Button(onClick = {
                 val la = lat.toDoubleOrNull()
                 val lo = lon.toDoubleOrNull()
@@ -375,12 +376,12 @@ private fun SiteTab(
                 } else {
                     savePlot(plot.copy(latitude = la, longitude = lo), "Location saved.")
                 }
-            }) { Text("Save") }
+            }) { Text(tr("Save")) }
         }
 
         var bearing by remember(plot.id, plot.northBearingDeg) { mutableStateOf(plot.northBearingDeg) }
-        Text("Top edge of the plot faces: ${compass(bearing)} (${bearing.toInt()}°)", fontSize = 13.sp)
-        Text("Stand at the bottom edge looking across the plot and check a compass. Used for shade estimates.", fontSize = 11.sp, color = Color.Gray)
+        Text(tr("Top edge of the plot faces: ${compass(bearing)} (${bearing.toInt()}°)"), fontSize = 13.sp)
+        Text(tr("Stand at the bottom edge looking across the plot and check a compass. Used for shade estimates."), fontSize = 11.sp, color = Color.Gray)
         Slider(value = bearing, onValueChange = { bearing = it }, valueRange = 0f..345f, steps = 22,
             onValueChangeFinished = { savePlot(plot.copy(northBearingDeg = bearing, orientationSet = true), "Orientation saved.") })
     }
@@ -415,8 +416,8 @@ private fun SiteTab(
                 }
                 if (problem != null) say(problem)
                 else savePlot(plot.copy(soilSandPct = s, soilSiltPct = si, soilClayPct = c, soilOrganicPct = o, soilPh = p), "Soil saved.")
-            }) { Text("Save soil") }
-            SoilAnalyzer.guidance(SoilProfile.of(plot)).forEach { Text("• $it", fontSize = 12.sp) }
+            }) { Text(tr("Save soil")) }
+            SoilAnalyzer.guidance(SoilProfile.of(plot)).forEach { Text(tr("• $it"), fontSize = 12.sp) }
         }
     }
 
@@ -425,13 +426,13 @@ private fun SiteTab(
             val ctx = snap.context
             val lat = ctx.latitude
             val barriers = ctx.barriers
-            if (plot.latitude == null) Text("No location set, so ${SunlightEngine.DEFAULT_LATITUDE.toInt()}° N is assumed.", fontSize = 11.sp, color = Color(0xFFEAB308))
+            if (plot.latitude == null) Text(tr("No location set, so ${SunlightEngine.DEFAULT_LATITUDE.toInt()}° N is assumed."), fontSize = 11.sp, color = Color(0xFFEAB308))
             val cx = plot.lengthM / 2f
             val cy = plot.widthM / 2f
             val today = SunlightEngine.directSunHours(cx, cy, lat, ctx.dayOfYear, plot.northBearingDeg, barriers)
             val summer = SunlightEngine.directSunHours(cx, cy, lat, SunlightEngine.midsummerDay(lat), plot.northBearingDeg, barriers)
-            Text("Plot center, clear sky: ~${"%.1f".format(today)} h direct sun today, ~${"%.1f".format(summer)} h at midsummer.", fontSize = 13.sp)
-            Text("${barriers.size} barrier${if (barriers.size == 1) "" else "s"} and ${ctx.areaFeatures.size} marked area${if (ctx.areaFeatures.size == 1) "" else "s"} on this plot. Add them on the canvas: menu → Site tools.", fontSize = 11.sp, color = Color.Gray)
+            Text(tr("Plot center, clear sky: ~${"%.1f".format(today)} h direct sun today, ~${"%.1f".format(summer)} h at midsummer."), fontSize = 13.sp)
+            Text(tr("${barriers.size} barrier${if (barriers.size == 1) "" else "s"} and ${ctx.areaFeatures.size} marked area${if (ctx.areaFeatures.size == 1) "" else "s"} on this plot. Add them on the canvas: menu → Site tools."), fontSize = 11.sp, color = Color.Gray)
 
             var measured by remember(plot.id) { mutableStateOf<List<Double>?>(null) }
             var measuredYear by remember(plot.id) { mutableStateOf<Int?>(null) }
@@ -439,10 +440,10 @@ private fun SiteTab(
                 online.cachedSunshine(plot.id)?.let { measured = it.second; measuredYear = it.first }
             }
             val daylight = SunlightEngine.monthlyDayLength(lat)
-            Text(if (measured != null) "Month: daylight / measured sunshine ($measuredYear)" else "Month: daylight hours (clear-sky maximum)", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(tr(if (measured != null) "Month: daylight / measured sunshine ($measuredYear)" else "Month: daylight hours (clear-sky maximum)"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
             MONTHS.forEachIndexed { i, m ->
                 val sun = measured?.getOrNull(i)
-                Text("$m: ${"%.1f".format(daylight[i])} h" + (sun?.let { " / ${"%.1f".format(it)} h sunshine" } ?: ""), fontSize = 12.sp)
+                Text(tr("$m: ${"%.1f".format(daylight[i])} h" + (sun?.let { " / ${"%.1f".format(it)} h sunshine" } ?: "")), fontSize = 12.sp)
             }
             val la = plot.latitude
             val lo = plot.longitude
@@ -457,7 +458,7 @@ private fun SiteTab(
                         }
                     }
                 }
-            ) { Text(if (la == null || lo == null) "Set a location to get sunshine history" else "Get last year's sunshine (online)") }
+            ) { Text(tr(if (la == null || lo == null) "Set a location to get sunshine history" else "Get last year's sunshine (online)")) }
         }
     }
 
@@ -466,7 +467,7 @@ private fun SiteTab(
         if (!Feature.isEnabled(Feature.SLOPE_CONFIGURATION, settings.currentAppTier())) {
             gate(Feature.SLOPE_CONFIGURATION, settings, "Slope and flood areas")
         } else if (areas.isEmpty()) {
-            Text("None marked.", fontSize = 12.sp, color = Color.Gray)
+            Text(tr("None marked."), fontSize = 12.sp, color = Color.Gray)
         } else {
             areas.forEach { a ->
                 if (a.featureType == SiteFeatureType.SLOPE.name) {
@@ -475,15 +476,15 @@ private fun SiteTab(
                         a.slopeGradePct >= 5f -> "Plant rows across the slope (along the contour) and mulch to stop soil washing away."
                         else -> "Gentle: fine for most beds; the low side stays wetter."
                     }
-                    Text("Slope${if (a.label.isNotBlank()) " '${a.label}'" else ""}: ${"%.0f".format(a.slopeGradePct)} %, downhill to the ${compass(a.slopeDirectionDeg)}. $advice", fontSize = 12.sp)
+                    Text(tr("Slope${if (a.label.isNotBlank()) " '${a.label}'" else ""}: ${"%.0f".format(a.slopeGradePct)} %, downhill to the ${compass(a.slopeDirectionDeg)}. $advice"), fontSize = 12.sp)
                 } else {
                     val months = a.floodMonths.split(",").mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..12 }.joinToString(", ") { MONTHS[it - 1] }
-                    Text("Floods${if (a.label.isNotBlank()) " '${a.label}'" else ""}${if (months.isNotBlank()) " in $months" else ""}. Only flood-tolerant plants are suggested there; use raised beds for others.", fontSize = 12.sp)
+                    Text(tr("Floods${if (a.label.isNotBlank()) " '${a.label}'" else ""}${if (months.isNotBlank()) " in $months" else ""}. Only flood-tolerant plants are suggested there; use raised beds for others."), fontSize = 12.sp)
                 }
             }
         }
     }
-    Text("Plot area: ${"%.1f".format(PlotShape.areaM2(plot))} m²" + if (PlotShape.outline(plot).isNotEmpty()) " (custom outline)" else "", fontSize = 12.sp, color = Color.Gray)
+    Text(tr("Plot area: ${"%.1f".format(PlotShape.areaM2(plot))} m²" + if (PlotShape.outline(plot).isNotEmpty()) " (custom outline)" else ""), fontSize = 12.sp, color = Color.Gray)
 }
 
 // ============================================================== Harmony
@@ -498,41 +499,41 @@ private fun HarmonyTab(snap: PlotSnapshot, settings: AppSettings) {
             report.score >= 50 -> Color(0xFFEAB308)
             else -> Color(0xFFEF4444)
         }
-        Text("Harmony score: ${report.score}/100", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = scoreColor)
-        Text(if (snap.context.guilds.isNotEmpty()) "Guilds are ON: guild partners are allowed closer together." else "Guilds are OFF: normal spacing for all plants.", fontSize = 11.sp, color = if (snap.context.guilds.isNotEmpty()) Color(0xFF10B981) else Color.Gray)
-        if (report.plantCounts.isEmpty()) Text("Nothing planted yet.", fontSize = 12.sp, color = Color.Gray)
-        else Text("Planted: " + report.plantCounts.joinToString(", ") { "${it.first} ×${it.second}" }, fontSize = 12.sp)
+        Text(tr("Harmony score: ${report.score}/100"), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = scoreColor)
+        Text(tr(if (snap.context.guilds.isNotEmpty()) "Guilds are ON: guild partners are allowed closer together." else "Guilds are OFF: normal spacing for all plants."), fontSize = 11.sp, color = if (snap.context.guilds.isNotEmpty()) Color(0xFF10B981) else Color.Gray)
+        if (report.plantCounts.isEmpty()) Text(tr("Nothing planted yet."), fontSize = 12.sp, color = Color.Gray)
+        else Text(tr("Planted: " + report.plantCounts.joinToString(", ") { "${it.first} ×${it.second}" }), fontSize = 12.sp)
     }
     // FR-032/033: what grew where in past seasons and where each family should go next.
     Section("Seasons & crop rotation", "Past seasons stay with the plot. Use Start a new season (layout menu) when a season ends.") {
         val season = com.example.smartgardenplanner.core.Seasons.currentSeason(snap.context.nodes, snap.history)
-        Text("Planning season: $season", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text(tr("Planning season: $season"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         com.example.smartgardenplanner.core.Seasons.years(snap.history).forEach { y ->
             val list = snap.history.filter { it.seasonYear == y }
-            Text("$y: " + list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }, fontSize = 12.sp)
+            Text(tr("$y: " + list.groupBy { it.speciesName }.entries.sortedByDescending { it.value.size }.joinToString(", ") { "${it.value.size} × ${it.key}" }), fontSize = 12.sp)
         }
         com.example.smartgardenplanner.core.CropRotation.advice(snap.context.plot, snap.history, snap.context.nodes, snap.context.seedLookup, season).forEach {
-            Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+            Text(tr(it), fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
         }
     }
     val report = remember(snap) { HarmonyAnalyzer.analyze(snap.context, snap.catalog, settings.spacingMarginMultiplier) }
     if (!Feature.isEnabled(Feature.HARMONY_REPORT, settings.currentAppTier())) return
     Section("Issues") {
-        if (report.issues.isEmpty()) Text("No problems found.", fontSize = 12.sp, color = Color(0xFF10B981))
+        if (report.issues.isEmpty()) Text(tr("No problems found."), fontSize = 12.sp, color = Color(0xFF10B981))
         report.issues.forEach { issue ->
             val c = when (issue.severity) { Severity.HIGH -> Color(0xFFEF4444); Severity.MEDIUM -> Color(0xFFEAB308); Severity.LOW -> Color.Gray }
             Row {
-                Text(issue.severity.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c, modifier = Modifier.width(52.dp))
-                Text(issue.text, fontSize = 12.sp)
+                Text(tr(issue.severity.label.uppercase()), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = c, modifier = Modifier.width(52.dp))
+                Text(tr(issue.text), fontSize = 12.sp)
             }
         }
     }
     if (report.goodPairs.isNotEmpty()) {
-        Section("Working well together") { report.goodPairs.forEach { Text("✓ $it", fontSize = 12.sp, color = Color(0xFF10B981)) } }
+        Section("Working well together") { report.goodPairs.forEach { Text(tr("✓ $it"), fontSize = 12.sp, color = Color(0xFF10B981)) } }
     }
         Section("Recommendations") {
-        if (report.recommendations.isEmpty()) Text("Nothing to add.", fontSize = 12.sp, color = Color.Gray)
-        report.recommendations.forEach { Text("• $it", fontSize = 12.sp) }
+        if (report.recommendations.isEmpty()) Text(tr("Nothing to add."), fontSize = 12.sp, color = Color.Gray)
+        report.recommendations.forEach { Text(tr("• $it"), fontSize = 12.sp) }
     }
 }
 
@@ -545,15 +546,15 @@ private fun SuggestTab(snap: PlotSnapshot, settings: AppSettings) {
         var foodOnly by remember { mutableStateOf(true) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = foodOnly, onCheckedChange = { foodOnly = it })
-            Text("Food crops only", fontSize = 13.sp)
+            Text(tr("Food crops only"), fontSize = 13.sp)
         }
-        if (snap.context.zone == null) Text("Tip: set the hardiness zone on the Site tab for better suggestions.", fontSize = 11.sp, color = Color(0xFFEAB308))
+        if (snap.context.zone == null) Text(tr("Tip: set the hardiness zone on the Site tab for better suggestions."), fontSize = 11.sp, color = Color(0xFFEAB308))
         val recs = remember(snap, foodOnly) { RecommendationEngine.recommend(snap.catalog, snap.context, null, 20, foodOnly) }
-        if (recs.isEmpty()) Text("Nothing in the current catalog fits. Try a larger catalog tier.", fontSize = 12.sp, color = Color.Gray)
+        if (recs.isEmpty()) Text(tr("Nothing in the current catalog fits. Try a larger catalog tier."), fontSize = 12.sp, color = Color.Gray)
         recs.forEach { r ->
             Column {
-                Text(CropReference.speciesName(r.seed) + " (e.g. ${r.seed.commonName.substringAfter(" - ", r.seed.commonName)})", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text(r.reasons.joinToString(" • "), fontSize = 11.sp, color = Color.Gray)
+                Text(tr(CropReference.speciesName(r.seed) + " (e.g. ${r.seed.commonName.substringAfter(" - ", r.seed.commonName)})"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(tr(r.reasons.joinToString(" • ")), fontSize = 11.sp, color = Color.Gray)
             }
         }
     }
@@ -573,12 +574,12 @@ private fun CareTab(
     scope: kotlinx.coroutines.CoroutineScope
 ) {
         val plot = snap.context.plot
-    Text(com.example.smartgardenplanner.core.Disclaimer.SHORT, fontSize = 11.sp, color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+    Text(tr(com.example.smartgardenplanner.core.Disclaimer.SHORT), fontSize = 11.sp, color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
     // FR-056: Plan B — faster varieties to keep in mind in case plants are lost.
     Section("Plan B: if a plant dies", "On the layout, tap a plant that died and choose Plan B: varieties that, planted today, will be ready with the plants that survived and before the first frost.") {
         val ahead = com.example.smartgardenplanner.core.BackupPlanner.planAhead(snap.context.plantedSeeds(), snap.catalog, snap.season)
-        if (ahead.isEmpty()) Text("Nothing planted yet, or no faster varieties in the catalog.", fontSize = 12.sp, color = Color.Gray)
-        ahead.forEach { (sp, list) -> Text("$sp: " + list.joinToString(", ") { "${it.commonName.substringAfter(" - ")} (${it.daysToHarvest} days)" }, fontSize = 12.sp) }
+        if (ahead.isEmpty()) Text(tr("Nothing planted yet, or no faster varieties in the catalog."), fontSize = 12.sp, color = Color.Gray)
+        ahead.forEach { (sp, list) -> Text(tr("$sp: " + list.joinToString(", ") { "${it.commonName.substringAfter(" - ")} (${it.daysToHarvest} days)" }), fontSize = 12.sp) }
     }
 
     // FR-042: pests and animals seen in the yard, with how to keep them out and which plants they go for.
@@ -590,40 +591,40 @@ private fun CareTab(
         chosen.forEach { p ->
             val atRisk = risks.first { it.pest == p }.atRisk
             Column {
-                Text(p.label + when {
+                Text(tr(p.label + when {
                     atRisk.isNotEmpty() -> " — goes for your ${atRisk.take(5).joinToString(", ")}"
                     p.targets.isEmpty() -> " — can damage most plants"
                     else -> ""
-                }, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text("Signs: ${p.signs}", fontSize = 11.sp, color = Color.Gray)
-                p.tips.forEach { Text("• $it", fontSize = 11.sp) }
+                }), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(tr("Signs: ${p.signs}"), fontSize = 11.sp, color = Color.Gray)
+                p.tips.forEach { Text(tr("• $it"), fontSize = 11.sp) }
             }
         }
-        if (chosen.isEmpty()) Text("None ticked yet. Deer, rabbits, groundhogs, raccoons and squirrels are the most common garden visitors in North America.", fontSize = 12.sp, color = Color.Gray)
-        Text("General tips", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        com.example.smartgardenplanner.core.Pest.GENERAL_TIPS.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
+        if (chosen.isEmpty()) Text(tr("None ticked yet. Deer, rabbits, groundhogs, raccoons and squirrels are the most common garden visitors in North America."), fontSize = 12.sp, color = Color.Gray)
+        Text(tr("General tips"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.Pest.GENERAL_TIPS.forEach { Text(tr("• $it"), fontSize = 11.sp, color = Color.Gray) }
     }
     // FR-039 / FR-045: watering advice, and which plants each sprinkler, drip line or hose reaches.
     Section("Watering and irrigation", "Draw sprinklers, drip lines and hose taps from the layout menu → Irrigation, then turn on Show water map to see what gets wet.") {
         if (snap.context.features.any { com.example.smartgardenplanner.core.SiteFeatureType.of(it.featureType)?.isIrrigation == true }) {
             com.example.smartgardenplanner.core.Irrigation.report(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
-                Text(it, fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
+                Text(tr(it), fontSize = 12.sp, color = if (it.startsWith("⚠")) Color(0xFFEAB308) else Color.Unspecified)
             }
         }
         com.example.smartgardenplanner.core.WateringAdvice.forPlot(plot, snap.context.nodes, snap.context.features, snap.context.seedLookup).forEach {
-            Text("→ $it", fontSize = 12.sp)
+            Text(tr("→ $it"), fontSize = 12.sp)
         }
         val species = snap.context.plantedSeeds().distinctBy { com.example.smartgardenplanner.core.CropReference.speciesKey(it) }
         if (species.isNotEmpty()) {
-            Text("How much water your plants need", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(tr("How much water your plants need"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
             species.sortedBy { com.example.smartgardenplanner.core.CropReference.forSeed(it).waterIntervalDays }.forEach {
-                Text("${com.example.smartgardenplanner.core.CropReference.speciesName(it)}: ${com.example.smartgardenplanner.core.WateringAdvice.needLabel(it)}", fontSize = 11.sp)
+                Text(tr("${com.example.smartgardenplanner.core.CropReference.speciesName(it)}: ${com.example.smartgardenplanner.core.WateringAdvice.needLabel(it)}"), fontSize = 11.sp)
             }
         }
-        Text("Watering tips", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        com.example.smartgardenplanner.core.WateringAdvice.GENERAL.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
-        Text("Choosing sprinklers, drip or hose", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        com.example.smartgardenplanner.core.WateringAdvice.SYSTEMS.forEach { Text("• $it", fontSize = 11.sp, color = Color.Gray) }
+        Text(tr("Watering tips"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.WateringAdvice.GENERAL.forEach { Text(tr("• $it"), fontSize = 11.sp, color = Color.Gray) }
+        Text(tr("Choosing sprinklers, drip or hose"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        com.example.smartgardenplanner.core.WateringAdvice.SYSTEMS.forEach { Text(tr("• $it"), fontSize = 11.sp, color = Color.Gray) }
     }
     Section("Today's care", "FR-019: watering and fertilizing due now. Daily notifications can be switched on in Settings → Household & care.") {
         if (gate(Feature.CARE_REMINDERS, settings, "Care reminders")) {
@@ -632,20 +633,20 @@ private fun CareTab(
             val tasks = remember(snap, careLog, rainMm) {
                 CarePlanner.dueTasks(snap.context, careLog, settings.carePreferenceEnum, System.currentTimeMillis(), rainMm, settings.rainSkipThresholdMm.toDouble())
             }
-            if (tasks.isEmpty()) Text("Nothing planted yet.", fontSize = 12.sp, color = Color.Gray)
+            if (tasks.isEmpty()) Text(tr("Nothing planted yet."), fontSize = 12.sp, color = Color.Gray)
             tasks.forEach { t ->
                 Column {
                     Text(
-                        (if (t.isDue) "DUE • " else if (t.rainSkip) "SKIP • " else "Next ${formatDate(t.dueEpochMillis)} • ") + t.title,
+                        tr((if (t.isDue) "DUE • " else if (t.rainSkip) "SKIP • " else "Next ${formatDate(t.dueEpochMillis)} • ") + t.title),
                         fontSize = 13.sp, fontWeight = FontWeight.Medium,
                         color = if (t.isDue) Color(0xFFEAB308) else if (t.rainSkip) Color(0xFF0EA5E9) else Color.Unspecified
                     )
-                    Text(t.detail, fontSize = 11.sp, color = Color.Gray)
+                    Text(tr(t.detail), fontSize = 11.sp, color = Color.Gray)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { markDone(CareTaskType.WATER) }) { Text("Watered") }
-                OutlinedButton(onClick = { markDone(CareTaskType.FERTILIZE) }) { Text("Fertilized") }
+                OutlinedButton(onClick = { markDone(CareTaskType.WATER) }) { Text(tr("Watered")) }
+                OutlinedButton(onClick = { markDone(CareTaskType.FERTILIZE) }) { Text(tr("Fertilized")) }
             }
             val la = plot.latitude
             val lo = plot.longitude
@@ -657,9 +658,9 @@ private fun CareTab(
                         is OnlineResult.Failure -> rainNote = r.message
                     }
                 }
-            }) { Text(if (la == null || lo == null) "Set a location to check rain" else "Check rain (online)") }
-            rainNote?.let { Text(it, fontSize = 11.sp, color = Color(0xFF0EA5E9)) }
-            Text("Reminders: " + if (settings.careRemindersEnabled) "ON" else "OFF (Settings → Household & care)", fontSize = 11.sp, color = Color.Gray)
+            }) { Text(tr(if (la == null || lo == null) "Set a location to check rain" else "Check rain (online)")) }
+            rainNote?.let { Text(tr(it), fontSize = 11.sp, color = Color(0xFF0EA5E9)) }
+            Text(tr("Reminders: " + if (settings.careRemindersEnabled) "ON" else "OFF (Settings → Household & care)"), fontSize = 11.sp, color = Color.Gray)
         }
     }
 
@@ -667,11 +668,11 @@ private fun CareTab(
         if (gate(Feature.FERTILIZING_PLAN, settings, "The fertilizing plan")) {
             PreferenceChips(settings, saveSettings)
             val plan = remember(snap, settings.carePreference) { CarePlanner.fertilizingPlan(snap.context, settings.carePreferenceEnum) }
-            if (plan.isEmpty()) Text("Nothing planted yet.", fontSize = 12.sp, color = Color.Gray)
+            if (plan.isEmpty()) Text(tr("Nothing planted yet."), fontSize = 12.sp, color = Color.Gray)
             plan.forEach { e ->
                 Column {
-                    Text("${formatDate(e.dueEpochMillis)} — ${e.species.joinToString(", ")}", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    Text(e.action, fontSize = 11.sp, color = Color.Gray)
+                    Text(tr("${formatDate(e.dueEpochMillis)} — ${e.species.joinToString(", ")}"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(tr(e.action), fontSize = 11.sp, color = Color.Gray)
                 }
             }
         }
@@ -681,13 +682,13 @@ private fun CareTab(
         if (gate(Feature.PEST_MANAGEMENT_PLAN, settings, "The pest plan")) {
             PreferenceChips(settings, saveSettings)
             val plan = remember(snap, settings.carePreference) { CarePlanner.pestPlan(snap.context, settings.carePreferenceEnum) }
-            if (plan.isEmpty()) Text("No common pests on file for what's planted.", fontSize = 12.sp, color = Color.Gray)
+            if (plan.isEmpty()) Text(tr("No common pests on file for what's planted."), fontSize = 12.sp, color = Color.Gray)
             plan.forEach { p ->
                 Column {
-                    Text("${p.pest} — ${p.affects.joinToString(", ")}", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text("Prevent: ${p.prevention}", fontSize = 11.sp)
-                    Text("Control: ${p.control}", fontSize = 11.sp)
-                    Text("Scout: ${p.scouting}", fontSize = 11.sp, color = Color.Gray)
+                    Text(tr("${p.pest} — ${p.affects.joinToString(", ")}"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(tr("Prevent: ${p.prevention}"), fontSize = 11.sp)
+                    Text(tr("Control: ${p.control}"), fontSize = 11.sp)
+                    Text(tr("Scout: ${p.scouting}"), fontSize = 11.sp, color = Color.Gray)
                 }
             }
         }
@@ -697,8 +698,8 @@ private fun CareTab(
 @Composable
 private fun PreferenceChips(settings: AppSettings, saveSettings: (AppSettings) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(selected = settings.carePreferenceEnum == CarePreference.ORGANIC, onClick = { saveSettings(settings.copy(carePreference = CarePreference.ORGANIC.name)) }, label = { Text("Organic") })
-        FilterChip(selected = settings.carePreferenceEnum == CarePreference.CONVENTIONAL, onClick = { saveSettings(settings.copy(carePreference = CarePreference.CONVENTIONAL.name)) }, label = { Text("Conventional") })
+        FilterChip(selected = settings.carePreferenceEnum == CarePreference.ORGANIC, onClick = { saveSettings(settings.copy(carePreference = CarePreference.ORGANIC.name)) }, label = { Text(tr("Organic")) })
+        FilterChip(selected = settings.carePreferenceEnum == CarePreference.CONVENTIONAL, onClick = { saveSettings(settings.copy(carePreference = CarePreference.CONVENTIONAL.name)) }, label = { Text(tr("Conventional")) })
     }
 }
 
@@ -721,11 +722,11 @@ private fun FoodTab(
     Section("Expected harvest", "FR-022: typical yield per plant for a home garden. Real harvests vary with weather, care and variety.") {
         if (gate(Feature.YIELD_ESTIMATES, settings, "Yield estimates")) {
             val lines = remember(snap) { FoodPlanner.yieldLines(ctx) }
-            if (lines.isEmpty()) Text("No food crops planted yet.", fontSize = 12.sp, color = Color.Gray)
-            lines.forEach { Text("${it.species}: ${it.plants} × ${"%.2f".format(it.kgPerPlant)} kg = ${"%.1f".format(it.totalKg)} kg", fontSize = 12.sp) }
+            if (lines.isEmpty()) Text(tr("No food crops planted yet."), fontSize = 12.sp, color = Color.Gray)
+            lines.forEach { Text(tr("${it.species}: ${it.plants} × ${"%.2f".format(it.kgPerPlant)} kg = ${"%.1f".format(it.totalKg)} kg"), fontSize = 12.sp) }
             if (lines.isNotEmpty()) {
                 val total = lines.sumOf { it.totalKg.toDouble() }
-                Text("Total ≈ ${"%.1f".format(total)} kg per season (${"%.1f".format(total / settings.householdSize)} kg per person for ${settings.householdSize} people).", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(tr("Total ≈ ${"%.1f".format(total)} kg per season (${"%.1f".format(total / settings.householdSize)} kg per person for ${settings.householdSize} people)."), fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -734,21 +735,21 @@ private fun FoodTab(
         if (gate(Feature.NUTRITION_GUIDE, settings, "The nutrition guide")) {
             val totals = remember(snap, nutritionRows) { FoodPlanner.nutritionTotals(ctx, overrides) }
             if (totals.energyKcal > 0) {
-                Text("This plot's season harvest could supply about:", fontSize = 12.sp)
-                Text("• ${"%.0f".format(totals.kcalDays)} days of calories, ${"%.0f".format(totals.proteinDays)} days of protein", fontSize = 12.sp)
-                Text("• ${"%.0f".format(totals.vitaminCDays)} days of vitamin C, ${"%.0f".format(totals.vitaminADays)} days of vitamin A", fontSize = 12.sp)
-                Text("(for one adult: 2000 kcal, 50 g protein, 90 mg vitamin C, 900 µg vitamin A per day)", fontSize = 10.sp, color = Color.Gray)
+                Text(tr("This plot's season harvest could supply about:"), fontSize = 12.sp)
+                Text(tr("• ${"%.0f".format(totals.kcalDays)} days of calories, ${"%.0f".format(totals.proteinDays)} days of protein"), fontSize = 12.sp)
+                Text(tr("• ${"%.0f".format(totals.vitaminCDays)} days of vitamin C, ${"%.0f".format(totals.vitaminADays)} days of vitamin A"), fontSize = 12.sp)
+                Text(tr("(for one adult: 2000 kcal, 50 g protein, 90 mg vitamin C, 900 µg vitamin A per day)"), fontSize = 10.sp, color = Color.Gray)
             }
             val species = ctx.plantedSeeds().distinctBy { CropReference.speciesKey(it) }.filter { CropReference.forSeed(it).isFood }
-            if (species.isEmpty()) Text("No food crops planted yet.", fontSize = 12.sp, color = Color.Gray)
+            if (species.isEmpty()) Text(tr("No food crops planted yet."), fontSize = 12.sp, color = Color.Gray)
             species.forEach { seed ->
                 val key = CropReference.speciesKey(seed)
                 val row = nutritionRows[key]
                 val n = row?.toNutrients() ?: CropReference.forSeed(seed).nutrients ?: return@forEach
                 Column {
-                    Text(CropReference.speciesName(seed), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text("${n.energyKcal.toInt()} kcal • protein ${n.proteinG} g • fibre ${n.fiberG} g • vit C ${n.vitaminCMg} mg • vit A ${n.vitaminAUg} µg • iron ${n.ironMg} mg • calcium ${n.calciumMg} mg • potassium ${n.potassiumMg} mg", fontSize = 11.sp)
-                    Text(row?.let { "Source: ${it.source} (updated ${formatDate(it.updatedEpochMillis)})" } ?: "Source: bundled snapshot", fontSize = 10.sp, color = Color.Gray)
+                    Text(tr(CropReference.speciesName(seed)), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(tr("${n.energyKcal.toInt()} kcal • protein ${n.proteinG} g • fibre ${n.fiberG} g • vit C ${n.vitaminCMg} mg • vit A ${n.vitaminAUg} µg • iron ${n.ironMg} mg • calcium ${n.calciumMg} mg • potassium ${n.potassiumMg} mg"), fontSize = 11.sp)
+                    Text(tr(row?.let { "Source: ${it.source} (updated ${formatDate(it.updatedEpochMillis)})" } ?: "Source: bundled snapshot"), fontSize = 10.sp, color = Color.Gray)
                     TextButton(contentPadding = PaddingValues(0.dp), onClick = {
                         scope.launch {
                             when (val r = online.refreshNutrition(key, CropReference.speciesName(seed), settings.usdaApiKey, settings.onlineFeaturesEnabled)) {
@@ -757,7 +758,7 @@ private fun FoodTab(
                                 is OnlineResult.Failure -> reload(r.message)
                             }
                         }
-                    }) { Text("Refresh from USDA (online)", fontSize = 11.sp) }
+                    }) { Text(tr("Refresh from USDA (online)"), fontSize = 11.sp) }
                 }
             }
         }
@@ -766,11 +767,11 @@ private fun FoodTab(
     Section("Homestead starter list", "FR-016: a basic balanced set of crops for ${settings.householdSize} people (change in Settings → Household & care), limited to what suits this zone and soil.") {
         if (gate(Feature.HOMESTEAD_STARTER_LIST, settings, "The homestead list")) {
             val items = remember(snap, settings.householdSize) { FoodPlanner.homesteadList(snap.catalog, ctx.zone, ctx.soil, settings.householdSize) }
-            if (items.isEmpty()) Text("The current catalog has none of the starter crops. Try a larger catalog tier.", fontSize = 12.sp, color = Color.Gray)
+            if (items.isEmpty()) Text(tr("The current catalog has none of the starter crops. Try a larger catalog tier."), fontSize = 12.sp, color = Color.Gray)
             items.groupBy { it.role }.forEach { (role, list) ->
-                Text(role.label, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(tr(role.label), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 list.forEach { i ->
-                    Text("• ${CropReference.speciesName(i.seed)}: ${i.plants} plant${if (i.plants == 1) "" else "s"}" + (if (i.expectedKg > 0f) " (≈ ${"%.0f".format(i.expectedKg)} kg)" else "") + ". ${i.note}", fontSize = 12.sp)
+                    Text(tr("• ${CropReference.speciesName(i.seed)}: ${i.plants} plant${if (i.plants == 1) "" else "s"}" + (if (i.expectedKg > 0f) " (≈ ${"%.0f".format(i.expectedKg)} kg)" else "") + ". ${i.note}"), fontSize = 12.sp)
                 }
             }
         }
@@ -780,12 +781,12 @@ private fun FoodTab(
         if (gate(Feature.RECIPE_SUGGESTIONS, settings, "Recipe suggestions")) {
             val keys = ctx.plantedSeeds().map { CropReference.speciesKey(it) }.toSet()
             val matches = remember(keys) { FoodPlanner.recipeMatches(keys) }
-            if (matches.isEmpty()) Text("Plant some vegetables or herbs to see recipes.", fontSize = 12.sp, color = Color.Gray)
+            if (matches.isEmpty()) Text(tr("Plant some vegetables or herbs to see recipes."), fontSize = 12.sp, color = Color.Gray)
             matches.take(10).forEach { m ->
                 Column {
-                    Text(m.recipe.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text("From your garden: ${m.grown.joinToString(", ")}" + if (m.missing.isNotEmpty()) " • also uses: ${m.missing.joinToString(", ")}" else "", fontSize = 11.sp, color = Color(0xFF10B981))
-                    Text("Pantry: ${m.recipe.pantry}. ${m.recipe.method}", fontSize = 11.sp, color = Color.Gray)
+                    Text(tr(m.recipe.name), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(tr("From your garden: ${m.grown.joinToString(", ")}" + if (m.missing.isNotEmpty()) " • also uses: ${m.missing.joinToString(", ")}" else ""), fontSize = 11.sp, color = Color(0xFF10B981))
+                    Text(tr("Pantry: ${m.recipe.pantry}. ${m.recipe.method}"), fontSize = 11.sp, color = Color.Gray)
                 }
             }
         }

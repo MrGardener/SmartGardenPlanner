@@ -17,24 +17,15 @@ object ZipLookup {
     @Volatile
     private var lines: List<String>? = null
 
-    @Volatile
-    private var zoneLines: List<String>? = null
-
     private fun table(context: Context): List<String> =
         lines ?: synchronized(this) {
-            lines ?: context.applicationContext.assets.open("zip_locations.txt").bufferedReader().readLines()
+            lines ?: context.applicationContext.assets.open("zip_data.txt").bufferedReader().readLines()
                 .filter { it.length >= 5 }.also { lines = it }
-        }
-
-    private fun zoneTable(context: Context): List<String> =
-        zoneLines ?: synchronized(this) {
-            zoneLines ?: context.applicationContext.assets.open("zip_zones.txt").bufferedReader().readLines()
-                .filter { it.length >= 7 }.also { zoneLines = it }
         }
 
     /** Zone from the bundled 2023 USDA/PRISM ZIP table (offline, 40,502 ZIPs), or null. */
     suspend fun offlineZone(context: Context, zip: String): String? = withContext(Dispatchers.IO) {
-        ZipTable.findZone(zoneTable(context), zip.trim())
+        ZipTable.findZone(table(context), zip.trim())
     }
 
     suspend fun location(context: Context, zip: String): ZipLocation? = withContext(Dispatchers.IO) {

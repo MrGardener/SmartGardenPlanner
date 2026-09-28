@@ -88,10 +88,19 @@ object BlockPlanner {
 
     const val WALKWAY_M = 0.45f
 
+    /** Variant number for "Long rows": every crop in full-width rows, tallest at the back, walkways between crops. */
+    const val LONG_ROWS = 10
+
     /** Rows and columns for [n] plants: as square as possible with no more rows than columns. */
     fun shape(n: Int): Pair<Int, Int> {
         val rows = max(1, floor(sqrt(n.toDouble())).toInt())
         return rows to ceil(n / rows.toDouble()).toInt()
+    }
+
+    /** [n] plants in rows of at most [perRow] (full rows first): long rows across the area. */
+    fun fullWidthRows(n: Int, perRow: Int): List<Int> {
+        val c = perRow.coerceAtLeast(1)
+        return List(n / c) { c } + listOfNotNull((n % c).takeIf { it > 0 })
     }
 
     /** Plants per row, back row first and the front row shortest: 7 → [4, 3]. */
@@ -129,7 +138,8 @@ object BlockPlanner {
         val spread = when (variant) { 8 -> 6.0; 9 -> -6.0; else -> 0.0 }
         val reorder = variant == 3 || variant == 6
         val altShape = variant == 4 || variant == 7
-        val depthWeight = if (variant == 5) 1.0 else 4.0
+        val longRows = variant == LONG_ROWS
+        val depthWeight = when { longRows -> 10.0; variant == 5 -> 1.0; else -> 4.0 }
         val notes = mutableListOf<String>()
         // Frame: v grows toward the back (away from the midday sun), u runs along the rows.
         val (sx, sy) = AutoPlanner.sunwardVector(context.latitude, plot.northBearingDeg)
@@ -188,6 +198,7 @@ object BlockPlanner {
         val relaxedFor = mutableSetOf<String>()
         val split = mutableListOf<String>()
         val reshaped = mutableListOf<String>()
+        val blockedRunways = mutableListOf<String>()
 
         for (req in order) {
             val seed = req.seed
@@ -248,7 +259,7 @@ object BlockPlanner {
             }
 
             val step = max(pitch / 2f, sqrt(((uMax - uMin) * vSpan / 1200f).toDouble()).toFloat()).coerceAtLeast(0.05f)
-            class Found(val score: Double, val pts: List<PlotPoint>, val u0: Float, val v0: Float, val rows: List<Int>)
+            class Found(val score: Double, val pts: List<PlotPoint>, val u0: Float, val v0: Float, val rows: List<Int>, val runwayBlocked: Boolean)
             // Best position for a block of [rows] (plants per row, back row first), or null if no cell is free.
             fun search(rows: List<Int>): Found? {
                 val cols = rows.max()
@@ -266,6 +277,7 @@ object BlockPlanner {
                         if (ok.isNotEmpty()) {
                             val pts = ok.map { (u, v) -> toXY(u, v) }
                             var score = ok.size * 10.0
+                            var runwayBad = false
                             val meanDepth = ok.map { (_, v) -> (v - vMin) / vSpan }.average()
                             score -= abs(meanDepth - target) * depthWeight
                             if (spread != 0.0 && placed.isNotEmpty()) {
@@ -291,26 +303,36 @@ object BlockPlanner {
                                 // Runway toward the sun, in front of the block: it should be free, inside the plot and sunny.
                                 val front = v0 - blockD - r
                                 var good = 0; var bad = 0
-                                var t = 0.25f
-                                while (t <= habit.runwayM) {
-                                    var uu = u0; while (uu <= u0 + blockW + 0.001f) {
+                                // Samples at most 25 cm apart over the whole runway (the block's width plus a plant radius each
+                                // side, out to its full length), edges included.
+                                val nu = ceil((blockW + 2 * r) / 0.25f).toInt().coerceAtLeast(1)
+                                val nt = ceil(habit.runwayM / 0.25f).toInt().coerceAtLeast(1)
+                                // Only plants near this runway can block it.
+                                val corners = listOf(toXY(u0 - r, front), toXY(u0 + blockW + r, front), toXY(u0 - r, front - habit.runwayM), toXY(u0 + blockW + r, front - habit.runwayM))
+                                val bx0 = corners.minOf { it.x }; val bx1 = corners.maxOf { it.x }; val by0 = corners.minOf { it.y }; val by1 = corners.maxOf { it.y }
+                                val near = (existing + placed).filter { o -> o.x + o.r >= bx0 && o.x - o.r <= bx1 && o.y + o.r >= by0 && o.y - o.r <= by1 }
+                                for (ti in 1..nt) {
+                                    val t = habit.runwayM * ti / nt
+                                    for (ui in 0..nu) {
+                                        val uu = u0 - r + (blockW + 2 * r) * ui / nu
                                         val p = toXY(uu, front - t)
-                                        val occupied = (existing + placed).any { o -> (o.x - p.x) * (o.x - p.x) + (o.y - p.y) * (o.y - p.y) < o.r * o.r }
+                                        val occupied = near.any { o -> (o.x - p.x) * (o.x - p.x) + (o.y - p.y) * (o.y - p.y) < o.r * o.r }
                                         val shaded = sunKnown && (sunAt(p.x, p.y) ?: 8.0) < 3.0
                                         // FR-059: the runway must stay inside the plot and clear of fences, walls and buildings.
                                         val walled = walls.any { w -> PlotGeometry.distanceToPolyline(p.x, p.y, w) < 0.4f }
                                         val otherRunway = reserved.any { it.contains(uu, front - t) }
                                         if (occupied || shaded || walled || otherRunway || !PlotShape.contains(plot, p.x, p.y) || !PlotGeometry.pointInPolygon(p.x, p.y, area)) bad++ else good++
-                                        uu += max(pitch, 0.5f)
                                     }
-                                    t += 0.5f
                                 }
+                                // FR-059: a runway must be completely free: over no plant (or another runway), inside the plot
+                                // and clear of fences. Any blocked runway ranks below every free one, and is used only when no
+                                // free runway exists (the proposal then says so).
                                 if (good + bad > 0) {
-                                    score += 3.0 * (good - 2.0 * bad) / (good + bad)
-                                    if (bad.toDouble() / (good + bad) > 0.3) score -= 25.0   // a runway that is mostly blocked is a last resort
+                                    score += 3.0 * good / (good + bad)
+                                    if (bad > 0) { score -= 200.0 + 100.0 * bad / (good + bad); runwayBad = true }
                                 }
                             }
-                            if (best == null || score > best.score) best = Found(score, pts, u0, v0, rows)
+                            if (best == null || score > best.score) best = Found(score, pts, u0, v0, rows, runwayBad)
                         }
                         u0 += step
                     }
@@ -324,9 +346,10 @@ object BlockPlanner {
                 // FR-047: the user's chosen arrangement first; otherwise the default, and before splitting a crop
                 // into several groups, other tidy arrangements that keep it in one block.
                 val preferred = if (blocks == 0 && wantShape != null) wantShape
+                    else if (longRows) fullWidthRows(remaining, ((uMax - uMin - r) / pitch).toInt() + 1)
                     else if (altShape && remaining > 3) ClumpShapes.options(remaining).getOrNull(1)?.rows ?: rowSizes(remaining) else rowSizes(remaining)
                 var best = search(preferred)
-                if (blocks == 0 && wantShape == null && (best == null || best.pts.size < remaining)) {
+                if (!longRows && blocks == 0 && wantShape == null && (best == null || best.pts.size < remaining)) {
                     for (alt in ClumpShapes.options(remaining).take(6)) {
                         if (alt.rows == preferred) continue
                         val f = search(alt.rows) ?: continue
@@ -365,6 +388,7 @@ object BlockPlanner {
                 }
                 val bu = best.u0; val bv = best.v0
                 if (habit != null && !habit.climber) {
+                    if (best.runwayBlocked) blockedRunways += CropReference.speciesName(seed)
                     val front = bv - blockD - r
                     reserved += Rect(bu - r, bu + blockW + r, front - habit.runwayM, front)
                     val poly = listOf(toXY(bu - r, front), toXY(bu + blockW + r, front), toXY(bu + blockW + r, front - habit.runwayM), toXY(bu - r, front - habit.runwayM))
@@ -376,7 +400,7 @@ object BlockPlanner {
                 blocks++
                 if (kept.size < best.pts.size && blocks > 6) break
             }
-            if (blocks > 1) {
+            if (blocks > 1 && !longRows) {
                 val sizes = shapes.map { it.sum() }
                 split += "${CropReference.speciesName(seed)} is in $blocks groups (${sizes.joinToString(" + ")}): " +
                     (if (wantShape != null) "your arrangement (${ClumpShapes.label(wantShape)}) didn't fit in one piece of free ground" else "no single block of ${req.count} fitted in the free ground") +
@@ -393,7 +417,10 @@ object BlockPlanner {
         // --- Explain.
         val backName = if (context.latitude >= 0) "north" else "south"
         val sunName = if (context.latitude >= 0) "south" else "north"
-        if (blockNotes.isNotEmpty()) notes += "Organized clumps: " + blockNotes.joinToString("; ") + ". Each clump is in rows and columns with a ${(WALKWAY_M * 100).toInt()} cm walkway around it, so you can reach and hose every plant. Next year the clumps can swap places for crop rotation."
+        if (blockNotes.isNotEmpty()) notes += if (longRows)
+            "Long rows: " + blockNotes.joinToString("; ") + ". Each crop has its own full-width rows with a ${(WALKWAY_M * 100).toInt()} cm walkway to the next crop."
+        else "Organized clumps: " + blockNotes.joinToString("; ") + ". Each clump is in rows and columns with a ${(WALKWAY_M * 100).toInt()} cm walkway around it, so you can reach and hose every plant. Next year the clumps can swap places for crop rotation."
+        if (longRows && order.size > 1) notes += "Crop rotation with long rows: tall rows must stay at the back so they don't shade the rest, so next year a row can only trade places with a crop of similar height. Organized clumps leave more room to rotate."
         val tall = order.filter { VineHabits.of(it.seed) == null && !isPollinator(it.seed) }.map { it.seed }.distinctBy { CropReference.speciesKey(it) }
         if (tall.size > 1) notes += "Taller clumps (${tall.take(2).joinToString(", ") { CropReference.speciesName(it) }}) are on the $backName side, shorter ones on the sunny side, so tall plants don't shade short ones."
         val climbers = order.filter { VineHabits.of(it.seed)?.climber == true }.map { CropReference.speciesName(it.seed) }.distinct()
@@ -403,6 +430,7 @@ object BlockPlanner {
             notes += "$species vines run toward the sun: the clump is at the sunny ($sunName) edge with about ${habit?.runwayM?.fmt(1) ?: "1"} m kept free toward the $sunName (arrow on the plan). Guide the runners that way so they don't grow into other crops looking for light."
         }
         split.forEach { notes += it }
+        if (blockedRunways.isNotEmpty()) notes += "There was no completely free ground for the runners of ${blockedRunways.distinct().joinToString(", ")}: part of the runway (arrow) is blocked. Choose a bigger area, fewer plants, or train the vines up a trellis."
         if (reshaped.isNotEmpty()) notes += "To keep each crop in one block, these got a different arrangement: ${reshaped.joinToString("; ")}."
                 if (relaxedFor.isNotEmpty()) notes += "Not enough room to keep ${relaxedFor.joinToString(", ")} off last season's spots, so some went back where the same family grew last year. Try a bigger area or fewer plants."
         if (rotationAvoided > 0 || rotationStuck > 0) {

@@ -275,26 +275,26 @@ fun DataUnreadableScreen(onStartEmpty: () -> Unit, onClose: () -> Unit) {
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
-        Text("Your garden data can't be read on this device", style = MaterialTheme.typography.headlineSmall)
+        Text(tr("Your garden data can't be read on this device"), style = MaterialTheme.typography.headlineSmall)
         Text(
-            "The saved data is encrypted with a key that isn't available on this phone. This usually " +
-                "happens after restoring a backup onto a new or reset phone.",
+            tr("The saved data is encrypted with a key that isn't available on this phone. This usually " +
+                "happens after restoring a backup onto a new or reset phone."),
             style = MaterialTheme.typography.bodyMedium
         )
         Text(
-            "You can start with empty data. The unreadable files are kept (renamed), not deleted.",
+            tr("You can start with empty data. The unreadable files are kept (renamed), not deleted."),
             style = MaterialTheme.typography.bodyMedium
         )
-        Button(onClick = { confirming = true }, modifier = Modifier.fillMaxWidth()) { Text("Start with empty data") }
-        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("Close app") }
+        Button(onClick = { confirming = true }, modifier = Modifier.fillMaxWidth()) { Text(tr("Start with empty data")) }
+        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(tr("Close app")) }
     }
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text("Start with empty data?") },
-            text = { Text("Your plots and plants won't be shown. The old files stay on the phone, renamed.") },
-            confirmButton = { TextButton(onClick = { confirming = false; onStartEmpty() }) { Text("Start empty") } },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text("Cancel") } }
+            title = { Text(tr("Start with empty data?")) },
+            text = { Text(tr("Your plots and plants won't be shown. The old files stay on the phone, renamed.")) },
+            confirmButton = { TextButton(onClick = { confirming = false; onStartEmpty() }) { Text(tr("Start empty")) } },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(tr("Cancel")) } }
         )
     }
 }
@@ -305,9 +305,9 @@ fun StartupFailedScreen(message: String, onRetry: () -> Unit) {
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
-        Text("The app couldn't start", style = MaterialTheme.typography.headlineSmall)
-        Text(message, style = MaterialTheme.typography.bodyMedium)
-        Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) { Text("Try again") }
+        Text(tr("The app couldn't start"), style = MaterialTheme.typography.headlineSmall)
+        Text(tr(message), style = MaterialTheme.typography.bodyMedium)
+        Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) { Text(tr("Try again")) }
     }
 }
 
@@ -336,15 +336,15 @@ fun AppNavigationContainer(
     if (showDisclaimer) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text(com.example.smartgardenplanner.core.Disclaimer.TITLE) },
-            text = { Text(com.example.smartgardenplanner.core.Disclaimer.TEXT + "\n\nYou can read this again in Settings.") },
+            title = { Text(tr(com.example.smartgardenplanner.core.Disclaimer.TITLE)) },
+            text = { Text(tr(com.example.smartgardenplanner.core.Disclaimer.TEXT + "\n\nYou can read this again in Settings.")) },
             confirmButton = {
                 TextButton(onClick = {
                     showDisclaimer = false
                     disclaimerScope.launch {
                         try { withContext(SgpExecutors.dbDispatcher) { disclaimerSettings.save(disclaimerSettings.load().copy(disclaimerAccepted = true)) } } catch (e: CancellationException) { throw e } catch (e: Exception) {}
                     }
-                }) { Text("I understand") }
+                }) { Text(tr("I understand")) }
             }
         )
     }
@@ -484,7 +484,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Smart Garden Planner", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Smart Garden Planner"), fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
                     com.example.smartgardenplanner.ui.OnlineBadge(onlineOn)
@@ -509,7 +509,7 @@ fun DashboardScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color(0xFF0F172A),
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Create New Plot", fontWeight = FontWeight.Bold) }
+                text = { Text(tr("Create New Plot"), fontWeight = FontWeight.Bold) }
             )
         }
     ) { paddingValues ->
@@ -520,10 +520,10 @@ fun DashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Active Plots", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(tr("Active Plots"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
-            loadError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
-            fileMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, modifier = Modifier.clickable { fileMessage = null }) }
+            loadError?.let { Text(tr(it), color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+            fileMessage?.let { Text(tr(it), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, modifier = Modifier.clickable { fileMessage = null }) }
 
             if (plotList.isEmpty()) {
                 Box(
@@ -535,8 +535,8 @@ fun DashboardScreen(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("No agricultural designs committed.", color = Color.Gray, fontSize = 14.sp)
-                        Text("Tap button to create a new layout.", color = Color.Gray, fontSize = 12.sp)
+                        Text(tr("No agricultural designs committed."), color = Color.Gray, fontSize = 14.sp)
+                        Text(tr("Tap button to create a new layout."), color = Color.Gray, fontSize = 12.sp)
                     }
                 }
             } else {
@@ -551,18 +551,18 @@ fun DashboardScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text(plot.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(tr(plot.name), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m" +
+                                    tr("Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m" +
                                         (if (com.example.smartgardenplanner.core.PlotShape.outline(plot).isNotEmpty()) " • custom outline" else "") +
-                                        (plot.hardinessZone?.let { " • zone $it" } ?: ""),
+                                        (plot.hardinessZone?.let { " • zone $it" } ?: "")),
                                     fontSize = 12.sp,
                                     color = Color.LightGray
                                 )
                                 if (plot.description.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(plot.description, fontSize = 12.sp, color = Color.Gray)
+                                    Text(tr(plot.description), fontSize = 12.sp, color = Color.Gray)
                                 }
                             }
                         }
@@ -628,7 +628,7 @@ fun CreatorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Initialize Plot Configuration") },
+                title = { Text(tr("Initialize Plot Configuration")) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -648,14 +648,14 @@ fun CreatorScreen(
             OutlinedTextField(
                 value = plotName,
                 onValueChange = { newValue -> plotName = newValue },
-                label = { Text("Agricultural Plot Designation Name") },
+                label = { Text(tr("Agricultural Plot Designation Name")) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = plotLength,
                 onValueChange = { newValue -> plotLength = newValue },
-                label = { Text("Real-World Length Dimension ($unitSuffix)") },
+                label = { Text(tr("Real-World Length Dimension ($unitSuffix)")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 isError = plotLength.isNotEmpty() && (!plotLength.matches(regexValidator) || (plotLength.toFloatOrNull() ?: 0f) < minDimDisplay || (plotLength.toFloatOrNull() ?: 0f) > maxDimDisplay)
@@ -664,7 +664,7 @@ fun CreatorScreen(
             OutlinedTextField(
                 value = plotWidth,
                 onValueChange = { newValue -> plotWidth = newValue },
-                label = { Text("Real-World Width Dimension ($unitSuffix)") },
+                label = { Text(tr("Real-World Width Dimension ($unitSuffix)")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 isError = plotWidth.isNotEmpty() && (!plotWidth.matches(regexValidator) || (plotWidth.toFloatOrNull() ?: 0f) < minDimDisplay || (plotWidth.toFloatOrNull() ?: 0f) > maxDimDisplay)
@@ -675,7 +675,7 @@ fun CreatorScreen(
                     value = scaleEngineSelection,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Scale Engine Computing Source") },
+                    label = { Text(tr("Scale Engine Computing Source")) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { dropdownExpanded = true }
@@ -686,14 +686,14 @@ fun CreatorScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Manual Dimensions Entry") },
+                        text = { Text(tr("Manual Dimensions Entry")) },
                         onClick = {
                             scaleEngineSelection = "Manual Dimensions Entry"
                             dropdownExpanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Device IMU Sensor Measuring") },
+                        text = { Text(tr("Device IMU Sensor Measuring")) },
                         onClick = {
                             scaleEngineSelection = "Device IMU Sensor Measuring"
                             dropdownExpanded = false
@@ -702,16 +702,16 @@ fun CreatorScreen(
                 }
             }
 
-            Text("Which way does the top edge of the plot face?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            Text("Stand at the bottom edge and look across the plot. Used to place tall plants where they won't shade others, and for sun and shade.", fontSize = 11.sp, color = Color.Gray)
+            Text(tr("Which way does the top edge of the plot face?"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(tr("Stand at the bottom edge and look across the plot. Used to place tall plants where they won't shade others, and for sun and shade."), fontSize = 11.sp, color = Color.Gray)
             com.example.smartgardenplanner.ui.CompassChips(topFaces) { topFaces = it }
-            Text("What pests or animals do you see regularly in your yard?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            Text("Tick all that apply. Plot insights → Care then shows how to keep them away (fencing and more) and which plants they go for. You can change this later.", fontSize = 11.sp, color = Color.Gray)
+            Text(tr("What pests or animals do you see regularly in your yard?"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(tr("Tick all that apply. Plot insights → Care then shows how to keep them away (fencing and more) and which plants they go for. You can change this later."), fontSize = 11.sp, color = Color.Gray)
             com.example.smartgardenplanner.ui.PestChips(yardPests) { yardPests = it }
             OutlinedTextField(
                 value = zipCode,
                 onValueChange = { zipCode = it.filter { c -> c.isDigit() }.take(5) },
-                label = { Text("ZIP code (optional)") },
+                label = { Text(tr("ZIP code (optional)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
@@ -719,7 +719,7 @@ fun CreatorScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+            saveError?.let { Text(tr(it), color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
 
             Button(
                 onClick = {
@@ -765,7 +765,7 @@ fun CreatorScreen(
                 enabled = isInputValid,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Initialize Spatial Workspace", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                Text(tr("Initialize Spatial Workspace"), fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
             }
         }
     }
@@ -1343,7 +1343,7 @@ fun CanvasWorkspaceScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(activePlot?.name ?: "Loading Layout...", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(tr(activePlot?.name ?: "Loading Layout..."), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -1388,41 +1388,41 @@ fun CanvasWorkspaceScreen(
                             Icon(Icons.Default.Menu, contentDescription = "Canvas options")
                         }
                         DropdownMenu(expanded = showOptionsMenu, onDismissRequest = { showOptionsMenu = false }) {
-                            Text("Canvas mode", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            Text(tr("Canvas mode"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             DropdownMenuItem(
-                                text = { Text(if (canvasMode == CanvasMode.PLACE_NODE) "✓ Place plants" else "Place plants") },
+                                text = { Text(tr(if (canvasMode == CanvasMode.PLACE_NODE) "✓ Place plants" else "Place plants")) },
                                 onClick = { canvasMode = CanvasMode.PLACE_NODE; showOptionsMenu = false }
                             )
                             DropdownMenuItem(
-                                text = { Text(if (canvasMode == CanvasMode.DRAW_PATH) "✓ Draw / edit no-plant path" else "Draw / edit no-plant path") },
+                                text = { Text(tr(if (canvasMode == CanvasMode.DRAW_PATH) "✓ Draw / edit no-plant path" else "Draw / edit no-plant path")) },
                                 onClick = { canvasMode = CanvasMode.DRAW_PATH; showOptionsMenu = false }
                             )
                             DropdownMenuItem(
-                                text = { Text(if (canvasMode == CanvasMode.SELECT_AREA) "✓ Select area to auto-populate" else "Select area to auto-populate") },
+                                text = { Text(tr(if (canvasMode == CanvasMode.SELECT_AREA) "✓ Select area to auto-populate" else "Select area to auto-populate")) },
                                 onClick = { canvasMode = CanvasMode.SELECT_AREA; showOptionsMenu = false }
                             )
                             if (canvasMode == CanvasMode.DRAW_PATH) {
                                 Divider()
-                                Text("Path style", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                                Text(tr("Path style"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                                 DropdownMenuItem(
-                                    text = { Text(if (pathSubMode == PathDrawSubMode.RECTANGLE) "✓ Straight (drag rectangle)" else "Straight (drag rectangle)") },
+                                    text = { Text(tr(if (pathSubMode == PathDrawSubMode.RECTANGLE) "✓ Straight (drag rectangle)" else "Straight (drag rectangle)")) },
                                     onClick = { pathSubMode = PathDrawSubMode.RECTANGLE; inProgressPoints = emptyList(); showOptionsMenu = false }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(if (pathSubMode == PathDrawSubMode.POINTS) "✓ Curved (tap points)" else "Curved (tap points)") },
+                                    text = { Text(tr(if (pathSubMode == PathDrawSubMode.POINTS) "✓ Curved (tap points)" else "Curved (tap points)")) },
                                     onClick = { pathSubMode = PathDrawSubMode.POINTS; showOptionsMenu = false }
                                 )
                             }
                             // [NEW — FR-001] Area-select shape submenu, same pattern as Path style above.
                             if (canvasMode == CanvasMode.SELECT_AREA) {
                                 Divider()
-                                Text("Area shape", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                                Text(tr("Area shape"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                                 DropdownMenuItem(
-                                    text = { Text(if (areaSubMode == AreaSelectSubMode.RECTANGLE) "✓ Rectangle (drag)" else "Rectangle (drag)") },
+                                    text = { Text(tr(if (areaSubMode == AreaSelectSubMode.RECTANGLE) "✓ Rectangle (drag)" else "Rectangle (drag)")) },
                                     onClick = { areaSubMode = AreaSelectSubMode.RECTANGLE; inProgressPoints = emptyList(); showOptionsMenu = false }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(if (areaSubMode == AreaSelectSubMode.POLYGON) "✓ Custom shape (tap points)" else "Custom shape (tap points)" + if (!Feature.isEnabled(Feature.POLYGON_AREA_SELECT, settings.currentAppTier())) " (Standard+)" else "") },
+                                    text = { Text(tr(if (areaSubMode == AreaSelectSubMode.POLYGON) "✓ Custom shape (tap points)" else "Custom shape (tap points)" + if (!Feature.isEnabled(Feature.POLYGON_AREA_SELECT, settings.currentAppTier())) " (Standard+)" else "")) },
                                     onClick = {
                                         if (Feature.isEnabled(Feature.POLYGON_AREA_SELECT, settings.currentAppTier())) {
                                             areaSubMode = AreaSelectSubMode.POLYGON
@@ -1435,11 +1435,11 @@ fun CanvasWorkspaceScreen(
                             }
                             Divider()
                             // Site tools (FR-002 to FR-006) and plot insights.
-                            Text("Site tools", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            Text(tr("Site tools"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             val tierNow = settings.currentAppTier()
                             fun lockLabel(f: Feature) = if (Feature.isEnabled(f, tierNow)) "" else " (${f.tierLabel}+)"
                             DropdownMenuItem(
-                                text = { Text((if (canvasMode == CanvasMode.OUTLINE) "✓ " else "") + "Draw plot outline" + lockLabel(Feature.POLYGON_PLOT_SHAPE)) },
+                                text = { Text(tr((if (canvasMode == CanvasMode.OUTLINE) "✓ " else "") + "Draw plot outline" + lockLabel(Feature.POLYGON_PLOT_SHAPE))) },
                                 onClick = {
                                     if (Feature.isEnabled(Feature.POLYGON_PLOT_SHAPE, tierNow)) {
                                         canvasMode = CanvasMode.OUTLINE; inProgressPoints = emptyList()
@@ -1449,10 +1449,10 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                             if (activePlot?.boundaryJson != null) {
-                                DropdownMenuItem(text = { Text("Delete outline (back to the full rectangle)") }, onClick = { saveOutline(null); movingOutlineCorner = null; showOptionsMenu = false; snackbarMessage = "Outline deleted. Undo brings it back." })
+                                DropdownMenuItem(text = { Text(tr("Delete outline (back to the full rectangle)")) }, onClick = { saveOutline(null); movingOutlineCorner = null; showOptionsMenu = false; snackbarMessage = "Outline deleted. Undo brings it back." })
                             }
                             DropdownMenuItem(
-                                text = { Text((if (canvasMode == CanvasMode.SITE_AREA) "✓ " else "") + "Mark sun / shade / flood / slope area" + lockLabel(Feature.SUN_SHADE_ZONES)) },
+                                text = { Text(tr((if (canvasMode == CanvasMode.SITE_AREA) "✓ " else "") + "Mark sun / shade / flood / slope area" + lockLabel(Feature.SUN_SHADE_ZONES))) },
                                 onClick = {
                                     if (Feature.isEnabled(Feature.SUN_SHADE_ZONES, tierNow)) {
                                         canvasMode = CanvasMode.SITE_AREA; inProgressPoints = emptyList()
@@ -1468,7 +1468,7 @@ fun CanvasWorkspaceScreen(
                                         else -> Feature.SUN_SHADE_ZONES
                                     }
                                     DropdownMenuItem(
-                                        text = { Text("   " + (if (siteAreaType == type) "✓ " else "") + type.label + lockLabel(needed), fontSize = 13.sp) },
+                                        text = { Text(tr("   " + (if (siteAreaType == type) "✓ " else "") + type.label + lockLabel(needed)), fontSize = 13.sp) },
                                         onClick = {
                                             if (Feature.isEnabled(needed, tierNow)) { siteAreaType = type; inProgressPoints = emptyList() }
                                             else snackbarMessage = "${type.label} areas need the ${needed.tierLabel} catalog tier."
@@ -1478,7 +1478,7 @@ fun CanvasWorkspaceScreen(
                                 }
                             }
                             DropdownMenuItem(
-                                text = { Text((if (canvasMode == CanvasMode.BARRIER) "✓ " else "") + "Place tree / fence / wall / building" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
+                                text = { Text(tr((if (canvasMode == CanvasMode.BARRIER) "✓ " else "") + "Place tree / fence / wall / building" + lockLabel(Feature.SUNLIGHT_BARRIERS))) },
                                 onClick = {
                                     if (Feature.isEnabled(Feature.SUNLIGHT_BARRIERS, tierNow)) {
                                         canvasMode = CanvasMode.BARRIER; inProgressPoints = emptyList()
@@ -1489,29 +1489,29 @@ fun CanvasWorkspaceScreen(
                             if (canvasMode == CanvasMode.BARRIER) {
                                 SiteFeatureType.entries.filter { it.isBarrier }.forEach { type ->
                                     DropdownMenuItem(
-                                        text = { Text("   " + (if (barrierType == type) "✓ " else "") + type.label, fontSize = 13.sp) },
+                                        text = { Text(tr("   " + (if (barrierType == type) "✓ " else "") + type.label), fontSize = 13.sp) },
                                         onClick = { barrierType = type; inProgressPoints = emptyList(); showOptionsMenu = false }
                                     )
                                 }
                             }
-                            DropdownMenuItem(text = { Text("Plot direction and ZIP…") }, onClick = { showOptionsMenu = false; showDirectionDialog = true })
+                            DropdownMenuItem(text = { Text(tr("Plot direction and ZIP…")) }, onClick = { showOptionsMenu = false; showDirectionDialog = true })
                             DropdownMenuItem(
-                                text = { Text("Save this plot as a file…") },
+                                text = { Text(tr("Save this plot as a file…")) },
                                 onClick = {
                                     showOptionsMenu = false
                                     exportLauncher.launch(com.example.smartgardenplanner.data.PlanFileIo.fileName(activePlot?.name ?: "garden"))
                                 }
                             )
-                            DropdownMenuItem(text = { Text("Plot insights (site, harmony, care, food)…") }, onClick = { showOptionsMenu = false; onOpenInsights() })
+                            DropdownMenuItem(text = { Text(tr("Plot insights (site, harmony, care, food)…")) }, onClick = { showOptionsMenu = false; onOpenInsights() })
                             // FR-033: close this season; plants become history, the fence, buildings, trees, paths and areas stay.
                                                         DropdownMenuItem(
-                                text = { Text("Start a new season (empty)…") },
+                                text = { Text(tr("Start a new season (empty)…")) },
                                 enabled = nodesState.isNotEmpty(),
                                 onClick = { showOptionsMenu = false; showNewSeasonDialog = true }
                             )
                             // FR-037: re-plan the whole plot for next year with the same crops, rotated.
                             DropdownMenuItem(
-                                text = { Text("Plan next season (rotate)…") },
+                                text = { Text(tr("Plan next season (rotate)…")) },
                                 enabled = nodesState.isNotEmpty() || historyState.isNotEmpty(),
                                 onClick = {
                                     showOptionsMenu = false
@@ -1525,14 +1525,14 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Rotation plan for several seasons…") },
+                                text = { Text(tr("Rotation plan for several seasons…")) },
                                 enabled = nodesState.isNotEmpty() || historyState.isNotEmpty(),
                                 onClick = { showOptionsMenu = false; showRotationDialog = true }
                             )
                             val viewYears = Seasons.years(historyState)
                             if (viewYears.isNotEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text("Season shown: " + (viewSeasonYear?.let { "$it (read only)" } ?: "${Seasons.currentSeason(nodesState, historyState)} (planning)") + "  (tap to change)") },
+                                    text = { Text(tr("Season shown: " + (viewSeasonYear?.let { "$it (read only)" } ?: "${Seasons.currentSeason(nodesState, historyState)} (planning)") + "  (tap to change)")) },
                                     onClick = {
                                         val options = listOf<Int?>(null) + viewYears
                                         viewSeasonYear = options[(options.indexOf(viewSeasonYear) + 1) % options.size]
@@ -1541,36 +1541,36 @@ fun CanvasWorkspaceScreen(
                                 )
                             }
                             // FR-041: copy this plot as a template.
-                            DropdownMenuItem(text = { Text("Duplicate this plot…") }, onClick = { showOptionsMenu = false; showDuplicateDialog = true })
+                            DropdownMenuItem(text = { Text(tr("Duplicate this plot…")) }, onClick = { showOptionsMenu = false; showDuplicateDialog = true })
                             // FR-046: a satellite photo under the plot, to trace trees, fences and buildings.
-                            DropdownMenuItem(text = { Text((if (canvasMode == CanvasMode.PHOTO) "✓ " else "") + "Satellite photo…") }, onClick = { showOptionsMenu = false; showPhotoDialog = true })
-                            DropdownMenuItem(text = { Text("Open in Google Maps" + (activePlot?.address?.let { " ($it)" } ?: "")) }, onClick = {
+                            DropdownMenuItem(text = { Text(tr((if (canvasMode == CanvasMode.PHOTO) "✓ " else "") + "Satellite photo…")) }, onClick = { showOptionsMenu = false; showPhotoDialog = true })
+                            DropdownMenuItem(text = { Text(tr("Open in Google Maps" + (activePlot?.address?.let { " ($it)" } ?: ""))) }, onClick = {
                                 showOptionsMenu = false
                                 val a = activePlot?.address
                                 if (a.isNullOrBlank() && activePlot?.latitude == null) showPhotoDialog = true else openInMaps(a.orEmpty())
                             })
                             // FR-039: irrigation.
-                            Text("Irrigation", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            Text(tr("Irrigation"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             listOf(SiteFeatureType.SPRINKLER, SiteFeatureType.DRIP_LINE, SiteFeatureType.HOSE_BIB).forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text((if (canvasMode == CanvasMode.BARRIER && barrierType == type) "✓ " else "") + "Place " + type.label.lowercase(), fontSize = 13.sp) },
+                                    text = { Text(tr((if (canvasMode == CanvasMode.BARRIER && barrierType == type) "✓ " else "") + "Place " + type.label.lowercase()), fontSize = 13.sp) },
                                     onClick = { canvasMode = CanvasMode.BARRIER; barrierType = type; inProgressPoints = emptyList(); showOptionsMenu = false }
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text((if (showWater) "✓ " else "") + "Show water map (what gets watered)") },
+                                text = { Text(tr((if (showWater) "✓ " else "") + "Show water map (what gets watered)")) },
                                 onClick = { showWater = !showWater; showOptionsMenu = false }
                             )
                             Divider()
                             // [NEW] Wires WeedMaskGeometryEngine and IrrigationRouteCalculator into the
                             // UI for the first time — both existed as tested engines with nothing calling them.
-                            Text("Overlays", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                            Text(tr("Overlays"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                             DropdownMenuItem(
-                                text = { Text(if (showSiteFeatures) "✓ Show site areas and barriers" else "Show site areas and barriers") },
+                                text = { Text(tr(if (showSiteFeatures) "✓ Show site areas and barriers" else "Show site areas and barriers")) },
                                 onClick = { showSiteFeatures = !showSiteFeatures; showOptionsMenu = false }
                             )
                             DropdownMenuItem(
-                                                                text = { Text((if (showShade) "✓ " else "") + "Show sun and shade" + lockLabel(Feature.SUNLIGHT_BARRIERS)) },
+                                                                text = { Text(tr((if (showShade) "✓ " else "") + "Show sun and shade" + lockLabel(Feature.SUNLIGHT_BARRIERS))) },
                                 onClick = {
                                     if (Feature.isEnabled(Feature.SUNLIGHT_BARRIERS, tierNow)) showShade = !showShade
                                     else snackbarMessage = "Shade estimates need the Pro catalog tier (Settings → Catalog)."
@@ -1578,7 +1578,7 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                                                         DropdownMenuItem(
-                                text = { Text((if (settings.showPlantLabels) "✓ " else "") + "Show plant names (sweet/hot, cherry/large…)") },
+                                text = { Text(tr((if (settings.showPlantLabels) "✓ " else "") + "Show plant names (sweet/hot, cherry/large…)")) },
                                 onClick = {
                                     val updated = settings.copy(showPlantLabels = !settings.showPlantLabels)
                                     settings = updated
@@ -1590,7 +1590,7 @@ fun CanvasWorkspaceScreen(
                             if (seasonYears.isNotEmpty()) {
                                 // FR-033: tap to cycle through past seasons (shown dashed under this season's plants).
                                 DropdownMenuItem(
-                                    text = { Text("Past season on layout: " + (historyYear?.toString() ?: "none") + "  (tap to change)") },
+                                    text = { Text(tr("Past season on layout: " + (historyYear?.toString() ?: "none") + "  (tap to change)")) },
                                     onClick = {
                                         val options = listOf<Int?>(null) + seasonYears
                                         historyYear = options[(options.indexOf(historyYear) + 1) % options.size]
@@ -1598,11 +1598,11 @@ fun CanvasWorkspaceScreen(
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text(if (showWeedMask) "✓ Show weed-risk mask" else "Show weed-risk mask") },
+                                text = { Text(tr(if (showWeedMask) "✓ Show weed-risk mask" else "Show weed-risk mask")) },
                                 onClick = { showWeedMask = !showWeedMask; showOptionsMenu = false }
                             )
                             DropdownMenuItem(
-                                text = { Text(if (showIrrigationRoute) "✓ Show irrigation route" else "Show irrigation route") },
+                                text = { Text(tr(if (showIrrigationRoute) "✓ Show irrigation route" else "Show irrigation route")) },
                                 onClick = { showIrrigationRoute = !showIrrigationRoute; showOptionsMenu = false }
                             )
                             Divider()
@@ -1613,10 +1613,10 @@ fun CanvasWorkspaceScreen(
                             // a legend is actually useful for.
                             val placedSeedCodes = nodesState.map { it.seedCode }.distinct()
                             Text(
-                                if (placedSeedCodes.isEmpty()) "Legend (nothing placed yet)" else "Legend (this plot)",
+                                tr(if (placedSeedCodes.isEmpty()) "Legend (nothing placed yet)" else "Legend (this plot)"),
                                 fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                             )
-                                                        if (placedSeedCodes.isNotEmpty()) Text("Tap a variety to find it on the layout", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp))
+                                                        if (placedSeedCodes.isNotEmpty()) Text(tr("Tap a variety to find it on the layout"), fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp))
                             placedSeedCodes.mapNotNull { seedFor(it) }.forEach { seed ->
                                 val count = nodesState.count { it.seedCode == seed.botanicalCode }
                                 DropdownMenuItem(
@@ -1625,8 +1625,8 @@ fun CanvasWorkspaceScreen(
                                             Box(modifier = Modifier.size(12.dp).background(VegetableColorPalette.colorFor(seed), shape = androidx.compose.foundation.shape.CircleShape))
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column {
-                                                Text((if (findCode == seed.botanicalCode) "◉ " else "") + "$count × ${seed.commonName}", fontSize = 12.sp)
-                                                VarietyCatalogTraits.of(seed)?.let { Text(it.details, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
+                                                Text(tr((if (findCode == seed.botanicalCode) "◉ " else "") + "$count × ${seed.commonName}"), fontSize = 12.sp)
+                                                VarietyCatalogTraits.of(seed)?.let { Text(tr(it.details), fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
                                             }
                                         }
                                     },
@@ -1637,7 +1637,7 @@ fun CanvasWorkspaceScreen(
                                     },
                                     // FR-051: change all plants of this variety at once.
                                     trailingIcon = {
-                                        TextButton(onClick = { showOptionsMenu = false; replaceFromCode = seed.botanicalCode }, contentPadding = PaddingValues(horizontal = 6.dp)) { Text("Replace…", fontSize = 11.sp) }
+                                        TextButton(onClick = { showOptionsMenu = false; replaceFromCode = seed.botanicalCode }, contentPadding = PaddingValues(horizontal = 6.dp)) { Text(tr("Replace…"), fontSize = 11.sp) }
                                     }
                                 )
                             }
@@ -1659,7 +1659,7 @@ fun CanvasWorkspaceScreen(
                             }
                         },
                         contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) { Text("Undo", fontSize = 12.sp) }
+                    ) { Text(tr("Undo"), fontSize = 12.sp) }
                     Spacer(modifier = Modifier.width(4.dp))
                     Button(
                         onClick = {
@@ -1675,7 +1675,7 @@ fun CanvasWorkspaceScreen(
                             }
                         },
                         contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) { Text("Redo", fontSize = 12.sp) }
+                    ) { Text(tr("Redo"), fontSize = 12.sp) }
                 }
             )
         }
@@ -1686,14 +1686,14 @@ fun CanvasWorkspaceScreen(
                     Column(modifier = Modifier.weight(1f, fill = false)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "Plot Layout Size: ${DistanceFormatter.format(state.lengthM, settings.distanceUnit)} × ${DistanceFormatter.format(state.widthM, settings.distanceUnit)}",
+                                tr("Plot Layout Size: ${DistanceFormatter.format(state.lengthM, settings.distanceUnit)} × ${DistanceFormatter.format(state.widthM, settings.distanceUnit)}"),
                                 fontWeight = FontWeight.SemiBold, fontSize = 13.sp
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             // [NEW] Quick unit toggle right here — no need to open Settings just to
                             // switch between meters and inches.
                             Text(
-                                if (settings.distanceUnit == DistanceUnit.METERS) "[in]" else "[m]",
+                                tr(if (settings.distanceUnit == DistanceUnit.METERS) "[in]" else "[m]"),
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.clickable {
@@ -1704,17 +1704,17 @@ fun CanvasWorkspaceScreen(
                                 }
                             )
                         }
-                        Text("Active Plantings: ${nodesState.size} nodes placed", color = Color.Gray, fontSize = 11.sp)
+                        Text(tr("Active Plantings: ${nodesState.size} nodes placed"), color = Color.Gray, fontSize = 11.sp)
                         // FR-028: the plot's compass direction drives sun, shade and planting direction; ask until it's set.
                         if (!state.orientationSet) {
                             Text(
-                                "⚠ Set which way the plot faces (needed for sun and shade)",
+                                tr("⚠ Set which way the plot faces (needed for sun and shade)"),
                                 fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEAB308),
                                 modifier = Modifier.clickable { showDirectionDialog = true }.padding(vertical = 2.dp)
                             )
                         } else {
                             Text(
-                                "Top edge faces ${com.example.smartgardenplanner.ui.compassName(state.northBearingDeg)}" + (state.locationZip?.let { " • ZIP $it" } ?: ""),
+                                tr("Top edge faces ${com.example.smartgardenplanner.ui.compassName(state.northBearingDeg)}" + (state.locationZip?.let { " • ZIP $it" } ?: "")),
                                 fontSize = 11.sp, color = Color.Gray,
                                 modifier = Modifier.clickable { showDirectionDialog = true }
                             )
@@ -1723,7 +1723,7 @@ fun CanvasWorkspaceScreen(
                         if (Feature.isEnabled(Feature.INTERPLANTING_GUILDS, settings.currentAppTier())) {
                             val guildColor = if (settings.guildsEnabled) Color(0xFF10B981) else Color(0xFFF97316)
                             Text(
-                                if (settings.guildsEnabled) "GUILDS ON — partners may be planted closer" else "GUILDS OFF — tap to turn on",
+                                tr(if (settings.guildsEnabled) "GUILDS ON — partners may be planted closer" else "GUILDS OFF — tap to turn on"),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = guildColor,
@@ -1743,14 +1743,14 @@ fun CanvasWorkspaceScreen(
                         // leading to placements against the wrong (unintended) variety.
                         val active = seedFor(activeSeedCode)
                         if (canvasMode == CanvasMode.PLACE_NODE && active != null) {
-                            Text("Now placing: ${active.commonName} (${DistanceFormatter.format(active.exclusionRadiusM, settings.distanceUnit)} radius)", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(tr("Now placing: ${active.commonName} (${DistanceFormatter.format(active.exclusionRadiusM, settings.distanceUnit)} radius)"), color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     AssistChip(
                         onClick = { showOptionsMenu = true },
                         label = {
                             Text(
-                                when (canvasMode) {
+                                tr(when (canvasMode) {
                                     CanvasMode.PLACE_NODE -> "Placing plants"
                                     CanvasMode.DRAW_PATH -> if (pathSubMode == PathDrawSubMode.RECTANGLE) "Drawing straight path" else "Drawing curved path"
                                         CanvasMode.SELECT_AREA -> "Selecting area"
@@ -1758,7 +1758,7 @@ fun CanvasWorkspaceScreen(
                                         CanvasMode.SITE_AREA -> "Marking: ${siteAreaType.label}"
                                         CanvasMode.BARRIER -> "Placing: ${barrierType.label}"
                                         CanvasMode.PHOTO -> if (photoCalibrating) "Setting photo scale" else "Moving the photo"
-                                    },
+                                    }),
                                 fontSize = 11.sp
                             )
                         }
@@ -1773,7 +1773,7 @@ fun CanvasWorkspaceScreen(
                         // This opens a 3-step Category -> Species -> Cultivar picker instead.
                         OutlinedButton(onClick = { showVarietyPicker = true }, modifier = Modifier.fillMaxWidth()) {
                             val active = seedFor(activeSeedCode)
-                            Text(if (active != null) "Change Variety (${active.commonName})" else "Choose a Variety to Place")
+                            Text(tr(if (active != null) "Change Variety (${active.commonName})" else "Choose a Variety to Place"))
                         }
                         // FR-027: the app decides where everything goes.
                         Button(
@@ -1790,7 +1790,7 @@ fun CanvasWorkspaceScreen(
                                 snackbarMessage = "Drag over the area you want planted (or tap its corners in Custom shape mode)."
                             },
                             modifier = Modifier.fillMaxWidth()
-                                                ) { Text("✨ Plan an area for me") }
+                                                ) { Text(tr("✨ Plan an area for me")) }
                         // FR-040: fill the whole plot this year.
                         OutlinedButton(
                             onClick = {
@@ -1805,7 +1805,7 @@ fun CanvasWorkspaceScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text("Fill the whole plot…") }
+                        ) { Text(tr("Fill the whole plot…")) }
                     }
                 }
             }
@@ -2604,46 +2604,46 @@ fun CanvasWorkspaceScreen(
                                         verticalArrangement = Arrangement.spacedBy(2.dp)
                                     ) {
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Text(shadeDay.label, fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
+                                            Text(tr(shadeDay.label), fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.clickable { shadeDay = ShadeDay.entries[(shadeDay.ordinal + 1) % ShadeDay.entries.size] })
-                                            Text(if (shadeHour == null) "Whole day" else "At ${ShadeTools.clock(shadeHour!!)}", fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
+                                            Text(tr(if (shadeHour == null) "Whole day" else "At ${ShadeTools.clock(shadeHour!!)}"), fontSize = 11.sp, color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.clickable { shadeHour = if (shadeHour == null) 9.0.coerceIn(rise, set) else null })
-                                            Text((if (shadePlants) "☑" else "☐") + " plants' shade", fontSize = 11.sp, color = Color(0xFF1D4ED8),
+                                            Text(tr((if (shadePlants) "☑" else "☐") + " plants' shade"), fontSize = 11.sp, color = Color(0xFF1D4ED8),
                                                 modifier = Modifier.clickable { shadePlants = !shadePlants })
                                         }
                                         val hour = shadeHour
                                         if (hour != null) {
                                             val sp = SunlightEngine.position(lat, day, hour)
                                             Slider(value = hour.toFloat(), onValueChange = { shadeHour = (kotlin.math.round(it * 4f) / 4f).toDouble() }, valueRange = rise.toFloat()..set.toFloat(), modifier = Modifier.width(240.dp))
-                                            Text("${ShadeTools.clock(hour)} solar time • sun ${com.example.smartgardenplanner.ui.compassName(sp.azimuthDeg.toFloat())}, ${sp.elevationDeg.toInt()}° up • dark = shade now", fontSize = 10.sp, color = Color(LayoutPalette.INK))
+                                            Text(tr("${ShadeTools.clock(hour)} solar time • sun ${com.example.smartgardenplanner.ui.compassName(sp.azimuthDeg.toFloat())}, ${sp.elevationDeg.toInt()}° up • dark = shade now"), fontSize = 10.sp, color = Color(LayoutPalette.INK))
                                         } else {
                                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                Text("Sun over the day:", fontSize = 11.sp, color = Color(LayoutPalette.INK), fontWeight = FontWeight.Bold)
+                                                Text(tr("Sun over the day:"), fontSize = 11.sp, color = Color(LayoutPalette.INK), fontWeight = FontWeight.Bold)
                                                 SunBand.entries.forEach { band ->
                                                     Box(Modifier.size(12.dp).background(Color(LayoutPalette.PAPER)).background(Color(band.overlayArgb)).border(1.dp, Color(LayoutPalette.BORDER)))
-                                                    Text(band.label, fontSize = 10.sp, color = Color(LayoutPalette.INK))
+                                                    Text(tr(band.label), fontSize = 10.sp, color = Color(LayoutPalette.INK))
                                                 }
                                             }
                                         }
-                                        Text("Tap the blue words to change the day, the time or plants' shade.", fontSize = 9.sp, color = Color.Gray)
+                                        Text(tr("Tap the blue words to change the day, the time or plants' shade."), fontSize = 9.sp, color = Color.Gray)
                                     }
                                 }
                                                                 Column(modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)) {
                                     viewSeasonYear?.let { y ->
                                         Button(onClick = { viewSeasonYear = null }, modifier = Modifier.padding(bottom = 4.dp)) {
-                                            Text("Looking back at $y (read only) — tap to return to planning", fontSize = 12.sp)
+                                            Text(tr("Looking back at $y (read only) — tap to return to planning"), fontSize = 12.sp)
                                         }
                                     }
                                     if (showWater) {
                                         val manual = activePlot?.let { plot -> Irrigation.plants(plot, nodesState, siteFeatures.filter { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) { seedFor(it) }.count { it.source == WaterSource.MANUAL } } ?: 0
-                                        Text(if (siteFeatures.none { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) "Water map: no sprinklers, drip lines or taps drawn yet (menu → Irrigation)."
-                                            else if (manual == 0) "Water map: every plant is reached." else "Water map: $manual plant(s) circled in red need a watering can.",
+                                        Text(tr(if (siteFeatures.none { SiteFeatureType.of(it.featureType)?.isIrrigation == true }) "Water map: no sprinklers, drip lines or taps drawn yet (menu → Irrigation)."
+                                            else if (manual == 0) "Water map: every plant is reached." else "Water map: $manual plant(s) circled in red need a watering can."),
                                             fontSize = 11.sp, color = Color(0xFF1D4ED8), modifier = Modifier.background(Color(0xE6FFFFFF), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 2.dp))
                                     }
                                     findCode?.let { code ->
                                         val name = seedFor(code)?.commonName ?: code
                                         Button(onClick = { findCode = null }, modifier = Modifier.padding(bottom = 4.dp)) {
-                                            Text("Showing ${nodesState.count { it.seedCode == code }} × $name — tap to clear", fontSize = 12.sp)
+                                            Text(tr("Showing ${nodesState.count { it.seedCode == code }} × $name — tap to clear"), fontSize = 12.sp)
                                         }
                                     }
                                     planPreview?.let { preview ->
@@ -2656,7 +2656,7 @@ fun CanvasWorkspaceScreen(
                                                         else -> "Planting plan: ${preview.placed.size} plants"
                                                     }), fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
                                                     // FR-064: fold the card to see more of the plot.
-                                                    TextButton(onClick = { previewFolded = !previewFolded }, contentPadding = PaddingValues(0.dp)) { Text(if (previewFolded) "+" else "−", fontSize = 18.sp) }
+                                                    TextButton(onClick = { previewFolded = !previewFolded }, contentPadding = PaddingValues(0.dp)) { Text(tr(if (previewFolded) "+" else "−"), fontSize = 18.sp) }
                                                 }
                                                 // FR-060: other layouts for the same list.
                                                 if (rotationPlans.isEmpty() && planOptions.isNotEmpty()) {
@@ -2673,15 +2673,15 @@ fun CanvasWorkspaceScreen(
                                                             } }
                                                         }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(tr(if (planRunning) "Working…" else "Option ▶"), fontSize = 11.sp) }
                                                     }
-                                                    activePlot?.let { plot -> Text(com.example.smartgardenplanner.core.AutoPlanner.summarize(plotContext(plot), preview), fontSize = 11.sp, color = Color.Gray) }
+                                                    activePlot?.let { plot -> Text(tr(com.example.smartgardenplanner.core.AutoPlanner.summarize(plotContext(plot), preview)), fontSize = 11.sp, color = Color.Gray) }
                                                     if (planReplaceIds.isNotEmpty()) Text(tr("Keeping this plan replaces the ${planReplaceIds.size} plants already in this area."), fontSize = 11.sp, color = Color(0xFFB45309))
                                                 }
-                                                rotationPlans.getOrNull(rotationIndex)?.summary?.forEach { Text("• $it", fontSize = 11.sp) }
+                                                rotationPlans.getOrNull(rotationIndex)?.summary?.forEach { Text(tr("• $it"), fontSize = 11.sp) }
                                                                                                 preview.placed.groupBy { it.seed.botanicalCode }.forEach { (_, list) ->
-                                                    Text("• ${VarietyCatalogTraits.displayName(list.first().seed)} × ${list.size}", fontSize = 11.sp)
+                                                    Text(tr("• ${VarietyCatalogTraits.displayName(list.first().seed)} × ${list.size}"), fontSize = 11.sp)
                                                 }
-                                                Text("Nothing is planted until you tap Plant them.", fontSize = 11.sp, color = Color.Gray)
-                                                preview.notes.forEach { Text(it, fontSize = 11.sp, color = Color.LightGray) }
+                                                Text(tr("Nothing is planted until you tap Plant them."), fontSize = 11.sp, color = Color.Gray)
+                                                preview.notes.forEach { Text(tr(it), fontSize = 11.sp, color = Color.LightGray) }
                                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                                                                                         Button(enabled = preview.placed.isNotEmpty(), onClick = {
                                                         val chosen = rotationPlans.firstOrNull()?.result ?: preview
@@ -2712,26 +2712,26 @@ fun CanvasWorkspaceScreen(
                                                         }
                                                                                                                 planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
                                                         nextSeasonMode = false; rotationPlans = emptyList()
-                                                    }) { Text(when { rotationPlans.isNotEmpty() -> "Use ${rotationPlans.first().year} now"; nextSeasonMode -> "Start next season"; else -> "Plant them" }, fontSize = 12.sp) }
+                                                    }) { Text(tr(when { rotationPlans.isNotEmpty() -> "Use ${rotationPlans.first().year} now"; nextSeasonMode -> "Start next season"; else -> "Plant them" }), fontSize = 12.sp) }
                                                     if (rotationPlans.isNotEmpty()) {
-                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex - 1).coerceAtLeast(0); planPreview = rotationPlans[rotationIndex].result }) { Text("◀", fontSize = 12.sp) }
-                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex + 1).coerceAtMost(rotationPlans.lastIndex); planPreview = rotationPlans[rotationIndex].result }) { Text("▶", fontSize = 12.sp) }
-                                                        OutlinedButton(onClick = { showRotationChange = true }) { Text("Change a variety…", fontSize = 12.sp) }
+                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex - 1).coerceAtLeast(0); planPreview = rotationPlans[rotationIndex].result }) { Text(tr("◀"), fontSize = 12.sp) }
+                                                        OutlinedButton(onClick = { rotationIndex = (rotationIndex + 1).coerceAtMost(rotationPlans.lastIndex); planPreview = rotationPlans[rotationIndex].result }) { Text(tr("▶"), fontSize = 12.sp) }
+                                                        OutlinedButton(onClick = { showRotationChange = true }) { Text(tr("Change a variety…"), fontSize = 12.sp) }
                                                     }
                                                                                                         // Back to the list for the same area, with everything as it was chosen.
-                                                                                                        if (rotationPlans.isEmpty()) OutlinedButton(onClick = { planPreview = null }) { Text("Change selections", fontSize = 12.sp) }
+                                                                                                        if (rotationPlans.isEmpty()) OutlinedButton(onClick = { planPreview = null }) { Text(tr("Change selections"), fontSize = 12.sp) }
                                                     // Drops only the proposal: the plot and the list stay as they are (the list is remembered).
                                                     TextButton(onClick = {
                                                                                                                 planPreview = null; autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE
                                                         nextSeasonMode = false; rotationPlans = emptyList()
                                                         snackbarMessage = "Proposal discarded. Nothing on the plot changed; your list is kept for next time."
-                                                    }) { Text("Discard", fontSize = 12.sp) }
+                                                    }) { Text(tr("Discard"), fontSize = 12.sp) }
                                                 }
                                             }
                                         }
                                     }
                                     Text(
-                                        text = when {
+                                        text = tr(when {
                                             zoomPanModeEnabled -> "Zoom/Pan Mode: use +/- to zoom, drag to pan • tap the zoom icon to turn this off (${"%.1f".format(zoomScale)}x)"
                                             planPreview != null -> "Preview: faded circles show where the plants would go"
                                             planForMe && canvasMode == CanvasMode.SELECT_AREA && areaSubMode == AreaSelectSubMode.POLYGON -> "Plan for me: tap the corners of the area to plant (3+), then Finish Area"
@@ -2748,16 +2748,16 @@ fun CanvasWorkspaceScreen(
                                             canvasMode == CanvasMode.PHOTO && photoCalibrating -> "Set scale: tap two points on the photo whose real distance you know (${photoPoints.size} of 2)"
                                             canvasMode == CanvasMode.PHOTO -> "Drag to move the satellite photo into line with the plot • menu → Satellite photo… for scale, turn and see-through"
                                             else -> "Drag to select an area to auto-populate"
-                                        },
+                                        }),
                                         color = if (zoomPanModeEnabled) Color(0xFF0EA5E9) else if (moveModeEnabled) Color(0xFFEF4444) else Color.LightGray, fontSize = 11.sp
                                     )
                                     if (canvasMode == CanvasMode.DRAW_PATH && pathSubMode == PathDrawSubMode.POINTS && inProgressPoints.size >= 2) {
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Button(onClick = { pendingPolylineWidth = true }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                                Text("Finish Path", fontSize = 11.sp)
+                                                Text(tr("Finish Path"), fontSize = 11.sp)
                                             }
                                             OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                                Text("Cancel", fontSize = 11.sp)
+                                                Text(tr("Cancel"), fontSize = 11.sp)
                                             }
                                         }
                                     }
@@ -2787,10 +2787,10 @@ fun CanvasWorkspaceScreen(
                                                 },
                                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
-                                                Text(if (canvasMode == CanvasMode.OUTLINE) "Finish Outline" else "Finish (${inProgressPoints.size} points)", fontSize = 11.sp)
+                                                Text(tr(if (canvasMode == CanvasMode.OUTLINE) "Finish Outline" else "Finish (${inProgressPoints.size} points)"), fontSize = 11.sp)
                                             }
                                             OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                                Text("Cancel", fontSize = 11.sp)
+                                                Text(tr("Cancel"), fontSize = 11.sp)
                                             }
                                         }
                                     }
@@ -2803,10 +2803,10 @@ fun CanvasWorkspaceScreen(
                                                 },
                                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
-                                                Text("Finish Area (${inProgressPoints.size} points)", fontSize = 11.sp)
+                                                Text(tr("Finish Area (${inProgressPoints.size} points)"), fontSize = 11.sp)
                                             }
                                             OutlinedButton(onClick = { inProgressPoints = emptyList() }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                                                Text("Cancel", fontSize = 11.sp)
+                                                Text(tr("Cancel"), fontSize = 11.sp)
                                             }
                                         }
                                     }
@@ -2875,10 +2875,10 @@ fun CanvasWorkspaceScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("Discard unfinished shape?") },
-            text = { Text("The points you've tapped for this path or area will be lost.") },
-            confirmButton = { TextButton(onClick = { inProgressPoints = emptyList(); showDiscardDialog = false }) { Text("Discard") } },
-            dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text("Keep drawing") } },
+            title = { Text(tr("Discard unfinished shape?")) },
+            text = { Text(tr("The points you've tapped for this path or area will be lost.")) },
+            confirmButton = { TextButton(onClick = { inProgressPoints = emptyList(); showDiscardDialog = false }) { Text(tr("Discard")) } },
+            dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text(tr("Keep drawing")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -2993,13 +2993,13 @@ fun CanvasWorkspaceScreen(
         val base = RotationPlanner.lastList(nodesState, historyState) { seedFor(it) }
         AlertDialog(
             onDismissRequest = { showRotationDialog = false },
-            title = { Text("Rotation plan") },
+            title = { Text(tr("Rotation plan")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before.", fontSize = 13.sp)
+                    Text(tr("Uses the same list every year (" + base.joinToString(", ") { "${it.count} ${CropReference.speciesName(it.seed)}" } + ") and plans the whole plot season after season, so no crop goes where its family grew the year before."), fontSize = 13.sp)
                     OutlinedTextField(value = seasonsText, onValueChange = { seasonsText = it.filter(Char::isDigit).take(2) }, singleLine = true,
-                        label = { Text("How many seasons (1–${RotationPlanner.MAX_SEASONS})") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                    Text("Nothing changes until you choose to use the first year. While looking at the plan, “Change a variety…” swaps a variety from that year on.", fontSize = 11.sp, color = Color.Gray)
+                        label = { Text(tr("How many seasons (1–${RotationPlanner.MAX_SEASONS})")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                    Text(tr("Nothing changes until you choose to use the first year. While looking at the plan, “Change a variety…” swaps a variety from that year on."), fontSize = 11.sp, color = Color.Gray)
                 }
             },
             confirmButton = {
@@ -3011,9 +3011,9 @@ fun CanvasWorkspaceScreen(
                     rotationCount = seasonsText.toInt()
                     rotationChanges = emptyMap()
                     replanRotation(0)
-                }) { Text(if (planRunning) "Planning…" else "Make the plan") }
+                }) { Text(tr(if (planRunning) "Planning…" else "Make the plan")) }
             },
-            dismissButton = { TextButton(onClick = { showRotationDialog = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showRotationDialog = false }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3026,24 +3026,24 @@ fun CanvasWorkspaceScreen(
         var picking by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { showRotationChange = false },
-            title = { Text("Change a variety from $year on") },
+            title = { Text(tr("Change a variety from $year on")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Tap the variety to replace, then choose the new one. $year and every later year use it (same number of plants), and the plan is worked out again with crop rotation.", fontSize = 12.sp)
+                    Text(tr("Tap the variety to replace, then choose the new one. $year and every later year use it (same number of plants), and the plan is worked out again with crop rotation."), fontSize = 12.sp)
                     listNow.forEach { r ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { fromCode = r.seed.botanicalCode }) {
                             RadioButton(selected = fromCode == r.seed.botanicalCode, onClick = { fromCode = r.seed.botanicalCode })
-                            Text("${r.count} × ${r.seed.commonName}", fontSize = 13.sp)
+                            Text(tr("${r.count} × ${r.seed.commonName}"), fontSize = 13.sp)
                         }
                     }
-                    if (rotationChanges.isNotEmpty()) Text("Changes so far: " + rotationChanges.entries.sortedBy { it.key }.flatMap { (y, m) -> m.map { (f, t) -> "from $y ${seedFor(f)?.commonName ?: f} → ${t.commonName}" } }.joinToString("; "), fontSize = 11.sp, color = Color.Gray)
+                    if (rotationChanges.isNotEmpty()) Text(tr("Changes so far: " + rotationChanges.entries.sortedBy { it.key }.flatMap { (y, m) -> m.map { (f, t) -> "from $y ${seedFor(f)?.commonName ?: f} → ${t.commonName}" } }.joinToString("; ")), fontSize = 11.sp, color = Color.Gray)
                 }
             },
-            confirmButton = { TextButton(enabled = fromCode != null, onClick = { picking = true }) { Text("Choose new variety…") } },
+            confirmButton = { TextButton(enabled = fromCode != null, onClick = { picking = true }) { Text(tr("Choose new variety…")) } },
             dismissButton = {
                 Row {
-                    if (rotationChanges.isNotEmpty()) TextButton(onClick = { showRotationChange = false; rotationChanges = emptyMap(); replanRotation(rotationIndex) }) { Text("Clear changes") }
-                    TextButton(onClick = { showRotationChange = false }) { Text("Cancel") }
+                    if (rotationChanges.isNotEmpty()) TextButton(onClick = { showRotationChange = false; rotationChanges = emptyMap(); replanRotation(rotationIndex) }) { Text(tr("Clear changes")) }
+                    TextButton(onClick = { showRotationChange = false }) { Text(tr("Cancel")) }
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface
@@ -3073,13 +3073,13 @@ fun CanvasWorkspaceScreen(
         var copyHistory by remember { mutableStateOf(true) }
         AlertDialog(
             onDismissRequest = { showDuplicateDialog = false },
-            title = { Text("Duplicate this plot") },
+            title = { Text(tr("Duplicate this plot")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("The copy keeps the size, direction, ZIP, soil, outline, fences, buildings, trees, paths, areas and irrigation.", fontSize = 13.sp)
-                    OutlinedTextField(value = copyName, onValueChange = { copyName = it.take(80) }, label = { Text("Name of the copy") }, singleLine = true)
-                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyPlants, onCheckedChange = { copyPlants = it }); Text("Copy this season's ${nodesState.size} plants", fontSize = 13.sp) }
-                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyHistory, onCheckedChange = { copyHistory = it }); Text("Copy the history (${Seasons.years(historyState).size} seasons)", fontSize = 13.sp) }
+                    Text(tr("The copy keeps the size, direction, ZIP, soil, outline, fences, buildings, trees, paths, areas and irrigation."), fontSize = 13.sp)
+                    OutlinedTextField(value = copyName, onValueChange = { copyName = it.take(80) }, label = { Text(tr("Name of the copy")) }, singleLine = true)
+                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyPlants, onCheckedChange = { copyPlants = it }); Text(tr("Copy this season's ${nodesState.size} plants"), fontSize = 13.sp) }
+                    Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyHistory, onCheckedChange = { copyHistory = it }); Text(tr("Copy the history (${Seasons.years(historyState).size} seasons)"), fontSize = 13.sp) }
                 }
             },
             confirmButton = {
@@ -3103,9 +3103,9 @@ fun CanvasWorkspaceScreen(
                         withContext(Dispatchers.IO) { com.example.smartgardenplanner.data.BackdropStore.copy(canvasContext.filesDir, plot.id, newId) }
                         snackbarMessage = "Made “$name”. The original is unchanged; open the copy from the plot list."
                     }
-                }) { Text("Duplicate") }
+                }) { Text(tr("Duplicate")) }
             },
-            dismissButton = { TextButton(onClick = { showDuplicateDialog = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDuplicateDialog = false }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3141,22 +3141,22 @@ fun CanvasWorkspaceScreen(
         if (photoAddress.isBlank()) photoAddress = plot?.address ?: plot?.locationZip.orEmpty()
         AlertDialog(
             onDismissRequest = { showPhotoDialog = false },
-            title = { Text("Satellite photo") },
+            title = { Text(tr("Satellite photo")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                     if (placement == null) {
-                        Text("See your real trees, fences and buildings under the plot: open Google Maps in satellite view, zoom in on your yard, take a screenshot, then choose it here.", fontSize = 13.sp)
-                        OutlinedTextField(value = photoAddress, onValueChange = { photoAddress = it.take(200) }, label = { Text("Your address") }, singleLine = true)
-                        OutlinedButton(onClick = { openInMaps(photoAddress) }) { Text("Open Google Maps (satellite)") }
-                        Button(onClick = { showPhotoDialog = false; photoPicker.launch("image/*") }) { Text("Choose photo…") }
+                        Text(tr("See your real trees, fences and buildings under the plot: open Google Maps in satellite view, zoom in on your yard, take a screenshot, then choose it here."), fontSize = 13.sp)
+                        OutlinedTextField(value = photoAddress, onValueChange = { photoAddress = it.take(200) }, label = { Text(tr("Your address")) }, singleLine = true)
+                        OutlinedButton(onClick = { openInMaps(photoAddress) }) { Text(tr("Open Google Maps (satellite)")) }
+                        Button(onClick = { showPhotoDialog = false; photoPicker.launch("image/*") }) { Text(tr("Choose photo…")) }
                     } else {
-                        Text("Photo: ${"%.1f".format(placement.widthM)} m wide.", fontSize = 13.sp)
+                        Text(tr("Photo: ${"%.1f".format(placement.widthM)} m wide."), fontSize = 13.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = true; photoPoints.clear() }) { Text("Set scale") }
-                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = false; photoPoints.clear() }) { Text("Move") }
+                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = true; photoPoints.clear() }) { Text(tr("Set scale")) }
+                            OutlinedButton(onClick = { showPhotoDialog = false; canvasMode = CanvasMode.PHOTO; photoCalibrating = false; photoPoints.clear() }) { Text(tr("Move")) }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            OutlinedButton(onClick = { savePhotoPlacement { it.copy(visible = !it.visible) } }) { Text(if (placement.visible) "Hide" else "Show") }
+                            OutlinedButton(onClick = { savePhotoPlacement { it.copy(visible = !it.visible) } }) { Text(tr(if (placement.visible) "Hide" else "Show")) }
                             OutlinedButton(onClick = {
                                 val p = activePlot ?: return@OutlinedButton
                                 val updated = p.copy(backdropJson = null)
@@ -3168,15 +3168,15 @@ fun CanvasWorkspaceScreen(
                                     activePlot = updated; photoVersion++
                                     snackbarMessage = "Photo removed."
                                 }
-                            }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                            }) { Text(tr("Remove"), color = MaterialTheme.colorScheme.error) }
                         }
                         var opacity by remember(placement.opacity) { mutableFloatStateOf(placement.opacity) }
-                        Text("See-through: ${(opacity * 100).toInt()}%", fontSize = 12.sp)
+                        Text(tr("See-through: ${(opacity * 100).toInt()}%"), fontSize = 12.sp)
                         Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f, onValueChangeFinished = { val o = opacity; savePhotoPlacement { it.copy(opacity = o) } })
                         // FR-049: slider and number box in step; + clockwise, − counter-clockwise, 180° at most either way.
                         var turn by remember(placement.rotationDeg) { mutableFloatStateOf(placement.rotationDeg) }
                         var turnText by remember(placement.rotationDeg) { mutableStateOf(kotlin.math.round(placement.rotationDeg).toInt().toString()) }
-                        Text("Turn: ${com.example.smartgardenplanner.core.Backdrop.describeTurn(turn)} (+ clockwise, − counterclockwise)", fontSize = 12.sp)
+                        Text(tr("Turn: ${com.example.smartgardenplanner.core.Backdrop.describeTurn(turn)} (+ clockwise, − counterclockwise)"), fontSize = 12.sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Slider(value = turn, onValueChange = { turn = kotlin.math.round(it); turnText = turn.toInt().toString() }, valueRange = -180f..180f,
                                 onValueChangeFinished = { val t = turn; savePhotoPlacement { it.turned(t) } }, modifier = Modifier.weight(1f))
@@ -3184,12 +3184,12 @@ fun CanvasWorkspaceScreen(
                                 turnText = v.filter { c -> c.isDigit() || c == '-' }.take(4)
                                 turnText.toIntOrNull()?.takeIf { it in -180..180 }?.let { turn = it.toFloat() }
                             }, singleLine = true, modifier = Modifier.width(80.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                            TextButton(onClick = { val t = turn; savePhotoPlacement { it.turned(t) } }) { Text("Set") }
+                            TextButton(onClick = { val t = turn; savePhotoPlacement { it.turned(t) } }) { Text(tr("Set")) }
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showPhotoDialog = false }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { showPhotoDialog = false }) { Text(tr("Close")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3199,11 +3199,11 @@ fun CanvasWorkspaceScreen(
         val shown = kotlin.math.sqrt(((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).toDouble())
         AlertDialog(
             onDismissRequest = { photoPoints.clear() },
-            title = { Text("Set the photo's scale") },
+            title = { Text(tr("Set the photo's scale")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("On the photo these points are ${"%.2f".format(shown)} m apart at the current scale. How far apart are they really?", fontSize = 13.sp)
-                    OutlinedTextField(value = distanceText, onValueChange = { distanceText = it.filter { c -> c.isDigit() || c == '.' }.take(8) }, label = { Text("Real distance, m (1 ft = 0.3048 m)") }, singleLine = true,
+                    Text(tr("On the photo these points are ${"%.2f".format(shown)} m apart at the current scale. How far apart are they really?"), fontSize = 13.sp)
+                    OutlinedTextField(value = distanceText, onValueChange = { distanceText = it.filter { c -> c.isDigit() || c == '.' }.take(8) }, label = { Text(tr("Real distance, m (1 ft = 0.3048 m)")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 }
             },
@@ -3216,9 +3216,9 @@ fun CanvasWorkspaceScreen(
                     photoPoints.clear(); photoCalibrating = false
                     savePhotoPlacement { cal }
                     snackbarMessage = "Scale set: the photo is ${"%.1f".format(cal.widthM)} m wide. Drag it to line up with the plot; turn it from menu → Satellite photo…"
-                }) { Text("Set scale") }
+                }) { Text(tr("Set scale")) }
             },
-            dismissButton = { TextButton(onClick = { photoPoints.clear() }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { photoPoints.clear() }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3229,12 +3229,12 @@ fun CanvasWorkspaceScreen(
         var yearText by remember(season) { mutableStateOf(season.toString()) }
         AlertDialog(
             onDismissRequest = { showNewSeasonDialog = false },
-            title = { Text("Start a new season") },
+            title = { Text(tr("Start a new season")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("The fence, walls, buildings, trees, paths, sun/shade areas and outline stay. This season's ${nodesState.size} plant(s) move into the plot's history.", fontSize = 13.sp)
-                    Text("History stays visible (menu → Past season on layout, and Plot insights → Harmony) and is used for crop-rotation advice and by Plan an area for me. It travels in plan files. Undo reverses this.", fontSize = 12.sp, color = Color.Gray)
-                    OutlinedTextField(value = yearText, onValueChange = { yearText = it.filter(Char::isDigit).take(4) }, label = { Text("Season being closed") }, singleLine = true)
+                    Text(tr("The fence, walls, buildings, trees, paths, sun/shade areas and outline stay. This season's ${nodesState.size} plant(s) move into the plot's history."), fontSize = 13.sp)
+                    Text(tr("History stays visible (menu → Past season on layout, and Plot insights → Harmony) and is used for crop-rotation advice and by Plan an area for me. It travels in plan files. Undo reverses this."), fontSize = 12.sp, color = Color.Gray)
+                    OutlinedTextField(value = yearText, onValueChange = { yearText = it.filter(Char::isDigit).take(4) }, label = { Text(tr("Season being closed")) }, singleLine = true)
                 }
             },
             confirmButton = {
@@ -3259,9 +3259,9 @@ fun CanvasWorkspaceScreen(
                             snackbarMessage = "Season $year closed: ${archived.size} plants kept as history (dashed). Plan ${year + 1} with rotation in mind."
                         }
                     }
-                ) { Text("Start new season") }
+                ) { Text(tr("Start new season")) }
             },
-            dismissButton = { TextButton(onClick = { showNewSeasonDialog = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showNewSeasonDialog = false }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3355,12 +3355,12 @@ fun CanvasWorkspaceScreen(
         var widthText by remember { mutableStateOf("0.5") }
         AlertDialog(
             onDismissRequest = { pendingPolylineWidth = false },
-            title = { Text("Path Width") },
+            title = { Text(tr("Path Width")) },
             text = {
                 OutlinedTextField(
                     value = widthText,
                     onValueChange = { widthText = it },
-                    label = { Text("Width (m)") },
+                    label = { Text(tr("Width (m)")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -3380,9 +3380,9 @@ fun CanvasWorkspaceScreen(
                     }
                     inProgressPoints = emptyList()
                     pendingPolylineWidth = false
-                }) { Text("Save Path") }
+                }) { Text(tr("Save Path")) }
             },
-            dismissButton = { TextButton(onClick = { pendingPolylineWidth = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pendingPolylineWidth = false }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
     }
@@ -3393,19 +3393,19 @@ fun CanvasWorkspaceScreen(
         var widthText by remember(zone.id) { mutableStateOf(zone.widthM.toString()) }
         AlertDialog(
             onDismissRequest = { editingPathZone = null },
-            title = { Text(if (zone.pathType == "POLYLINE") "Edit Path" else "No-Plant Area") },
+            title = { Text(tr(if (zone.pathType == "POLYLINE") "Edit Path" else "No-Plant Area")) },
             text = {
                 Column {
                     if (zone.pathType == "POLYLINE") {
                         OutlinedTextField(
                             value = widthText,
                             onValueChange = { widthText = it },
-                            label = { Text("Width (m)") },
+                            label = { Text(tr("Width (m)")) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        Text("${"%.2f".format(zone.widthM)}m × ${"%.2f".format(zone.heightM)}m rectangle.")
+                        Text(tr("${"%.2f".format(zone.widthM)}m × ${"%.2f".format(zone.heightM)}m rectangle."))
                     }
                 }
             },
@@ -3421,9 +3421,9 @@ fun CanvasWorkspaceScreen(
                             redoStack.clear()
                         }
                         editingPathZone = null
-                    }) { Text("Save") }
+                    }) { Text(tr("Save")) }
                 } else {
-                    TextButton(onClick = { editingPathZone = null }) { Text("Close") }
+                    TextButton(onClick = { editingPathZone = null }) { Text(tr("Close")) }
                 }
             },
             dismissButton = {
@@ -3438,7 +3438,7 @@ fun CanvasWorkspaceScreen(
                         editingPathZone = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))
-                ) { Text("Delete") }
+                ) { Text(tr("Delete")) }
             },
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -3450,16 +3450,16 @@ fun CanvasWorkspaceScreen(
             val options = germinationEngine.buildContingencyOptions(seed, seedDictionary)
             AlertDialog(
                 onDismissRequest = { germinationDialogNode = null },
-                title = { Text("Germination Failed — Recovery Plan") },
+                title = { Text(tr("Germination Failed — Recovery Plan")) },
                 text = {
                     Column {
-                        Text("This ${seed.commonName} was planted more than ${seed.germinationDays} days ago with no recorded germination. Choose how to reuse this spot:")
+                        Text(tr("This ${seed.commonName} was planted more than ${seed.germinationDays} days ago with no recorded germination. Choose how to reuse this spot:"))
                         Spacer(modifier = Modifier.height(12.dp))
                         if (options.isEmpty()) {
-                            Text("No fallback options are on file for this variety.", color = Color.Gray)
+                            Text(tr("No fallback options are on file for this variety."), color = Color.Gray)
                         }
                         // FR-056: varieties that catch up with the plants that survived.
-                        TextButton(onClick = { planBNode = node; germinationDialogNode = null }, modifier = Modifier.fillMaxWidth()) { Text("Plan B: varieties ready with the others…", fontSize = 12.sp) }
+                        TextButton(onClick = { planBNode = node; germinationDialogNode = null }, modifier = Modifier.fillMaxWidth()) { Text(tr("Plan B: varieties ready with the others…"), fontSize = 12.sp) }
                         options.forEach { option ->
                             val label = when (option) {
                                 is GerminationContingencyEngine.ContingencyOption.FastTrackVariety -> "Fast-track substitute: ${option.alternateCommonName}"
@@ -3483,7 +3483,7 @@ fun CanvasWorkspaceScreen(
                                     germinationDialogNode = null
                                 },
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text(label, fontSize = 12.sp) }
+                            ) { Text(tr(label), fontSize = 12.sp) }
                         }
                     }
                 },
@@ -3495,9 +3495,9 @@ fun CanvasWorkspaceScreen(
                             reloadNodes()
                         }
                         germinationDialogNode = null
-                    }) { Text("Keep as-is") }
+                    }) { Text(tr("Keep as-is")) }
                 },
-                dismissButton = { TextButton(onClick = { germinationDialogNode = null }) { Text("Close") } },
+                dismissButton = { TextButton(onClick = { germinationDialogNode = null }) { Text(tr("Close")) } },
                 containerColor = MaterialTheme.colorScheme.surface
             )
         }
@@ -3531,7 +3531,7 @@ fun CanvasWorkspaceScreen(
                                     snackbarMessage = tr("Rearranged ${m.size} plants as ${o.label}. Undo reverses it.")
                                 }
                             }, modifier = Modifier.fillMaxWidth()) {
-                                Text(o.label + if (bad > 0) " — " + tr("doesn't fit here") else "", fontSize = 12.sp)
+                                Text(tr(o.label + if (bad > 0) " — " + tr("doesn't fit here") else ""), fontSize = 12.sp)
                             }
                         }
                     }
@@ -3552,16 +3552,16 @@ fun CanvasWorkspaceScreen(
             var replaceAll by remember(node) { mutableStateOf(false) }
             AlertDialog(
                 onDismissRequest = { planBNode = null },
-                title = { Text("Plan B for ${seed.commonName}") },
+                title = { Text(tr("Plan B for ${seed.commonName}")) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text("The plants that survived should be ready around ${com.example.smartgardenplanner.core.GrowingSeason.date(planted + seed.daysToHarvest)}" +
+                        Text(tr("The plants that survived should be ready around ${com.example.smartgardenplanner.core.GrowingSeason.date(planted + seed.daysToHarvest)}" +
                             (growingSeason?.takeIf { !it.frostFree }?.let { " (first frost around ${com.example.smartgardenplanner.core.GrowingSeason.date(it.firstFrost)})" } ?: "") +
-                            ". Tap one to plant it today in this spot:", fontSize = 13.sp)
-                        if (opts.isEmpty()) Text("Nothing in the catalog would be ready in time this season. A quick catch crop (radishes, lettuce) or leaving the spot for next season are the options.", fontSize = 12.sp, color = Color(0xFFB45309))
+                            ". Tap one to plant it today in this spot:"), fontSize = 13.sp)
+                        if (opts.isEmpty()) Text(tr("Nothing in the catalog would be ready in time this season. A quick catch crop (radishes, lettuce) or leaving the spot for next season are the options."), fontSize = 12.sp, color = Color(0xFFB45309))
                         if (sameDay.size > 1) Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = replaceAll, onCheckedChange = { replaceAll = it })
-                            Text("Replace all ${sameDay.size} planted the same day", fontSize = 12.sp)
+                            Text(tr("Replace all ${sameDay.size} planted the same day"), fontSize = 12.sp)
                         }
                         opts.forEach { o ->
                             OutlinedButton(onClick = {
@@ -3577,12 +3577,12 @@ fun CanvasWorkspaceScreen(
                                     snackbarMessage = "Plan B: ${updated.size} × ${o.seed.commonName} planted today. Undo reverses it."
                                 }
                             }, modifier = Modifier.fillMaxWidth()) {
-                                Column { Text(o.seed.commonName, fontSize = 13.sp); Text(o.reason, fontSize = 11.sp, color = Color.Gray) }
+                                Column { Text(tr(o.seed.commonName), fontSize = 13.sp); Text(tr(o.reason), fontSize = 11.sp, color = Color.Gray) }
                             }
                         }
                     }
                 },
-                confirmButton = { TextButton(onClick = { planBNode = null }) { Text("Close") } },
+                confirmButton = { TextButton(onClick = { planBNode = null }) { Text(tr("Close")) } },
                 containerColor = MaterialTheme.colorScheme.surface
             )
         }
@@ -3592,36 +3592,36 @@ fun CanvasWorkspaceScreen(
         val seed = seedFor(node.seedCode)
         AlertDialog(
             onDismissRequest = { infoDialogNode = null },
-            title = { Text(seed?.commonName ?: node.seedCode) },
+            title = { Text(tr(seed?.commonName ?: node.seedCode)) },
             text = {
                 Column {
-                                        seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(it.details, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
+                                        seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(tr(it.details), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
                     val plantedDate = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(node.datePlantedEpochMillis))
-                    Text("Planted: $plantedDate")
+                    Text(tr("Planted: $plantedDate"))
                     if (seed != null) {
                         val harvestMillis = node.datePlantedEpochMillis + seed.daysToHarvest.toLong() * 86_400_000L
                         val harvestDate = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(harvestMillis))
-                        Text("Expected harvest: ~$harvestDate")
-                        Text("Spacing: ${seed.exclusionRadiusM}m")
+                        Text(tr("Expected harvest: ~$harvestDate"))
+                        Text(tr("Spacing: ${seed.exclusionRadiusM}m"))
                         val crop = CropReference.forSeed(seed)
-                        if (crop.yieldKgPerPlant > 0f) Text("Typical yield: ~${"%.2f".format(crop.yieldKgPerPlant)} kg per plant")
-                        crop.nutrients?.let { n -> Text("Per 100 g: ${n.energyKcal.toInt()} kcal, vit C ${n.vitaminCMg} mg, protein ${n.proteinG} g", fontSize = 12.sp) }
-                        Text("${crop.feeding.label} • ${crop.sun.label} • pH ${crop.phMin}–${crop.phMax}", fontSize = 12.sp, color = Color.Gray)
-                        HardinessZones.describe(seed, activePlot?.hardinessZone)?.let { Text(it, fontSize = 12.sp, color = Color(0xFFEAB308)) }
+                        if (crop.yieldKgPerPlant > 0f) Text(tr("Typical yield: ~${"%.2f".format(crop.yieldKgPerPlant)} kg per plant"))
+                        crop.nutrients?.let { n -> Text(tr("Per 100 g: ${n.energyKcal.toInt()} kcal, vit C ${n.vitaminCMg} mg, protein ${n.proteinG} g"), fontSize = 12.sp) }
+                        Text(tr("${crop.feeding.label} • ${crop.sun.label} • pH ${crop.phMin}–${crop.phMax}"), fontSize = 12.sp, color = Color.Gray)
+                        HardinessZones.describe(seed, activePlot?.hardinessZone)?.let { Text(tr(it), fontSize = 12.sp, color = Color(0xFFEAB308)) }
                         val guilds = GuildCatalog.guildsFor(seed, activeGuilds)
-                        if (guilds.isNotEmpty()) Text("Guild: ${guilds.joinToString { it.name }}", fontSize = 12.sp, color = Color(0xFF10B981))
+                        if (guilds.isNotEmpty()) Text(tr("Guild: ${guilds.joinToString { it.name }}"), fontSize = 12.sp, color = Color(0xFF10B981))
                         // FR-023/024: vendor slot (placeholder until a real vendor is linked).
                         val vendor = VendorRegistry.effectiveVendor(settings.preferredVendorId, Feature.isEnabled(Feature.VENDOR_TARGETING, settings.currentAppTier()))
                         val link = VendorRegistry.purchaseLink(seed, vendor)
-                        Text(if (link != null) "Buy seeds: ${vendor.displayName}" else "Buy seeds: ${vendor.displayName} — links not available yet", fontSize = 11.sp, color = Color.Gray)
+                        Text(tr(if (link != null) "Buy seeds: ${vendor.displayName}" else "Buy seeds: ${vendor.displayName} — links not available yet"), fontSize = 11.sp, color = Color.Gray)
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { infoDialogNode = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { infoDialogNode = null }) { Text(tr("Close")) } },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { changeVarietyNode = node; infoDialogNode = null }) { Text("Change Variety") }
-                    TextButton(onClick = { planBNode = node; infoDialogNode = null }) { Text("Plan B") }
+                    TextButton(onClick = { changeVarietyNode = node; infoDialogNode = null }) { Text(tr("Change Variety")) }
+                    TextButton(onClick = { planBNode = node; infoDialogNode = null }) { Text(tr("Plan B")) }
                     TextButton(onClick = {
                         val g = com.example.smartgardenplanner.core.GroupTools.groupOf(nodesState, node) { seedFor(it) }
                         infoDialogNode = null
@@ -3638,7 +3638,7 @@ fun CanvasWorkspaceScreen(
                             infoDialogNode = null
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))
-                    ) { Text("Delete") }
+                    ) { Text(tr("Delete")) }
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface
@@ -3718,17 +3718,17 @@ fun CanvasWorkspaceScreen(
 
         AlertDialog(
             onDismissRequest = { pendingAreaSelection = null },
-            title = { Text("Auto-populate Area") },
+            title = { Text(tr("Auto-populate Area")) },
             text = {
                 Column {
-                    Text("Area: ${"%.2f".format(area.width)}m × ${"%.2f".format(area.height)}m")
+                    Text(tr("Area: ${"%.2f".format(area.width)}m × ${"%.2f".format(area.height)}m"))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Variety", fontSize = 12.sp, color = Color.Gray)
+                    Text(tr("Variety"), fontSize = 12.sp, color = Color.Gray)
                     // [FIXED] Was a flat radio-button LazyColumn over the entire seed dictionary —
                     // unusable now that the catalog can hold up to 2,936 entries. Reuses the same
                     // 3-step picker used everywhere else a variety needs choosing.
                     OutlinedButton(onClick = { showAutoPopVarietyPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(chosenSeed?.commonName ?: "Choose a Variety")
+                        Text(tr(chosenSeed?.commonName ?: "Choose a Variety"))
                     }
                     RecommendForArea(
                         enabled = Feature.isEnabled(Feature.RECOMMEND_AND_AUTOPOPULATE, settings.currentAppTier()),
@@ -3744,20 +3744,20 @@ fun CanvasWorkspaceScreen(
                         onPick = { code -> chosenSeedCode = code }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Pattern", fontSize = 12.sp, color = Color.Gray)
+                    Text(tr("Pattern"), fontSize = 12.sp, color = Color.Gray)
                     Row {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { chosenPattern = AutoPopulateEngine.PackingPattern.LINE }) {
                             RadioButton(selected = chosenPattern == AutoPopulateEngine.PackingPattern.LINE, onClick = { chosenPattern = AutoPopulateEngine.PackingPattern.LINE })
-                            Text("Lines", fontSize = 12.sp)
+                            Text(tr("Lines"), fontSize = 12.sp)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { chosenPattern = AutoPopulateEngine.PackingPattern.HEXAGON }) {
                             RadioButton(selected = chosenPattern == AutoPopulateEngine.PackingPattern.HEXAGON, onClick = { chosenPattern = AutoPopulateEngine.PackingPattern.HEXAGON })
-                            Text("Hexagon (denser)", fontSize = 12.sp)
+                            Text(tr("Hexagon (denser)"), fontSize = 12.sp)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("≈ $previewCount plants will be placed", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("≈ $previewCount plants will be placed"), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             },
             confirmButton = {
@@ -3806,9 +3806,9 @@ fun CanvasWorkspaceScreen(
                         // (which is also where tap-to-edit lives) fixes that directly.
                         canvasMode = CanvasMode.PLACE_NODE
                     }
-                ) { Text("Populate") }
+                ) { Text(tr("Populate")) }
             },
-            dismissButton = { TextButton(onClick = { pendingAreaSelection = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pendingAreaSelection = null }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
 
@@ -3849,14 +3849,14 @@ fun CanvasWorkspaceScreen(
 
         AlertDialog(
             onDismissRequest = { pendingPolygonSelection = null },
-            title = { Text("Auto-populate Custom Area") },
+            title = { Text(tr("Auto-populate Custom Area")) },
             text = {
                 Column {
-                    Text("${polygon.size}-point shape, ${"%.2f".format(boundingWidth)}m × ${"%.2f".format(boundingHeight)}m bounding box")
+                    Text(tr("${polygon.size}-point shape, ${"%.2f".format(boundingWidth)}m × ${"%.2f".format(boundingHeight)}m bounding box"))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Variety", fontSize = 12.sp, color = Color.Gray)
+                    Text(tr("Variety"), fontSize = 12.sp, color = Color.Gray)
                     OutlinedButton(onClick = { showAutoPopVarietyPicker2 = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(chosenSeed?.commonName ?: "Choose a Variety")
+                        Text(tr(chosenSeed?.commonName ?: "Choose a Variety"))
                     }
                     RecommendForArea(
                         enabled = Feature.isEnabled(Feature.RECOMMEND_AND_AUTOPOPULATE, settings.currentAppTier()),
@@ -3866,20 +3866,20 @@ fun CanvasWorkspaceScreen(
                         onPick = { code -> chosenSeedCode = code }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Pattern", fontSize = 12.sp, color = Color.Gray)
+                    Text(tr("Pattern"), fontSize = 12.sp, color = Color.Gray)
                     Row {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { chosenPattern = AutoPopulateEngine.PackingPattern.LINE }) {
                             RadioButton(selected = chosenPattern == AutoPopulateEngine.PackingPattern.LINE, onClick = { chosenPattern = AutoPopulateEngine.PackingPattern.LINE })
-                            Text("Lines", fontSize = 12.sp)
+                            Text(tr("Lines"), fontSize = 12.sp)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { chosenPattern = AutoPopulateEngine.PackingPattern.HEXAGON }) {
                             RadioButton(selected = chosenPattern == AutoPopulateEngine.PackingPattern.HEXAGON, onClick = { chosenPattern = AutoPopulateEngine.PackingPattern.HEXAGON })
-                            Text("Hexagon (denser)", fontSize = 12.sp)
+                            Text(tr("Hexagon (denser)"), fontSize = 12.sp)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("≈ $previewCount plants will be placed", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("≈ $previewCount plants will be placed"), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             },
             confirmButton = {
@@ -3918,9 +3918,9 @@ fun CanvasWorkspaceScreen(
                         pendingPolygonSelection = null
                         canvasMode = CanvasMode.PLACE_NODE
                     }
-                ) { Text("Populate") }
+                ) { Text(tr("Populate")) }
             },
-            dismissButton = { TextButton(onClick = { pendingPolygonSelection = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pendingPolygonSelection = null }) { Text(tr("Cancel")) } },
             containerColor = MaterialTheme.colorScheme.surface
         )
 
@@ -3981,17 +3981,17 @@ private fun VarietyPickerDialog(
         title = {
             Column {
                 Text(
-                    when (step) {
+                    tr(when (step) {
                         0 -> "Choose a Category"
                         1 -> "Choose a ${selectedCategory?.lowercase()?.replaceFirstChar { it.uppercase() }} Species"
                         else -> "Choose a Cultivar"
-                    }
+                    })
                 )
                 if (step > 0) {
                     TextButton(
                         onClick = { if (step == 2) { step = 1; selectedSpeciesPrefix = null } else { step = 0; selectedCategory = null } },
                         contentPadding = PaddingValues(0.dp)
-                    ) { Text("← Back", fontSize = 12.sp) }
+                    ) { Text(tr("← Back"), fontSize = 12.sp) }
                 }
             }
         },
@@ -4001,7 +4001,7 @@ private fun VarietyPickerDialog(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = { Text("Search") },
+                        label = { Text(tr("Search")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     )
@@ -4016,8 +4016,8 @@ private fun VarietyPickerDialog(
                                     .padding(vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(category.lowercase().replaceFirstChar { it.uppercase() }, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                Text("$count", fontSize = 12.sp, color = Color.Gray)
+                                Text(tr(category.lowercase().replaceFirstChar { it.uppercase() }), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                Text(tr("$count"), fontSize = 12.sp, color = Color.Gray)
                             }
                         }
                         1 -> items(speciesInCategory.filter { it.second.contains(searchQuery, ignoreCase = true) }) { (prefix, name, count) ->
@@ -4028,8 +4028,8 @@ private fun VarietyPickerDialog(
                                     .padding(vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(name, fontSize = 14.sp)
-                                Text("$count cultivar${if (count == 1) "" else "s"}", fontSize = 12.sp, color = Color.Gray)
+                                Text(tr(name), fontSize = 14.sp)
+                                Text(tr("$count cultivar${if (count == 1) "" else "s"}"), fontSize = 12.sp, color = Color.Gray)
                             }
                         }
                         else -> items(cultivarsInSpecies.filter { cultivarNameOf(it).contains(searchQuery, ignoreCase = true) }) { seed ->
@@ -4045,11 +4045,11 @@ private fun VarietyPickerDialog(
                                 Box(modifier = Modifier.size(12.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                                                        Text(cultivarNameOf(seed), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                    VarietyCatalogTraits.of(seed)?.let { Text(it.details, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary) }
-                                    conflict?.let { Text(it, fontSize = 10.sp, color = Color(0xFFEF4444)) }
+                                                                        Text(tr(cultivarNameOf(seed)), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    VarietyCatalogTraits.of(seed)?.let { Text(tr(it.details), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary) }
+                                    conflict?.let { Text(tr(it), fontSize = 10.sp, color = Color(0xFFEF4444)) }
                                     Text(
-                                        "spacing ${seed.exclusionRadiusM}m • germinates ~${seed.germinationDays}d • harvest ~${seed.daysToHarvest}d",
+                                        tr("spacing ${seed.exclusionRadiusM}m • germinates ~${seed.germinationDays}d • harvest ~${seed.daysToHarvest}d"),
                                         fontSize = 10.sp, color = Color.Gray
                                     )
                                 }
@@ -4059,7 +4059,7 @@ private fun VarietyPickerDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
         containerColor = MaterialTheme.colorScheme.surface
     )
 }
@@ -4108,16 +4108,16 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRuler(
 private fun RecommendForArea(enabled: Boolean, compute: () -> List<Recommendation>, onPick: (String) -> Unit) {
     var recs by remember { mutableStateOf<List<Recommendation>?>(null) }
     if (!enabled) {
-        Text("Recommend for this area: Pro tier", fontSize = 11.sp, color = Color.Gray)
+        Text(tr("Recommend for this area: Pro tier"), fontSize = 11.sp, color = Color.Gray)
         return
     }
-    TextButton(onClick = { recs = compute() }, contentPadding = PaddingValues(0.dp)) { Text("Recommend for this area", fontSize = 12.sp) }
+    TextButton(onClick = { recs = compute() }, contentPadding = PaddingValues(0.dp)) { Text(tr("Recommend for this area"), fontSize = 12.sp) }
     recs?.let { list ->
-        if (list.isEmpty()) Text("Nothing in the catalog suits this spot.", fontSize = 11.sp, color = Color.Gray)
+        if (list.isEmpty()) Text(tr("Nothing in the catalog suits this spot."), fontSize = 11.sp, color = Color.Gray)
         list.forEach { r ->
             Column(modifier = Modifier.fillMaxWidth().clickable { onPick(r.seed.botanicalCode) }.padding(vertical = 3.dp)) {
-                Text(r.seed.commonName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
-                Text(r.reasons.take(2).joinToString(" • "), fontSize = 10.sp, color = Color.Gray)
+                Text(tr(r.seed.commonName), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(tr(r.reasons.take(2).joinToString(" • ")), fontSize = 10.sp, color = Color.Gray)
             }
         }
     }
@@ -4145,55 +4145,55 @@ private fun SiteFeatureDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text((if (isNew) "New: " else "") + type.label) },
+        title = { Text(tr((if (isNew) "New: " else "") + type.label)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(value = label, onValueChange = { label = it.take(40) }, label = { Text("Label (optional)") }, singleLine = true)
+                OutlinedTextField(value = label, onValueChange = { label = it.take(40) }, label = { Text(tr("Label (optional)")) }, singleLine = true)
                 if (type.isBarrier) {
-                    OutlinedTextField(value = height, onValueChange = { height = it }, label = { Text("Height (m)") }, singleLine = true,
+                    OutlinedTextField(value = height, onValueChange = { height = it }, label = { Text(tr("Height (m)")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 }
                 if (type == SiteFeatureType.TREE) {
-                    OutlinedTextField(value = radius, onValueChange = { radius = it }, label = { Text("Crown radius (m)") }, singleLine = true,
+                    OutlinedTextField(value = radius, onValueChange = { radius = it }, label = { Text(tr("Crown radius (m)")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 }
                 if (type == SiteFeatureType.SLOPE) {
-                    OutlinedTextField(value = grade, onValueChange = { grade = it }, label = { Text("Grade (%) — 1 m drop over 10 m is 10 %") }, singleLine = true,
+                    OutlinedTextField(value = grade, onValueChange = { grade = it }, label = { Text(tr("Grade (%) — 1 m drop over 10 m is 10 %")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                    Text("Downhill direction (compass)", fontSize = 12.sp)
+                    Text(tr("Downhill direction (compass)"), fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         directions.forEach { (name, deg) ->
-                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(name, fontSize = 10.sp) })
+                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(tr(name), fontSize = 10.sp) })
                         }
                     }
                 }
                                 if (type == SiteFeatureType.FLOOD) {
-                    OutlinedTextField(value = months, onValueChange = { months = it }, label = { Text("Months it floods, e.g. 3,4,5") }, singleLine = true)
+                    OutlinedTextField(value = months, onValueChange = { months = it }, label = { Text(tr("Months it floods, e.g. 3,4,5")) }, singleLine = true)
                 }
                 // FR-039: irrigation settings.
                 if (type.isIrrigation) {
                     OutlinedTextField(value = radius, onValueChange = { radius = it }, singleLine = true,
-                        label = { Text(when (type) { SiteFeatureType.SPRINKLER -> "How far it throws water (m)"; SiteFeatureType.DRIP_LINE -> "Wetted strip each side (m)"; else -> "Hose length (m)" }) },
+                        label = { Text(tr(when (type) { SiteFeatureType.SPRINKLER -> "How far it throws water (m)"; SiteFeatureType.DRIP_LINE -> "Wetted strip each side (m)"; else -> "Hose length (m)" })) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                 }
                 if (type == SiteFeatureType.SPRINKLER) {
-                    Text("Pattern", fontSize = 12.sp)
+                    Text(tr("Pattern"), fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         listOf("Full" to 360f, "¾" to 270f, "½" to 180f, "¼" to 90f).forEach { (name, arc) ->
-                            FilterChip(selected = (grade.toFloatOrNull() ?: 360f) == arc, onClick = { grade = arc.toInt().toString() }, label = { Text(name, fontSize = 11.sp) })
+                            FilterChip(selected = (grade.toFloatOrNull() ?: 360f) == arc, onClick = { grade = arc.toInt().toString() }, label = { Text(tr(name), fontSize = 11.sp) })
                         }
                     }
-                    Text("For a part circle, which way the middle of the spray points", fontSize = 12.sp)
+                    Text(tr("For a part circle, which way the middle of the spray points"), fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         directions.forEach { (name, deg) ->
-                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(name, fontSize = 10.sp) })
+                            FilterChip(selected = direction == deg, onClick = { direction = deg }, label = { Text(tr(name), fontSize = 10.sp) })
                         }
                     }
                 }
                 if (type == SiteFeatureType.FULL_SUN || type == SiteFeatureType.PART_SHADE || type == SiteFeatureType.FULL_SHADE) {
-                    Text("Plants that need more sun than this area gets are flagged in the harmony report and left out of suggestions for it.", fontSize = 11.sp, color = Color.Gray)
+                    Text(tr("Plants that need more sun than this area gets are flagged in the harmony report and left out of suggestions for it."), fontSize = 11.sp, color = Color.Gray)
                 }
-                error?.let { Text(it, color = Color(0xFFEF4444), fontSize = 12.sp) }
+                error?.let { Text(tr(it), color = Color(0xFFEF4444), fontSize = 12.sp) }
             }
         },
         confirmButton = {
@@ -4224,17 +4224,17 @@ private fun SiteFeatureDialog(
                         )
                     )
                 }
-            }) { Text("Save") }
+            }) { Text(tr("Save")) }
         },
         dismissButton = {
             Row {
                 if (onDelete != null) {
-                    TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text("Delete") }
+                    TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))) { Text(tr("Delete")) }
                 }
                 if (onMove != null) {
-                    TextButton(onClick = onMove) { Text("Move") }
+                    TextButton(onClick = onMove) { Text(tr("Move")) }
                 }
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text(tr("Cancel")) }
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
@@ -4279,17 +4279,17 @@ private fun AutoPlanRequestDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-                title = { Text(title) },
+                title = { Text(tr(title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together. Tap ☆ on the plants that matter most: they're placed first, in the sunniest spots.", fontSize = 12.sp)
+                Text(tr("Add each plant and how many. The app decides where each one goes: tall plants behind short ones, sun lovers in the sun, pollinators near the crops that need them, similar watering needs together. Tap ☆ on the plants that matter most: they're placed first, in the sunniest spots."), fontSize = 12.sp)
                 if (!orientationSet) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("⚠ The plot's direction isn't set, so north is assumed to be the top edge.", fontSize = 11.sp, color = Color(0xFFEAB308), modifier = Modifier.weight(1f))
-                        TextButton(onClick = onSetDirection) { Text("Set it") }
+                        Text(tr("⚠ The plot's direction isn't set, so north is assumed to be the top edge."), fontSize = 11.sp, color = Color(0xFFEAB308), modifier = Modifier.weight(1f))
+                        TextButton(onClick = onSetDirection) { Text(tr("Set it")) }
                     }
                 }
-                                if (hasHistory) Text("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently.", fontSize = 11.sp, color = Color.Gray)
+                                if (hasHistory) Text(tr("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently."), fontSize = 11.sp, color = Color.Gray)
                 // FR-063: keep the plants already in this area, or plan it from blank.
                 if (inAreaCount > 0) {
                     Text(tr("$inAreaCount plants are already in this area"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -4302,7 +4302,7 @@ private fun AutoPlanRequestDialog(
                 }
                 // FR-034: what this gardener usually plants, one tap to add.
                 if (usual.isNotEmpty()) {
-                    Text("What you usually plant", fontSize = 11.sp, color = Color.Gray)
+                    Text(tr("What you usually plant"), fontSize = 11.sp, color = Color.Gray)
                     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         usual.forEach { (s, _) ->
                             OutlinedButton(
@@ -4311,29 +4311,29 @@ private fun AutoPlanRequestDialog(
                                     if (i >= 0) rows[i] = s.botanicalCode to rows[i].second + 1 else rows.add(s.botanicalCode to 3)
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                            ) { Text("+ ${CropReference.speciesName(s)}", fontSize = 11.sp) }
+                            ) { Text(tr("+ ${CropReference.speciesName(s)}"), fontSize = 11.sp) }
                         }
                     }
                 }
                 Column(modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState())) {
-                    if (rows.isEmpty()) Text("No plants yet. Tap Add a plant.", fontSize = 12.sp, color = Color.Gray)
+                    if (rows.isEmpty()) Text(tr("No plants yet. Tap Add a plant."), fontSize = 12.sp, color = Color.Gray)
                     rows.forEachIndexed { i, (code, count) ->
                         val seed = byCode[code]
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val starred = code in priority
                             TextButton(onClick = { if (starred) priority.remove(code) else priority.add(code) }, contentPadding = PaddingValues(0.dp), modifier = Modifier.width(32.dp)) {
-                                Text(if (starred) "★" else "☆", fontSize = 18.sp, color = if (starred) Color(0xFFD97706) else Color.Gray)
+                                Text(tr(if (starred) "★" else "☆"), fontSize = 18.sp, color = if (starred) Color(0xFFD97706) else Color.Gray)
                             }
                             Box(modifier = Modifier.size(10.dp).background(VegetableColorPalette.colorFor(seed), androidx.compose.foundation.shape.CircleShape))
                             Spacer(Modifier.width(6.dp))
                                                         Column(modifier = Modifier.weight(1f)) {
-                                Text(seed?.commonName ?: code, fontSize = 12.sp)
-                                seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(it.details, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
+                                Text(tr(seed?.commonName ?: code), fontSize = 12.sp)
+                                seed?.let { VarietyCatalogTraits.of(it) }?.let { Text(tr(it.details), fontSize = 10.sp, color = MaterialTheme.colorScheme.primary) }
                             }
-                            TextButton(onClick = { if (count > 1) rows[i] = code to count - 1 else rows.removeAt(i) }, contentPadding = PaddingValues(0.dp)) { Text("−", fontSize = 16.sp) }
-                            Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            TextButton(onClick = { rows[i] = code to (count + 1).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+", fontSize = 16.sp) }
-                            TextButton(onClick = { rows[i] = code to (count + 5).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text("+5", fontSize = 11.sp) }
+                            TextButton(onClick = { if (count > 1) rows[i] = code to count - 1 else rows.removeAt(i) }, contentPadding = PaddingValues(0.dp)) { Text(tr("−"), fontSize = 16.sp) }
+                            Text(tr("$count"), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = { rows[i] = code to (count + 1).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text(tr("+"), fontSize = 16.sp) }
+                            TextButton(onClick = { rows[i] = code to (count + 5).coerceAtMost(500) }, contentPadding = PaddingValues(0.dp)) { Text(tr("+5"), fontSize = 11.sp) }
                         }
                         // FR-047: how this clump is laid out, chosen before planting.
                         if (layout == PlantingLayout.CLUMPS && seed != null && count > 1) {
@@ -4341,17 +4341,17 @@ private fun AutoPlanRequestDialog(
                             val chosen = shapes[code]?.takeIf { it.sum() == count }
                             Box(modifier = Modifier.padding(start = 48.dp)) {
                                 TextButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
-                                    Text("Arrange: " + (chosen?.let { com.example.smartgardenplanner.core.ClumpShapes.label(it) } ?: "planner chooses") + " ▾", fontSize = 11.sp)
+                                    Text(tr("Arrange: " + (chosen?.let { com.example.smartgardenplanner.core.ClumpShapes.label(it) } ?: "planner chooses") + " ▾"), fontSize = 11.sp)
                                 }
                                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                                     val opts = com.example.smartgardenplanner.core.ClumpShapes.options(count)
-                                    DropdownMenuItem(text = { Text("Let the planner choose (${opts.first().label})", fontSize = 12.sp) }, onClick = { shapes.remove(code); open = false })
-                                    opts.forEach { o -> DropdownMenuItem(text = { Text((if (chosen == o.rows) "✓ " else "") + o.label, fontSize = 12.sp) }, onClick = { shapes[code] = o.rows; open = false }) }
+                                    DropdownMenuItem(text = { Text(tr("Let the planner choose (${opts.first().label})"), fontSize = 12.sp) }, onClick = { shapes.remove(code); open = false })
+                                    opts.forEach { o -> DropdownMenuItem(text = { Text(tr((if (chosen == o.rows) "✓ " else "") + o.label), fontSize = 12.sp) }, onClick = { shapes[code] = o.rows; open = false }) }
                                     val tidy = com.example.smartgardenplanner.core.ClumpShapes.nearbyTidy(count).take(3)
                                     if (tidy.isNotEmpty()) {
                                         Divider()
-                                        Text("Neater counts", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 12.dp))
-                                        tidy.forEach { t -> DropdownMenuItem(text = { Text("${t.count} = ${t.label}", fontSize = 12.sp) }, onClick = { rows[i] = code to t.count; shapes[code] = t.rows; open = false }) }
+                                        Text(tr("Neater counts"), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 12.dp))
+                                        tidy.forEach { t -> DropdownMenuItem(text = { Text(tr("${t.count} = ${t.label}"), fontSize = 12.sp) }, onClick = { rows[i] = code to t.count; shapes[code] = t.rows; open = false }) }
                                     }
                                 }
                             }
@@ -4359,16 +4359,16 @@ private fun AutoPlanRequestDialog(
                     }
                 }
                                                 Row {
-                    TextButton(onClick = { picking = true }) { Text("+ Add a plant") }
+                    TextButton(onClick = { picking = true }) { Text(tr("+ Add a plant")) }
                     // FR-040: keep the list's proportions and scale to what the area holds.
-                    TextButton(enabled = rows.isNotEmpty(), onClick = { onHowManyFit(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n.coerceAtLeast(1)) } }) }) { Text("How many fit?") }
+                    TextButton(enabled = rows.isNotEmpty(), onClick = { onHowManyFit(rows.mapNotNull { (c, n) -> byCode[c]?.let { PlantRequest(it, n.coerceAtLeast(1)) } }) }) { Text(tr("How many fit?")) }
                 }
                 if (checks.isNotEmpty()) {
-                    Text("Checks before planning", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(tr("Checks before planning"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     Column(modifier = Modifier.heightIn(max = 160.dp).verticalScroll(rememberScrollState())) {
                         checks.forEach { c ->
                             Text(
-                                (when (c.severity) { com.example.smartgardenplanner.core.Severity.HIGH -> "⚠ "; com.example.smartgardenplanner.core.Severity.MEDIUM -> "• "; else -> "✓ " }) + c.text,
+                                tr((when (c.severity) { com.example.smartgardenplanner.core.Severity.HIGH -> "⚠ "; com.example.smartgardenplanner.core.Severity.MEDIUM -> "• "; else -> "✓ " }) + c.text),
                                 fontSize = 11.sp,
                                 color = when (c.severity) { com.example.smartgardenplanner.core.Severity.HIGH -> MaterialTheme.colorScheme.error; com.example.smartgardenplanner.core.Severity.MEDIUM -> Color(0xFFB45309); else -> Color.Gray }
                             )
@@ -4376,23 +4376,23 @@ private fun AutoPlanRequestDialog(
                     }
                 }
                 // FR-032: clumps (default) or rows.
-                Text("How should each crop be arranged?", fontSize = 11.sp, color = Color.Gray)
+                Text(tr("How should each crop be arranged?"), fontSize = 11.sp, color = Color.Gray)
                 PlantingLayout.entries.forEach { l ->
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLayoutChange(l) }) {
                         RadioButton(selected = layout == l, onClick = { onLayoutChange(l) })
-                        Text(l.label, fontSize = 13.sp)
+                        Text(tr(l.label), fontSize = 13.sp)
                     }
                 }
-                Text(layout.description, fontSize = 11.sp, color = Color.Gray)
+                Text(tr(layout.description), fontSize = 11.sp, color = Color.Gray)
             }
         },
         confirmButton = {
             TextButton(
                 enabled = rows.any { it.second > 0 } && !running,
                 onClick = { onPlan(requests()) }
-            ) { Text(if (running) "Planning…" else "Plan it") }
+            ) { Text(tr(if (running) "Planning…" else "Plan it")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
         containerColor = MaterialTheme.colorScheme.surface
     )
     if (picking) {

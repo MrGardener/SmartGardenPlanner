@@ -1,5 +1,6 @@
 package com.example.smartgardenplanner.ui
 
+import com.example.smartgardenplanner.tr
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -33,7 +34,7 @@ fun PestChips(selected: Set<com.example.smartgardenplanner.core.Pest>, onChange:
                     FilterChip(
                         selected = p in selected,
                         onClick = { onChange(if (p in selected) selected - p else selected + p) },
-                        label = { Text(p.label, fontSize = 12.sp, maxLines = 2) },
+                        label = { Text(tr(p.label), fontSize = 12.sp, maxLines = 2) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -50,7 +51,7 @@ fun CompassChips(bearing: Float?, onSelect: (Float) -> Unit) {
         listOf(DIRECTIONS.take(4), DIRECTIONS.drop(4)).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 row.forEach { (name, deg) ->
-                    FilterChip(selected = bearing == deg, onClick = { onSelect(deg) }, label = { Text(name, fontSize = 12.sp) })
+                    FilterChip(selected = bearing == deg, onClick = { onSelect(deg) }, label = { Text(tr(name), fontSize = 12.sp) })
                 }
             }
         }
@@ -82,19 +83,19 @@ fun PlotDirectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Plot direction and location") },
+        title = { Text(tr("Plot direction and location")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Stand at the bottom edge of the plot (as drawn on screen) and look across to the top edge. Which way are you facing? Use a phone compass if unsure.", fontSize = 12.sp)
+                Text(tr("Stand at the bottom edge of the plot (as drawn on screen) and look across to the top edge. Which way are you facing? Use a phone compass if unsure."), fontSize = 12.sp)
                 CompassChips(bearing) { bearing = it; fine = it }
                 if (bearing != null) {
-                    Text("Top edge faces ${compassName(fine)} (${fine.toInt()}°)", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(tr("Top edge faces ${compassName(fine)} (${fine.toInt()}°)"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     Slider(value = fine, onValueChange = { fine = it; bearing = it }, valueRange = 0f..355f, steps = 70)
                 }
                 OutlinedTextField(
                     value = zip,
                     onValueChange = { zip = it.filter { c -> c.isDigit() }.take(5) },
-                    label = { Text("ZIP code") },
+                    label = { Text(tr("ZIP code")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -116,9 +117,9 @@ fun PlotDirectionDialog(
                             )
                         }
                     }
-                }) { Text("Look up ZIP") }
-                note?.let { Text(it, fontSize = 11.sp, color = Color(0xFF0EA5E9)) }
-                if (bearing == null) Text("Choose a direction to continue. Without it, sun and planting calculations would assume the top edge faces north.", fontSize = 11.sp, color = Color(0xFFEAB308))
+                }) { Text(tr("Look up ZIP")) }
+                note?.let { Text(tr(it), fontSize = 11.sp, color = Color(0xFF0EA5E9)) }
+                if (bearing == null) Text(tr("Choose a direction to continue. Without it, sun and planting calculations would assume the top edge faces north."), fontSize = 11.sp, color = Color(0xFFEAB308))
             }
         },
         confirmButton = {
@@ -134,9 +135,9 @@ fun PlotDirectionDialog(
                         lastModifiedTimestamp = System.currentTimeMillis()
                     )
                 )
-            }) { Text("Save") }
+            }) { Text(tr("Save")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Later") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Later")) } },
         containerColor = MaterialTheme.colorScheme.surface
     )
 }

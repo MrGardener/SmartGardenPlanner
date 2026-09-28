@@ -1,5 +1,6 @@
 package com.example.smartgardenplanner.ui
 
+import com.example.smartgardenplanner.tr
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -121,7 +122,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Settings"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
@@ -156,7 +157,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SettingsSection(title = "About this planner") {
-                Text(com.example.smartgardenplanner.core.Disclaimer.TEXT, fontSize = 12.sp)
+                Text(tr(com.example.smartgardenplanner.core.Disclaimer.TEXT), fontSize = 12.sp)
             }
             SettingsSection(title = "Language", note = "Texts without a translation stay in English.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -175,31 +176,31 @@ fun SettingsScreen(
                                     }
                                 }
                             },
-                            label = { Text(lang.name) }
+                            label = { Text(tr(lang.name)) }
                         )
                     }
                 }
             }
             SettingsSection(title = "Units") {
-                Text("Distance unit", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text("Everything is still stored in meters internally — this only changes how numbers are shown and entered.", fontSize = 11.sp, color = Color.Gray)
+                Text(tr("Distance unit"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(tr("Everything is still stored in meters internally — this only changes how numbers are shown and entered."), fontSize = 11.sp, color = Color.Gray)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                     FilterChip(
                         selected = settings.distanceUnit == com.example.smartgardenplanner.core.DistanceUnit.METERS,
                         onClick = { update(settings.copy(distanceUnit = com.example.smartgardenplanner.core.DistanceUnit.METERS)) },
-                        label = { Text("Meters") }
+                        label = { Text(tr("Meters")) }
                     )
                     FilterChip(
                         selected = settings.distanceUnit == com.example.smartgardenplanner.core.DistanceUnit.INCHES,
                         onClick = { update(settings.copy(distanceUnit = com.example.smartgardenplanner.core.DistanceUnit.INCHES)) },
-                        label = { Text("Inches") }
+                        label = { Text(tr("Inches")) }
                     )
                 }
             }
 
             SettingsSection(title = "Catalog", note = "Basic/Standard/Pro control how many bundled seed varieties are loaded. Anything you've personally added or edited in the Encyclopedia is never affected by this.") {
-                Text("Current: ${catalogSeedCount} bundled varieties (${settings.catalogTier})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                tierMessage?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
+                Text(tr("Current: ${catalogSeedCount} bundled varieties (${settings.catalogTier})"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                tierMessage?.let { Text(tr(it), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
                 CatalogTier.values().forEach { tier ->
                     val isActive = settings.catalogTier == tier.name
                     Row(
@@ -208,13 +209,13 @@ fun SettingsScreen(
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(tier.displayName, fontSize = 13.sp, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
+                            Text(tr(tier.displayName), fontSize = 13.sp, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
                         }
                         if (isActive) {
-                            Text("Active", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(tr("Active"), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                         } else {
                             TextButton(enabled = !isSwitchingTier, onClick = { switchTier(tier) }) {
-                                Text(if (isSwitchingTier) "Switching..." else "Switch")
+                                Text(tr(if (isSwitchingTier) "Switching..." else "Switch"))
                             }
                         }
                     }
@@ -263,14 +264,14 @@ fun SettingsScreen(
                 OutlinedTextField(
                     value = keyText,
                     onValueChange = { keyText = it.trim() },
-                    label = { Text("USDA FoodData Central API key") },
-                    supportingText = { Text("DEMO_KEY works but is rate-limited. A free personal key is available from api.data.gov.", fontSize = 10.sp) },
+                    label = { Text(tr("USDA FoodData Central API key")) },
+                    supportingText = { Text(tr("DEMO_KEY works but is rate-limited. A free personal key is available from api.data.gov."), fontSize = 10.sp) },
                     singleLine = true,
                     enabled = settings.onlineFeaturesEnabled,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (keyText != settings.usdaApiKey) {
-                    TextButton(onClick = { update(settings.copy(usdaApiKey = keyText.ifBlank { "DEMO_KEY" })) }) { Text("Save key") }
+                    TextButton(onClick = { update(settings.copy(usdaApiKey = keyText.ifBlank { "DEMO_KEY" })) }) { Text(tr("Save key")) }
                 }
             }
 
@@ -289,9 +290,9 @@ fun SettingsScreen(
                 )
                 GuildCatalog.ALL.forEach { g ->
                     Column {
-                        Text(g.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(g.members.joinToString(", ") { it.replaceFirstChar { c -> c.uppercase() } }, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                        Text(g.description, fontSize = 11.sp, color = Color.Gray)
+                        Text(tr(g.name), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(tr(g.members.joinToString(", ") { it.replaceFirstChar { c -> c.uppercase() } }), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                        Text(tr(g.description), fontSize = 11.sp, color = Color.Gray)
                     }
                 }
             }
@@ -311,17 +312,17 @@ fun SettingsScreen(
                     valueLabel = { "${it.toInt()} people" },
                     onChange = { update(settings.copy(householdSize = it.toInt())) }
                 )
-                Text("Fertilizer and pest control style", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(tr("Fertilizer and pest control style"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = settings.carePreferenceEnum == CarePreference.ORGANIC,
                         onClick = { update(settings.copy(carePreference = CarePreference.ORGANIC.name)) },
-                        label = { Text("Organic") }
+                        label = { Text(tr("Organic")) }
                     )
                     FilterChip(
                         selected = settings.carePreferenceEnum == CarePreference.CONVENTIONAL,
                         onClick = { update(settings.copy(carePreference = CarePreference.CONVENTIONAL.name)) },
-                        label = { Text("Conventional") }
+                        label = { Text(tr("Conventional")) }
                     )
                 }
                 SwitchSetting(
@@ -361,7 +362,7 @@ fun SettingsScreen(
                             enabled = vendorChoice,
                             onClick = { update(settings.copy(preferredVendorId = v.id)) }
                         )
-                        Text(v.displayName, fontSize = 13.sp, color = if (vendorChoice) Color.Unspecified else Color.Gray)
+                        Text(tr(v.displayName), fontSize = 13.sp, color = if (vendorChoice) Color.Unspecified else Color.Gray)
                     }
                 }
             }
@@ -493,7 +494,7 @@ private fun SettingsSection(title: String, note: String? = null, content: @Compo
     Column {
         Text(com.example.smartgardenplanner.tr(title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         note?.let {
-            Text(it, fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp))
+            Text(tr(it), fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp))
         }
         if (note == null) Spacer(modifier = Modifier.height(8.dp))
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
@@ -513,10 +514,10 @@ private fun SliderSetting(
 ) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            Text(valueLabel(value), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Text(tr(label), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(tr(valueLabel(value)), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
-        Text(description, fontSize = 11.sp, color = Color.Gray)
+        Text(tr(description), fontSize = 11.sp, color = Color.Gray)
         Slider(value = value, onValueChange = onChange, valueRange = range, steps = steps)
     }
 }
@@ -531,8 +532,8 @@ private fun SwitchSetting(
 ) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (enabled) Color.Unspecified else Color.Gray)
-            Text(description, fontSize = 11.sp, color = Color.Gray)
+            Text(tr(label), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (enabled) Color.Unspecified else Color.Gray)
+            Text(tr(description), fontSize = 11.sp, color = Color.Gray)
         }
         Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
     }

@@ -74,10 +74,10 @@ object Frost {
 }
 
 object Zips {
-    private val zones: List<String> by lazy { Embedded.lines("sgp-zipzones") }
-    private val locations: List<String> by lazy { Embedded.lines("sgp-ziplocs") }
-    fun zone(zip: String): String? = ZipTable.findZone(zones, zip.trim())
-    fun location(zip: String): ZipLocation? = ZipTable.find(locations, zip.trim())
+    // One table for everything known per ZIP: zip|lat|lon|state|zone.
+    private val table: List<String> by lazy { Embedded.lines("sgp-zips") }
+    fun zone(zip: String): String? = ZipTable.findZone(table, zip.trim())
+    fun location(zip: String): ZipLocation? = ZipTable.find(table, zip.trim())
 }
 
 /** A stable colour per species (or the variety's own colour), readable on the light layout background. */

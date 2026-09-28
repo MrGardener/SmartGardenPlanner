@@ -13,7 +13,17 @@ import org.w3c.dom.asList
  * assets/i18n/<code>.txt), and anything without an entry stays in English.
  */
 object Lang {
-    fun init() = use(Prefs.language)
+    fun init() {
+        use(Prefs.language)
+        // For the translation coverage check (tests/i18n_coverage.mjs): translate texts into [code] without changing the page.
+        kotlinx.browser.window.asDynamic().sgpTranslate = { code: String, texts: Array<String> ->
+            val was = I18n.language
+            use(code)
+            val out = texts.map { I18n.tr(it) }.toTypedArray()
+            use(was)
+            out
+        }
+    }
 
     fun use(code: String) {
         val dict = if (code == "en") emptyMap() else try { I18n.parse(Embedded.lines("sgp-i18n-$code")) } catch (e: Throwable) { emptyMap() }

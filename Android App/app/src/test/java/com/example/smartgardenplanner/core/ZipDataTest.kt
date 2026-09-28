@@ -19,16 +19,18 @@ class ZipDataTest {
     }
 
     @Test
-    fun zoneTable_isSortedWellFormedAndComplete() {
-        val lines = asset("zip_zones.txt")
-        assertEquals(40502, lines.size)
+    fun zipTable_isSortedWellFormedAndComplete() {
+        val lines = asset("zip_data.txt")
+        assertEquals(42277, lines.size)
         assertTrue(lines.zipWithNext().all { (a, b) -> a.take(5) < b.take(5) })
-        assertTrue(lines.all { Regex("^\\d{5}\\|(1[0-3]|[1-9])[ab]$").matches(it) })
+        // zip|lat|lon|state|zone, with the location fields or the zone empty where that source has no value.
+        assertTrue(lines.all { Regex("^\\d{5}\\|(-?\\d+\\.\\d+\\|-?\\d+\\.\\d+\\|[A-Z]{2}|\\|\\|)\\|((1[0-3]|[1-9])[ab])?$").matches(it) })
+        assertEquals(40502, lines.count { ZipTable.findZone(lines, it.take(5)) != null })
     }
 
     @Test
     fun zoneTable_givesPublishedZones() {
-        val lines = asset("zip_zones.txt")
+        val lines = asset("zip_data.txt")
         mapOf(
             "48201" to "6b", "48933" to "6a", "49938" to "4b", "49783" to "4b", "49855" to "5b",
             "10001" to "7b", "90210" to "10b", "33101" to "11a", "99501" to "5a", "96813" to "12b", "00901" to "13b"
@@ -39,7 +41,7 @@ class ZipDataTest {
 
     @Test
     fun locationTable_isSortedAndParses() {
-        val lines = asset("zip_locations.txt")
+        val lines = asset("zip_data.txt")
         assertTrue(lines.size > 40000)
         assertTrue(lines.zipWithNext().all { (a, b) -> a.take(5) < b.take(5) })
         val detroit = ZipTable.find(lines, "48201")!!

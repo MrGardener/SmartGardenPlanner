@@ -1,3 +1,8 @@
+zip_data.txt — one line per US ZIP code: zip|latitude|longitude|state|hardiness zone (sorted by ZIP).
+A field is empty when that source has no value for the ZIP. Merged from the two sources below on 2026-09-28;
+no values were changed.
+
+=== Latitude, longitude, state ===
 zip_locations.txt — US ZIP code approximate centres (zip|latitude|longitude|state), 42,249 entries.
 
 Derived from the "zipcodes" package version 8.0.0 (https://github.com/davglass/zipcodes), whose US data
@@ -29,3 +34,17 @@ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR B
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
+
+=== Hardiness zone ===
+zip_zones.txt — USDA plant hardiness zone for each ZIP code (zip|zone), 40,502 entries
+(contiguous US 39,921; Alaska 272; Hawaii 133; Puerto Rico 176).
+
+Source: 2023 USDA Plant Hardiness Zone Map, ZIP code tables (phzm_us/ak/hi/pr_zipcode_2023.csv),
+by the PRISM Climate Group, Oregon State University, for the USDA Agricultural Research Service.
+Supplied by the project owner on 2026-09-27; merged without changes to zone values (only zip|zone kept).
+
+Suggested citation: USDA Plant Hardiness Zone Map, 2023. Agricultural Research Service, U.S. Department of
+Agriculture. Accessed from https://planthardiness.ars.usda.gov/. Data by the PRISM Climate Group,
+Oregon State University.
+
+Note: a ZIP's zone is its representative value; zones can vary within a ZIP code area (elevation, water).

@@ -4,9 +4,10 @@ package com.example.smartgardenplanner.core
 data class ZipLocation(val zip: String, val latitude: Double, val longitude: Double, val state: String)
 
 /**
- * Offline ZIP → location lookup over the bundled table `assets/zip_locations.txt`: one line per ZIP,
- * "zip|lat|lon|state", sorted by ZIP. Data: "zipcodes" package by Dav Glass (BSD licence), from the free
- * federalgovernmentzipcodes.us database; see assets/NOTICE_zip_locations.txt.
+ * Offline ZIP lookups over the one bundled ZIP table `assets/zip_data.txt`: one line per ZIP,
+ * "zip|lat|lon|state|zone", sorted by ZIP, a field empty when its source has no value. Location: "zipcodes" package
+ * by Dav Glass (BSD licence), from the free federalgovernmentzipcodes.us database; zone: 2023 USDA/PRISM ZIP tables.
+ * See assets/NOTICE_zip_data.txt.
  */
 object ZipTable {
 
@@ -25,11 +26,11 @@ object ZipTable {
     fun find(sortedLines: List<String>, zip: String): ZipLocation? = findLine(sortedLines, zip)?.let { parseLine(it) }
 
     /**
-     * Hardiness zone from the bundled 2023 USDA/PRISM table `assets/zip_zones.txt` ("zip|zone", sorted by ZIP;
-     * see assets/NOTICE_zip_zones.txt). Returns null when the ZIP isn't listed or the value isn't a valid zone.
+     * Hardiness zone (2023 USDA/PRISM) from the ZIP table: the 5th field of "zip|lat|lon|state|zone" (or the 2nd of a
+     * "zip|zone" line). Returns null when the ZIP isn't listed or the value isn't a valid zone.
      */
     fun findZone(sortedLines: List<String>, zip: String): String? =
-        findLine(sortedLines, zip)?.split("|")?.getOrNull(1)?.trim()?.takeIf { HardinessZones.number(it) != null && (it.endsWith("a") || it.endsWith("b")) }
+        findLine(sortedLines, zip)?.split("|")?.let { f -> if (f.size >= 5) f[4] else f.getOrNull(1) }?.trim()?.takeIf { HardinessZones.number(it) != null && (it.endsWith("a") || it.endsWith("b")) }
 
     private fun findLine(sortedLines: List<String>, zip: String): String? {
         if (!isValidZip(zip)) return null
