@@ -1,5 +1,7 @@
 package sgp.web
 
+import com.example.smartgardenplanner.core.Numbers
+import com.example.smartgardenplanner.core.ZipTable
 import com.example.smartgardenplanner.core.AutoPlanner
 import com.example.smartgardenplanner.core.HardinessZones
 import com.example.smartgardenplanner.core.PlantHeights
@@ -141,21 +143,27 @@ object Dialogs {
         modal(if (existing == null) "New plot" else "Plot details", body, listOf(
             "Cancel" to { true },
             (if (existing == null) "Create plot" else "Save") to save@{
-                val l = length.value.toFloatOrNull(); val w = width.value.toFloatOrNull()
+                val l = Numbers.parse(length.value); val w = Numbers.parse(width.value)
                 if (name.value.isBlank()) { App.status("Give the plot a name."); return@save false }
                 if (l == null || w == null || l < 0.5f || w < 0.5f || l > 1000f || w > 1000f) { App.status("Length and width must be between 0.5 and 1000 m."); return@save false }
-                val s = sand.value.toFloatOrNull(); val si = silt.value.toFloatOrNull(); val c = clay.value.toFloatOrNull()
+                val zipText = zip.value.trim()
+                if (zipText.isNotEmpty() && !ZipTable.isValidZip(zipText)) { App.status("Enter a 5-digit ZIP code, or leave it empty."); return@save false }
+                val s = Numbers.parse(sand.value); val si = Numbers.parse(silt.value); val c = Numbers.parse(clay.value)
+                if (listOf(s, si, c).count { it != null } in 1..2) { App.status("Enter all three of sand, silt and clay, or none."); return@save false }
                 if (s != null && si != null && c != null) {
                     com.example.smartgardenplanner.core.SoilAnalyzer.validateTexture(s, si, c)?.let { App.status(it); return@save false }
                 }
+                val org = Numbers.parse(organic.value); val phV = Numbers.parse(ph.value)
+                if (org != null && org !in 0f..100f) { App.status("Organic matter must be 0–100 %."); return@save false }
+                if (phV != null && phV !in 3f..10f) { App.status("pH must be between 3 and 10."); return@save false }
                 val base = existing ?: PlotEntity(name = "", lengthM = l, widthM = w)
                 val updated = base.copy(
                     name = name.value.trim(), lengthM = l, widthM = w,
-                    locationZip = zip.value.trim().ifBlank { null }, hardinessZone = zone.value.ifBlank { null },
+                    locationZip = zipText.ifBlank { null }, hardinessZone = zone.value.ifBlank { null },
                     latitude = lat, longitude = lon,
                     northBearingDeg = bearing ?: base.northBearingDeg, orientationSet = bearing != null || base.orientationSet,
                     soilSandPct = s, soilSiltPct = si, soilClayPct = c,
-                    soilOrganicPct = organic.value.toFloatOrNull(), soilPh = ph.value.toFloatOrNull(),
+                    soilOrganicPct = org, soilPh = phV,
                     pests = com.example.smartgardenplanner.core.Pest.encode(chosenPests),
                     address = address.value.trim().take(200).ifBlank { null }
                 )
@@ -206,18 +214,21 @@ object Dialogs {
         val actions = mutableListOf<Pair<String, () -> Boolean>>("Cancel" to { true })
         if (!isNew) actions += "Delete" to { Store.change { wp -> wp.features = wp.features.filter { it.id != entity.id } }; Canvas.selection = null; App.render(); true }
         actions += (if (isNew) "Add" else "Save") to save@{
-            val hgt = height.value.toFloatOrNull() ?: 0f
-            if (t.isBarrier && (hgt <= 0f || hgt > 150f)) { App.status("Height must be between 0 and 150 m."); return@save false }
+            val hgt = Numbers.parse(height.value) ?: 0f
+            // The same limit as plan files (a taller barrier would be dropped when the file is opened again).
+            if (t.isBarrier && (hgt <= 0f || hgt > 100f)) { App.status("Enter a height between 0 and 100 m."); return@save false }
+            val gradeV = Numbers.parse(grade.value)
+            if (t == SiteFeatureType.SLOPE && gradeV != null && gradeV !in 0f..100f) { App.status("Enter a grade between 0 and 100 %."); return@save false }
             val updated = entity.copy(
                 label = labelIn.value.trim(), heightM = if (t.isBarrier) hgt else 0f,
                                 radiusM = when {
-                    t == SiteFeatureType.TREE -> (radius.value.toFloatOrNull() ?: 1f).coerceIn(0.2f, 40f)
-                    t == SiteFeatureType.SPRINKLER -> (radius.value.toFloatOrNull() ?: 3f).coerceIn(0.5f, 30f)
-                    t == SiteFeatureType.DRIP_LINE -> (radius.value.toFloatOrNull() ?: 0.3f).coerceIn(0.05f, 2f)
-                    t == SiteFeatureType.HOSE_BIB -> (radius.value.toFloatOrNull() ?: 15f).coerceIn(1f, 60f)
+                    t == SiteFeatureType.TREE -> (Numbers.parse(radius.value) ?: 1f).coerceIn(0.2f, 40f)
+                    t == SiteFeatureType.SPRINKLER -> (Numbers.parse(radius.value) ?: 3f).coerceIn(0.5f, 30f)
+                    t == SiteFeatureType.DRIP_LINE -> (Numbers.parse(radius.value) ?: 0.3f).coerceIn(0.05f, 2f)
+                    t == SiteFeatureType.HOSE_BIB -> (Numbers.parse(radius.value) ?: 15f).coerceIn(1f, 60f)
                     else -> entity.radiusM
                 },
-                slopeGradePct = if (t == SiteFeatureType.SPRINKLER) arcWidth.value.toFloat() else grade.value.toFloatOrNull() ?: 0f, slopeDirectionDeg = downhill,
+                slopeGradePct = if (t == SiteFeatureType.SPRINKLER) (Numbers.parse(arcWidth.value) ?: 360f) else gradeV ?: 0f, slopeDirectionDeg = downhill,
                 floodMonths = months.filter { it.second.checked }.joinToString(",") { it.first.toString() }
             )
             Store.change { wp ->

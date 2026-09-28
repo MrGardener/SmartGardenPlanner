@@ -97,6 +97,15 @@ object CivilDate {
     }
 }
 
+/** Numbers typed by the user (T2-VAL): spaces trimmed, a decimal comma accepted ("3,5"), NaN and infinities rejected. */
+object Numbers {
+    fun parse(text: String?): Float? {
+        val t = text?.trim() ?: return null
+        val n = if (t.count { it == ',' } == 1 && '.' !in t) t.replace(',', '.') else t
+        return n.toFloatOrNull()?.takeIf { it.isFinite() }
+    }
+}
+
 /** application/x-www-form-urlencoded encoding (same output as java.net.URLEncoder with UTF-8). */
 fun urlEncode(text: String): String {
     val sb = StringBuilder()

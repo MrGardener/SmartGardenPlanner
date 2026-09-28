@@ -52,7 +52,7 @@ object Prefs {
         get() = get("companions") != "0"
         set(v) = set("companions", if (v) "1" else "0")
     var margin: Float
-        get() = get("margin")?.toFloatOrNull() ?: 1f
+        get() = get("margin")?.toFloatOrNull()?.takeIf { it.isFinite() }?.coerceIn(0.3f, 2f) ?: 1f
         set(v) = set("margin", v.toString())
     var household: Int
         get() = get("household")?.toIntOrNull() ?: 4
@@ -198,9 +198,10 @@ object Store {
     )
 
     /** Loads a plan file (replacing what's open). Returns messages for the user; empty plots list means failure. */
-    fun load(text: String, name: String): List<String> {
+    /** Opens a plan file's text. Returns (opened, messages): a refused file leaves the open plan as it was. */
+    fun load(text: String, name: String): Pair<Boolean, List<String>> {
         val decoded = PlanFileCodec.decode(text)
-        val bundle = decoded.bundle ?: return decoded.errors
+        val bundle = decoded.bundle ?: return false to decoded.errors
         val messages = decoded.warnings.toMutableList()
         bundle.customVarieties.forEach { Catalog.addCustom(it) }
         var unknown = 0
@@ -224,7 +225,7 @@ object Store {
         preview = null
         previewMode = PreviewMode.NORMAL; rotation = emptyList(); viewSeason = null; historyYear = null
         autosave()
-        return messages
+        return true to messages
     }
 
     fun autosave() {

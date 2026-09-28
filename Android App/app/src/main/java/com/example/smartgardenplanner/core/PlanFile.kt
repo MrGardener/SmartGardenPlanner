@@ -239,7 +239,7 @@ object PlanFileCodec {
         val plots = mutableListOf<PlanPlot>()
         plotsJson!!.forEachIndexed { index, v ->
             val m = v as? Map<*, *> ?: run { warnings += "Plot ${index + 1} skipped: not an object."; return@forEachIndexed }
-            val name = m.text("name", 80)?.takeIf { it.isNotBlank() } ?: "Imported plot ${index + 1}"
+            val name = m.text("name", 200)?.takeIf { it.isNotBlank() } ?: "Imported plot ${index + 1}"
             val length = m.num("lengthM")?.toFloat()
             val width = m.num("widthM")?.toFloat()
             if (length == null || width == null || length <= 0f || width <= 0f || length > MAX_DIMENSION_M || width > MAX_DIMENSION_M) {

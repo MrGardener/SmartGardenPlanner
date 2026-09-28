@@ -3315,3 +3315,4 @@ Alternate catch-crop:	Cultivo intercalado alternativo:
 Fast-track substitute:	Sustituto rápido:
 From your garden:	De tu huerto:
 Plot area:	Superficie de la parcela:
+Enter a 5-digit ZIP code, or leave it empty.	Escribe un código postal de 5 dígitos o déjalo vacío.

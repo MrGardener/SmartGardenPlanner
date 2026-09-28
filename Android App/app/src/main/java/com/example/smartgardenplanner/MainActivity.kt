@@ -647,7 +647,7 @@ fun CreatorScreen(
         ) {
             OutlinedTextField(
                 value = plotName,
-                onValueChange = { newValue -> plotName = newValue },
+                onValueChange = { newValue -> plotName = newValue.take(200) },
                 label = { Text(tr("Agricultural Plot Designation Name")) },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -3077,7 +3077,7 @@ fun CanvasWorkspaceScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(tr("The copy keeps the size, direction, ZIP, soil, outline, fences, buildings, trees, paths, areas and irrigation."), fontSize = 13.sp)
-                    OutlinedTextField(value = copyName, onValueChange = { copyName = it.take(80) }, label = { Text(tr("Name of the copy")) }, singleLine = true)
+                    OutlinedTextField(value = copyName, onValueChange = { copyName = it.take(200) }, label = { Text(tr("Name of the copy")) }, singleLine = true)
                     Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyPlants, onCheckedChange = { copyPlants = it }); Text(tr("Copy this season's ${nodesState.size} plants"), fontSize = 13.sp) }
                     Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = copyHistory, onCheckedChange = { copyHistory = it }); Text(tr("Copy the history (${Seasons.years(historyState).size} seasons)"), fontSize = 13.sp) }
                 }

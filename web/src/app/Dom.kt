@@ -53,6 +53,8 @@ fun button(label: String, cls: String = "btn", title: String? = null, onClick: (
 
 fun input(value: String = "", type: String = "text", placeholder: String = "", cls: String = "inp"): HTMLInputElement {
     val e = h("input", cls, attrs = mapOf("type" to type, "placeholder" to placeholder)) as HTMLInputElement
+    // Text boxes hold at most what a plan file keeps (names and addresses: 200 characters).
+    if (type == "text") e.maxLength = 200
     e.value = value
     return e
 }

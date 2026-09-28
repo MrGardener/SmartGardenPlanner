@@ -54,7 +54,7 @@ object App {
 
         val draft = Store.draft()
         if (draft != null) {
-            val msgs = Store.load(draft.first, draft.second)
+            val (_, msgs) = Store.load(draft.first, draft.second)
             if (Store.plots.isNotEmpty()) { Store.dirty = true; status("Restored your last session from this browser. Save to keep it as a file.") }
             else if (msgs.isNotEmpty()) status(msgs.first())
         }
@@ -315,8 +315,9 @@ object App {
     fun readFile(f: File, handle: dynamic = null) {
         val reader = FileReader()
         reader.onload = {
-            val msgs = Store.load(reader.result as String, f.name)
-            if (Store.plots.isEmpty()) Dialogs.message("Couldn't open ${f.name}", msgs.ifEmpty { listOf("The file has no plots.") })
+            val (opened, msgs) = Store.load(reader.result as String, f.name)
+            // A refused file leaves the open plan untouched and says why (it used to report "Opened" and hide the reason).
+            if (!opened || Store.plots.isEmpty()) Dialogs.message("Couldn't open ${f.name}", msgs.ifEmpty { listOf("The file has no plots.") })
             else {
                 Store.fileHandle = handle
                 Canvas.selection = null

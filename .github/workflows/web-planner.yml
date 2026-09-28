@@ -59,6 +59,9 @@ jobs:
           npm install --no-save --no-package-lock playwright@1
           npx playwright install --with-deps chromium
           SGP_SHOTS="$RUNNER_TEMP" node tests/smoke.mjs
+      - name: Adversarial browser tests (bad input, hostile files, undo storm, random monkey run)
+        working-directory: web
+        run: node tests/adversarial.mjs
       - name: Spanish coverage (no English sentences left on the main screens)
         working-directory: web
         run: node tests/i18n_coverage.mjs
