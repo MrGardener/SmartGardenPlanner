@@ -240,8 +240,9 @@ For when you know *what* you want but not *where*.
    - **Organized clumps (recommended):** each crop is a small block of rows and columns at its own spacing (20 corn
      = 4 rows of 5; 7 tomatoes = a row of 4 and a row of 3), with a **45 cm walkway** between crops so you can walk
      round and water with a hose. Next year the blocks can swap places.
-   - **Long rows:** crops lined up by height. Tidy, but harder to rotate: a long row of tomatoes at the back has
-     nowhere to go next year without shading the rest.
+   - **Long rows:** each crop gets its own straight rows running the full width of the area, tallest crops at the
+     back, with the same 45 cm walkway between crops. Tidy, but harder to rotate: a tall row at the back can only
+     trade places next year with a crop of similar height, or it would shade the rest. The proposal says so.
 8. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
    - Tall crops are on the side away from the midday sun (north in the northern hemisphere).
    - Sun lovers get the sunniest spots.
@@ -257,8 +258,10 @@ For when you know *what* you want but not *where*.
    - **Climbers** (pole beans, peas) are at the back, with a note to put up a trellis there.
    - **Sprawling vines** (watermelon, squash, pumpkin, cucumber, melon, sweet potato, gourds) are on the sunny side,
      with their runway toward the sun kept free (about 2 m for watermelon), shown by a **green arrow**. Guide the
-     runners that way. A runway never runs over other plants, over another vine's runway (so two squash blocks
-     don't grow into each other), past the edge of the plot, or along a fence, wall or building.
+     runners that way. A runway is only used when it is **completely free**: no plants on it, not over another
+     vine's runway (so two squash blocks don't grow into each other), not past the edge of the plot and not along a
+     fence, wall or building. If there's no free ground left for a vine's runners, the card says which vine, so you
+     can choose a bigger area, fewer plants, or grow that vine up a trellis.
    - A crop that doesn't get along with something nearby (for example tomatoes next to potatoes) is moved to other free
      ground and kept as one block where the area allows, instead of being split or left out.
    - **See other layouts:** **Option ▶** works out another way to place the same list (crops shifted to one side or
@@ -520,8 +523,9 @@ Reach it from the Dashboard's search icon.
 Changes save immediately; the reset icon restores the defaults.
 
 - **About this planner:** the disclaimer.
-- **Language:** English or Español. The screen is rebuilt in the chosen language. Texts that aren't translated yet
-  stay in English.
+- **Language:** English or Español. The screen is rebuilt in the chosen language: menus, buttons, advice, the
+  planner's explanations, plant names and the catalog's pest and care notes. Registered variety names (for example
+  "Honey Select" or "Golden California Wonder") stay as published; plain ones such as "Mid-Season" are translated.
 - **Catalog:** Basic, Standard or Pro.
 - **Units:** meters or inches. Also switchable from the "[in]/[m]" chip on the layout header.
 - **Spacing & placement:**
@@ -575,8 +579,8 @@ see.
   you add your own screenshot. On the phone the photo is clipped to the plot rectangle and its changes aren't
   undoable.
 - **Units on the computer:** meters only (the phone can show inches).
-- **Languages:** the Spanish dictionary covers menus, tools, tabs and the planning dialogs; other texts (for example
-  plant advice and notes) still appear in English.
+- **Languages:** English and Spanish only for now. Registered variety names aren't translated. Dates show the day and
+  a short month (e.g. "12 may"). The Spanish is reviewed by the planner's tests, not yet by a native speaker.
 - **Phone:** the proposal card folds but can't be dragged; a group is chosen from a plant's details (no box select).
 - **Frost dates** are US-only (NOAA stations), from the nearest station within 250 km, without adjusting for elevation
   or local frost pockets.
@@ -584,6 +588,14 @@ see.
 ---
 
 ## Changelog
+
+- **2026-09-28 (runways, rows, Spanish):**
+  - Squash and other vines: a runway is used only when it's completely free (no plants, no other runway, inside the
+    plot, away from fences); otherwise the proposal says which vine has no free room.
+  - **Long rows** are now real rows: each crop in full-width rows, tallest at the back, with walkways.
+  - Spanish covers the whole interface: advice, the planner's explanations, plant names, and the catalog's pest and
+    care notes.
+  - The ZIP data (location, state and hardiness zone) is one table, which makes the computer planner file smaller.
 
 - **2026-09-28 (options, groups, languages):**
   - All interface text uses **US English** spelling (neighbor, color, center, meters).

@@ -1423,9 +1423,16 @@ dialog link, `planBNode` dialog (transaction + undo snapshot); Care section. ↑
 the origin. Android `drawRuler`: the number via `DistanceFormatter.metersToDisplay`, the unit suffix only at 0. ↑ HLR-RULER-010
 
 **LLR-BLK-030** `BlockPlanner`: `Rect.contains(u, v, pad)`; `cellOk` rejects cells inside a reserved runway padded by
-0.8 × r. Runway samples are bad when outside the area, inside another reserved runway, within 0.8 × r of a placed or
-existing plant, or within 0.4 m of a fence/wall/building feature (`walls`); the vine term is 3 × (free − 2 × bad) /
-samples, and −25 when bad > 30 %. ↑ HLR-BLK-030
+0.8 × r. Runway samples: `nu = ⌈(blockW + 2r) / 0.25⌉ + 1` across, `nt = ⌈runway / 0.25⌉` along (edges included); a sample
+is bad when outside the area or plot, inside another reserved runway, within a nearby plant's radius (plants filtered
+to the runway's bounding box), shaded (< 3 h, when sun is known) or within 0.4 m of a fence/wall/building (`walls`).
+Score + 3 × free / samples; any bad sample: − (200 + 100 × bad / samples) and `Found.runwayBlocked`; a kept block with a
+blocked runway adds its species to the note "There was no completely free ground for the runners of …". ↑ HLR-BLK-030
+
+**LLR-BLK-050** `BlockPlanner.LONG_ROWS` = 10; `AutoPlanner.plan(layout = ROWS)` calls `BlockPlanner.plan(…, variant =
+LONG_ROWS)`: preferred shape `fullWidthRows(remaining, ((uMax − uMin − r) / pitch) + 1)`, depth weight 10, no alternative
+shapes and no "split" note; notes "Long rows: …" and "Crop rotation with long rows: …". The former plant-by-plant row
+filler is removed. ↑ HLR-BLK-050
 
 **LLR-BLK-040** `BlockPlanner`: `rejected` = set of 5 cm grid keys; cells failing `validatePlacement` are added and
 `cellOk` skips them; when no cell of the chosen block passes, the anchor search repeats (≤ 25 tries). When the first
@@ -1462,6 +1469,15 @@ reading order. Options from `ClumpShapes.options(n)`, each checked with `problem
 
 **LLR-LANG-010** Interface string literals use US spelling (neighbor, color, center, meters, organized, gray…); the
 plan file's `"units":"metres"` and published cultivar names are unchanged. ↑ HLR-LANG-010
+
+**LLR-LANG-030** `I18n.translate`: exact → `direct` (variety "Species - Cultivar"; templates by first-3-character index,
+then last-3, then short "loose" ones, longest literal first; an identity template such as "{0} ({1})" applies only when a
+part changes; parts through `part`: numbers kept, whole, else split on "; ", ", ", " · ", " + ") → `fallback` (leading
+symbol + space, final "." or ":", sentence runs by longest matching run then single sentences, " — ", "Label: rest",
+all-translated comma list); results memoized (cleared at 20,000). Dictionary `assets/i18n/es.txt`: about 3,270 entries
+incl. 323 species (and lower-case forms), 322 care notes, pest items, generic cultivar words and label combinations.
+Web `window.sgpTranslate(code, texts)` for `tests/i18n_coverage.mjs` (CI step). Android: every `Text(…)` argument goes
+through `tr()`. Test `SpanishDictionaryTest`. ↑ HLR-LANG-030
 
 **LLR-LANG-020** `I18n` (core): `LANGUAGES` (en, es), `parse(lines)`, `use(code, dict)` (exact map + regex templates,
 longest first), `tr(text)`, `coverage(texts)`. Dictionaries: `assets/i18n/<code>.txt`, embedded in the web page as
@@ -1576,12 +1592,13 @@ shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° sli
 bearing −northBearingDeg (red, labeled "N"), gray and labeled "N?" when `orientationSet` is false, and show the
 tappable warning text in the plot header while it is false. ↑ HLR-ORNT-020
 
-**LLR-ORNT-030** `ZipLookup.location` shall binary-search the bundled `zip_locations.txt` (lines "zip|lat|lon|state",
-sorted by ZIP, loaded once) with `ZipTable.find`. `ZipLookup.zone` shall return, in order: the zone from the
-bundled `zip_zones.txt` ("zip|zone", 40,502 ZIPs from the 2023 USDA/PRISM tables, sorted, loaded once) via
+**LLR-ORNT-030** `ZipLookup.location` shall binary-search the one bundled ZIP table `zip_data.txt` (lines
+"zip|lat|lon|state|zone", 42,277 ZIPs sorted by ZIP, a field empty where its source has no value, loaded once; merged
+2026-09-28 from the former location and zone files, values unchanged) with `ZipTable.find`. `ZipLookup.zone` shall
+return, in order: the zone from the same table (5th field, 40,502 ZIPs from the 2023 USDA/PRISM tables) via
 `ZipTable.findZone`; the starter climate table's zone; else, only when Online features are on, the result of
-`NetworkGateway` with `OnlineData.zoneUrl(zip)`. Only zones `1a`–`13b` are accepted. The data files are checked
-by `ZipDataTest` (sorted, well-formed, 40,502 entries, published zones for sample ZIPs). ↑ HLR-ORNT-030
+`NetworkGateway` with `OnlineData.zoneUrl(zip)`. Only zones `1a`–`13b` are accepted. The table is checked
+by `ZipDataTest` (sorted, well-formed, 42,277 lines, 40,502 zones, published zones for sample ZIPs). ↑ HLR-ORNT-030
 
 **LLR-OBST-010** `SiteFeatureDialog` shall show Move for existing features. After Move, the next tap in a site
 tool mode calls `moveSiteFeature`, which translates all points by (tap − anchor), with the translation clamped so
@@ -1623,8 +1640,8 @@ plants, paths and site features with the new plot id. Any exception rolls back e
 **LLR-WEB-010** `web/build.sh` shall compile every `core/*.kt` file except `AgriculturalIsolationEngine.kt`,
 `CameraCaptureManager.kt` and the JVM `PlatformClock.kt`, together with `web/src/platform` (browser clock, Room
 annotation stubs) and `web/src/app`, with the Kotlin 2.2.10 JS compiler (ES2015, dead-code elimination), and
-`web/tools/bundle.py` shall inline the styles, the compiled script and the Pro seed catalog, `zip_zones.txt` and
-`zip_locations.txt` (as `<script type="text/plain">` blocks) into `web/dist/smart-garden-planner.html`, failing if
+`web/tools/bundle.py` shall inline the styles, the compiled script and the Pro seed catalog, `zip_data.txt`,
+`frost_stations.txt` and the dictionaries (as `<script type="text/plain">` blocks) into `web/dist/smart-garden-planner.html`, failing if
 a data file contains `</script`. The page shall load nothing from the network. ↑ HLR-PORT-030
 
 **LLR-WEB-020** `Store.encode`/`Store.load` shall use `PlanFileCodec.encode`/`decode`. Loading replaces the open
@@ -1872,6 +1889,7 @@ Generated by script from the `↑` links above.
 | HLR-PLANB-010 | Active | LLR-PLANB-060 |
 | HLR-RULER-010 | Active | LLR-RULER-010 |
 | HLR-BLK-030 | Active | LLR-BLK-030 |
+| HLR-BLK-050 | Active | LLR-BLK-050 |
 | HLR-BLK-040 | Active | LLR-BLK-040 |
 | HLR-OPT-010 | Active | LLR-OPT-010 |
 | HLR-KEEP-010 | Active | LLR-KEEP-010 |
@@ -1880,6 +1898,7 @@ Generated by script from the `↑` links above.
 | HLR-GRP-020 | Active | LLR-GRP-020 |
 | HLR-GRP-030 | Active | LLR-GRP-030 |
 | HLR-LANG-010 | Active | LLR-LANG-010 |
+| HLR-LANG-030 | Active | LLR-LANG-030 |
 | HLR-LANG-020 | Active | LLR-LANG-020 |
 | HLR-SWAP-010 | Active | LLR-SWAP-010 |
 | HLR-LEG-010 | Active | LLR-LEG-010 |
@@ -1910,8 +1929,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **300**. Duplicate LLR IDs: **0**.
-- HLRs: 213 (205 active, 7 future, 1 suspended).
+- LLRs: **302**. Duplicate LLR IDs: **0**.
+- HLRs: 215 (207 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

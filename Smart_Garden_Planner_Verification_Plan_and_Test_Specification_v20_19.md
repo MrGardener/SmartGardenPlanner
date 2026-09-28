@@ -16901,6 +16901,8 @@ SGP-DWR-001). They are listed so the gaps are visible.
 | T2-FUN-430 Plan B | SeasonPlanBSunTest.planBOffersFasterVarietiesThatCatchUpWithTheSurvivors | "Plan B suggests replacements", "Plan B shows days to harvest and timing", "Plan B replaced the lost plant", "undo reverts Plan B" | inspection |
 | T2-FUN-140 (ruler units) | — (UI) | "ruler ticks show numbers only, unit once" | inspection |
 | T2-FUN-240 (antagonist retry, vine runways) | OptionsGroupsI18nTest.tomatoesFindRoomAwayFromTheirAntagonist_inOneBlock, vinesKeepTheirRunwayClearOfOtherPlantsAndFences | (proposal) | inspection |
+| T2-FUN-240 (strict runways, long rows) | RunwaysAndRowsTest.runwaysNeverCrossPlantsOtherRunwaysOrThePlotEdge_inEveryLayout, longRowsAreRealRowsWithWalkways | (proposal) | inspection |
+| T2-FUN-480 (complete Spanish) | SpanishDictionaryTest.plannerNotesForTheOwnersListComeOutInSpanish, namesListsBulletsAndDates | tests/i18n_coverage.mjs (CI: no English sentence left on the main screens) | native-speaker review (I18N_PLAN) |
 | T2-FUN-440 Several layouts | OptionsGroupsI18nTest.severalDifferentLayoutsAreOffered | "proposal shows option 1 with its summary", "Option ▶ shows another layout", "◀ Option goes back" | inspection (phone) |
 | T2-FUN-450 Keep or replace | — (UI) | "plan dialog asks to keep or replace the plants there", "proposal warns how many plants it replaces", "nothing is removed before the plan is kept", "blank area: new plan replaced the old plants", "one undo brings the replaced plants back" | inspection (phone) |
 | T2-FUN-460 Proposal card out of the way | — (UI) | "proposal card can be dragged out of the way", "proposal card folds to its header" | inspection (phone) |

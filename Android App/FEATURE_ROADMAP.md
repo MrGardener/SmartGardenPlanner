@@ -151,9 +151,12 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-059 | Vine runways kept clear | Runways don't cross other plants, other runways, the plot edge or fences/walls/buildings. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
 | FR-060 | Several layouts before keeping | ◀ Option / Option ▶ through up to 11 distinct layouts, each with a summary. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-061 | Move and rearrange a whole group | Select a clump (or box-select on the computer), move it, or re-lay it as other rows × columns; rotation plans follow. | All | FR-047 | **Implemented — Awaiting Your Confirmation** |
-| FR-062 | Interface languages, US spelling | US English everywhere; language menu with swappable dictionaries; Spanish started. | All | — | **Partly implemented — Spanish dictionary in progress** |
+| FR-062 | Interface languages, US spelling | US English everywhere; language menu with swappable dictionaries; complete Spanish (advice, notes, plant names included). | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-063 | Keep or replace existing plants | When planning over plants (or Change selections): keep and plan around them, or start blank. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-064 | Proposal card movable and foldable | Fold to the title (both); drag by the title (computer). | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-065 | Vine runways strictly free | Fix: a runway is used only when free of plants, other runways, the plot edge and fences; otherwise the proposal names the vine. | All | FR-059 | **Implemented — Awaiting Your Confirmation** |
+| FR-066 | Real long rows | Long rows rebuilt: full-width rows per crop, tallest at the back, walkways; replaces the plant-by-plant filler that crammed crops together. | All | FR-032 | **Implemented — Awaiting Your Confirmation** |
+| FR-067 | One ZIP table | ZIP location, state and hardiness zone in one file (zip_data.txt); planner file about 240 KB smaller before the dictionary. | All | FR-028 | **Implemented — Awaiting Your Confirmation** |
 | FR-046 | Satellite photo under the plot | Open Google Maps (satellite) for the address, add a screenshot, set scale from two points, move, turn, see-through, hide, remove; in plan files and duplicates. | All | FR-002, FR-006 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
@@ -259,6 +262,12 @@ This is a proposal, not a commitment — reorder however matters most to you.
 ---
 
 ## Change Log for This Document
+
+- **2026-09-28 (runways, rows, Spanish, ZIP table)**: Squash runways still crossed other squash and ran past the plot
+  edge, because a runway up to 30 % blocked was only mildly penalized; runways must now be completely free (FR-065).
+  "Long rows" was the original plant-by-plant filler from before organized clumps, which crammed crops together; it is
+  now real full-width rows (FR-066). Spanish completed, including advice, notes and plant names (FR-062). ZIP data
+  merged into one table at the owner's suggestion (FR-067).
 
 - **2026-09-28 (options, groups, languages)**: Tomatoes weren't placed although there was room (a failed antagonist
   check wasn't retried elsewhere, FR-058); vine runways could cross other squash or run along fences (FR-059). Added

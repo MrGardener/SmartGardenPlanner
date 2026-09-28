@@ -300,8 +300,11 @@ between blocks so every plant can be reached and watered with a hose, keep climb
 midday sun (for a trellis), and put sprawling vines (e.g. watermelon, squash, pumpkin, cucumber) at the sunny side
 with free, sunny ground reserved toward the sun for their runners, shown on the proposal, so they don't grow into
 other crops looking for light. A runway shall not run over other plants (including other vines' runways), past the
-plot edge, or along a fence, wall or building (FR-059, 2026-09-28), and a crop whose antagonists are near shall still be
-placed as one block wherever the remaining space allows (FR-058).
+plot edge, or along a fence, wall or building (FR-059, 2026-09-28; made strict 2026-09-28 after the owner's report of
+squash runways over other squash and past the plot edge: a runway is used only when completely free, otherwise the
+proposal says which vines lack free ground), and a crop whose antagonists are near shall still be placed as one block
+wherever the remaining space allows (FR-058). "Long rows", when chosen, shall be real rows: each crop in full-width rows
+across the area, tallest at the back, with the same walkway between crops (FR-066).
 Parent: owner request 2026-09-27 (FR-035) · Safety: FC-18 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
@@ -457,8 +460,11 @@ interface language shall be chosen from a list (computer: header menu; phone: Se
 from a replaceable dictionary for that language, and any text without an entry shall appear in US English. Variety and
 cultivar names stay as published. Adding a language shall need only a new dictionary file.
 Parent: owner request 2026-09-28 (FR-062) · Safety: FC-29 · Verify: Test + Inspection · Status: Proposed
-**Now:** PART — dictionary mechanism on both, Spanish dictionary started (menus, tools, planning dialogs); remaining
-texts appear in English (see docs/I18N_PLAN.md).
+**Now:** IMPL (2026-09-28, owner request: "we should not have a word in English when using a Spanish or any other
+dictionary"): the Spanish dictionary covers the interface, advice, planner notes, catalog species, pest and care notes;
+text built at run time (lists, bullets, several sentences, dates) is translated piece by piece; cultivar names that are
+registered names stay as published. A coverage check in CI fails if an English sentence is left on the main screens
+(see docs/I18N_PLAN.md).
 
 ### T2-FUN-360 — Replace all plants of a variety (NEW 2026-09-27)
 **Statement:** From the list of what's on the plot, the user shall be able to change every plant of one variety to
