@@ -19,3 +19,5 @@ jobs:
           python-version: "3.12"
       - name: Check T2 -> HLR -> LLR trace
         run: python3 tools/req_trace.py --check
+      - name: Check LLR -> test case -> test / procedure trace
+        run: python3 tools/tc_trace.py --check

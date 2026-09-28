@@ -184,7 +184,8 @@ object BackupPlanner {
      * @param plantedDay day of year the original was planted; @param today day of year now;
      * @param season frost data (null = no frost limit known).
      */
-    fun options(original: SeedEntity, plantedDay: Int, today: Int, catalog: List<SeedEntity>, season: Season?, limit: Int = 6): List<BackupOption> {
+    fun options(original: SeedEntity, plantedDay: Int, today: Int, catalog: List<SeedEntity>, season: Season?, limitIn: Int = 6): List<BackupOption> {
+        val limit = limitIn.coerceAtLeast(0)   // a negative limit made take() throw
         val targetReady = plantedDay + original.daysToHarvest
         val frostLimit = season?.takeIf { !it.frostFree }?.firstFrost
         val daysLeft = targetReady - today

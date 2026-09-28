@@ -227,7 +227,7 @@ object PlanFileCodec {
                 antagonistCodes = m.text("antagonists", 400) ?: "",
                 pestNotes = m.text("pests", 500) ?: "",
                 careNotes = m.text("care", 500) ?: "",
-                colorHex = m.text("colorHex", 9)?.takeIf { Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$").matches(it) },
+                colorHex = m.text("colorHex", 20)?.takeIf { Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$").matches(it) },
                 plantType = m.text("plantType", 20)?.takeIf { it in setOf("VEGETABLE", "FRUIT", "HERB", "FLOWER", "ORNAMENTAL") } ?: "VEGETABLE",
                 lifecycle = if (m.text("lifecycle", 20) == "PERENNIAL") "PERENNIAL" else "ANNUAL",
                 hardinessZoneMin = m.num("zoneMin")?.toInt()?.coerceIn(1, 13) ?: 3,
@@ -272,7 +272,7 @@ object PlanFileCodec {
                 hardinessZone = location?.text("hardinessZone", 4)?.takeIf { HardinessZones.isValid(it) },
                 latitude = lat,
                 longitude = lon,
-                northBearingDeg = (orientation?.num("topFacesDeg")?.toFloat() ?: 0f).let { ((it % 360f) + 360f) % 360f },
+                northBearingDeg = (orientation?.num("topFacesDeg")?.toFloat()?.takeIf { it.isFinite() } ?: 0f).let { ((it % 360f) + 360f) % 360f },
                 orientationSet = orientation?.get("set") == true,
                 soilSandPct = pct("sandPct"), soilSiltPct = pct("siltPct"), soilClayPct = pct("clayPct"),
                 soilOrganicPct = pct("organicPct"),
@@ -316,11 +316,13 @@ object PlanFileCodec {
                 }
             }
 
+            var badFeatures = 0
             val features = (m["siteFeatures"] as? List<*>).orEmpty().take(MAX_ITEMS_PER_PLOT).mapNotNull { fv ->
                 val fm = fv as? Map<*, *> ?: return@mapNotNull null
                 val type = SiteFeatureType.of(fm.text("type", 20) ?: "") ?: return@mapNotNull null
-                val pts = readPoints(fm["points"]) ?: return@mapNotNull null
-                                val needed = when { type.isArea -> 3; type == SiteFeatureType.TREE || type == SiteFeatureType.SPRINKLER || type == SiteFeatureType.HOSE_BIB -> 1; else -> 2 }
+                // Every point must be inside the plot, as when it is drawn (a tree at 500 m on an 8 m plot was accepted).
+                val pts = readPoints(fm["points"])?.takeIf { it.all(::inside) } ?: return@mapNotNull null.also { badFeatures++ }
+                val needed = when { type.isArea -> 3; type == SiteFeatureType.TREE || type == SiteFeatureType.SPRINKLER || type == SiteFeatureType.HOSE_BIB -> 1; else -> 2 }
                 if (pts.size < needed) return@mapNotNull null
                 val height = fm.num("heightM")?.toFloat() ?: 0f
                 if (type.isBarrier && (height <= 0f || height > 100f)) return@mapNotNull null
@@ -329,12 +331,13 @@ object PlanFileCodec {
                     label = fm.text("label", 40) ?: "",
                     heightM = height.coerceIn(0f, 100f),
                                         radiusM = (fm.num("radiusM")?.toFloat() ?: 0f).coerceIn(0f, 60f),
-                    slopeDirectionDeg = (((if (type == SiteFeatureType.SPRINKLER) fm.num("arcCentreDeg") else fm.num("slopeDirectionDeg"))?.toFloat() ?: 0f) % 360f + 360f) % 360f,
+                    slopeDirectionDeg = (((if (type == SiteFeatureType.SPRINKLER) fm.num("arcCentreDeg") else fm.num("slopeDirectionDeg"))?.toFloat()?.takeIf { it.isFinite() } ?: 0f) % 360f + 360f) % 360f,
                     slopeGradePct = if (type == SiteFeatureType.SPRINKLER) (fm.num("arcWidthDeg")?.toFloat() ?: 360f).coerceIn(10f, 360f)
                         else (fm.num("slopeGradePct")?.toFloat() ?: 0f).coerceIn(0f, 100f),
                     floodMonths = (fm["floodMonths"] as? List<*>).orEmpty().mapNotNull { (it as? Number)?.toInt()?.takeIf { mo -> mo in 1..12 } }.joinToString(",")
                 )
             }
+            if (badFeatures > 0) warnings += "Plot '$name': $badFeatures site feature(s) skipped (outside the plot)."
             val historyJson = (m["history"] as? List<*>).orEmpty()
             if (historyJson.size > MAX_HISTORY_PER_PLOT) warnings += "Plot '$name': only the first $MAX_HISTORY_PER_PLOT of ${historyJson.size} past plantings were read."
             var badHistory = 0

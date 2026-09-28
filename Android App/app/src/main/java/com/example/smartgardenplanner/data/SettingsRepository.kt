@@ -74,7 +74,7 @@ class SettingsRepository(private val repository: SecurityRepository) {
             showPlantLabels = boolOrDefault(Keys.PLANT_LABELS, defaults.showPlantLabels),
             disclaimerAccepted = boolOrDefault(Keys.DISCLAIMER, defaults.disclaimerAccepted),
             language = repository.fetchConfig(Keys.LANGUAGE)?.configValue ?: defaults.language
-        )
+        ).sanitized()
     }
 
     suspend fun save(settings: AppSettings) {

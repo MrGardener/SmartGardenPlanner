@@ -134,6 +134,7 @@ object AutoPlanner {
         history: List<PlantingHistoryEntity> = emptyList(), seasonYear: Int = Seasons.thisYear(), count: Int = 8
     ): List<PlanOption> {
         val ctx = context.forPlanning()
+        val wanted = count.coerceIn(1, 10)   // 0 or a negative count gave no layout at all
         val out = mutableListOf<PlanOption>()
         val seen = HashSet<String>()
         fun add(label: String, r: AutoPlanResult) {
@@ -143,11 +144,11 @@ object AutoPlanner {
             out += PlanOption(label, r, r.placed.size, sun, r.notes.count { it.contains(" groups (") })
         }
         for (v in VARIANT_LABELS.indices) {
-            if (out.size >= count) break
+            if (out.size >= wanted) break
             add(VARIANT_LABELS[v], plan(ctx, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.CLUMPS, history = history, seasonYear = seasonYear, variant = v))
         }
-        if (out.size < count) add("Long rows", plan(ctx, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.ROWS, history = history, seasonYear = seasonYear))
-        return out.take(count.coerceIn(1, 10))
+        if (out.size < wanted) add("Long rows", plan(ctx, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.ROWS, history = history, seasonYear = seasonYear))
+        return out.take(wanted)
     }
 
 

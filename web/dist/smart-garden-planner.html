@@ -53054,6 +53054,7 @@ Plot '{0}': its satellite photo was missing, too large or not an image, and was 
 Plot '{0}': only the first {1} of {2} past plantings were read.	Parcela «{0}»: solo se leyeron las primeras {1} de {2} plantaciones pasadas.
 Plot '{0}': only the first {1} of {2} plants were read.	Parcela «{0}»: solo se leyeron las primeras {1} de {2} plantas.
 Plot '{0}': {1} past planting(s) skipped (invalid season, variety or position).	Parcela «{0}»: se omitieron {1} plantación(es) pasada(s) (temporada, variedad o posición no válida).
+Plot '{0}': {1} site feature(s) skipped (outside the plot).	Parcela «{0}»: se omitieron {1} elemento(s) del terreno (fuera de la parcela).
 Plot '{0}': {1} plant(s) skipped (missing variety or outside the plot).	Parcela «{0}»: se omitieron {1} planta(s) (falta la variedad o están fuera de la parcela).
 Plot Layout Size: {0} × {1}	Tamaño del plano: {0} × {1}
 Plot area: {0} m²	Superficie de la parcela: {0} m²
@@ -55215,6 +55216,17 @@ if (typeof Array.prototype.fill === 'undefined') {
     Object.defineProperty(TypedArray.prototype, 'fill', {value: Array.prototype.fill});
   }
 });
+if (typeof Math.clz32 === 'undefined') {
+  Math.clz32 = function (log, LN2) {
+    return function (x) {
+      var asUint = x >>> 0;
+      if (asUint === 0) {
+        return 32;
+      }
+      return 31 - (log(asUint) / LN2 | 0) | 0; // the "| 0" acts like math.floor
+    };
+  }(Math.log, Math.LN2);
+}
 if (typeof Math.hypot === 'undefined') {
   Math.hypot = function () {
     var y = 0;
@@ -55228,16 +55240,11 @@ if (typeof Math.hypot === 'undefined') {
     return Math.sqrt(y);
   };
 }
-if (typeof Math.clz32 === 'undefined') {
-  Math.clz32 = function (log, LN2) {
-    return function (x) {
-      var asUint = x >>> 0;
-      if (asUint === 0) {
-        return 32;
-      }
-      return 31 - (log(asUint) / LN2 | 0) | 0; // the "| 0" acts like math.floor
-    };
-  }(Math.log, Math.LN2);
+if (typeof String.prototype.startsWith === 'undefined') {
+  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
+    position = position || 0;
+    return this.lastIndexOf(searchString, position) === position;
+  }});
 }
 if (typeof String.prototype.endsWith === 'undefined') {
   Object.defineProperty(String.prototype, 'endsWith', {value: function (searchString, position) {
@@ -55248,12 +55255,6 @@ if (typeof String.prototype.endsWith === 'undefined') {
     position -= searchString.length;
     var lastIndex = subjectString.indexOf(searchString, position);
     return lastIndex !== -1 && lastIndex === position;
-  }});
-}
-if (typeof String.prototype.startsWith === 'undefined') {
-  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
-    position = position || 0;
-    return this.lastIndexOf(searchString, position) === position;
   }});
 }
 //endregion
@@ -56941,18 +56942,6 @@ class IndexOutOfBoundsException extends RuntimeException {
     return $this;
   }
 }
-class ConcurrentModificationException extends RuntimeException {
-  static new_kotlin_ConcurrentModificationException_fy07nh_k$() {
-    var $this = this.new_kotlin_RuntimeException_29f9zq_k$();
-    init_kotlin_ConcurrentModificationException($this);
-    return $this;
-  }
-  static new_kotlin_ConcurrentModificationException_snpq2y_k$(message) {
-    var $this = this.new_kotlin_RuntimeException_xu1s8h_k$(message);
-    init_kotlin_ConcurrentModificationException($this);
-    return $this;
-  }
-}
 class ArithmeticException extends RuntimeException {
   static new_kotlin_ArithmeticException_t7nj4q_k$() {
     var $this = this.new_kotlin_RuntimeException_29f9zq_k$();
@@ -56962,6 +56951,18 @@ class ArithmeticException extends RuntimeException {
   static new_kotlin_ArithmeticException_y2sjkx_k$(message) {
     var $this = this.new_kotlin_RuntimeException_xu1s8h_k$(message);
     init_kotlin_ArithmeticException($this);
+    return $this;
+  }
+}
+class ConcurrentModificationException extends RuntimeException {
+  static new_kotlin_ConcurrentModificationException_fy07nh_k$() {
+    var $this = this.new_kotlin_RuntimeException_29f9zq_k$();
+    init_kotlin_ConcurrentModificationException($this);
+    return $this;
+  }
+  static new_kotlin_ConcurrentModificationException_snpq2y_k$(message) {
+    var $this = this.new_kotlin_RuntimeException_xu1s8h_k$(message);
+    init_kotlin_ConcurrentModificationException($this);
     return $this;
   }
 }
@@ -64628,7 +64629,8 @@ class BackupPlanner {
     BackupPlanner_instance = this;
     this.DAY_MS_1 = new Long(86400000, 0);
   }
-  options_mzhd7u_k$(original, plantedDay, today, catalog, season, limit) {
+  options_mzhd7u_k$(original, plantedDay, today, catalog, season, limitIn) {
+    var limit = coerceAtLeast(limitIn, 0);
     var targetReady = plantedDay + original.daysToHarvest_1 | 0;
     var tmp;
     if (season == null) {
@@ -64706,9 +64708,9 @@ class BackupPlanner {
     }
     return take(out, limit);
   }
-  options$default_9hbiox_k$(original, plantedDay, today, catalog, season, limit, $super) {
-    limit = limit === VOID ? 6 : limit;
-    return $super === VOID ? this.options_mzhd7u_k$(original, plantedDay, today, catalog, season, limit) : $super.options_mzhd7u_k$.call(this, original, plantedDay, today, catalog, season, limit);
+  options$default_9hbiox_k$(original, plantedDay, today, catalog, season, limitIn, $super) {
+    limitIn = limitIn === VOID ? 6 : limitIn;
+    return $super === VOID ? this.options_mzhd7u_k$(original, plantedDay, today, catalog, season, limitIn) : $super.options_mzhd7u_k$.call(this, original, plantedDay, today, catalog, season, limitIn);
   }
   planAhead_5n0yaq_k$(planted, catalog, season, perSpecies) {
     // Inline function 'kotlin.collections.distinctBy' call
@@ -67026,7 +67028,7 @@ class PlanFileCodec {
         var tmp_17 = tmp16_elvis_lhs == null ? '' : tmp16_elvis_lhs;
         var tmp17_elvis_lhs = text(PlanFileCodec_instance, m, 'care', 500);
         var tmp_18 = tmp17_elvis_lhs == null ? '' : tmp17_elvis_lhs;
-        var tmp18_safe_receiver = text(PlanFileCodec_instance, m, 'colorHex', 9);
+        var tmp18_safe_receiver = text(PlanFileCodec_instance, m, 'colorHex', 20);
         var tmp_19;
         if (tmp18_safe_receiver == null) {
           tmp_19 = null;
@@ -67274,7 +67276,7 @@ class PlanFileCodec {
         }
         var backdrop = tmp_44;
         var tmp11_elvis_lhs = text(PlanFileCodec_instance, m_0, 'description', 500);
-        var tmp30_description = tmp11_elvis_lhs == null ? '' : tmp11_elvis_lhs;
+        var tmp31_description = tmp11_elvis_lhs == null ? '' : tmp11_elvis_lhs;
         var tmp13_safe_receiver = location == null ? null : text(PlanFileCodec_instance, location, 'zip', 10);
         var tmp_51;
         if (tmp13_safe_receiver == null) {
@@ -67289,8 +67291,8 @@ class PlanFileCodec {
           }
           tmp_51 = tmp_52;
         }
-        var tmp31_locationZip = tmp_51;
-        var tmp32_boundaryJson = outlineOk ? PlotGeometry_instance.serializePoints_ourzje_k$(ensureNotNull(outline)) : null;
+        var tmp32_locationZip = tmp_51;
+        var tmp33_boundaryJson = outlineOk ? PlotGeometry_instance.serializePoints_ourzje_k$(ensureNotNull(outline)) : null;
         var tmp15_safe_receiver = location == null ? null : text(PlanFileCodec_instance, location, 'hardinessZone', 4);
         var tmp_53;
         if (tmp15_safe_receiver == null) {
@@ -67305,67 +67307,81 @@ class PlanFileCodec {
           }
           tmp_53 = tmp_54;
         }
-        var tmp33_hardinessZone = tmp_53;
+        var tmp34_hardinessZone = tmp_53;
         var tmp17_safe_receiver = orientation == null ? null : num_0(PlanFileCodec_instance, orientation, 'topFacesDeg');
-        var tmp18_elvis_lhs = tmp17_safe_receiver == null ? null : tmp17_safe_receiver;
-        // Inline function 'kotlin.let' call
-        var tmp34_northBearingDeg = ((tmp18_elvis_lhs == null ? 0.0 : tmp18_elvis_lhs) % 360.0 + 360.0) % 360.0;
+        var tmp18_safe_receiver_0 = tmp17_safe_receiver == null ? null : tmp17_safe_receiver;
         var tmp_55;
-        if (orientation == null) {
+        if (tmp18_safe_receiver_0 == null) {
           tmp_55 = null;
         } else {
-          // Inline function 'kotlin.collections.get' call
-          tmp_55 = (isInterface(orientation, KtMap) ? orientation : THROW_CCE()).get_wei43m_k$('set');
-        }
-        var tmp35_orientationSet = equals(tmp_55, true);
-        var tmp36_soilSandPct = decode$_anonymous_$pct_q2ffws(soil, 'sandPct');
-        var tmp37_soilSiltPct = decode$_anonymous_$pct_q2ffws(soil, 'siltPct');
-        var tmp38_soilClayPct = decode$_anonymous_$pct_q2ffws(soil, 'clayPct');
-        var tmp39_soilOrganicPct = decode$_anonymous_$pct_q2ffws(soil, 'organicPct');
-        var tmp21_safe_receiver_0 = soil == null ? null : num_0(PlanFileCodec_instance, soil, 'ph');
-        var tmp22_safe_receiver_0 = tmp21_safe_receiver_0 == null ? null : tmp21_safe_receiver_0;
-        var tmp_56;
-        if (tmp22_safe_receiver_0 == null) {
-          tmp_56 = null;
-        } else {
           // Inline function 'kotlin.takeIf' call
-          var tmp_57;
-          if (3.0 <= tmp22_safe_receiver_0 ? tmp22_safe_receiver_0 <= 10.0 : false) {
-            tmp_57 = tmp22_safe_receiver_0;
+          var tmp_56;
+          if (isFinite(tmp18_safe_receiver_0)) {
+            tmp_56 = tmp18_safe_receiver_0;
           } else {
-            tmp_57 = null;
+            tmp_56 = null;
           }
-          tmp_56 = tmp_57;
+          tmp_55 = tmp_56;
         }
-        var tmp40_soilPh = tmp_56;
-        var tmp24_safe_receiver_0 = location == null ? null : text(PlanFileCodec_instance, location, 'address', 200);
+        var tmp19_elvis_lhs = tmp_55;
+        // Inline function 'kotlin.let' call
+        var tmp35_northBearingDeg = ((tmp19_elvis_lhs == null ? 0.0 : tmp19_elvis_lhs) % 360.0 + 360.0) % 360.0;
+        var tmp_57;
+        if (orientation == null) {
+          tmp_57 = null;
+        } else {
+          // Inline function 'kotlin.collections.get' call
+          tmp_57 = (isInterface(orientation, KtMap) ? orientation : THROW_CCE()).get_wei43m_k$('set');
+        }
+        var tmp36_orientationSet = equals(tmp_57, true);
+        var tmp37_soilSandPct = decode$_anonymous_$pct_q2ffws(soil, 'sandPct');
+        var tmp38_soilSiltPct = decode$_anonymous_$pct_q2ffws(soil, 'siltPct');
+        var tmp39_soilClayPct = decode$_anonymous_$pct_q2ffws(soil, 'clayPct');
+        var tmp40_soilOrganicPct = decode$_anonymous_$pct_q2ffws(soil, 'organicPct');
+        var tmp22_safe_receiver_0 = soil == null ? null : num_0(PlanFileCodec_instance, soil, 'ph');
+        var tmp23_safe_receiver = tmp22_safe_receiver_0 == null ? null : tmp22_safe_receiver_0;
         var tmp_58;
-        if (tmp24_safe_receiver_0 == null) {
+        if (tmp23_safe_receiver == null) {
           tmp_58 = null;
         } else {
-          // Inline function 'kotlin.text.trim' call
-          tmp_58 = toString_1(trim(isCharSequence(tmp24_safe_receiver_0) ? tmp24_safe_receiver_0 : THROW_CCE()));
+          // Inline function 'kotlin.takeIf' call
+          var tmp_59;
+          if (3.0 <= tmp23_safe_receiver ? tmp23_safe_receiver <= 10.0 : false) {
+            tmp_59 = tmp23_safe_receiver;
+          } else {
+            tmp_59 = null;
+          }
+          tmp_58 = tmp_59;
         }
-        var tmp25_safe_receiver_0 = tmp_58;
-        var tmp_59;
+        var tmp41_soilPh = tmp_58;
+        var tmp25_safe_receiver_0 = location == null ? null : text(PlanFileCodec_instance, location, 'address', 200);
+        var tmp_60;
         if (tmp25_safe_receiver_0 == null) {
-          tmp_59 = null;
+          tmp_60 = null;
+        } else {
+          // Inline function 'kotlin.text.trim' call
+          tmp_60 = toString_1(trim(isCharSequence(tmp25_safe_receiver_0) ? tmp25_safe_receiver_0 : THROW_CCE()));
+        }
+        var tmp26_safe_receiver = tmp_60;
+        var tmp_61;
+        if (tmp26_safe_receiver == null) {
+          tmp_61 = null;
         } else {
           // Inline function 'kotlin.text.ifBlank' call
-          var tmp_60;
-          if (isBlank(tmp25_safe_receiver_0)) {
-            tmp_60 = null;
+          var tmp_62;
+          if (isBlank(tmp26_safe_receiver)) {
+            tmp_62 = null;
           } else {
-            tmp_60 = tmp25_safe_receiver_0;
+            tmp_62 = tmp26_safe_receiver;
           }
-          tmp_59 = tmp_60;
+          tmp_61 = tmp_62;
         }
-        var tmp41_address = tmp_59;
-        var tmp_61 = Companion_getInstance_13();
+        var tmp42_address = tmp_61;
+        var tmp_63 = Companion_getInstance_13();
         // Inline function 'kotlin.collections.get' call
-        var tmp_62 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('pests');
+        var tmp_64 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('pests');
         // Inline function 'kotlin.collections.orEmpty' call
-        var tmp0_elvis_lhs_3 = (!(tmp_62 == null) ? isInterface(tmp_62, KtList) : false) ? tmp_62 : null;
+        var tmp0_elvis_lhs_3 = (!(tmp_64 == null) ? isInterface(tmp_64, KtList) : false) ? tmp_64 : null;
         // Inline function 'kotlin.collections.mapNotNull' call
         var tmp0_1 = tmp0_elvis_lhs_3 == null ? emptyList() : tmp0_elvis_lhs_3;
         // Inline function 'kotlin.collections.mapNotNullTo' call
@@ -67374,8 +67390,8 @@ class PlanFileCodec {
         var _iterator__ex2g4s_2 = tmp0_1.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
           var element_12 = _iterator__ex2g4s_2.next_20eer_k$();
-          var tmp_63 = Companion_getInstance_13();
-          var tmp0_safe_receiver_0 = tmp_63.of_oqdej4_k$((!(element_12 == null) ? typeof element_12 === 'string' : false) ? element_12 : null);
+          var tmp_65 = Companion_getInstance_13();
+          var tmp0_safe_receiver_0 = tmp_65.of_oqdej4_k$((!(element_12 == null) ? typeof element_12 === 'string' : false) ? element_12 : null);
           if (tmp0_safe_receiver_0 == null)
             null;
           else {
@@ -67383,18 +67399,18 @@ class PlanFileCodec {
             destination_0.add_utx5q5_k$(tmp0_safe_receiver_0);
           }
         }
-        var tmp42_pests = tmp_61.encode_dpf1i9_k$(destination_0);
-        var tmp27_safe_receiver = backdrop == null ? null : backdrop.first_1;
-        var tmp43_backdropJson = tmp27_safe_receiver == null ? null : tmp27_safe_receiver.encode_lh9aei_k$();
-        var tmp28_elvis_lhs = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, m_0, 'createdAt', 30));
-        var tmp44_createdTimestamp = tmp28_elvis_lhs == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp28_elvis_lhs;
-        var tmp29_elvis_lhs = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, m_0, 'modifiedAt', 30));
-        var tmp45_lastModifiedTimestamp = tmp29_elvis_lhs == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp29_elvis_lhs;
-        var plot = new PlotEntity(VOID, name, length, width, tmp30_description, VOID, VOID, tmp31_locationZip, VOID, tmp44_createdTimestamp, tmp45_lastModifiedTimestamp, tmp32_boundaryJson, tmp33_hardinessZone, lat, lon, tmp34_northBearingDeg, tmp36_soilSandPct, tmp37_soilSiltPct, tmp38_soilClayPct, tmp39_soilOrganicPct, tmp40_soilPh, tmp35_orientationSet, tmp42_pests, tmp43_backdropJson, tmp41_address);
+        var tmp43_pests = tmp_63.encode_dpf1i9_k$(destination_0);
+        var tmp28_safe_receiver = backdrop == null ? null : backdrop.first_1;
+        var tmp44_backdropJson = tmp28_safe_receiver == null ? null : tmp28_safe_receiver.encode_lh9aei_k$();
+        var tmp29_elvis_lhs = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, m_0, 'createdAt', 30));
+        var tmp45_createdTimestamp = tmp29_elvis_lhs == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp29_elvis_lhs;
+        var tmp30_elvis_lhs = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, m_0, 'modifiedAt', 30));
+        var tmp46_lastModifiedTimestamp = tmp30_elvis_lhs == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp30_elvis_lhs;
+        var plot = new PlotEntity(VOID, name, length, width, tmp31_description, VOID, VOID, tmp32_locationZip, VOID, tmp45_createdTimestamp, tmp46_lastModifiedTimestamp, tmp33_boundaryJson, tmp34_hardinessZone, lat, lon, tmp35_northBearingDeg, tmp37_soilSandPct, tmp38_soilSiltPct, tmp39_soilClayPct, tmp40_soilOrganicPct, tmp41_soilPh, tmp36_orientationSet, tmp43_pests, tmp44_backdropJson, tmp42_address);
         // Inline function 'kotlin.collections.get' call
-        var tmp_64 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('plants');
+        var tmp_66 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('plants');
         // Inline function 'kotlin.collections.orEmpty' call
-        var tmp0_elvis_lhs_4 = (!(tmp_64 == null) ? isInterface(tmp_64, KtList) : false) ? tmp_64 : null;
+        var tmp0_elvis_lhs_4 = (!(tmp_66 == null) ? isInterface(tmp_66, KtList) : false) ? tmp_66 : null;
         var plantsJson = tmp0_elvis_lhs_4 == null ? emptyList() : tmp0_elvis_lhs_4;
         if (plantsJson.get_size_woubt6_k$() > 5000) {
           // Inline function 'kotlin.collections.plusAssign' call
@@ -67410,52 +67426,52 @@ class PlanFileCodec {
         var _iterator__ex2g4s_3 = tmp0_2.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
           var element_14 = _iterator__ex2g4s_3.next_20eer_k$();
-          var tmp$ret$86;
+          var tmp$ret$88;
           $l$block_9: {
             var tmp0_elvis_lhs_5 = (!(element_14 == null) ? isInterface(element_14, KtMap) : false) ? element_14 : null;
-            var tmp_65;
+            var tmp_67;
             if (tmp0_elvis_lhs_5 == null) {
               // Inline function 'kotlin.also' call
               badPlants = badPlants + 1 | 0;
-              tmp$ret$86 = null;
+              tmp$ret$88 = null;
               break $l$block_9;
             } else {
-              tmp_65 = tmp0_elvis_lhs_5;
+              tmp_67 = tmp0_elvis_lhs_5;
             }
-            var pm = tmp_65;
+            var pm = tmp_67;
             var tmp1_safe_receiver_2 = text(PlanFileCodec_instance, pm, 'code', 40);
-            var tmp_66;
+            var tmp_68;
             if (tmp1_safe_receiver_2 == null) {
-              tmp_66 = null;
+              tmp_68 = null;
             } else {
               // Inline function 'kotlin.takeIf' call
-              var tmp_67;
+              var tmp_69;
               // Inline function 'kotlin.text.isNotBlank' call
               if (!isBlank(tmp1_safe_receiver_2)) {
-                tmp_67 = tmp1_safe_receiver_2;
+                tmp_69 = tmp1_safe_receiver_2;
               } else {
-                tmp_67 = null;
+                tmp_69 = null;
               }
-              tmp_66 = tmp_67;
+              tmp_68 = tmp_69;
             }
-            var tmp2_elvis_lhs_1 = tmp_66;
-            var tmp_68;
+            var tmp2_elvis_lhs_1 = tmp_68;
+            var tmp_70;
             if (tmp2_elvis_lhs_1 == null) {
               // Inline function 'kotlin.also' call
               badPlants = badPlants + 1 | 0;
-              tmp$ret$86 = null;
+              tmp$ret$88 = null;
               break $l$block_9;
             } else {
-              tmp_68 = tmp2_elvis_lhs_1;
+              tmp_70 = tmp2_elvis_lhs_1;
             }
-            var code_0 = tmp_68;
+            var code_0 = tmp_70;
             var tmp3_safe_receiver_1 = num_0(PlanFileCodec_instance, pm, 'x');
             var x = tmp3_safe_receiver_1 == null ? null : tmp3_safe_receiver_1;
             var tmp4_safe_receiver_1 = num_0(PlanFileCodec_instance, pm, 'y');
             var y = tmp4_safe_receiver_1 == null ? null : tmp4_safe_receiver_1;
             if (x == null || y == null || !decode$_anonymous_$inside_1qkhmx(length, width, new PlotPoint(x, y))) {
               badPlants = badPlants + 1 | 0;
-              tmp$ret$86 = null;
+              tmp$ret$88 = null;
               break $l$block_9;
             }
             var tmp5_safe_receiver_0 = text(PlanFileCodec_instance, pm, 'variety', 100);
@@ -67466,15 +67482,15 @@ class PlanFileCodec {
               // Inline function 'kotlin.collections.set' call
               names.put_4fpzoq_k$(code_0, tmp5_safe_receiver_0);
             }
-            var tmp_69 = new Long(0, 0);
+            var tmp_71 = new Long(0, 0);
             var tmp6_elvis_lhs_0 = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, pm, 'plantedAt', 30));
-            var tmp_70 = tmp6_elvis_lhs_0 == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp6_elvis_lhs_0;
+            var tmp_72 = tmp6_elvis_lhs_0 == null ? PlatformClock_instance.nowMillis_8ras04_k$() : tmp6_elvis_lhs_0;
             // Inline function 'kotlin.collections.get' call
             var key_3 = 'germinationResolved';
-            var tmp$ret$95 = (isInterface(pm, KtMap) ? pm : THROW_CCE()).get_wei43m_k$(key_3);
-            tmp$ret$86 = new PlantedNodeEntity(VOID, tmp_69, code_0, x, y, tmp_70, equals(tmp$ret$95, true));
+            var tmp$ret$97 = (isInterface(pm, KtMap) ? pm : THROW_CCE()).get_wei43m_k$(key_3);
+            tmp$ret$88 = new PlantedNodeEntity(VOID, tmp_71, code_0, x, y, tmp_72, equals(tmp$ret$97, true));
           }
-          var tmp0_safe_receiver_1 = tmp$ret$86;
+          var tmp0_safe_receiver_1 = tmp$ret$88;
           if (tmp0_safe_receiver_1 == null)
             null;
           else {
@@ -67489,42 +67505,42 @@ class PlanFileCodec {
           warnings.add_utx5q5_k$(element_15);
         }
         // Inline function 'kotlin.collections.get' call
-        var tmp_71 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('paths');
+        var tmp_73 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('paths');
         // Inline function 'kotlin.collections.orEmpty' call
-        var tmp0_elvis_lhs_6 = (!(tmp_71 == null) ? isInterface(tmp_71, KtList) : false) ? tmp_71 : null;
-        var tmp$ret$104 = tmp0_elvis_lhs_6 == null ? emptyList() : tmp0_elvis_lhs_6;
+        var tmp0_elvis_lhs_6 = (!(tmp_73 == null) ? isInterface(tmp_73, KtList) : false) ? tmp_73 : null;
+        var tmp$ret$106 = tmp0_elvis_lhs_6 == null ? emptyList() : tmp0_elvis_lhs_6;
         // Inline function 'kotlin.collections.mapNotNull' call
-        var tmp0_3 = take(tmp$ret$104, 2000);
+        var tmp0_3 = take(tmp$ret$106, 2000);
         // Inline function 'kotlin.collections.mapNotNullTo' call
         var destination_2 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
         // Inline function 'kotlin.collections.forEach' call
         var _iterator__ex2g4s_4 = tmp0_3.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
           var element_16 = _iterator__ex2g4s_4.next_20eer_k$();
-          var tmp$ret$105;
+          var tmp$ret$107;
           $l$block_13: {
             var tmp0_elvis_lhs_7 = (!(element_16 == null) ? isInterface(element_16, KtMap) : false) ? element_16 : null;
-            var tmp_72;
+            var tmp_74;
             if (tmp0_elvis_lhs_7 == null) {
-              tmp$ret$105 = null;
+              tmp$ret$107 = null;
               break $l$block_13;
             } else {
-              tmp_72 = tmp0_elvis_lhs_7;
+              tmp_74 = tmp0_elvis_lhs_7;
             }
-            var zm = tmp_72;
+            var zm = tmp_74;
             var tmp1_elvis_lhs = text(PlanFileCodec_instance, zm, 'label', 40);
             var label = tmp1_elvis_lhs == null ? '' : tmp1_elvis_lhs;
-            var tmp_73;
+            var tmp_75;
             // Inline function 'kotlin.collections.get' call
-            var tmp$ret$106 = (isInterface(zm, KtMap) ? zm : THROW_CCE()).get_wei43m_k$('type');
-            if (equals(tmp$ret$106, 'POLYLINE')) {
-              var tmp_74 = PlanFileCodec_instance;
+            var tmp$ret$108 = (isInterface(zm, KtMap) ? zm : THROW_CCE()).get_wei43m_k$('type');
+            if (equals(tmp$ret$108, 'POLYLINE')) {
+              var tmp_76 = PlanFileCodec_instance;
               // Inline function 'kotlin.collections.get' call
-              var tmp$ret$107 = (isInterface(zm, KtMap) ? zm : THROW_CCE()).get_wei43m_k$('points');
-              var tmp2_safe_receiver = readPoints(tmp_74, tmp$ret$107);
-              var tmp_75;
+              var tmp$ret$109 = (isInterface(zm, KtMap) ? zm : THROW_CCE()).get_wei43m_k$('points');
+              var tmp2_safe_receiver = readPoints(tmp_76, tmp$ret$109);
+              var tmp_77;
               if (tmp2_safe_receiver == null) {
-                tmp_75 = null;
+                tmp_77 = null;
               } else {
                 // Inline function 'kotlin.collections.filter' call
                 // Inline function 'kotlin.collections.filterTo' call
@@ -67536,56 +67552,56 @@ class PlanFileCodec {
                     destination_3.add_utx5q5_k$(element_17);
                   }
                 }
-                tmp_75 = destination_3;
+                tmp_77 = destination_3;
               }
-              var tmp3_safe_receiver_2 = tmp_75;
-              var tmp_76;
+              var tmp3_safe_receiver_2 = tmp_77;
+              var tmp_78;
               if (tmp3_safe_receiver_2 == null) {
-                tmp_76 = null;
+                tmp_78 = null;
               } else {
                 // Inline function 'kotlin.takeIf' call
-                var tmp_77;
+                var tmp_79;
                 if (tmp3_safe_receiver_2.get_size_woubt6_k$() >= 2) {
-                  tmp_77 = tmp3_safe_receiver_2;
+                  tmp_79 = tmp3_safe_receiver_2;
                 } else {
-                  tmp_77 = null;
+                  tmp_79 = null;
                 }
-                tmp_76 = tmp_77;
+                tmp_78 = tmp_79;
               }
-              var tmp4_elvis_lhs = tmp_76;
-              var tmp_78;
+              var tmp4_elvis_lhs = tmp_78;
+              var tmp_80;
               if (tmp4_elvis_lhs == null) {
-                tmp$ret$105 = null;
+                tmp$ret$107 = null;
                 break $l$block_13;
               } else {
-                tmp_78 = tmp4_elvis_lhs;
+                tmp_80 = tmp4_elvis_lhs;
               }
-              var pts = tmp_78;
+              var pts = tmp_80;
               var tmp5_safe_receiver_1 = num_0(PlanFileCodec_instance, zm, 'widthM');
               var tmp6_safe_receiver = tmp5_safe_receiver_1 == null ? null : tmp5_safe_receiver_1;
-              var tmp_79;
+              var tmp_81;
               if (tmp6_safe_receiver == null) {
-                tmp_79 = null;
+                tmp_81 = null;
               } else {
                 // Inline function 'kotlin.takeIf' call
-                var tmp_80;
+                var tmp_82;
                 if (tmp6_safe_receiver > 0.0 && tmp6_safe_receiver <= 50.0) {
-                  tmp_80 = tmp6_safe_receiver;
+                  tmp_82 = tmp6_safe_receiver;
                 } else {
-                  tmp_80 = null;
+                  tmp_82 = null;
                 }
-                tmp_79 = tmp_80;
+                tmp_81 = tmp_82;
               }
-              var tmp7_elvis_lhs_0 = tmp_79;
-              var tmp_81;
+              var tmp7_elvis_lhs_0 = tmp_81;
+              var tmp_83;
               if (tmp7_elvis_lhs_0 == null) {
-                tmp$ret$105 = null;
+                tmp$ret$107 = null;
                 break $l$block_13;
               } else {
-                tmp_81 = tmp7_elvis_lhs_0;
+                tmp_83 = tmp7_elvis_lhs_0;
               }
-              var w = tmp_81;
-              tmp_73 = new PathZoneEntity(VOID, new Long(0, 0), 0.0, 0.0, w, 0.0, label, 'POLYLINE', PlotGeometry_instance.serializePoints_ourzje_k$(pts));
+              var w = tmp_83;
+              tmp_75 = new PathZoneEntity(VOID, new Long(0, 0), 0.0, 0.0, w, 0.0, label, 'POLYLINE', PlotGeometry_instance.serializePoints_ourzje_k$(pts));
             } else {
               var tmp8_safe_receiver_0 = num_0(PlanFileCodec_instance, zm, 'x');
               var x_0 = tmp8_safe_receiver_0 == null ? null : tmp8_safe_receiver_0;
@@ -67596,14 +67612,14 @@ class PlanFileCodec {
               var tmp11_safe_receiver_0 = num_0(PlanFileCodec_instance, zm, 'heightM');
               var h = tmp11_safe_receiver_0 == null ? null : tmp11_safe_receiver_0;
               if (x_0 == null || y_0 == null || w_0 == null || h == null || w_0 <= 0.0 || h <= 0.0 || !decode$_anonymous_$inside_1qkhmx(length, width, new PlotPoint(x_0, y_0)) || !decode$_anonymous_$inside_1qkhmx(length, width, new PlotPoint(x_0 + w_0, y_0 + h))) {
-                tmp$ret$105 = null;
+                tmp$ret$107 = null;
                 break $l$block_13;
               }
-              tmp_73 = new PathZoneEntity(VOID, new Long(0, 0), x_0, y_0, w_0, h, label);
+              tmp_75 = new PathZoneEntity(VOID, new Long(0, 0), x_0, y_0, w_0, h, label);
             }
-            tmp$ret$105 = tmp_73;
+            tmp$ret$107 = tmp_75;
           }
-          var tmp0_safe_receiver_2 = tmp$ret$105;
+          var tmp0_safe_receiver_2 = tmp$ret$107;
           if (tmp0_safe_receiver_2 == null)
             null;
           else {
@@ -67612,117 +67628,171 @@ class PlanFileCodec {
           }
         }
         var paths = destination_2;
+        var badFeatures = 0;
         // Inline function 'kotlin.collections.get' call
         var key_4 = 'siteFeatures';
-        var tmp_82 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$(key_4);
+        var tmp_84 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$(key_4);
         // Inline function 'kotlin.collections.orEmpty' call
-        var tmp0_elvis_lhs_8 = (!(tmp_82 == null) ? isInterface(tmp_82, KtList) : false) ? tmp_82 : null;
-        var tmp$ret$122 = tmp0_elvis_lhs_8 == null ? emptyList() : tmp0_elvis_lhs_8;
+        var tmp0_elvis_lhs_8 = (!(tmp_84 == null) ? isInterface(tmp_84, KtList) : false) ? tmp_84 : null;
+        var tmp$ret$124 = tmp0_elvis_lhs_8 == null ? emptyList() : tmp0_elvis_lhs_8;
         // Inline function 'kotlin.collections.mapNotNull' call
-        var tmp0_4 = take(tmp$ret$122, 2000);
+        var tmp0_4 = take(tmp$ret$124, 2000);
         // Inline function 'kotlin.collections.mapNotNullTo' call
         var destination_4 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
         // Inline function 'kotlin.collections.forEach' call
         var _iterator__ex2g4s_6 = tmp0_4.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
           var element_18 = _iterator__ex2g4s_6.next_20eer_k$();
-          var tmp$ret$123;
-          $l$block_18: {
+          var tmp$ret$125;
+          $l$block_20: {
             var tmp0_elvis_lhs_9 = (!(element_18 == null) ? isInterface(element_18, KtMap) : false) ? element_18 : null;
-            var tmp_83;
-            if (tmp0_elvis_lhs_9 == null) {
-              tmp$ret$123 = null;
-              break $l$block_18;
-            } else {
-              tmp_83 = tmp0_elvis_lhs_9;
-            }
-            var fm = tmp_83;
-            var tmp_84 = Companion_instance_15;
-            var tmp1_elvis_lhs_0 = text(PlanFileCodec_instance, fm, 'type', 20);
-            var tmp2_elvis_lhs_2 = tmp_84.of_5gnbr7_k$(tmp1_elvis_lhs_0 == null ? '' : tmp1_elvis_lhs_0);
             var tmp_85;
-            if (tmp2_elvis_lhs_2 == null) {
-              tmp$ret$123 = null;
-              break $l$block_18;
+            if (tmp0_elvis_lhs_9 == null) {
+              tmp$ret$125 = null;
+              break $l$block_20;
             } else {
-              tmp_85 = tmp2_elvis_lhs_2;
+              tmp_85 = tmp0_elvis_lhs_9;
             }
-            var type = tmp_85;
-            var tmp_86 = PlanFileCodec_instance;
-            // Inline function 'kotlin.collections.get' call
-            var tmp$ret$124 = (isInterface(fm, KtMap) ? fm : THROW_CCE()).get_wei43m_k$('points');
-            var tmp3_elvis_lhs = readPoints(tmp_86, tmp$ret$124);
+            var fm = tmp_85;
+            var tmp_86 = Companion_instance_15;
+            var tmp1_elvis_lhs_0 = text(PlanFileCodec_instance, fm, 'type', 20);
+            var tmp2_elvis_lhs_2 = tmp_86.of_5gnbr7_k$(tmp1_elvis_lhs_0 == null ? '' : tmp1_elvis_lhs_0);
             var tmp_87;
-            if (tmp3_elvis_lhs == null) {
-              tmp$ret$123 = null;
-              break $l$block_18;
+            if (tmp2_elvis_lhs_2 == null) {
+              tmp$ret$125 = null;
+              break $l$block_20;
             } else {
-              tmp_87 = tmp3_elvis_lhs;
+              tmp_87 = tmp2_elvis_lhs_2;
             }
-            var pts_0 = tmp_87;
+            var type = tmp_87;
+            var tmp_88 = PlanFileCodec_instance;
+            // Inline function 'kotlin.collections.get' call
+            var tmp$ret$126 = (isInterface(fm, KtMap) ? fm : THROW_CCE()).get_wei43m_k$('points');
+            var tmp3_safe_receiver_3 = readPoints(tmp_88, tmp$ret$126);
+            var tmp_89;
+            if (tmp3_safe_receiver_3 == null) {
+              tmp_89 = null;
+            } else {
+              // Inline function 'kotlin.takeIf' call
+              var tmp_90;
+              var tmp$ret$127;
+              $l$block_17: {
+                // Inline function 'kotlin.collections.all' call
+                var tmp_91;
+                if (isInterface(tmp3_safe_receiver_3, Collection)) {
+                  tmp_91 = tmp3_safe_receiver_3.isEmpty_y1axqb_k$();
+                } else {
+                  tmp_91 = false;
+                }
+                if (tmp_91) {
+                  tmp$ret$127 = true;
+                  break $l$block_17;
+                }
+                var _iterator__ex2g4s_7 = tmp3_safe_receiver_3.iterator_jk1svi_k$();
+                while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
+                  var element_19 = _iterator__ex2g4s_7.next_20eer_k$();
+                  if (!decode$_anonymous_$inside_1qkhmx(length, width, element_19)) {
+                    tmp$ret$127 = false;
+                    break $l$block_17;
+                  }
+                }
+                tmp$ret$127 = true;
+              }
+              if (tmp$ret$127) {
+                tmp_90 = tmp3_safe_receiver_3;
+              } else {
+                tmp_90 = null;
+              }
+              tmp_89 = tmp_90;
+            }
+            var tmp4_elvis_lhs_0 = tmp_89;
+            var tmp_92;
+            if (tmp4_elvis_lhs_0 == null) {
+              // Inline function 'kotlin.also' call
+              badFeatures = badFeatures + 1 | 0;
+              tmp$ret$125 = null;
+              break $l$block_20;
+            } else {
+              tmp_92 = tmp4_elvis_lhs_0;
+            }
+            var pts_0 = tmp_92;
             var needed = type.isArea_1 ? 3 : type.equals(SiteFeatureType_TREE_getInstance()) || type.equals(SiteFeatureType_SPRINKLER_getInstance()) || type.equals(SiteFeatureType_HOSE_BIB_getInstance()) ? 1 : 2;
             if (pts_0.get_size_woubt6_k$() < needed) {
-              tmp$ret$123 = null;
-              break $l$block_18;
+              tmp$ret$125 = null;
+              break $l$block_20;
             }
-            var tmp4_safe_receiver_2 = num_0(PlanFileCodec_instance, fm, 'heightM');
-            var tmp5_elvis_lhs_0 = tmp4_safe_receiver_2 == null ? null : tmp4_safe_receiver_2;
-            var height = tmp5_elvis_lhs_0 == null ? 0.0 : tmp5_elvis_lhs_0;
+            var tmp5_safe_receiver_2 = num_0(PlanFileCodec_instance, fm, 'heightM');
+            var tmp6_elvis_lhs_1 = tmp5_safe_receiver_2 == null ? null : tmp5_safe_receiver_2;
+            var height = tmp6_elvis_lhs_1 == null ? 0.0 : tmp6_elvis_lhs_1;
             if (type.isBarrier_1 && (height <= 0.0 || height > 100.0)) {
-              tmp$ret$123 = null;
-              break $l$block_18;
+              tmp$ret$125 = null;
+              break $l$block_20;
             }
-            var tmp_88 = new Long(0, 0);
-            var tmp_89 = PlotGeometry_instance.serializePoints_ourzje_k$(pts_0);
-            var tmp6_elvis_lhs_1 = text(PlanFileCodec_instance, fm, 'label', 40);
-            var tmp_90 = tmp6_elvis_lhs_1 == null ? '' : tmp6_elvis_lhs_1;
-            var tmp_91 = coerceIn(height, 0.0, 100.0);
-            var tmp7_safe_receiver_0 = num_0(PlanFileCodec_instance, fm, 'radiusM');
-            var tmp8_elvis_lhs = tmp7_safe_receiver_0 == null ? null : tmp7_safe_receiver_0;
-            var tmp_92 = coerceIn(tmp8_elvis_lhs == null ? 0.0 : tmp8_elvis_lhs, 0.0, 60.0);
-            var tmp9_safe_receiver_2 = type.equals(SiteFeatureType_SPRINKLER_getInstance()) ? num_0(PlanFileCodec_instance, fm, 'arcCentreDeg') : num_0(PlanFileCodec_instance, fm, 'slopeDirectionDeg');
-            var tmp10_elvis_lhs_0 = tmp9_safe_receiver_2 == null ? null : tmp9_safe_receiver_2;
-            var tmp_93 = ((tmp10_elvis_lhs_0 == null ? 0.0 : tmp10_elvis_lhs_0) % 360.0 + 360.0) % 360.0;
-            var tmp_94;
-            if (type.equals(SiteFeatureType_SPRINKLER_getInstance())) {
-              var tmp11_safe_receiver_1 = num_0(PlanFileCodec_instance, fm, 'arcWidthDeg');
-              var tmp12_elvis_lhs = tmp11_safe_receiver_1 == null ? null : tmp11_safe_receiver_1;
-              tmp_94 = coerceIn(tmp12_elvis_lhs == null ? 360.0 : tmp12_elvis_lhs, 10.0, 360.0);
+            var tmp_93 = new Long(0, 0);
+            var tmp_94 = PlotGeometry_instance.serializePoints_ourzje_k$(pts_0);
+            var tmp7_elvis_lhs_1 = text(PlanFileCodec_instance, fm, 'label', 40);
+            var tmp_95 = tmp7_elvis_lhs_1 == null ? '' : tmp7_elvis_lhs_1;
+            var tmp_96 = coerceIn(height, 0.0, 100.0);
+            var tmp8_safe_receiver_1 = num_0(PlanFileCodec_instance, fm, 'radiusM');
+            var tmp9_elvis_lhs = tmp8_safe_receiver_1 == null ? null : tmp8_safe_receiver_1;
+            var tmp_97 = coerceIn(tmp9_elvis_lhs == null ? 0.0 : tmp9_elvis_lhs, 0.0, 60.0);
+            var tmp10_safe_receiver_1 = type.equals(SiteFeatureType_SPRINKLER_getInstance()) ? num_0(PlanFileCodec_instance, fm, 'arcCentreDeg') : num_0(PlanFileCodec_instance, fm, 'slopeDirectionDeg');
+            var tmp11_safe_receiver_1 = tmp10_safe_receiver_1 == null ? null : tmp10_safe_receiver_1;
+            var tmp_98;
+            if (tmp11_safe_receiver_1 == null) {
+              tmp_98 = null;
             } else {
-              var tmp13_safe_receiver_0 = num_0(PlanFileCodec_instance, fm, 'slopeGradePct');
-              var tmp14_elvis_lhs_0 = tmp13_safe_receiver_0 == null ? null : tmp13_safe_receiver_0;
-              tmp_94 = coerceIn(tmp14_elvis_lhs_0 == null ? 0.0 : tmp14_elvis_lhs_0, 0.0, 100.0);
+              // Inline function 'kotlin.takeIf' call
+              var tmp_99;
+              if (isFinite(tmp11_safe_receiver_1)) {
+                tmp_99 = tmp11_safe_receiver_1;
+              } else {
+                tmp_99 = null;
+              }
+              tmp_98 = tmp_99;
             }
-            var tmp_95 = tmp_94;
+            var tmp12_elvis_lhs = tmp_98;
+            var tmp_100 = ((tmp12_elvis_lhs == null ? 0.0 : tmp12_elvis_lhs) % 360.0 + 360.0) % 360.0;
+            var tmp_101;
+            if (type.equals(SiteFeatureType_SPRINKLER_getInstance())) {
+              var tmp13_safe_receiver_0 = num_0(PlanFileCodec_instance, fm, 'arcWidthDeg');
+              var tmp14_elvis_lhs_0 = tmp13_safe_receiver_0 == null ? null : tmp13_safe_receiver_0;
+              tmp_101 = coerceIn(tmp14_elvis_lhs_0 == null ? 360.0 : tmp14_elvis_lhs_0, 10.0, 360.0);
+            } else {
+              var tmp15_safe_receiver_0 = num_0(PlanFileCodec_instance, fm, 'slopeGradePct');
+              var tmp16_elvis_lhs_0 = tmp15_safe_receiver_0 == null ? null : tmp15_safe_receiver_0;
+              tmp_101 = coerceIn(tmp16_elvis_lhs_0 == null ? 0.0 : tmp16_elvis_lhs_0, 0.0, 100.0);
+            }
+            var tmp_102 = tmp_101;
             // Inline function 'kotlin.collections.get' call
             var key_5 = 'floodMonths';
-            var tmp_96 = (isInterface(fm, KtMap) ? fm : THROW_CCE()).get_wei43m_k$(key_5);
+            var tmp_103 = (isInterface(fm, KtMap) ? fm : THROW_CCE()).get_wei43m_k$(key_5);
             // Inline function 'kotlin.collections.orEmpty' call
-            var tmp0_elvis_lhs_10 = (!(tmp_96 == null) ? isInterface(tmp_96, KtList) : false) ? tmp_96 : null;
+            var tmp0_elvis_lhs_10 = (!(tmp_103 == null) ? isInterface(tmp_103, KtList) : false) ? tmp_103 : null;
             // Inline function 'kotlin.collections.mapNotNull' call
             var tmp0_5 = tmp0_elvis_lhs_10 == null ? emptyList() : tmp0_elvis_lhs_10;
             // Inline function 'kotlin.collections.mapNotNullTo' call
             var destination_5 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
             // Inline function 'kotlin.collections.forEach' call
-            var _iterator__ex2g4s_7 = tmp0_5.iterator_jk1svi_k$();
-            while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
-              var element_19 = _iterator__ex2g4s_7.next_20eer_k$();
-              var tmp0_safe_receiver_3 = isNumber(element_19) ? element_19 : null;
+            var _iterator__ex2g4s_8 = tmp0_5.iterator_jk1svi_k$();
+            while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
+              var element_20 = _iterator__ex2g4s_8.next_20eer_k$();
+              var tmp0_safe_receiver_3 = isNumber(element_20) ? element_20 : null;
               var tmp1_safe_receiver_3 = tmp0_safe_receiver_3 == null ? null : numberToInt(tmp0_safe_receiver_3);
-              var tmp_97;
+              var tmp_104;
               if (tmp1_safe_receiver_3 == null) {
-                tmp_97 = null;
+                tmp_104 = null;
               } else {
                 // Inline function 'kotlin.takeIf' call
-                var tmp_98;
+                var tmp_105;
                 if (1 <= tmp1_safe_receiver_3 ? tmp1_safe_receiver_3 <= 12 : false) {
-                  tmp_98 = tmp1_safe_receiver_3;
+                  tmp_105 = tmp1_safe_receiver_3;
                 } else {
-                  tmp_98 = null;
+                  tmp_105 = null;
                 }
-                tmp_97 = tmp_98;
+                tmp_104 = tmp_105;
               }
-              var tmp0_safe_receiver_4 = tmp_97;
+              var tmp0_safe_receiver_4 = tmp_104;
               if (tmp0_safe_receiver_4 == null)
                 null;
               else {
@@ -67730,9 +67800,9 @@ class PlanFileCodec {
                 destination_5.add_utx5q5_k$(tmp0_safe_receiver_4);
               }
             }
-            tmp$ret$123 = new SiteFeatureEntity(VOID, tmp_88, type.name_1, tmp_89, tmp_90, tmp_91, tmp_92, tmp_93, tmp_95, joinToString_0(destination_5, ','));
+            tmp$ret$125 = new SiteFeatureEntity(VOID, tmp_93, type.name_1, tmp_94, tmp_95, tmp_96, tmp_97, tmp_100, tmp_102, joinToString_0(destination_5, ','));
           }
-          var tmp0_safe_receiver_5 = tmp$ret$123;
+          var tmp0_safe_receiver_5 = tmp$ret$125;
           if (tmp0_safe_receiver_5 == null)
             null;
           else {
@@ -67741,15 +67811,20 @@ class PlanFileCodec {
           }
         }
         var features = destination_4;
+        if (badFeatures > 0) {
+          // Inline function 'kotlin.collections.plusAssign' call
+          var element_21 = "Plot '" + name + "': " + badFeatures + ' site feature(s) skipped (outside the plot).';
+          warnings.add_utx5q5_k$(element_21);
+        }
         // Inline function 'kotlin.collections.get' call
-        var tmp_99 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('history');
+        var tmp_106 = (isInterface(m_0, KtMap) ? m_0 : THROW_CCE()).get_wei43m_k$('history');
         // Inline function 'kotlin.collections.orEmpty' call
-        var tmp0_elvis_lhs_11 = (!(tmp_99 == null) ? isInterface(tmp_99, KtList) : false) ? tmp_99 : null;
+        var tmp0_elvis_lhs_11 = (!(tmp_106 == null) ? isInterface(tmp_106, KtList) : false) ? tmp_106 : null;
         var historyJson = tmp0_elvis_lhs_11 == null ? emptyList() : tmp0_elvis_lhs_11;
         if (historyJson.get_size_woubt6_k$() > 20000) {
           // Inline function 'kotlin.collections.plusAssign' call
-          var element_20 = "Plot '" + name + "': only the first 20000 of " + historyJson.get_size_woubt6_k$() + ' past plantings were read.';
-          warnings.add_utx5q5_k$(element_20);
+          var element_22 = "Plot '" + name + "': only the first 20000 of " + historyJson.get_size_woubt6_k$() + ' past plantings were read.';
+          warnings.add_utx5q5_k$(element_22);
         }
         var badHistory = 0;
         // Inline function 'kotlin.collections.mapNotNull' call
@@ -67757,124 +67832,124 @@ class PlanFileCodec {
         // Inline function 'kotlin.collections.mapNotNullTo' call
         var destination_6 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
         // Inline function 'kotlin.collections.forEach' call
-        var _iterator__ex2g4s_8 = tmp0_6.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
-          var element_21 = _iterator__ex2g4s_8.next_20eer_k$();
-          var tmp$ret$147;
-          $l$block_22: {
-            var tmp0_elvis_lhs_12 = (!(element_21 == null) ? isInterface(element_21, KtMap) : false) ? element_21 : null;
-            var tmp_100;
+        var _iterator__ex2g4s_9 = tmp0_6.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_9.hasNext_bitz1p_k$()) {
+          var element_23 = _iterator__ex2g4s_9.next_20eer_k$();
+          var tmp$ret$158;
+          $l$block_24: {
+            var tmp0_elvis_lhs_12 = (!(element_23 == null) ? isInterface(element_23, KtMap) : false) ? element_23 : null;
+            var tmp_107;
             if (tmp0_elvis_lhs_12 == null) {
               // Inline function 'kotlin.also' call
               badHistory = badHistory + 1 | 0;
-              tmp$ret$147 = null;
-              break $l$block_22;
+              tmp$ret$158 = null;
+              break $l$block_24;
             } else {
-              tmp_100 = tmp0_elvis_lhs_12;
+              tmp_107 = tmp0_elvis_lhs_12;
             }
-            var hm = tmp_100;
+            var hm = tmp_107;
             var tmp1_safe_receiver_4 = text(PlanFileCodec_instance, hm, 'code', 40);
-            var tmp_101;
+            var tmp_108;
             if (tmp1_safe_receiver_4 == null) {
-              tmp_101 = null;
+              tmp_108 = null;
             } else {
               // Inline function 'kotlin.takeIf' call
-              var tmp_102;
+              var tmp_109;
               // Inline function 'kotlin.text.isNotBlank' call
               if (!isBlank(tmp1_safe_receiver_4)) {
-                tmp_102 = tmp1_safe_receiver_4;
+                tmp_109 = tmp1_safe_receiver_4;
               } else {
-                tmp_102 = null;
+                tmp_109 = null;
               }
-              tmp_101 = tmp_102;
+              tmp_108 = tmp_109;
             }
-            var tmp2_elvis_lhs_3 = tmp_101;
-            var tmp_103;
+            var tmp2_elvis_lhs_3 = tmp_108;
+            var tmp_110;
             if (tmp2_elvis_lhs_3 == null) {
               // Inline function 'kotlin.also' call
               badHistory = badHistory + 1 | 0;
-              tmp$ret$147 = null;
-              break $l$block_22;
+              tmp$ret$158 = null;
+              break $l$block_24;
             } else {
-              tmp_103 = tmp2_elvis_lhs_3;
+              tmp_110 = tmp2_elvis_lhs_3;
             }
-            var code_1 = tmp_103;
-            var tmp3_safe_receiver_3 = num_0(PlanFileCodec_instance, hm, 'season');
-            var tmp4_safe_receiver_3 = tmp3_safe_receiver_3 == null ? null : numberToInt(tmp3_safe_receiver_3);
-            var tmp_104;
-            if (tmp4_safe_receiver_3 == null) {
-              tmp_104 = null;
+            var code_1 = tmp_110;
+            var tmp3_safe_receiver_4 = num_0(PlanFileCodec_instance, hm, 'season');
+            var tmp4_safe_receiver_2 = tmp3_safe_receiver_4 == null ? null : numberToInt(tmp3_safe_receiver_4);
+            var tmp_111;
+            if (tmp4_safe_receiver_2 == null) {
+              tmp_111 = null;
             } else {
               // Inline function 'kotlin.takeIf' call
-              var tmp_105;
-              if (1900 <= tmp4_safe_receiver_3 ? tmp4_safe_receiver_3 <= 3000 : false) {
-                tmp_105 = tmp4_safe_receiver_3;
+              var tmp_112;
+              if (1900 <= tmp4_safe_receiver_2 ? tmp4_safe_receiver_2 <= 3000 : false) {
+                tmp_112 = tmp4_safe_receiver_2;
               } else {
-                tmp_105 = null;
+                tmp_112 = null;
               }
-              tmp_104 = tmp_105;
+              tmp_111 = tmp_112;
             }
-            var tmp5_elvis_lhs_1 = tmp_104;
-            var tmp_106;
-            if (tmp5_elvis_lhs_1 == null) {
+            var tmp5_elvis_lhs_0 = tmp_111;
+            var tmp_113;
+            if (tmp5_elvis_lhs_0 == null) {
               // Inline function 'kotlin.also' call
               badHistory = badHistory + 1 | 0;
-              tmp$ret$147 = null;
-              break $l$block_22;
+              tmp$ret$158 = null;
+              break $l$block_24;
             } else {
-              tmp_106 = tmp5_elvis_lhs_1;
+              tmp_113 = tmp5_elvis_lhs_0;
             }
-            var season = tmp_106;
+            var season = tmp_113;
             var tmp6_safe_receiver_0 = num_0(PlanFileCodec_instance, hm, 'x');
             var x_1 = tmp6_safe_receiver_0 == null ? null : tmp6_safe_receiver_0;
-            var tmp7_safe_receiver_1 = num_0(PlanFileCodec_instance, hm, 'y');
-            var y_1 = tmp7_safe_receiver_1 == null ? null : tmp7_safe_receiver_1;
+            var tmp7_safe_receiver_0 = num_0(PlanFileCodec_instance, hm, 'y');
+            var y_1 = tmp7_safe_receiver_0 == null ? null : tmp7_safe_receiver_0;
             if (x_1 == null || y_1 == null || !decode$_anonymous_$inside_1qkhmx(length, width, new PlotPoint(x_1, y_1))) {
               badHistory = badHistory + 1 | 0;
-              tmp$ret$147 = null;
-              break $l$block_22;
+              tmp$ret$158 = null;
+              break $l$block_24;
             }
-            var tmp_107 = new Long(0, 0);
-            var tmp8_elvis_lhs_0 = text(PlanFileCodec_instance, hm, 'variety', 100);
-            var tmp_108 = tmp8_elvis_lhs_0 == null ? code_1 : tmp8_elvis_lhs_0;
-            var tmp9_elvis_lhs = text(PlanFileCodec_instance, hm, 'family', 60);
-            var tmp_109 = tmp9_elvis_lhs == null ? '' : tmp9_elvis_lhs;
-            var tmp10_safe_receiver_1 = text(PlanFileCodec_instance, hm, 'rotationGroup', 20);
-            var tmp_110;
-            if (tmp10_safe_receiver_1 == null) {
-              tmp_110 = null;
+            var tmp_114 = new Long(0, 0);
+            var tmp8_elvis_lhs = text(PlanFileCodec_instance, hm, 'variety', 100);
+            var tmp_115 = tmp8_elvis_lhs == null ? code_1 : tmp8_elvis_lhs;
+            var tmp9_elvis_lhs_0 = text(PlanFileCodec_instance, hm, 'family', 60);
+            var tmp_116 = tmp9_elvis_lhs_0 == null ? '' : tmp9_elvis_lhs_0;
+            var tmp10_safe_receiver_2 = text(PlanFileCodec_instance, hm, 'rotationGroup', 20);
+            var tmp_117;
+            if (tmp10_safe_receiver_2 == null) {
+              tmp_117 = null;
             } else {
               // Inline function 'kotlin.takeIf' call
-              var tmp_111;
-              if (!(Companion_getInstance_14().of_5gnbr7_k$(tmp10_safe_receiver_1) == null)) {
-                tmp_111 = tmp10_safe_receiver_1;
+              var tmp_118;
+              if (!(Companion_getInstance_14().of_5gnbr7_k$(tmp10_safe_receiver_2) == null)) {
+                tmp_118 = tmp10_safe_receiver_2;
               } else {
-                tmp_111 = null;
+                tmp_118 = null;
               }
-              tmp_110 = tmp_111;
+              tmp_117 = tmp_118;
             }
-            var tmp_112 = tmp_110;
+            var tmp_119 = tmp_117;
             var tmp11_safe_receiver_2 = num_0(PlanFileCodec_instance, hm, 'radiusM');
             var tmp12_safe_receiver_0 = tmp11_safe_receiver_2 == null ? null : tmp11_safe_receiver_2;
-            var tmp_113;
+            var tmp_120;
             if (tmp12_safe_receiver_0 == null) {
-              tmp_113 = null;
+              tmp_120 = null;
             } else {
               // Inline function 'kotlin.takeIf' call
-              var tmp_114;
+              var tmp_121;
               if (tmp12_safe_receiver_0 > 0.0 && tmp12_safe_receiver_0 <= 50.0) {
-                tmp_114 = tmp12_safe_receiver_0;
+                tmp_121 = tmp12_safe_receiver_0;
               } else {
-                tmp_114 = null;
+                tmp_121 = null;
               }
-              tmp_113 = tmp_114;
+              tmp_120 = tmp_121;
             }
-            var tmp13_elvis_lhs_0 = tmp_113;
-            var tmp_115 = tmp13_elvis_lhs_0 == null ? 0.3 : tmp13_elvis_lhs_0;
+            var tmp13_elvis_lhs_0 = tmp_120;
+            var tmp_122 = tmp13_elvis_lhs_0 == null ? 0.3 : tmp13_elvis_lhs_0;
             var tmp14_elvis_lhs_1 = parseIso(PlanFileCodec_instance, text(PlanFileCodec_instance, hm, 'plantedAt', 30));
-            tmp$ret$147 = new PlantingHistoryEntity(VOID, tmp_107, season, code_1, tmp_108, tmp_109, tmp_112, x_1, y_1, tmp_115, tmp14_elvis_lhs_1 == null ? new Long(0, 0) : tmp14_elvis_lhs_1);
+            tmp$ret$158 = new PlantingHistoryEntity(VOID, tmp_114, season, code_1, tmp_115, tmp_116, tmp_119, x_1, y_1, tmp_122, tmp14_elvis_lhs_1 == null ? new Long(0, 0) : tmp14_elvis_lhs_1);
           }
-          var tmp0_safe_receiver_6 = tmp$ret$147;
+          var tmp0_safe_receiver_6 = tmp$ret$158;
           if (tmp0_safe_receiver_6 == null)
             null;
           else {
@@ -67885,20 +67960,20 @@ class PlanFileCodec {
         var history = destination_6;
         if (badHistory > 0) {
           // Inline function 'kotlin.collections.plusAssign' call
-          var element_22 = "Plot '" + name + "': " + badHistory + ' past planting(s) skipped (invalid season, variety or position).';
-          warnings.add_utx5q5_k$(element_22);
+          var element_24 = "Plot '" + name + "': " + badHistory + ' past planting(s) skipped (invalid season, variety or position).';
+          warnings.add_utx5q5_k$(element_24);
         }
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_23 = new PlanPlot(plot, plants, paths, features, history, backdrop == null ? null : backdrop.second_1);
-        plots.add_utx5q5_k$(element_23);
+        var element_25 = new PlanPlot(plot, plants, paths, features, history, backdrop == null ? null : backdrop.second_1);
+        plots.add_utx5q5_k$(element_25);
       }
     }
     if (plots.isEmpty_y1axqb_k$())
       return new PlanDecodeResult(null, names, plus_0(listOf('No usable plots in the file.'), warnings), warnings);
     // Inline function 'kotlin.collections.get' call
     var key_6 = 'exportedAt';
-    var tmp_116 = (isInterface(root, KtMap) ? root : THROW_CCE()).get_wei43m_k$(key_6);
-    var tmp2_elvis_lhs_4 = parseIso(this, (!(tmp_116 == null) ? typeof tmp_116 === 'string' : false) ? tmp_116 : null);
+    var tmp_123 = (isInterface(root, KtMap) ? root : THROW_CCE()).get_wei43m_k$(key_6);
+    var tmp2_elvis_lhs_4 = parseIso(this, (!(tmp_123 == null) ? typeof tmp_123 === 'string' : false) ? tmp_123 : null);
     return new PlanDecodeResult(new PlanBundle(plots, custom, tmp2_elvis_lhs_4 == null ? new Long(0, 0) : tmp2_elvis_lhs_4), names, emptyList(), warnings);
   }
 }
@@ -76094,21 +76169,6 @@ function asSequence(_this__u8e3s4) {
   // Inline function 'kotlin.sequences.Sequence' call
   return new asSequence$$inlined$Sequence$1(_this__u8e3s4);
 }
-function min_0(_this__u8e3s4) {
-  var iterator = _this__u8e3s4.iterator_jk1svi_k$();
-  if (!iterator.hasNext_bitz1p_k$())
-    throw NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$();
-  var min = iterator.next_20eer_k$();
-  while (iterator.hasNext_bitz1p_k$()) {
-    var e = iterator.next_20eer_k$();
-    if (compareTo(min, e) > 0)
-      min = e;
-  }
-  return min;
-}
-function sortedDescending(_this__u8e3s4) {
-  return sortedWith(_this__u8e3s4, reverseOrder());
-}
 function toList(_this__u8e3s4) {
   if (isInterface(_this__u8e3s4, Collection)) {
     var tmp;
@@ -76133,6 +76193,21 @@ function toList(_this__u8e3s4) {
     return tmp;
   }
   return optimizeReadOnlyList(toMutableList_0(_this__u8e3s4));
+}
+function min_0(_this__u8e3s4) {
+  var iterator = _this__u8e3s4.iterator_jk1svi_k$();
+  if (!iterator.hasNext_bitz1p_k$())
+    throw NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$();
+  var min = iterator.next_20eer_k$();
+  while (iterator.hasNext_bitz1p_k$()) {
+    var e = iterator.next_20eer_k$();
+    if (compareTo(min, e) > 0)
+      min = e;
+  }
+  return min;
+}
+function sortedDescending(_this__u8e3s4) {
+  return sortedWith(_this__u8e3s4, reverseOrder());
 }
 function toMutableSet(_this__u8e3s4) {
   var tmp;
@@ -78372,10 +78447,10 @@ function init_kotlin_NoSuchElementException(_this__u8e3s4) {
 function init_kotlin_IndexOutOfBoundsException(_this__u8e3s4) {
   captureStack(_this__u8e3s4, _this__u8e3s4.$throwableCtor_3);
 }
-function init_kotlin_ConcurrentModificationException(_this__u8e3s4) {
+function init_kotlin_ArithmeticException(_this__u8e3s4) {
   captureStack(_this__u8e3s4, _this__u8e3s4.$throwableCtor_3);
 }
-function init_kotlin_ArithmeticException(_this__u8e3s4) {
+function init_kotlin_ConcurrentModificationException(_this__u8e3s4) {
   captureStack(_this__u8e3s4, _this__u8e3s4.$throwableCtor_3);
 }
 function init_kotlin_NumberFormatException(_this__u8e3s4) {
@@ -79092,11 +79167,11 @@ function collectionToArrayCommonImpl(collection) {
   }
   return destination;
 }
-function emptyList() {
-  return EmptyList_getInstance();
-}
 function listOf_0(elements) {
   return elements.length > 0 ? asList(elements) : emptyList();
+}
+function emptyList() {
+  return EmptyList_getInstance();
 }
 function listOfNotNull(elements) {
   return filterNotNull(elements);
@@ -90972,8 +91047,8 @@ initMetadataForClass(IllegalStateException, 'IllegalStateException', IllegalStat
 initMetadataForClass(UnsupportedOperationException, 'UnsupportedOperationException', UnsupportedOperationException.new_kotlin_UnsupportedOperationException_cv3bvm_k$);
 initMetadataForClass(NoSuchElementException, 'NoSuchElementException', NoSuchElementException.new_kotlin_NoSuchElementException_wy3d4q_k$);
 initMetadataForClass(IndexOutOfBoundsException, 'IndexOutOfBoundsException', IndexOutOfBoundsException.new_kotlin_IndexOutOfBoundsException_cc7xqw_k$);
-initMetadataForClass(ConcurrentModificationException, 'ConcurrentModificationException', ConcurrentModificationException.new_kotlin_ConcurrentModificationException_fy07nh_k$);
 initMetadataForClass(ArithmeticException, 'ArithmeticException', ArithmeticException.new_kotlin_ArithmeticException_t7nj4q_k$);
+initMetadataForClass(ConcurrentModificationException, 'ConcurrentModificationException', ConcurrentModificationException.new_kotlin_ConcurrentModificationException_fy07nh_k$);
 initMetadataForClass(NumberFormatException, 'NumberFormatException', NumberFormatException.new_kotlin_NumberFormatException_rswu7k_k$);
 initMetadataForClass(NullPointerException, 'NullPointerException', NullPointerException.new_kotlin_NullPointerException_q6jd54_k$);
 initMetadataForClass(NoWhenBranchMatchedException, 'NoWhenBranchMatchedException', NoWhenBranchMatchedException.new_kotlin_NoWhenBranchMatchedException_9ooqm1_k$);

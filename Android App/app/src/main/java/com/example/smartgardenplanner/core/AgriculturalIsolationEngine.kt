@@ -17,7 +17,6 @@ import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.ProviderException
 import java.security.SecureRandom
-import java.util.ArrayDeque
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.Mac
@@ -267,38 +266,6 @@ class SecurityAuditLogger(private val context: Context) {
         val hashBytes = digest.digest(input.toByteArray(StandardCharsets.UTF_8))
         return hashBytes.joinToString("") { "%02x".format(it) }
     }
-}
-
-// --- IMMUTABLE HISTORICAL SNAPSHOT STACK ---
-class BoundedHistoryStack<T>(private var limit: Int) {
-    private val deque = ArrayDeque<T>()
-
-    fun push(element: T) {
-        if (deque.size >= limit) {
-            deque.pollFirst() // Discard oldest transition step
-        }
-        deque.addLast(element)
-    }
-
-    /** [NEW] Lets the configured depth (Settings) apply without recreating the stack / losing history. */
-    fun updateLimit(newLimit: Int) {
-        limit = newLimit
-        while (deque.size > limit) {
-            deque.pollFirst()
-        }
-    }
-
-    fun pop(): T? {
-        return if (deque.isNotEmpty()) deque.pollLast() else null
-    }
-
-    fun clear() {
-        deque.clear()
-    }
-
-    fun size(): Int = deque.size
-
-    fun toList(): List<T> = deque.toList()
 }
 
 // --- TELEMETRY SPATIAL INTEGRATION ENGINE ---

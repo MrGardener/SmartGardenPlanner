@@ -132,7 +132,9 @@ doesn't see the history.
 1. Refuse the whole file if it isn't JSON, `format` is wrong, `version` is missing or newer, `plots` is missing,
    or there are more than 100 plots. Nothing is stored.
 2. Otherwise range-check every value. Skip and report anything invalid (a plot with a bad size, a plant outside
-   the plot, a malformed obstacle). Drop out-of-range optional values.
+   the plot, a malformed obstacle, a site feature with any point outside the plot). Drop out-of-range optional
+   values; a direction that isn't a finite number reads as 0°. The limits are tested at, just inside and just
+   outside each value by `PlanFileLimitsTest` (SGP-TCS-001).
 3. Store each plot as a **new** plot. Existing plots are never overwritten; a name clash gets " (imported)".
 4. Match each plant's variety by code, then by name; skip and count plants whose variety is unknown.
 5. Do all of this in one database transaction.

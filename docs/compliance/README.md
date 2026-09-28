@@ -35,10 +35,16 @@ still to be done).
 - [SGP-SW-HLR-001](../requirements/SGP-SW-HLR-001_Software_High_Level_Requirements.md): software high-level requirements, rewritten from scratch and traced to T2 (full coverage), Proposed. The v20.18 HLR/LLR IDs are retired.
 - [SGP-SW-LLR-001](../requirements/SGP-SW-LLR-001_Software_Low_Level_Requirements.md): software low-level requirements by design component, traced to the HLRs (full coverage of active HLRs), with the error catalogue. Proposed.
 
+## Verification cases and procedures (§11.13)
+
+- [SGP-TCS-001](../verification/SGP-TCS-001_Test_Case_Specification.md): test cases for every LLR (at least three each: nominal, limit, invalid/random), the regression register, and the LLRs that don't match the code. Proposed.
+- [SGP-TPR-001](../verification/SGP-TPR-001_Test_Procedures.md): automated procedures (CI) and manual Android procedures that run those cases. Proposed.
+- Checked by `python3 tools/tc_trace.py --check` in CI.
+
 ## Life cycle data still to be produced (tracked in SGP-DWR-001)
 
 Software requirements data (§11.9) · Design Description (§11.10) · Verification cases & procedures
-(§11.13) · Verification results (§11.14) · SECI/SCI (§11.15/11.16) · Problem Reports (§11.17) ·
+(§11.13, first issue: SGP-TCS-001 / SGP-TPR-001) · Verification results (§11.14) · SECI/SCI (§11.15/11.16) · Problem Reports (§11.17) ·
 SCM/SQA records (§11.18/11.19) · Trace data (§11.21) · PDI specification (§11.22) · FHA/PSSA/CCA/SSA
 records · validation matrix · system verification matrix · Software Accomplishment Summary (§11.20).
 
