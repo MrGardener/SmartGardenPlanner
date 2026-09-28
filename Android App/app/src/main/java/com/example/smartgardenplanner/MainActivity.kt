@@ -3895,12 +3895,12 @@ fun CanvasWorkspaceScreen(
                             snackbarMessage = HardinessZones.describe(seed, activePlot?.hardinessZone) ?: "Not hardy in this zone."
                             return@TextButton
                         }
-                        val localPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
-                        if (localPoints.isEmpty() && autoPopulateEngine.estimateCount(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern) > com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS) {
+                        val allPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
+                        val localPoints = allPoints.filter { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
+                        if (allPoints.isEmpty() && autoPopulateEngine.estimateCount(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern) > com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS) {
                             snackbarMessage = "That's more than ${com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS} plants. Choose a smaller area or a variety with more spacing."
                             return@TextButton
                         }
-                            .filter { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
                         val newNodes = localPoints.fold(emptyList<PlantedNodeEntity>()) { accepted, point ->
                             val absX = minX + point.xM
                             val absY = minY + point.yM
