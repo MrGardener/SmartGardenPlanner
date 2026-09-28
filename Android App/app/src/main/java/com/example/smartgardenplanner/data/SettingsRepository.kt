@@ -39,6 +39,7 @@ class SettingsRepository(private val repository: SecurityRepository) {
         const val LAST_PLAN = "settings.lastPlanList"
         const val PLANT_LABELS = "settings.showPlantLabels"
         const val DISCLAIMER = "settings.disclaimerAccepted"
+        const val LANGUAGE = "settings.language"
     }
 
     suspend fun load(): AppSettings {
@@ -71,7 +72,8 @@ class SettingsRepository(private val repository: SecurityRepository) {
             planLayout = repository.fetchConfig(Keys.PLAN_LAYOUT)?.configValue ?: defaults.planLayout,
             lastPlanList = repository.fetchConfig(Keys.LAST_PLAN)?.configValue ?: defaults.lastPlanList,
             showPlantLabels = boolOrDefault(Keys.PLANT_LABELS, defaults.showPlantLabels),
-            disclaimerAccepted = boolOrDefault(Keys.DISCLAIMER, defaults.disclaimerAccepted)
+            disclaimerAccepted = boolOrDefault(Keys.DISCLAIMER, defaults.disclaimerAccepted),
+            language = repository.fetchConfig(Keys.LANGUAGE)?.configValue ?: defaults.language
         )
     }
 
@@ -104,6 +106,7 @@ class SettingsRepository(private val repository: SecurityRepository) {
         repository.saveConfig(Keys.LAST_PLAN, settings.lastPlanList)
         repository.saveConfig(Keys.PLANT_LABELS, settings.showPlantLabels.toString())
         repository.saveConfig(Keys.DISCLAIMER, settings.disclaimerAccepted.toString())
+        repository.saveConfig(Keys.LANGUAGE, settings.language)
     }
 
     suspend fun resetToDefaults() {

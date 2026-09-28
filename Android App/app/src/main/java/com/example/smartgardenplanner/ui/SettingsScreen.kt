@@ -158,6 +158,28 @@ fun SettingsScreen(
             SettingsSection(title = "About this planner") {
                 Text(com.example.smartgardenplanner.core.Disclaimer.TEXT, fontSize = 12.sp)
             }
+            SettingsSection(title = "Language", note = "Texts without a translation stay in English.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    com.example.smartgardenplanner.core.I18n.LANGUAGES.forEach { lang ->
+                        FilterChip(
+                            selected = settings.language == lang.code,
+                            onClick = {
+                                if (settings.language != lang.code) {
+                                    val chosen = settings.copy(language = lang.code)
+                                    settings = chosen
+                                    // Saved before the screen is rebuilt in the new language.
+                                    scope.launch {
+                                        withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(chosen) }
+                                        com.example.smartgardenplanner.applyLanguage(context, lang.code)
+                                        (context as? android.app.Activity)?.recreate()
+                                    }
+                                }
+                            },
+                            label = { Text(lang.name) }
+                        )
+                    }
+                }
+            }
             SettingsSection(title = "Units") {
                 Text("Distance unit", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Text("Everything is still stored in meters internally — this only changes how numbers are shown and entered.", fontSize = 11.sp, color = Color.Gray)
@@ -469,7 +491,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsSection(title: String, note: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Column {
-        Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(com.example.smartgardenplanner.tr(title), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         note?.let {
             Text(it, fontSize = 11.sp, color = Color.Gray, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp))
         }

@@ -197,6 +197,7 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
             com.example.smartgardenplanner.data.SecurityRepositoryImpl(database.configDao())
         ).load()
         com.example.smartgardenplanner.data.CareReminderWorker.schedule(context, startupSettings.careRemindersEnabled)
+        applyLanguage(context, startupSettings.language)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -204,6 +205,14 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
     }
 
     AppServices(database, auditLogger, SensorMeasurementEngine(context))
+}
+
+/** Loads the dictionary for [code] from assets/i18n (FR-062); English, or a missing file, means no translation. */
+fun applyLanguage(context: Context, code: String) {
+    val dict = if (code == "en") emptyMap() else try {
+        context.assets.open("i18n/$code.txt").bufferedReader().use { com.example.smartgardenplanner.core.I18n.parse(it.readLines()) }
+    } catch (e: java.io.IOException) { emptyMap() }
+    com.example.smartgardenplanner.core.I18n.use(if (dict.isEmpty()) "en" else code, dict)
 }
 
 @Composable
@@ -827,6 +836,9 @@ data class CanvasSnapshot(
     val history: List<PlantingHistoryEntity> // finished seasons (FR-033), so "Start a new season" can be undone
 )
 
+/** FR-062: interface text in the chosen language (English when there's no translation). */
+fun tr(text: String): String = com.example.smartgardenplanner.core.I18n.tr(text)
+
 /** [NEW] "x1,y1;x2,y2;..." <-> List<Offset> (meters) for POLYLINE path zones. */
 private fun parsePoints(json: String?): List<Offset> {
     if (json.isNullOrBlank()) return emptyList()
@@ -905,6 +917,9 @@ fun CanvasWorkspaceScreen(
     var germinationDialogNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     // FR-056: Plan B for a plant that died.
     var planBNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
+    // FR-061: a whole group — rearrange its rows, or move it by dragging any of its plants in Move Mode.
+    var rearrangeIds by remember { mutableStateOf<Set<Long>?>(null) }
+    var groupMoveIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var infoDialogNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     var changeVarietyNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
     var inProgressPoints by remember { mutableStateOf<List<Offset>>(emptyList()) } // [NEW] points-mode path being drawn
@@ -925,6 +940,14 @@ fun CanvasWorkspaceScreen(
     var autoPlanArea by remember { mutableStateOf<List<PlotPoint>?>(null) }
     var planPreview by remember { mutableStateOf<AutoPlanResult?>(null) }
     var planRunning by remember { mutableStateOf(false) }
+    // FR-060: layouts worked out for the proposal, the one shown, and how to get another.
+    var planOptions by remember { mutableStateOf<List<Pair<String, AutoPlanResult>>>(emptyList()) }
+    var planOptionIndex by remember { mutableStateOf(0) }
+    var planMore by remember { mutableStateOf<(suspend () -> Pair<String, AutoPlanResult>?)?>(null) }
+    // FR-063: plants already in the area that the proposal replaces when kept; FR-064: card folded.
+    var planReplace by remember { mutableStateOf(false) }
+    var planReplaceIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var previewFolded by remember { mutableStateOf(false) }
         val planRows = remember { mutableStateListOf<Pair<String, Int>>() }
         // FR-043: varieties marked "most important" in that list.
         val planPriority = remember { mutableStateListOf<String>() }
@@ -1003,6 +1026,8 @@ fun CanvasWorkspaceScreen(
     // [NEW] Drag-to-reposition support. Locked (off) by default, as requested, so it can't cause
     // an accidental move — must be explicitly enabled via the lock/unlock button in the top bar.
     var moveModeEnabled by remember { mutableStateOf(false) }
+    // A group move (FR-061) lasts until Move Mode is turned off; then single plants move one at a time again.
+    LaunchedEffect(moveModeEnabled) { if (!moveModeEnabled) groupMoveIds = emptySet() }
     var draggingNodeId by remember { mutableStateOf<Long?>(null) }
     var dragPreviewOffset by remember { mutableStateOf<Offset?>(null) }
 
@@ -1309,7 +1334,7 @@ fun CanvasWorkspaceScreen(
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let { message: String ->
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(tr(message))
             snackbarMessage = null
         }
     }
@@ -2112,6 +2137,28 @@ fun CanvasWorkspaceScreen(
                                                     onDragEnd = {
                                                         val id = draggingNodeId
                                                         val preview = dragPreviewOffset
+                                                        // FR-061: dragging a plant of the group being moved moves the whole group.
+                                                        if (id != null && preview != null && id in groupMoveIds) {
+                                                            val node = nodesState.find { it.id == id }
+                                                            val plot = activePlot
+                                                            if (node != null && plot != null) {
+                                                                val dx = (preview.x / size.width) * state.lengthM - node.coordinateXM
+                                                                val dy = (preview.y / size.height) * state.widthM - node.coordinateYM
+                                                                val group = nodesState.filter { it.id in groupMoveIds }
+                                                                val moved = com.example.smartgardenplanner.core.GroupTools.moved(group, dx, dy)
+                                                                val others = nodesState.filter { it.id !in groupMoveIds }
+                                                                val bad = com.example.smartgardenplanner.core.GroupTools.problems(moved, others, plot, { seedFor(it) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds) +
+                                                                    moved.count { n -> isInsidePath(n.coordinateXM, n.coordinateYM, seedFor(n.seedCode)?.exclusionRadiusM ?: 0.3f) }
+                                                                if (bad > 0) snackbarMessage = tr("Can't move the group there: $bad plant(s) would be outside the plot, on a path, or too close to other plants.")
+                                                                else launchSafely {
+                                                                    withContext(SgpExecutors.dbDispatcher) { database.withTransaction { moved.forEach { database.plantedNodeDao().update(it) } } }
+                                                                    reloadNodes(); undoStack.push(snapshotNow()); redoStack.clear()
+                                                                    snackbarMessage = tr("Moved ${moved.size} plants. Future rotation plans start from where they are now.")
+                                                                }
+                                                            }
+                                                            draggingNodeId = null; dragPreviewOffset = null
+                                                            return@detectDragGestures
+                                                        }
                                                         if (id != null && preview != null) {
                                                             val node = nodesState.find { it.id == id }
                                                             val seed = node?.let { seedFor(it.seedCode) }
@@ -2601,12 +2648,34 @@ fun CanvasWorkspaceScreen(
                                     }
                                     planPreview?.let { preview ->
                                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-                                            Column(modifier = Modifier.padding(10.dp).heightIn(max = 220.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                                                                Text(when {
-                                                    rotationPlans.isNotEmpty() -> "Rotation plan: ${rotationPlans.getOrNull(rotationIndex)?.year} (${rotationIndex + 1} of ${rotationPlans.size})"
-                                                    nextSeasonMode -> "Next season's plan: ${preview.placed.size} plants"
-                                                    else -> "Planting plan: ${preview.placed.size} plants"
-                                                }, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Column(modifier = Modifier.padding(10.dp).heightIn(max = if (previewFolded) 48.dp else 260.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(tr(when {
+                                                        rotationPlans.isNotEmpty() -> "Rotation plan: ${rotationPlans.getOrNull(rotationIndex)?.year} (${rotationIndex + 1} of ${rotationPlans.size})"
+                                                        nextSeasonMode -> "Next season's plan: ${preview.placed.size} plants"
+                                                        else -> "Planting plan: ${preview.placed.size} plants"
+                                                    }), fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                                                    // FR-064: fold the card to see more of the plot.
+                                                    TextButton(onClick = { previewFolded = !previewFolded }, contentPadding = PaddingValues(0.dp)) { Text(if (previewFolded) "+" else "−", fontSize = 18.sp) }
+                                                }
+                                                // FR-060: other layouts for the same list.
+                                                if (rotationPlans.isEmpty() && planOptions.isNotEmpty()) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        OutlinedButton(enabled = planOptionIndex > 0, onClick = { planOptionIndex--; planPreview = planOptions[planOptionIndex].second }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(tr("◀ Option"), fontSize = 11.sp) }
+                                                        Text(tr("Option ${planOptionIndex + 1}: ${planOptions[planOptionIndex].first}"), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                                                        OutlinedButton(enabled = !planRunning, onClick = {
+                                                            if (planOptionIndex + 1 < planOptions.size) { planOptionIndex++; planPreview = planOptions[planOptionIndex].second }
+                                                            else { val more = planMore; if (more != null) launchSafely {
+                                                                planRunning = true
+                                                                val next = try { more() } finally { planRunning = false }
+                                                                if (next != null) { planOptions = planOptions + next; planOptionIndex = planOptions.lastIndex; planPreview = next.second }
+                                                                else snackbarMessage = tr("No other layout is different from the ones shown.")
+                                                            } }
+                                                        }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(tr(if (planRunning) "Working…" else "Option ▶"), fontSize = 11.sp) }
+                                                    }
+                                                    activePlot?.let { plot -> Text(com.example.smartgardenplanner.core.AutoPlanner.summarize(plotContext(plot), preview), fontSize = 11.sp, color = Color.Gray) }
+                                                    if (planReplaceIds.isNotEmpty()) Text(tr("Keeping this plan replaces the ${planReplaceIds.size} plants already in this area."), fontSize = 11.sp, color = Color(0xFFB45309))
+                                                }
                                                 rotationPlans.getOrNull(rotationIndex)?.summary?.forEach { Text("• $it", fontSize = 11.sp) }
                                                                                                 preview.placed.groupBy { it.seed.botanicalCode }.forEach { (_, list) ->
                                                     Text("• ${VarietyCatalogTraits.displayName(list.first().seed)} × ${list.size}", fontSize = 11.sp)
@@ -2620,6 +2689,8 @@ fun CanvasWorkspaceScreen(
                                                         // FR-037: next season / rotation: close this season (plants → history) and plant the new one.
                                                         val newSeason = nextSeasonMode || rotationPlans.isNotEmpty()
                                                         val archived = if (newSeason && nodesState.isNotEmpty()) Seasons.archive(plotId, nodesState, Seasons.currentSeason(nodesState, historyState)) { seedFor(it) } else emptyList()
+                                                        val replaceIds = planReplaceIds
+                                                        val replaceNodes = nodesState.filter { it.id in replaceIds }
                                                         launchSafely {
                                                             withContext(SgpExecutors.dbDispatcher) {
                                                                 database.withTransaction {
@@ -2627,6 +2698,8 @@ fun CanvasWorkspaceScreen(
                                                                         if (archived.isNotEmpty()) database.plantingHistoryDao().insertAll(archived)
                                                                         database.plantedNodeDao().deleteAllForPlot(plotId)
                                                                     }
+                                                                    // FR-063: "start from a blank area" — the plants that were in it go.
+                                                                    if (!newSeason && replaceIds.isNotEmpty()) replaceNodes.forEach { database.plantedNodeDao().delete(it) }
                                                                     database.plantedNodeDao().insertAll(nodes)
                                                                 }
                                                             }
@@ -2817,6 +2890,9 @@ fun CanvasWorkspaceScreen(
                                 rows = planRows,
                 priority = planPriority,
                 shapes = planShapes,
+                inAreaCount = if (nextSeasonMode) 0 else nodesState.count { PlotGeometry.pointInPolygon(it.coordinateXM, it.coordinateYM, area) },
+                replaceExisting = planReplace,
+                onReplaceChange = { planReplace = it },
                 checksFor = { reqs ->
                     val plot = activePlot
                     if (plot == null) emptyList() else {
@@ -2863,26 +2939,42 @@ fun CanvasWorkspaceScreen(
                     val nowSeason = Seasons.currentSeason(nodesState, historyState)
                     val history = if (nextSeasonMode && nodesState.isNotEmpty()) historyState + Seasons.archive(plotId, nodesState, nowSeason) { seedFor(it) } else historyState
                     val season = if (nextSeasonMode && nodesState.isNotEmpty()) nowSeason + 1 else nowSeason
-                    val planNodes = if (nextSeasonMode) emptyList() else nodesState
+                    // FR-063: plants already in the area are kept (planned around) or replaced ("start from a blank area").
+                    val inArea = if (nextSeasonMode) emptyList() else nodesState.filter { PlotGeometry.pointInPolygon(it.coordinateXM, it.coordinateYM, area) }
+                    val replaceIds = if (planReplace) inArea.map { it.id }.toSet() else emptySet()
+                    val planNodes = if (nextSeasonMode) emptyList() else nodesState.filter { it.id !in replaceIds }
                     launchSafely {
                                                 val context = plotContext(plot, planNodes)
                         val paths = pathZonesState
+                        val blocked: (Float, Float, Float) -> Boolean = { x, y, r ->
+                            paths.any { zone ->
+                                if (zone.pathType == "POLYLINE") distanceToPolyline(x, y, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + r)
+                                else circleIntersectsRect(x, y, r, zone.xM, zone.yM, zone.widthM, zone.heightM)
+                            }
+                        }
+                        val margin = settings.spacingMarginMultiplier
+                        val firstVariant = if (remembered.planLayoutEnum == PlantingLayout.ROWS) AutoPlanner.VARIANT_COUNT - 1 else 0
                         val result = try { withContext(Dispatchers.Default) {
-                            AutoPlanner.plan(
-                                context, area, requests,
-                                isBlocked = { x, y, r ->
-                                    paths.any { zone ->
-                                        if (zone.pathType == "POLYLINE") distanceToPolyline(x, y, parsePoints(zone.pointsJson)) < (zone.widthM / 2f + r)
-                                        else circleIntersectsRect(x, y, r, zone.xM, zone.yM, zone.widthM, zone.heightM)
-                                    }
-                                },
-                                                                marginMultiplier = settings.spacingMarginMultiplier,
-                                orientationKnown = plot.orientationSet,
-                                layout = remembered.planLayoutEnum,
-                                history = history,
-                                seasonYear = season
-                            )
+                            AutoPlanner.planVariant(firstVariant, context, area, requests, blocked, margin, plot.orientationSet, history, season)
                         } } finally { planRunning = false }
+                        // FR-060: more layouts on request ("Option ▶"), skipping ones that come out the same.
+                        val tried = mutableSetOf(firstVariant)
+                        val seen = mutableSetOf(AutoPlanner.signature(result))
+                        planOptions = listOf(AutoPlanner.variantLabel(firstVariant) to result)
+                        planOptionIndex = 0
+                        planReplaceIds = replaceIds
+                        planMore = {
+                            withContext(Dispatchers.Default) {
+                                var found: Pair<String, AutoPlanResult>? = null
+                                for (v in 0 until AutoPlanner.VARIANT_COUNT) {
+                                    if (v in tried) continue
+                                    tried += v
+                                    val r = AutoPlanner.planVariant(v, context, area, requests, blocked, margin, plot.orientationSet, history, season)
+                                    if (r.placed.isNotEmpty() && seen.add(AutoPlanner.signature(r))) { found = AutoPlanner.variantLabel(v) to r; break }
+                                }
+                                found
+                            }
+                        }
                                                 planPreview = result
                         withContext(SgpExecutors.dbDispatcher) { settingsRepository.save(remembered) }
                     }
@@ -3411,6 +3503,45 @@ fun CanvasWorkspaceScreen(
         }
     }
 
+    rearrangeIds?.let { ids ->
+        val group = nodesState.filter { it.id in ids }
+        val plot = activePlot
+        if (group.size < 2 || plot == null) { rearrangeIds = null } else {
+            val others = nodesState.filter { it.id !in ids }
+            val options = remember(ids) { com.example.smartgardenplanner.core.ClumpShapes.options(group.size) }
+            AlertDialog(
+                onDismissRequest = { rearrangeIds = null },
+                title = { Text(tr("Group of ${group.size} plants")) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        OutlinedButton(onClick = {
+                            groupMoveIds = ids; moveModeEnabled = true; rearrangeIds = null
+                            snackbarMessage = tr("Move Mode: drag any plant of the group to move all ${group.size}. Turn Move Mode off when done.")
+                        }, modifier = Modifier.fillMaxWidth()) { Text(tr("Move the whole group")) }
+                        Text(tr("Or lay it out as other rows and columns (it stays centered where it is):"), fontSize = 12.sp, color = Color.Gray)
+                        options.forEach { o ->
+                            val moved = com.example.smartgardenplanner.core.GroupTools.rearranged(group, o.rows, { seedFor(it) }, settings.spacingMarginMultiplier)
+                            val bad = moved?.let { com.example.smartgardenplanner.core.GroupTools.problems(it, others, plot, { c -> seedFor(c) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds) } ?: 1
+                            OutlinedButton(enabled = moved != null && bad == 0, onClick = {
+                                val m = moved ?: return@OutlinedButton
+                                rearrangeIds = null
+                                launchSafely {
+                                    withContext(SgpExecutors.dbDispatcher) { database.withTransaction { m.forEach { database.plantedNodeDao().update(it) } } }
+                                    reloadNodes(); undoStack.push(snapshotNow()); redoStack.clear()
+                                    snackbarMessage = tr("Rearranged ${m.size} plants as ${o.label}. Undo reverses it.")
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Text(o.label + if (bad > 0) " — " + tr("doesn't fit here") else "", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { rearrangeIds = null }) { Text(tr("Close")) } },
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        }
+    }
+
     planBNode?.let { node ->
         val seed = seedFor(node.seedCode)
         if (seed == null) { planBNode = null } else {
@@ -3491,6 +3622,11 @@ fun CanvasWorkspaceScreen(
                 Row {
                     TextButton(onClick = { changeVarietyNode = node; infoDialogNode = null }) { Text("Change Variety") }
                     TextButton(onClick = { planBNode = node; infoDialogNode = null }) { Text("Plan B") }
+                    TextButton(onClick = {
+                        val g = com.example.smartgardenplanner.core.GroupTools.groupOf(nodesState, node) { seedFor(it) }
+                        infoDialogNode = null
+                        rearrangeIds = g.map { it.id }.toSet()
+                    }) { Text(tr("Group…")) }
                     TextButton(
                         onClick = {
                             launchSafely {
@@ -4113,6 +4249,9 @@ private fun AutoPlanRequestDialog(
         rows: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String, Int>>,
     priority: androidx.compose.runtime.snapshots.SnapshotStateList<String>,
     shapes: androidx.compose.runtime.snapshots.SnapshotStateMap<String, List<Int>>,
+    inAreaCount: Int,
+    replaceExisting: Boolean,
+    onReplaceChange: (Boolean) -> Unit,
     checksFor: (List<PlantRequest>) -> List<com.example.smartgardenplanner.core.PlanCheck>,
     usual: List<Pair<SeedEntity, Int>>,
     layout: PlantingLayout,
@@ -4151,6 +4290,16 @@ private fun AutoPlanRequestDialog(
                     }
                 }
                                 if (hasHistory) Text("Past seasons on this plot are used for crop rotation: crops are kept away from where their family grew recently.", fontSize = 11.sp, color = Color.Gray)
+                // FR-063: keep the plants already in this area, or plan it from blank.
+                if (inAreaCount > 0) {
+                    Text(tr("$inAreaCount plants are already in this area"), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onReplaceChange(false) }) {
+                        RadioButton(selected = !replaceExisting, onClick = { onReplaceChange(false) }); Text(tr("Keep them where they are and plan around them"), fontSize = 12.sp)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onReplaceChange(true) }) {
+                        RadioButton(selected = replaceExisting, onClick = { onReplaceChange(true) }); Text(tr("Start from a blank area: the new plan replaces them when you keep it"), fontSize = 12.sp)
+                    }
+                }
                 // FR-034: what this gardener usually plants, one tap to add.
                 if (usual.isNotEmpty()) {
                     Text("What you usually plant", fontSize = 11.sp, color = Color.Gray)

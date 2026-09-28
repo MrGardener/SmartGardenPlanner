@@ -143,7 +143,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
 
     LaunchedEffect(plotId) { reload() }
     LaunchedEffect(message) {
-        message?.let { snackbar.showSnackbar(it); message = null }
+        message?.let { snackbar.showSnackbar(com.example.smartgardenplanner.tr(it)); message = null }
     }
 
     Scaffold(
