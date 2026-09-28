@@ -19,7 +19,7 @@
   written when those features are scheduled. The coverage check lists them as intentionally deferred.
 - `[L-TBC-nn]` refers to this document's confirmation list (§8). `[TBC-nn]` and `[H-TBC-nn]` refer to the
   system and HLR lists. Proposed values apply until changed.
-- Units unless stated: metres (m), days (d), UTC milliseconds for timestamps, density-independent pixels
+- Units unless stated: meters (m), days (d), UTC milliseconds for timestamps, density-independent pixels
   (dp) for screen sizes. All `:core` arithmetic is double precision.
 
 ---
@@ -97,7 +97,7 @@ for INCHES, where ft² = m² / 0.09290304. ↑ HLR-VIEW-080
 
 ### 2.3 Geometry (GEO)
 
-**LLR-GEO-010** `PointM(x, y)` shall hold double coordinates in metres, relative to the plot's top-left
+**LLR-GEO-010** `PointM(x, y)` shall hold double coordinates in meters, relative to the plot's top-left
 corner. x runs along the plot length (to the right) and y along the plot width (downwards).
 ↑ HLR-RULE-010, HLR-LAY-010
 
@@ -300,7 +300,7 @@ consecutive plants, or 0 for an empty route. ↑ HLR-VIEW-090
 
 **LLR-WEED-010** `weedRiskArea(plot, plants, paths, lookup)` shall estimate the uncovered area on a grid:
 - cell size c = max(length, width) / 400, with cells covering the plot (edge cells clipped to it)
-- a cell is covered when its centre is within some plant's spacing circle (d ≤ r), inside a RECT path, or
+- a cell is covered when its center is within some plant's spacing circle (d ≤ r), inside a RECT path, or
   within width/2 of a LINE path
 - the area = sum of the areas of uncovered cells
 
@@ -428,13 +428,13 @@ and climate asset. ↑ HLR-ENC-100, HLR-CLIM-010
 
 ↑ HLR-ENC-020, HLR-ENC-030
 
-### 2.16 Colours and letter codes (COLR, LTR)
+### 2.16 Colors and letter codes (COLR, LTR)
 
-**LLR-COLR-010** The 16 preset colours shall be: #EF4444, #F97316, #F59E0B, #EAB308, #84CC16, #22C55E,
+**LLR-COLR-010** The 16 preset colors shall be: #EF4444, #F97316, #F59E0B, #EAB308, #84CC16, #22C55E,
 #10B981, #14B8A6, #06B6D4, #0EA5E9, #3B82F6, #6366F1, #8B5CF6, #A855F7, #D946EF, #EC4899.
-A user colour is stored as one of these strings. ↑ HLR-VIEW-070
+A user color is stored as one of these strings. ↑ HLR-VIEW-070
 
-**LLR-COLR-020** The automatic colour shall be HSV(h, 0.65, 0.90), where h = ((H mod 360) + 360) mod 360, and H
+**LLR-COLR-020** The automatic color shall be HSV(h, 0.65, 0.90), where h = ((H mod 360) + 360) mod 360, and H
 is the variety code's hash as defined by `java.lang.String.hashCode` (deterministic across runs). ↑ HLR-VIEW-070
 
 **LLR-LTR-010** `letterCodes(varieties on plot)` shall process the varieties sorted by code. Each gets the
@@ -507,7 +507,7 @@ distance (Earth radius 6371.0088 km), if that distance ≤ 50 km `[H-TBC-06]`, a
 ↑ HLR-STOR-020, HLR-STOR-040, HLR-PLOT-060, HLR-VIEW-100, HLR-HIST-050, HLR-PLTN-020
 
 **LLR-DB-020** `planting_date` shall be stored as ISO `yyyy-MM-dd`. LINE `points` shall be stored as
-`x,y;x,y;…`, with "." decimals, in metres, and at most MAX_POINTS_PER_SHAPE pairs. ↑ HLR-STOR-020, HLR-TIME-010
+`x,y;x,y;…`, with "." decimals, in meters, and at most MAX_POINTS_PER_SHAPE pairs. ↑ HLR-STOR-020, HLR-TIME-010
 
 **LLR-DB-030** Foreign-key enforcement shall be on for every connection. ↑ HLR-STOR-040
 
@@ -784,7 +784,7 @@ drawn, a plant drag is in progress, or a dialog with edited text is open. ↑ HL
 - plotId
 - tool
 - zoom
-- view centre (m)
+- view center (m)
 - in-progress points (≤ MAX_POINTS_PER_SHAPE)
 - open dialog id and its field texts
 - overlay toggles
@@ -795,12 +795,12 @@ drawn, a plant drag is in progress, or a dialog with edited text is open. ↑ HL
 plot data and undo history from the database. ↑ HLR-NAV-040, HLR-HIST-050
 
 **LLR-STATE-030** When a plot is opened by navigation (not restored), the tool shall be Plant, overlays off, zoom 1
-and the centre at the plot's middle. ↑ HLR-PLC-010, HLR-VIEW-080, HLR-VIEW-090
+and the center at the plot's middle. ↑ HLR-PLC-010, HLR-VIEW-080, HLR-VIEW-090
 
 ### 4.2 Canvas transform (XFORM)
 
 **LLR-XFORM-010** For a viewport of Vw × Vh px (after insets and ruler gutters), a plot L × W m, zoom z and
-centre (cx, cy):
+center (cx, cy):
 - s0 = min(Vw / L, Vh / W)
 - s = s0 · z
 - screen(x, y) = ((x − cx)·s + Vw/2, (y − cy)·s + Vh/2)
@@ -809,21 +809,21 @@ centre (cx, cy):
 
 **LLR-XFORM-020** `toPlot(screen)` shall be the exact inverse of LLR-XFORM-010. ↑ HLR-PLC-020, HLR-PLC-080
 
-**LLR-XFORM-030** The centre shall be clamped to [0, L] × [0, W] after every pan and zoom. ↑ HLR-VIEW-020
+**LLR-XFORM-030** The center shall be clamped to [0, L] × [0, W] after every pan and zoom. ↑ HLR-VIEW-020
 
 **LLR-XFORM-040** Pinch zoom shall multiply z by the gesture's scale factor, clamp z to [zoom_min, zoom_max],
-and adjust the centre so that the plot point under the gesture centroid stays under it. "+" and "−" shall change
-z by ± zoom_step (clamped), keeping the centre. ↑ HLR-VIEW-010
+and adjust the center so that the plot point under the gesture centroid stays under it. "+" and "−" shall change
+z by ± zoom_step (clamped), keeping the center. ↑ HLR-VIEW-010
 
-**LLR-XFORM-050** "Recenter" shall set z = 1 and centre = (L/2, W/2). It shall be visible only when z ≠ 1 or
-the centre ≠ (L/2, W/2). ↑ HLR-VIEW-010
+**LLR-XFORM-050** "Recenter" shall set z = 1 and center = (L/2, W/2). It shall be visible only when z ≠ 1 or
+the center ≠ (L/2, W/2). ↑ HLR-VIEW-010
 
 **LLR-XFORM-060** `hitToleranceM = HIT_TOLERANCE_DP × density / s`. ↑ HLR-PLC-040, HLR-PLC-080, HLR-AREA-030
 
 ### 4.3 Gestures (GEST)
 
 **LLR-GEST-010** The pointer handler shall treat the gesture as a transform (pinch/pan) whenever two or more
-pointers are down. A one-finger gesture in progress when a second pointer goes down shall be cancelled,
+pointers are down. A one-finger gesture in progress when a second pointer goes down shall be canceled,
 with no change to stored data. ↑ HLR-VIEW-020, HLR-VIEW-030
 
 **LLR-GEST-020** A tap is a single pointer that moves less than the system touch slop and is released within the
@@ -839,7 +839,7 @@ long-press timeout. In the Plant tool, the software shall:
 the finger position. On release it calls `movePlant` (validated). On rejection or cancel it redraws the plant
 at its stored position and shows the message. ↑ HLR-PLC-080
 
-**LLR-GEST-040** In the Path tool, rectangle style, a drag shall produce `normalizeRect(start, end)` in metres,
+**LLR-GEST-040** In the Path tool, rectangle style, a drag shall produce `normalizeRect(start, end)` in meters,
 then `clipRect`. The path is added if both sides ≥ MIN_SHAPE_SIDE_M. ↑ HLR-AREA-010
 
 **LLR-GEST-050** In the Path tool, line style, and in the Area tool, polygon shape, each tap inside the plot shall
@@ -875,15 +875,15 @@ its left and right edges (within the platform limit), so that drawing near an ed
 
 ↑ HLR-LAY-020, HLR-LAY-030, HLR-VIEW-080, HLR-VIEW-090
 
-**LLR-DRAW-020** Plant markers shall be circles with a radius of 10 dp, in the variety colour, with the letter
-code centred (text ≥ 10 sp). Spacing circles have radius `radiusM · s`, a translucent fill (alpha 0.25) and an
+**LLR-DRAW-020** Plant markers shall be circles with a radius of 10 dp, in the variety color, with the letter
+code centered (text ≥ 10 sp). Spacing circles have radius `radiusM · s`, a translucent fill (alpha 0.25) and an
 outline (1 dp). ↑ HLR-LAY-020, HLR-NAV-080
 
-**LLR-DRAW-030** Overdue plants shall get a ring of radius 14 dp and stroke 3 dp in the theme's error colour.
+**LLR-DRAW-030** Overdue plants shall get a ring of radius 14 dp and stroke 3 dp in the theme's error color.
 Conflict-flagged plants shall get a warning triangle, 12 dp, at the top-right of the marker. ↑ HLR-LAY-050, HLR-LAY-060
 
 **LLR-DRAW-040** The weed-risk overlay shall be drawn as: plot rectangle minus the union of spacing circles
-minus the paths (path boolean operations). It is filled with the theme's warning colour at alpha 0.3, and cached,
+minus the paths (path boolean operations). It is filled with the theme's warning color at alpha 0.3, and cached,
 recomputed only when plants, paths or scale change. ↑ HLR-VIEW-080, HLR-PERF-020
 
 **LLR-DRAW-050** The ruler tick step shall be: raw = ruler_tick_m (converted to the display unit) / z, then the
@@ -896,7 +896,7 @@ Text size = ruler_text_sp. ↑ HLR-VIEW-040
 **LLR-DRAW-070** Text layout and paint objects shall be created once per style and reused across frames.
 Nothing shall be allocated per plant per frame beyond primitive values. ↑ HLR-PERF-020
 
-**LLR-DRAW-080** Colours shall come from the theme (light, dark, high-contrast). Plant colours come from
+**LLR-DRAW-080** Colors shall come from the theme (light, dark, high-contrast). Plant colors come from
 LLR-COLR-010/020. ↑ HLR-VIEW-070
 
 ---
@@ -907,7 +907,7 @@ LLR-COLR-010/020. ↑ HLR-VIEW-070
 
 **LLR-LIST-010** The plot list shall observe the non-archived query (LLR-DB-070). Each row shows the name,
 `formatDistance(L) × formatDistance(W)` and the plant count. A "Show archived" switch changes the query to all
-plots, with archived ones labelled. ↑ HLR-PLOT-010, HLR-PLOT-100
+plots, with archived ones labeled. ↑ HLR-PLOT-010, HLR-PLOT-100
 
 **LLR-LIST-020** With zero rows, the list shall show the empty-state text and a "Create plot" button.
 ↑ HLR-PLOT-020
@@ -925,7 +925,7 @@ are valid. ↑ HLR-PLOT-030, HLR-PLOT-040
 **LLR-EDIT-020** On save, if L or W < UNUSUAL_MIN_M or > UNUSUAL_MAX_M, a confirmation dialog shall be shown.
 Cancel returns to the form unchanged. ↑ HLR-PLOT-050
 
-**LLR-EDIT-030** Saving a new plot shall call `createPlot` with a new UUID, the dimensions in metres and
+**LLR-EDIT-030** Saving a new plot shall call `createPlot` with a new UUID, the dimensions in meters and
 created = modified = now, then navigate to Layout(newId), replacing the editor in the back stack. ↑ HLR-PLOT-060
 
 **LLR-EDIT-040** Saving an existing plot shall call `renamePlot` and/or `resizePlot`. An `OutsideBounds`
@@ -971,7 +971,7 @@ When the irrigation route is on, a movable water-source marker is drawn. Draggin
 the marker) calls `setWaterSource` with the position clamped to the plot. Route length and weed-risk area are
 shown in a small panel. ↑ HLR-VIEW-080, HLR-VIEW-090, HLR-VIEW-100
 
-**LLR-LAYV-110** The Legend shall list the varieties on the plot, sorted by name, each with colour, letter
+**LLR-LAYV-110** The Legend shall list the varieties on the plot, sorted by name, each with color, letter
 code, name and count. ↑ HLR-VIEW-060
 
 **LLR-LAYV-120** When the plot has a location, the header shall show the zone and frost dates. Location-
@@ -1049,7 +1049,7 @@ header. ↑ HLR-ENC-050, HLR-ENC-060, HLR-ENC-110
 
 **LLR-ENCV-030** The editor shall validate with LLR-CATP-020's rules (code uniqueness checked against the
 database). It takes the radius in the display unit, and offers the family as a list from `families.txt`,
-companions and antagonists as a searchable multi-select from `species.txt`, and the 16 colours plus
+companions and antagonists as a searchable multi-select from `species.txt`, and the 16 colors plus
 "Automatic". Save is enabled only when valid. ↑ HLR-ENC-070, HLR-ENC-080
 
 **LLR-ENCV-040** "Delete" shall appear only for USER varieties. A refusal lists the plots using it. ↑ HLR-ENC-090
@@ -1125,7 +1125,7 @@ text. It never crashes. ↑ HLR-CAPS-020, HLR-CAM-010
 **LLR-A11Y-010** Every interactive element shall have a minimum touch target of 48 × 48 dp and a content
 description from string resources. ↑ HLR-NAV-070
 
-**LLR-A11Y-020** The canvas shall expose each plant as a semantic node at its marker, labelled
+**LLR-A11Y-020** The canvas shall expose each plant as a semantic node at its marker, labeled
 "<variety name>, planted <date>", with a click action that opens its details. ↑ HLR-NAV-070
 
 **LLR-DISP-010** The activity shall enable edge-to-edge. Every screen shall apply safe-drawing insets to its
@@ -1134,7 +1134,7 @@ content and floating controls. No orientation shall be locked `[TBC-21]`. ↑ HL
 **LLR-DISP-020** Text sizes shall be in sp from the theme typography. Forms and settings shall scroll vertically.
 At font scale 2.0, no control shall be clipped so that it can't be used. ↑ HLR-NAV-060
 
-**LLR-DISP-030** A configuration change shall not recreate ViewModels, and shall keep the zoom and view centre
+**LLR-DISP-030** A configuration change shall not recreate ViewModels, and shall keep the zoom and view center
 of LLR-STATE-010. ↑ HLR-NAV-030
 
 ### 5.7 Errors, about and data-unreadable screens (ERRV, ABOUT, UNRD)
@@ -1214,16 +1214,16 @@ memory and in settings. ↑ HLR-AUTO-060, HLR-AUTO-010
 **LLR-VAR-010** `VarietyCatalogTraits.of(seed)` shall return, by species key and cultivar name: for "pepper" a
 shape (bell, horn, banana, mild chile, chile, hot chile, super-hot), a `Heat` (SWEET … EXTREME) and a `FruitColour`
 from a table covering all 46 catalog peppers (else keywords "bell", "sweet", "hot"/"chil" in the name or care notes);
-"shishito type pepper" mild green; for "tomato" a size (cherry, salad, slicing, beefsteak, paste) and colour from a
+"shishito type pepper" mild green; for "tomato" a size (cherry, salad, slicing, beefsteak, paste) and color from a
 table covering all catalog tomatoes (else "cherry/grape/currant/pear", "paste/roma/plum/marzano", "beefsteak"
-keywords); "paste tomato" paste; "onion" bulb with a colour; "spring onion" spring; "egyptian walking onion" walking;
-null otherwise. `details` joins kind, heat (not for sweet), colour and size note; `tag` is kind and colour for the
-layout; `displayName` appends the details in brackets; `dotArgb` is the colour. ↑ HLR-VAR-010, HLR-VAR-020
+keywords); "paste tomato" paste; "onion" bulb with a color; "spring onion" spring; "egyptian walking onion" walking;
+null otherwise. `details` joins kind, heat (not for sweet), color and size note; `tag` is kind and color for the
+layout; `displayName` appends the details in brackets; `dotArgb` is the color. ↑ HLR-VAR-010, HLR-VAR-020
 
 **LLR-VAR-020** ONI-101..103 (Spring Onion - Evergreen Hardy White, Tokyo Long White, Red Beard) shall be in all three
 tier files (253 / 603 / 2,939). At start-up, when the seed table holds fewer rows than the active tier's count, the
-tier file shall be inserted with `OnConflictStrategy.IGNORE`. Android draws the tag 34 px below the plant centre in
-24 px bold ink over a 6 px paper-coloured halo, and the centre dot in `dotArgb` with an ink outline; the web draws the
+tier file shall be inserted with `OnConflictStrategy.IGNORE`. Android draws the tag 34 px below the plant center in
+24 px bold ink over a 6 px paper-coloured halo, and the center dot in `dotArgb` with an ink outline; the web draws the
 same with SVG text sized to the layout. `settings.showPlantLabels` (default true) and the web preference control the
 names. ↑ HLR-VAR-020
 
@@ -1237,7 +1237,7 @@ Placing (tap) and moving (drag) a plant on Android and the web shall show `CropR
 change. ↑ HLR-ROT-010
 
 **LLR-ROT-020** `CropRotation.advice(plot, history, current, lookup, seasonYear)` shall return: a no-history hint;
-else "YEAR: group (species) in the SPOT; …" for the last season, where SPOT comes from `describeSpot` (plot centre
+else "YEAR: group (species) in the SPOT; …" for the last season, where SPOT comes from `describeSpot` (plot center
 offset projected on north and east unit vectors from `sunDirectionInPlot(0|90, bearing)`, thirds of the half-size →
 "north-west corner", "east side", "middle" …); one line per group naming the successor and the wait; a row note when
 `isRow` (long side ≥ 60 % of the plot side and short side ≤ 25 % of the long side, ≥ 4 plants); one ⚠ line per
@@ -1283,12 +1283,12 @@ HLR-BLK-020, HLR-ROT-020
 **LLR-BLK-020** `VineHabits` shall give runways (watermelon 2.0 m, melon 1.5, pumpkin 2.5, winter squash 2.0, cucumber
 1.2, sweet potato 1.5, luffa 2.0, bottle gourd 2.0, bitter melon 1.5, summer squash 0.8) and climbers (pole bean,
 yard-long bean, pea). A placed vine block reserves the rectangle from its front edge to the runway length across its
-width and adds a `GrowthGuide` (area, arrow from the block's front centre toward the sun), drawn dashed green with an
+width and adds a `GrowthGuide` (area, arrow from the block's front center toward the sun), drawn dashed green with an
 arrow on the web and Android proposals. ↑ HLR-BLK-020
 
 **LLR-FIND-010** Web: `App.find(label, test)` sets `Canvas.find`; matching plants get a pulsing orange ring and a label,
-others 25 % opacity; the floating "On this plot" legend (collapsible) lists variety, count, kind and colour (ring =
-variety colour, centre = fruit colour) and toggles find; Food harvest lines and Harmony counts find by species name;
+others 25 % opacity; the floating "On this plot" legend (collapsible) lists variety, count, kind and color (ring =
+variety color, center = fruit color) and toggles find; Food harvest lines and Harmony counts find by species name;
 Esc clears. Android: overflow-menu legend items show counts and kinds and toggle `findCode`; matching plants get a 6 px
 orange ring, others 25 % alpha; a "Showing … — tap to clear" button clears it. ↑ HLR-FIND-010
 
@@ -1304,9 +1304,9 @@ null. Android: in OUTLINE mode with no new points, handles are drawn; a tap with
 side, ≤ 1.5 m) of a corner selects it (orange) and the next tap moves it through `saveOutline`; the menu's "Delete
 outline (back to the full rectangle)" calls `saveOutline(null)`. ↑ HLR-OUTL-010
 
-**LLR-CMP-010** Both clients draw, around the compass centre, for N/E/S/W at bearing − plot bearing: a filled half and a
+**LLR-CMP-010** Both clients draw, around the compass center, for N/E/S/W at bearing − plot bearing: a filled half and a
 white half arrowhead from 0.6 r to 1.02 r (half-width 0.2 r at 0.52 r) and the letter at 0.34 r, upright; N red
-(#DC2626) when set, grey otherwise with "N?". Web r = 3.8 × (longer side / 38) placed right of the plot (the fitted view
+(#DC2626) when set, gray otherwise with "N?". Web r = 3.8 × (longer side / 38) placed right of the plot (the fitted view
 includes it); Android r = 62 px at the top-right of the canvas on a white disc. ↑ HLR-CMP-010
 
 **LLR-SEAS-040** `Seasons.currentSeason` defines the planning season. Web: the Plot tab's "Season shown on the layout"
@@ -1367,7 +1367,7 @@ web tool "Irrigation" with the kind chosen on the Plot tab; Android menu → Irr
 **LLR-WATER-020** `Irrigation.sprinklerCovers` = within the throw and, for arcs, |compass bearing from the head − arc middle|
 ≤ arc / 2, where the bearing uses north / east unit vectors from `sunDirectionInPlot(0|90, plot bearing)`;
 `dripCovers` = distance to the polyline ≤ half-width; `hoseReaches` = straight distance ≤ hose length. `sourceAt` returns
-the best of DRIP, SPRINKLER, HOSE, else MANUAL. `grid(plot, features, cols, rows)` evaluates cell centres (web 40 cols,
+the best of DRIP, SPRINKLER, HOSE, else MANUAL. `grid(plot, features, cols, rows)` evaluates cell centers (web 40 cols,
 Android 40 cols, rows from the aspect ratio) and both clients fill non-MANUAL cells with `WaterSource.argb`; plants whose
 source is MANUAL get a red (#DC2626) dashed ring. ↑ HLR-IRR-020
 
@@ -1421,6 +1421,54 @@ dialog link, `planBNode` dialog (transaction + undo snapshot); Care section. ↑
 
 **LLR-RULER-010** Web `drawRulers`: ticks `class="ruler-tick"` with the number only, one `class="ruler-unit"` "(m)" left of
 the origin. Android `drawRuler`: the number via `DistanceFormatter.metersToDisplay`, the unit suffix only at 0. ↑ HLR-RULER-010
+
+**LLR-BLK-030** `BlockPlanner`: `Rect.contains(u, v, pad)`; `cellOk` rejects cells inside a reserved runway padded by
+0.8 × r. Runway samples are bad when outside the area, inside another reserved runway, within 0.8 × r of a placed or
+existing plant, or within 0.4 m of a fence/wall/building feature (`walls`); the vine term is 3 × (free − 2 × bad) /
+samples, and −25 when bad > 30 %. ↑ HLR-BLK-030
+
+**LLR-BLK-040** `BlockPlanner`: `rejected` = set of 5 cm grid keys; cells failing `validatePlacement` are added and
+`cellOk` skips them; when no cell of the chosen block passes, the anchor search repeats (≤ 25 tries). When the first
+block of a request is only partly valid, its placed nodes are rolled back and the search repeats (`wholeTries` ≤ 8)
+before accepting a split. ↑ HLR-BLK-040
+
+**LLR-OPT-010** `BlockPlanner.plan(…, variant)`: 1/6 `sideBias` +4, 2/7 −4 (score + bias × u / width); 3/6 `reorder`
+(requests reversed within the same rank); 4/7 `altShape` (columns = ⌊√n⌋); 5 `depthWeight` 1.0 (sun first); 8 `spread`
++6, 9 −6. `AutoPlanner`: `VARIANT_LABELS` (10), `VARIANT_COUNT` = 11 (10 = long rows), `variantLabel`, `planVariant`,
+`signature` (sorted code@x,y at 10 cm), `summarize(context, r)` ("N placed · M didn't fit · average sun H h"),
+`options(…, count = 8)`. Web: `Store.planOptions / planOptionIndex / planMore / planSummary`, ◀ ▶ buttons in
+`.opt-nav`. Android: `planOptions`, `planOptionIndex`, `planMore` (suspend, Dispatchers.Default). ↑ HLR-OPT-010
+
+**LLR-KEEP-010** Web: the plan dialog shows the `.keep-choice` radios when `inArea` > 0 (`Store.planReplace`); the
+planner context excludes those ids; `Store.previewReplace` holds them and "Keep this plan" removes them and adds the new
+plants in one `Store.change`. Android: `AutoPlanRequestDialog(inAreaCount, replaceExisting, onReplaceChange)`,
+`planReplaceIds`; "Plant them" deletes `replaceNodes` inside the same `withTransaction` as the insert. ↑ HLR-KEEP-010
+
+**LLR-CARD-010** Web: `.pv-head` with − / + (`Store.previewFolded`) and `draggableBy(box, handle, onDrop, pos)` storing
+`Store.previewPos`. Android: `previewFolded` limits the card to 48 dp. ↑ HLR-CARD-010
+
+**LLR-GRP-010** `GroupTools.groupOf(nodes, start, lookup)`: breadth-first over same-code nodes within 2 × r × 1.6 + 1 cm;
+`inRect` for the web band select (`Canvas.bandStart`, Shift + drag); `Selection.Group(ids)`; `selectGroupOf`. Android:
+info dialog "Group…" → `rearrangeIds`. ↑ HLR-GRP-010
+
+**LLR-GRP-020** `GroupTools.moved(group, dx, dy)` and `problems(moved, others, plot, lookup, margin, companions,
+guilds)` (plot containment + `validatePlacement`); callers add the path check. Web: drag of a `Selection.Group`; Android:
+`groupMoveIds` set by "Move the whole group", used at drag end, cleared when Move Mode goes off. One undo step each.
+↑ HLR-GRP-020
+
+**LLR-GRP-030** `GroupTools.rearranged(group, rows, lookup, margin)`: null when the rows don't sum to the group size;
+pitch = 2 × largest r × margin; rows centered on the group's mean point, shorter rows centered; plants assigned in
+reading order. Options from `ClumpShapes.options(n)`, each checked with `problems`. ↑ HLR-GRP-030
+
+**LLR-LANG-010** Interface string literals use US spelling (neighbor, color, center, meters, organized, gray…); the
+plan file's `"units":"metres"` and published cultivar names are unchanged. ↑ HLR-LANG-010
+
+**LLR-LANG-020** `I18n` (core): `LANGUAGES` (en, es), `parse(lines)`, `use(code, dict)` (exact map + regex templates,
+longest first), `tr(text)`, `coverage(texts)`. Dictionaries: `assets/i18n/<code>.txt`, embedded in the web page as
+`sgp-i18n-<code>`. Web `Lang.apply` translates text nodes, title, placeholder and aria-label after each render
+(`Prefs.language`, header select). Android: top-level `tr()`, `applyLanguage(context, code)` at start-up and from
+Settings → Language (saved as `settings.language`, then `Activity.recreate()`); snackbars and section titles pass
+through `tr`. ↑ HLR-LANG-020
 
 **LLR-SWAP-010** `PlantSwap.replaceAll(nodes, fromCode, to, lookup, zone, margin, companions, guilds)` shall return the
 nodes unchanged with a message when the variety is the same, none are planted, or `HardinessZones.blocksPlacement(to,
@@ -1500,13 +1548,13 @@ as JPEG 85 % (web: data URL, retried at 60 % if over 4 000 000 characters). `Bac
 aspect = height/width. ↑ HLR-SAT-010
 
 **LLR-SAT-020** `Backdrop.calibrate(a, b, d)` returns null if |ab| < 0.01 m, d ∉ 0.1–2000 or the new width ∉ 1–2000 m;
-else scales by k = d/|ab| about a (the centre moves to a + k(c − a); the turn is kept). The photo turns about its centre;
-`turned(deg)` and `parse` normalise to −180…180 (`normalizeDeg`), `describeTurn` gives "n° clockwise / counter-clockwise".
+else scales by k = d/|ab| about a (the center moves to a + k(c − a); the turn is kept). The photo turns about its center;
+`turned(deg)` and `parse` normalise to −180…180 (`normalizeDeg`), `describeTurn` gives "n° clockwise / counterclockwise".
 Web: a range and a number box (min/max set before the value) kept in step, applied on change; SVG `rotate(r cx cy)`.
 Android: `Slider` −180…180 and a number field with "Set"; `nativeCanvas.rotate(r, w/2, h/2)` after translating to the
 corner. `moved(dx, dy)`; opacity 0.1–1; `visible`. Web: Tool
 "Satellite photo" (drag to move; two clicks then a distance dialog while calibrating), SVG `<image>` with
-`rotate(r cx cy)` (about the centre) drawn after the paper, before the grid; sliders apply on change; every change is one undo step.
+`rotate(r cx cy)` (about the center) drawn after the paper, before the grid; sliders apply on change; every change is one undo step.
 Android: `CanvasMode.PHOTO` with a tap detector (calibrating) or drag detector (moving), bitmap drawn with the plot's
 x/y scale, translate and rotate before the grid; placement saved with `plotDao().update`. ↑ HLR-SAT-020
 
@@ -1524,8 +1572,8 @@ schema is 12). The creator
 shows `CompassChips`; `PlotDirectionDialog` offers the chips and a 0–355° slider with 70 steps; saving sets
 `orientationSet = true`. ↑ HLR-ORNT-010
 
-**LLR-ORNT-020** The layout shall draw, 44 px from the canvas's top-right corner, an arrow from the centre toward
-bearing −northBearingDeg (red, labelled "N"), grey and labelled "N?" when `orientationSet` is false, and show the
+**LLR-ORNT-020** The layout shall draw, 44 px from the canvas's top-right corner, an arrow from the center toward
+bearing −northBearingDeg (red, labeled "N"), gray and labeled "N?" when `orientationSet` is false, and show the
 tappable warning text in the plot header while it is false. ↑ HLR-ORNT-020
 
 **LLR-ORNT-030** `ZipLookup.location` shall binary-search the bundled `zip_locations.txt` (lines "zip|lat|lon|state",
@@ -1545,12 +1593,12 @@ outline if it differs. Insert, update, move and delete of a site feature and `sa
 `snapshotNow()` after reloading. ↑ HLR-OBST-020
 
 **LLR-OBST-030** `SunBand.of(hours)` shall return FULL_SUN for hours ≥ 6, PART_SHADE for hours ≥ 3, else
-FULL_SHADE, with overlay colours 0x40FACC15, 0x6660A5FA and 0xA6312E81 (ARGB). `LayoutPalette` shall hold the
-layout colours (paper 0xFFF5F1E6, grid, border, ink, paths, fence, wall, building, tree, trunk, site areas). The
+FULL_SHADE, with overlay colors 0x40FACC15, 0x6660A5FA and 0xA6312E81 (ARGB). `LayoutPalette` shall hold the
+layout colors (paper 0xFFF5F1E6, grid, border, ink, paths, fence, wall, building, tree, trunk, site areas). The
 Android canvas and the web SVG shall fill the plot with `PAPER`, draw every cell of `SunlightEngine.sunHoursGrid`
-in its band colour while the shade display is on, draw tree crowns as outlines only while it is on, and show a
+in its band color while the shade display is on, draw tree crowns as outlines only while it is on, and show a
 "Sun today" legend of the three bands. The web page theme (auto, light, dark; kept in the browser) shall not change
-the layout colours. ↑ HLR-OBST-030
+the layout colors. ↑ HLR-OBST-030
 
 **LLR-PFILE-010** `PlanFileCodec.encode` shall write a JSON object with `format` = "smart-garden-plan",
 `version` = 1, `exportedAt` (ISO-8601 UTC), `app`, `units` = "metres", `plots` (name, description, lengthM,
@@ -1604,11 +1652,11 @@ shade overlay `SunlightEngine.sunHoursGrid` for today. ↑ HLR-PORT-040
   be written when they are scheduled.
 - HLR-MEAS-010 is **[Suspended]** pending decision D-03.
 
-## 7. Error catalogue
+## 7. Error catalog
 
 | Code | Condition | User text (string resource) | Handling |
 |---|---|---|---|
-| E-DATA-001 | Stored data could not be read | "Couldn't read your garden data. Try again; if it keeps happening, restart the app." | Action cancelled |
+| E-DATA-001 | Stored data could not be read | "Couldn't read your garden data. Try again; if it keeps happening, restart the app." | Action canceled |
 | E-DATA-002 | Stored data could not be written | "Couldn't save the change. Nothing was changed. Free some storage and try again." | Transaction rolled back |
 | E-DATA-003 | Data from an unsupported (newer/older) version | "This data was created by a different version of the app and can't be opened." | No file modified |
 | E-DATA-004 | Plant or path limit reached | "This plot has reached its limit of <n> <plants/paths>." | Change refused |
@@ -1629,7 +1677,7 @@ shade overlay `SunlightEngine.sunHoursGrid` for today. ↑ HLR-PORT-040
 | E-SET-001 | Setting conflict | "Minimum must stay below maximum." | Change refused |
 | E-AUD-001 | Audit log unreadable | "Audit log can't be read (key lost at seq <n>)." | Shown in About |
 
-↑ HLR-STOR-050 (catalogue referenced by all error-reporting LLRs)
+↑ HLR-STOR-050 (catalog referenced by all error-reporting LLRs)
 
 ## 8. LLR-level values to confirm `[L-TBC]`
 
@@ -1823,6 +1871,16 @@ Generated by script from the `↑` links above.
 | HLR-SUN-020 | Active | LLR-SUN-020 |
 | HLR-PLANB-010 | Active | LLR-PLANB-060 |
 | HLR-RULER-010 | Active | LLR-RULER-010 |
+| HLR-BLK-030 | Active | LLR-BLK-030 |
+| HLR-BLK-040 | Active | LLR-BLK-040 |
+| HLR-OPT-010 | Active | LLR-OPT-010 |
+| HLR-KEEP-010 | Active | LLR-KEEP-010 |
+| HLR-CARD-010 | Active | LLR-CARD-010 |
+| HLR-GRP-010 | Active | LLR-GRP-010 |
+| HLR-GRP-020 | Active | LLR-GRP-020 |
+| HLR-GRP-030 | Active | LLR-GRP-030 |
+| HLR-LANG-010 | Active | LLR-LANG-010 |
+| HLR-LANG-020 | Active | LLR-LANG-020 |
 | HLR-SWAP-010 | Active | LLR-SWAP-010 |
 | HLR-LEG-010 | Active | LLR-LEG-010 |
 | HLR-ARR-010 | Active | LLR-ARR-010 |
@@ -1852,8 +1910,8 @@ Generated by script from the `↑` links above.
 
 ## 10. Coverage check
 
-- LLRs: **290**. Duplicate LLR IDs: **0**.
-- HLRs: 203 (195 active, 7 future, 1 suspended).
+- LLRs: **300**. Duplicate LLR IDs: **0**.
+- HLRs: 213 (205 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

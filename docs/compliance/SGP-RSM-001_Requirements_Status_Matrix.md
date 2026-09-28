@@ -228,7 +228,7 @@ requirement or is extraneous code to be removed. Found by inspection:
 ## 4. Requirements added since the baseline (Revision B, 2026-09-27)
 
 Revision B adds the system requirements written after the baseline commit, from the owner's requests of
-2026-09-27 (FEATURE_ROADMAP FR-027 … FR-057). T2-FUN-260 was revised (1–30 seasons instead of 2–10, and variety changes) at the owner's request. Their status is the "Now" line of SGP-SYS-REQ-001, assessed by code
+2026-09-27 (FEATURE_ROADMAP FR-027 … FR-064). T2-FUN-260 was revised (1–30 seasons instead of 2–10, and variety changes) at the owner's request. Their status is the "Now" line of SGP-SYS-REQ-001, assessed by code
 inspection and by the automated tests named in the Verification Plan and Test Specification (§ added-feature tests);
 source at commit `1f2a58a` plus the changes of that day. The HLR/LLR for each is listed in the trace tables of
 SGP-SW-HLR-001 / SGP-SW-LLR-001 (`python3 tools/req_trace.py --check`: no gaps).
@@ -262,6 +262,11 @@ SGP-SW-HLR-001 / SGP-SW-LLR-001 (`python3 tools/req_trace.py --check`: no gaps).
 | T2-FUN-410 | Growing season and planting calendar | **IMPL** |  Parent: owner request 2026-09-27 (FR-054). Also closes T2-DAT-080 (offline frost dates). |
 | T2-FUN-420 | Plan for the growing season's sun | **IMPL** |  Parent: owner problem report 2026-09-27 (FR-055). Root cause: sun was judged on the day the plan was made (late September: long tree shadows). |
 | T2-FUN-430 | Plan B when a plant dies | **IMPL** |  Parent: owner request 2026-09-27 (FR-056); computes T2-FUN-080 (a)/(c). |
+| T2-FUN-440 | Several layouts to choose from | **IMPL** |  Parent: owner request 2026-09-28 (FR-060). Up to 11 variants, identical ones skipped. |
+| T2-FUN-450 | Keep or replace what's already there | **IMPL** |  Parent: owner request 2026-09-28 (FR-063). |
+| T2-FUN-460 | Proposal card out of the way | **IMPL** |  Parent: owner problem report 2026-09-28 (FR-064). Phone: fold only. |
+| T2-FUN-470 | Work with a whole group of plants | **IMPL** |  Parent: owner request 2026-09-28 (FR-061). Phone: group chosen from plant details, no box select. |
+| T2-FUN-480 | Interface language and US English | **PART** |  Parent: owner request 2026-09-28 (FR-062). US spelling done; dictionary mechanism on both; Spanish partial (docs/I18N_PLAN.md). |
 | T2-FUN-360 | Replace all plants of a variety | **IMPL** |  Parent: owner request 2026-09-27 (FR-051). |
 | T2-FUN-370 | Plot list out of the way | **IMPL** |  Parent: owner request 2026-09-27 (FR-052). Computer only (the phone list is in a menu). |
 | T2-FUN-380 | Choose how clumps are arranged | **IMPL** |  Parent: owner request 2026-09-27 (FR-047). The owner's test file was made before organised clumps existed (irregular placement); the current planner keeps each crop of that list in one block (checked by replaying it). |

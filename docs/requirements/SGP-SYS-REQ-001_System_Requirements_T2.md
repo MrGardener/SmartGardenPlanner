@@ -23,7 +23,7 @@
   - The two process requirements (GOV) are **Deleted**, and moved to the QA plan.
   - One requirement is **Merged** into another. It keeps its ID and says where it went.
 - **New requirements** cover functions the app already has but that were never written down (no-plant
-  paths, auto-populate, colours, ruler…), and gaps found in the review (Back button, app updates, backups,
+  paths, auto-populate, colors, ruler…), and gaps found in the review (Back button, app updates, backups,
   display). They take new IDs in the same areas.
 - **Values marked `[TBC-nn]`** are **proposals for you to confirm**. They are collected in §15, so you
   can settle them all in one pass.
@@ -41,7 +41,7 @@
 | Layout | Place plants to scale, see their spacing zones, move them, change their variety, undo/redo | FUN-030/040/050/120, INT-090/100, VAL-020/030/040/070 |
 | Rules | Spacing and companion/antagonist checks with clear messages; adjustable strictness | VAL-040, INT-030, CFG-040/050, DAT-210 |
 | Areas | Mark no-plant paths; auto-fill an area with a chosen variety | FUN-100/110, VAL-050 |
-| Views | Zoom/pan, ruler, colour per variety + legend, weed-risk overlay, irrigation route | FUN-060/130/140, INT-040/070/080 |
+| Views | Zoom/pan, ruler, color per variety + legend, weed-risk overlay, irrigation route | FUN-060/130/140, INT-040/070/080 |
 | Timing | Harvest dates, germination alerts, "Plan B" recovery options | DAT-010, FUN-080, INT-020, DAT-160 |
 | Knowledge | Plant catalog in three tiers, encyclopedia, custom varieties, companions, pests, care | DAT-020…065, DAT-150, DAT-190…220, VAL-080 |
 | Place & climate | Location per plot, hardiness zone, frost dates, planting windows, recommendations | FUN-090, DAT-080…100, ENV-025 |
@@ -82,7 +82,7 @@ user shall be able to accept or edit them before use.
 Parent: ConOps §5.2 · Safety: FC-14 · Verify: Test (target) · Status: **Suspended — decision D-03 (method)**
 **Was:** "…local measuring tool utilizing onboard device sensors to estimate physical distances or dimensions post-capture."
 **Why changed:** Stated as a capability, independent of the method. Measuring by double-integrating the
-accelerometer (the method in the HLRs) does not give usable metre-scale accuracy on a phone. Candidate
+accelerometer (the method in the HLRs) does not give usable meter-scale accuracy on a phone. Candidate
 methods: ARCore, a reference object in the photo, or GPS for large fields.
 **Now:** An unused, physically unsound IMU engine exists (DEC).
 
@@ -121,7 +121,7 @@ enforcement rule in T2-VAL-040.
   `[TBC-03]`
 - each next plant is the nearest one not yet connected
 
-The route's total length shall be shown in the display unit. The overlay shall be labelled as a suggestion.
+The route's total length shall be shown in the display unit. The overlay shall be labeled as a suggestion.
 Hoses and sprinklers are future scope `[TBC-04]`.
 Parent: ConOps §5.4 · Safety: FC-08 · Verify: Test · Status: Proposed
 **Was:** "…calculate and overlay an optimized layout grid for irrigation (drip lines, hoses, or sprinklers) across the field image."
@@ -171,7 +171,7 @@ T2-ENV-025). The location is optional. Features that need it (T2-DAT-080…100) 
 missing.
 Parent: ConOps §5.3 · Safety: FC-13 · Verify: Test · Status: Proposed
 **Was:** "…input a location parameter (ZIP code or geographic coordinates) associated with the planting zone."
-**Why changed:** Added the device-location option, and the behaviour when the location is absent.
+**Why changed:** Added the device-location option, and the behavior when the location is absent.
 **Now:** IMPL: ZIP → latitude/longitude offline (bundled table) and ZIP → hardiness zone offline from the 2023
 USDA Plant Hardiness Zone Map ZIP tables (PRISM/OSU; 40,502 ZIPs incl. AK, HI, PR); manual zone list; online
 lookup only for ZIPs not in the table; device location on the Site tab.
@@ -198,14 +198,14 @@ Parent: existing functionality; FEATURE_ROADMAP FR-001 · Safety: FC-01 · Verif
 ### T2-FUN-120 — Change a plant's variety (NEW)
 **Statement:** The system shall let the user change the variety of a placed plant. The change shall be
 accepted only if the plant, with its new variety, satisfies the same rules as a new placement. Otherwise the
-system shall say which neighbour conflicts and keep the old variety.
+system shall say which neighbor conflicts and keep the old variety.
 Parent: existing functionality · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** Implemented (IMPL).
 
-### T2-FUN-130 — Variety colours and legend (NEW)
-**Statement:** The system shall draw each variety in its own colour. The user shall be able to choose a
-variety's colour from at least 16 preset colours, or leave it automatic. The system shall provide a legend
-listing the varieties placed on the current plot with their colours.
+### T2-FUN-130 — Variety colors and legend (NEW)
+**Statement:** The system shall draw each variety in its own color. The user shall be able to choose a
+variety's color from at least 16 preset colors, or leave it automatic. The system shall provide a legend
+listing the varieties placed on the current plot with their colors.
 Parent: existing functionality · Safety: — · Verify: Test · Status: Proposed
 **Now:** Implemented (IMPL).
 
@@ -220,7 +220,7 @@ shown once per ruler (at the origin), not on every tick (IMPL on both).
 **Statement:** The system shall list all of the user's plots, with name and dimensions in the display unit,
 and open a plot's layout when it is selected.
 Parent: existing functionality · Safety: — · Verify: Test · Status: Proposed
-**Now:** Implemented (units always shown in metres) (PART).
+**Now:** Implemented (units always shown in meters) (PART).
 
 ### T2-FUN-160 — Plan an area for me (NEW 2026-09-27)
 **Statement:** The system shall let a user with no gardening knowledge select a plot, select an area of it
@@ -268,9 +268,9 @@ Parent: owner problem report 2026-09-27 (undo did not remove a placed building, 
 ### T2-FUN-200 — Say what each variety is (NEW 2026-09-27)
 **Statement:** Wherever a variety is chosen or shown (lists, the plan-for-me list and proposal, and the layout),
 the system shall say in everyday words what it is where the species name alone doesn't: for peppers, sweet or spicy
-(with a heat level), bell or other shape, and ripe colour; for tomatoes, cherry, salad, slicing, beefsteak or paste
-size and colour; for onions, bulb or spring (green) onion. The layout shall be able to show a short name under each
-plant, and plants whose fruit colour is known shall be told apart by it (e.g. red and yellow bell peppers). The
+(with a heat level), bell or other shape, and ripe color; for tomatoes, cherry, salad, slicing, beefsteak or paste
+size and color; for onions, bulb or spring (green) onion. The layout shall be able to show a short name under each
+plant, and plants whose fruit color is known shall be told apart by it (e.g. red and yellow bell peppers). The
 catalog shall include spring onions.
 Parent: owner request 2026-09-27 (FR-031) · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** IMPL.
@@ -287,19 +287,21 @@ Parent: owner request 2026-09-27 (FR-032) · Safety: FC-17 · Verify: Test · St
 ### T2-FUN-220 — Seasons and plot history (NEW 2026-09-27)
 **Statement:** The user shall be able to start a new season on a plot. Doing so shall keep the plot and everything
 fixed on it (fences, walls, buildings, trees, paths, sun/shade/flood/slope areas, outline) and move the season's
-plants into the plot's history, labelled with the season year. History shall never be discarded by later seasons:
+plants into the plot's history, labeled with the season year. History shall never be discarded by later seasons:
 it shall stay viewable (per season, and drawn faintly on the layout on request), be used for crop rotation
 (T2-FUN-210), travel in plan files (T2-PLT-020), and starting a season shall be undoable.
 Parent: owner request 2026-09-27 (FR-033) · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
-### T2-FUN-240 — Organised clumps and room for vines (NEW 2026-09-27)
-**Statement:** "Plan an area for me" shall, by default, lay out each crop as an organised block of rows and columns
+### T2-FUN-240 — Organized clumps and room for vines (NEW 2026-09-27)
+**Statement:** "Plan an area for me" shall, by default, lay out each crop as an organized block of rows and columns
 at the crop's spacing (e.g. 20 sweet corn as 4 rows of 5; 7 tomatoes as a row of 4 and a row of 3), leave a walkway
 between blocks so every plant can be reached and watered with a hose, keep climbing crops at the side away from the
 midday sun (for a trellis), and put sprawling vines (e.g. watermelon, squash, pumpkin, cucumber) at the sunny side
 with free, sunny ground reserved toward the sun for their runners, shown on the proposal, so they don't grow into
-other crops looking for light.
+other crops looking for light. A runway shall not run over other plants (including other vines' runways), past the
+plot edge, or along a fence, wall or building (FR-059, 2026-09-28), and a crop whose antagonists are near shall still be
+placed as one block wherever the remaining space allows (FR-058).
 Parent: owner request 2026-09-27 (FR-035) · Safety: FC-18 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
@@ -307,7 +309,7 @@ Parent: owner request 2026-09-27 (FR-035) · Safety: FC-18 · Verify: Test · St
 **Statement:** The user shall be able to (a) see a legend of what is planted on the plot, with counts, and have the
 plants of a chosen variety pointed out on the layout, also from the harvest and harmony lists; (b) change a planted
 plant's variety (and, on the computer, its planting date) or delete it; (c) move the corners of a plot outline, add
-corners, and delete the outline. The layout's compass shall show four arrowheads labelled N, E, S and W turned to the
+corners, and delete the outline. The layout's compass shall show four arrowheads labeled N, E, S and W turned to the
 plot's direction, with north stressed.
 Parent: owner problem report 2026-09-27 (FR-036) · Safety: FC-01 · Verify: Test · Status: Proposed
 **Now:** IMPL.
@@ -386,7 +388,7 @@ Parent: owner request 2026-09-27 (FR-045) · Safety: FC-20 · Verify: Test · St
 a screenshot or aerial photo of the yard under the plot, set its scale from two points a known distance apart, move and
 turn it, change how see-through it is, hide or remove it, and trace obstacles on top of it. The photo shall be kept with
 the plot, travel in plan files and duplicates, and the system shall not fetch map imagery by itself.
-Parent: owner request 2026-09-27 (FR-046, FR-049: turn up to 180° clockwise or counter-clockwise with a slider and a
+Parent: owner request 2026-09-27 (FR-046, FR-049: turn up to 180° clockwise or counterclockwise with a slider and a
 number box that stay in step) · Safety: FC-24 · Verify: Test · Status: Proposed
 **Now:** IMPL (phone: the photo is clipped to the plot rectangle; photo changes aren't undoable on the phone).
 
@@ -403,7 +405,7 @@ Parent: owner request 2026-09-27 (FR-054) · Safety: FC-27 · Verify: Test · St
 over the plot's growing season (not on the day the plan is made), put crops that need full sun in the sunniest spots
 that suit them before part-shade and shade-tolerant crops, and leave the sunniest ground to sun lovers. The shade
 display shall offer the growing season as a day, and use it by default.
-Parent: owner problem report 2026-09-27 (FR-055: "Fill the whole plot" favoured shady parts when planned in autumn) ·
+Parent: owner problem report 2026-09-27 (FR-055: "Fill the whole plot" favored shady parts when planned in autumn) ·
 Safety: FC-19 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
@@ -416,9 +418,51 @@ Care section shall list, per planted crop, the faster varieties worth keeping as
 Parent: owner request 2026-09-27 (FR-056); extends T2-FUN-080 · Safety: FC-05, FC-06 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
+### T2-FUN-440 — Several layouts to choose from (NEW 2026-09-28)
+**Statement:** Before anything is stored, "Plan an area for me" shall let the user step through different layouts of the
+same list (at least 5 distinct ones where the area allows, up to 11: crops shifted to one side or the other, in another
+order, other clump shapes, sun first, spread out or close together, long rows), each named, with a one-line summary
+(plants placed, didn't fit, average sun), skipping layouts that come out the same. Only the layout on screen is stored
+when the user keeps the plan. Every layout obeys every placement rule.
+Parent: owner request 2026-09-28 (FR-060: "show me 5 to 10 ways to place the plants before… 'keep this plan'") ·
+Safety: FC-25 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-450 — Keep or replace what's already there (NEW 2026-09-28)
+**Statement:** When the area to plan already holds plants (including "Change selections" after a proposal), the system
+shall ask whether to keep them where they are and plan around them, or start from a blank area; with a blank area the
+proposal says how many plants it replaces, and they're removed only when the user keeps the plan, in the same undoable
+step.
+Parent: owner request 2026-09-28 (FR-063) · Safety: FC-28 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-460 — Proposal card out of the way (NEW 2026-09-28)
+**Statement:** The proposal card shall be foldable to its title and (computer) movable by its title bar, so the whole
+proposed layout can be inspected before keeping it.
+Parent: owner problem report 2026-09-28 (FR-064: "not able to move/minimize the proposed plan") · Safety: — ·
+Verify: Test · Status: Proposed
+**Now:** IMPL (phone: fold only; the card sits under the layout).
+
+### T2-FUN-470 — Work with a whole group of plants (NEW 2026-09-28)
+**Statement:** The user shall be able to select a whole group of plants (the touching plants of one variety, or on the
+computer any plants inside a dragged box), move the group as one, and lay it out again as other rows × columns (e.g.
+4 × 5 → 2 × 10) around the same center, only where every plant still obeys the placement rules; each is one undoable
+step. Moving single plants shall work as before. Later season and rotation plans start from the plants' new places.
+Parent: owner request 2026-09-28 (FR-061) · Safety: FC-18 · Verify: Test · Status: Proposed
+**Now:** IMPL.
+
+### T2-FUN-480 — Interface language and US English (NEW 2026-09-28)
+**Statement:** All interface text shall be written in US English spelling (e.g. "neighbor", "color", "center"). The
+interface language shall be chosen from a list (computer: header menu; phone: Settings); every text shown shall come
+from a replaceable dictionary for that language, and any text without an entry shall appear in US English. Variety and
+cultivar names stay as published. Adding a language shall need only a new dictionary file.
+Parent: owner request 2026-09-28 (FR-062) · Safety: FC-29 · Verify: Test + Inspection · Status: Proposed
+**Now:** PART — dictionary mechanism on both, Spanish dictionary started (menus, tools, planning dialogs); remaining
+texts appear in English (see docs/I18N_PLAN.md).
+
 ### T2-FUN-360 — Replace all plants of a variety (NEW 2026-09-27)
 **Statement:** From the list of what's on the plot, the user shall be able to change every plant of one variety to
-another variety in one step, keeping their places and planting dates, be told how many now crowd a neighbour, and undo
+another variety in one step, keeping their places and planting dates, be told how many now crowd a neighbor, and undo
 it in one step.
 Parent: owner request 2026-09-27 (FR-051) · Safety: FC-26 · Verify: Test · Status: Proposed
 **Now:** IMPL.
@@ -586,7 +630,7 @@ Parent: ConOps §4 · Safety: FC-10 · Verify: Test · Status: Proposed (future)
 The role shall travel with the export file.
 Parent: ConOps §4 · Verify: Test · Status: Proposed (future) `[TBC-11: still wanted?]`
 **Was:** "Support Owner, Contributor, Viewer roles."
-**Now:** A role column exists; no behaviour (PART).
+**Now:** A role column exists; no behavior (PART).
 
 ### T2-DAT-150 — Encyclopedia (NEW)
 **Statement:** The system shall let the user browse and search the whole catalog (including custom
@@ -650,7 +694,7 @@ Parent: review finding (GAP §4.5); PSSA · Safety: FC-09 · Verify: Analysis (a
 shall provide every function without a network connection. Network connections shall be made only while
 the user has switched on "Online features" (off by default), only over HTTPS to the approved data services
 listed in the design, and only to fetch optional data (weather, sunshine history, nutrition updates); every
-such feature shall fall back to offline behaviour when the switch is off or the connection fails.
+such feature shall fall back to offline behavior when the switch is off or the connection fails.
 Parent: ConOps §1.2 · Verify: Analysis (merged manifest, network code, allow-list) + Test (airplane mode; switch off) · Status: Proposed (revised 2026-09-27)
 **Was (Rev A):** "…shall make no network connections, and shall not request the Internet permission." Original: "…locally on the device with zero network dependencies."
 **Why changed:** The owner asked for all roadmap features to be implemented, including FR-026 (optional
@@ -743,13 +787,13 @@ Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 outside the new boundary, and shall show which plants or paths are affected.
 Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 **Was:** "…reject updates to a plot's physical scale dimensions if the modification recomputes existing node pin coordinates to lie outside the newly bound layout boundary."
-**Why changed:** Wording simplified; paths added. Plant positions are stored in metres and don't change on
+**Why changed:** Wording simplified; paths added. Plant positions are stored in meters and don't change on
 resize.
 **Now:** No resize function (NONE).
 
 ### T2-VAL-020 — Plants stay inside the plot
 **Statement:** The system shall accept a plant position (from placing, moving, auto-populating or a Plan B
-choice) only if the plant's centre lies inside the plot boundary `[TBC-19: centre inside, or the whole
+choice) only if the plant's center lies inside the plot boundary `[TBC-19: center inside, or the whole
 spacing circle inside]`.
 Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 **Was:** "…validate user-entered seed node coordinates to ensure they fall strictly within the boundaries of the defined layout image."
@@ -768,13 +812,13 @@ Multi-step is kept, since it is what you built and asked for. Paths added.
 **Now:** Multi-step, but undo→redo can duplicate plants (PART).
 
 ### T2-VAL-040 — Spacing rule (NEW — was implicit)
-**Statement:** The system shall refuse a plant position where the distance between its centre and any other
-plant's centre is less than (sum of both spacing radii) × the spacing margin (T2-CFG-040), with a
+**Statement:** The system shall refuse a plant position where the distance between its center and any other
+plant's center is less than (sum of both spacing radii) × the spacing margin (T2-CFG-040), with a
 tolerance of `[TBC-20: 0.1 mm]` so that circles that exactly touch are allowed. The refusal message shall
 name the conflicting plant, the actual distance and the required distance, in the display unit.
 Parent: ConOps §5.3; KB Part 11 · Safety: FC-01, FC-02 · Verify: Test · Status: Proposed
 **Now:** Implemented, but touching circles are wrongly refused due to rounding (SVP §7.4), and the message
-always uses metres (PART).
+always uses meters (PART).
 
 ### T2-VAL-050 — Paths are kept clear (NEW — was implicit)
 **Statement:** The system shall refuse a plant position where the plant's spacing circle overlaps a no-plant
@@ -819,7 +863,7 @@ position, and with any unfinished work (path or area points being drawn, text be
 restored.
 Parent: ConOps §5.5 · Verify: Test (target, "Don't keep activities") · Status: Proposed
 **Was:** "…serialize temporary session state variables during Android onPause/onStop lifecycle interruptions to prevent current transactional data loss."
-**Why changed:** Stated as user-visible behaviour, without Android method names.
+**Why changed:** Stated as user-visible behavior, without Android method names.
 **Now:** Everything unsaved is lost; the app returns to the plot list (NONE).
 
 ### T2-ENV-025 — Location accuracy gate
@@ -839,7 +883,7 @@ Parent: ConOps §5.1 · Verify: Test (target) · Status: Proposed
 **Why changed:** "Continuously" and "threaten fidelity" replaced by values.
 **Now:** CODE.
 
-### T2-ENV-040 — Back button behaviour (NEW)
+### T2-ENV-040 — Back button behavior (NEW)
 **Statement:** The Back action (button or gesture) shall return to the previous screen. On the layout
 screen with unfinished work (T2-ENV-020), it shall first ask whether to discard that work. On the plot list,
 it shall leave the app.
@@ -857,7 +901,7 @@ Parent: review finding (Android 16) · Verify: Test (target) · Status: Proposed
 **Statement:**
 - Interactive controls shall be at least 48 dp × 48 dp.
 - Icons and controls shall have spoken labels for screen readers.
-- Varieties shall be distinguishable by something other than colour alone `[TBC-22: e.g. a letter or
+- Varieties shall be distinguishable by something other than color alone `[TBC-22: e.g. a letter or
   pattern on each plant]`.
 
 Parent: review finding · Verify: Test + Inspection · Status: Proposed
@@ -869,7 +913,7 @@ Parent: review finding · Verify: Test + Inspection · Status: Proposed
 
 ### T2-INT-010 — Resizing redraws at the new scale
 **Statement:** After a plot's dimensions are changed (T2-FUN-070, T2-VAL-017), the layout, spacing zones,
-ruler and overlays shall be redrawn at the new scale. Plant and path positions (in metres) shall be unchanged.
+ruler and overlays shall be redrawn at the new scale. Plant and path positions (in meters) shall be unchanged.
 Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 **Was:** "…automatically recalculate and update all existing seed nodes' physical spacing overlays based on the updated scale."
 **Why changed:** Clarified that positions don't move.
@@ -896,7 +940,7 @@ enforcement toggle. Proposal: refuse when enforced; warn when not.
 
 ### T2-INT-040 — Weed-risk overlay
 **Statement:** The system shall, on request, shade every part of the plot that is outside all plants' spacing
-zones and outside paths, as "weed-risk" guidance, labelled as display-only guidance.
+zones and outside paths, as "weed-risk" guidance, labeled as display-only guidance.
 Parent: ConOps §5.4 · Safety: FC-07 · Verify: Test · Status: Proposed
 **Was:** "…generate an inverse graphical overlay ("Weed Control Mask") defining all coordinate matrices outside the active seed and spacing areas as unplanted/clearance target zones."
 **Why changed:** Plainer wording. Excluding paths is a proposal `[TBC-25]` (today paths are shaded too).
@@ -1150,7 +1194,7 @@ Parent: KB Part 11 · Verify: Test · Status: Proposed
 
 ### T2-CFG-050 — Companion rule toggle
 **Statement:** On the Pro tier, the user shall be able to turn companion/antagonist enforcement off without
-affecting spacing enforcement (see T2-INT-030 for behaviour when off). On Basic and Standard, enforcement shall
+affecting spacing enforcement (see T2-INT-030 for behavior when off). On Basic and Standard, enforcement shall
 always be on, and the setting shall be shown as locked with an explanation.
 Parent: KB Part 11; FEATURE_ROADMAP FR-012 · Verify: Test · Status: Proposed
 **Now:** IMPL.
@@ -1178,12 +1222,12 @@ Parent: KB Part 11 · Verify: Test · Status: Proposed
 **Now:** IMPL.
 
 ### T2-CFG-100 — Display unit
-**Statement:** The user shall be able to choose metres or inches as the display unit, from Settings and from the
+**Statement:** The user shall be able to choose meters or inches as the display unit, from Settings and from the
 layout screen. Every distance shown or entered anywhere in the app shall use the chosen unit. Stored values
-and calculations shall always be in metres.
+and calculations shall always be in meters.
 Parent: KB Part 11 · Verify: Test · Status: Proposed
 **Was:** "…converting only at input/display boundaries…"
-**Why changed:** "Every distance, anywhere" made explicit, because several messages still show metres.
+**Why changed:** "Every distance, anywhere" made explicit, because several messages still show meters.
 **Now:** PART.
 
 ---
@@ -1221,10 +1265,10 @@ Settle these whenever you're ready. Each proposal is what the requirement says u
 | 16 | CON-080 | Maximum plants per plot / smooth-interaction target | 500 |
 | 17 | CON-080 | Maximum tier switch time | ≤ 10 s with progress |
 | 18 | VAL-015 | "Unusual" plot size thresholds | < 0.30 m or > 200 m |
-| 19 | VAL-020 | Must the plant's centre, or its whole spacing circle, be inside the plot? | Centre |
+| 19 | VAL-020 | Must the plant's center, or its whole spacing circle, be inside the plot? | Center |
 | 20 | VAL-040 | Tolerance for touching circles | 0.1 mm |
 | 21 | ENV-010 | Support both orientations, or lock the layout screen? (D-04) | Both |
-| 22 | ENV-060 | How to tell varieties apart without colour | Letter code on each plant |
+| 22 | ENV-060 | How to tell varieties apart without color | Letter code on each plant |
 | 23 | INT-030 | "Nearby" distance for antagonists | 2 × required spacing (today's rule) |
 | 24 | INT-030 | When rules are off: show a conflict indicator? | Yes |
 | 25 | INT-040 | Exclude paths from the weed-risk shading? | Yes |

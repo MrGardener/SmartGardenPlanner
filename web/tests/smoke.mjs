@@ -289,6 +289,27 @@ check(d.plots[0].plants.every(p => p.variety === 'Sweet Corn - Golden Bantam'), 
 await page.keyboard.press('Control+z');
 d = await draft();
 check(d.plots[0].plants.every(p => p.variety === 'Sweet Corn - Silver Queen'), 'one undo puts the old variety back');
+// Planning over plants already there: keep them, or start from a blank area (replaced only when kept, one undo).
+{
+  const before = d.plots[0].plants.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).sort().join(';');
+  await page.locator('nav.tools').getByRole('button', { name: 'Plan an area for me' }).click();
+  await drag(3.3, 0.3, 7.9, 4.9);
+  await page.locator('.modal').waitFor();
+  const keepText = await page.locator('.modal .keep-choice').innerText();
+  check(keepText.includes('20 plants are already in this area') && keepText.includes('Start from a blank area'), 'plan dialog asks to keep or replace the plants there');
+  await page.locator('.modal .keep-choice label', { hasText: 'Start from a blank area' }).locator('input').check();
+  await btn('Plan it').click();
+  await page.locator('#sgp-preview:not(.hidden)').waitFor();
+  check((await page.locator('#sgp-preview').innerText()).includes('replaces the 20 plants already in this area'), 'proposal warns how many plants it replaces');
+  d = await draft();
+  check(d.plots[0].plants.length === 20, 'nothing is removed before the plan is kept');
+  await btn('Keep this plan').click();
+  d = await draft();
+  check(d.plots[0].plants.length === 20 && d.plots[0].plants.every(p => p.variety === 'Sweet Corn - Silver Queen'), `blank area: new plan replaced the old plants (${d.plots[0].plants.length})`);
+  await page.keyboard.press('Control+z');
+  d = await draft();
+  check(d.plots[0].plants.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).sort().join(';') === before, 'one undo brings the replaced plants back');
+}
 // The "On this plot" box can be dragged out of the way.
 const headBox = await page.locator('.plant-legend .pl-head').boundingBox();
 await page.mouse.move(headBox.x + 40, headBox.y + 8); await page.mouse.down();

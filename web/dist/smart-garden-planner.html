@@ -92517,6 +92517,18 @@ Other side, different order	Al otro lado, en otro orden
 Other side, other shapes	Al otro lado, otras formas
 Clumps spread out	Grupos separados
 Clumps close together	Grupos juntos
+About this planner	Acerca de este planificador
+Units	Unidades
+Catalog	Catálogo
+Spacing & Placement	Espaciado y colocación
+Household & care	Hogar y cuidados
+Canvas Display	Vista del lienzo
+Plot Validation	Validación de la parcela
+Sensors & Hardware	Sensores y hardware
+Texts without a translation stay in English.	Los textos sin traducción se quedan en inglés.
+Group…	Grupo…
+Move the whole group	Mover todo el grupo
+Plant them	Plantarlas
 
 </script>
 <script type="module">
@@ -92559,6 +92571,17 @@ if (typeof Array.prototype.fill === 'undefined') {
     Object.defineProperty(TypedArray.prototype, 'fill', {value: Array.prototype.fill});
   }
 });
+if (typeof Math.clz32 === 'undefined') {
+  Math.clz32 = function (log, LN2) {
+    return function (x) {
+      var asUint = x >>> 0;
+      if (asUint === 0) {
+        return 32;
+      }
+      return 31 - (log(asUint) / LN2 | 0) | 0; // the "| 0" acts like math.floor
+    };
+  }(Math.log, Math.LN2);
+}
 if (typeof Math.hypot === 'undefined') {
   Math.hypot = function () {
     var y = 0;
@@ -92571,17 +92594,6 @@ if (typeof Math.hypot === 'undefined') {
     }
     return Math.sqrt(y);
   };
-}
-if (typeof Math.clz32 === 'undefined') {
-  Math.clz32 = function (log, LN2) {
-    return function (x) {
-      var asUint = x >>> 0;
-      if (asUint === 0) {
-        return 32;
-      }
-      return 31 - (log(asUint) / LN2 | 0) | 0; // the "| 0" acts like math.floor
-    };
-  }(Math.log, Math.LN2);
 }
 if (typeof String.prototype.endsWith === 'undefined') {
   Object.defineProperty(String.prototype, 'endsWith', {value: function (searchString, position) {

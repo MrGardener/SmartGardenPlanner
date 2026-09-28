@@ -70,7 +70,7 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 |---|---|---|---|---|---|
 | FR-008 | Companion plants shown by name, not code | The companion/antagonist fields currently display raw codes (e.g. "BAS,MAR,CAR"). Resolve these to full common names everywhere they're shown. | All | None — contained display fix | **Implemented — Awaiting Your Confirmation** |
 | FR-009 | Named interplanting guilds (Three Sisters and others) | **Answered:** generalize beyond Three Sisters to other well-established real companion-guild groupings; must be explicitly deactivatable with a highly visible indicator when off. | Pro | Validator architecture change — needs care not to break normal overlap protection | **Implemented — Awaiting Your Confirmation** |
-| FR-010 | Grey out incompatible varieties in the picker | In the Category → Species → Cultivar picker, visually disable/grey out cultivars that would conflict with something already planted on the current plot. | Standard | 3-step picker (exists) | **Implemented — Awaiting Your Confirmation** |
+| FR-010 | Gray out incompatible varieties in the picker | In the Category → Species → Cultivar picker, visually disable/gray out cultivars that would conflict with something already planted on the current plot. | Standard | 3-step picker (exists) | **Implemented — Awaiting Your Confirmation** |
 | FR-011 | Garden harmony report | A report screen: what's planted, what's incompatible with what, and recommendations to fix it. | Standard | FR-008 | **Implemented — Awaiting Your Confirmation** |
 | FR-012 | Companion-rule toggle restricted to Pro | Below Pro, the toggle now shows locked-on with an explanation instead of being editable. | Pro (toggle) | FR-025 (tier-gating system) | **Implemented — Awaiting Your Confirmation** |
 
@@ -121,11 +121,11 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-028 | Plot direction and ZIP | Say which way the plot's top edge faces (creator, direction dialog, Site tab); compass on the layout; warning until set. ZIP fills latitude/longitude offline and the zone offline or online. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-029 | Portable plan files | Save one or all plots to a `.sgp.json` file and open such files as new plots, on any device. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-030 | Planner on a computer | No-install browser planner for Windows, macOS, Linux and ChromeOS, sharing the same rules and plan files (docs/CROSS_PLATFORM_PLAN.md, option A). One file: `web/dist/smart-garden-planner.html`. | All | FR-029 | **Implemented — Awaiting Your Confirmation** (tested in Chromium/Linux; other browsers to test) |
-| FR-031 | Say what each variety is | Sweet or spicy pepper (heat level), bell or other shape and colour; cherry, salad, slicing, beefsteak or paste tomato; bulb or spring onion. Shown in lists, the plan list and proposal, and as short names on the layout (menu → Show plant names); the centre dot shows the fruit colour. Spring onions added to the catalog. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-031 | Say what each variety is | Sweet or spicy pepper (heat level), bell or other shape and color; cherry, salad, slicing, beefsteak or paste tomato; bulb or spring onion. Shown in lists, the plan list and proposal, and as short names on the layout (menu → Show plant names); the center dot shows the fruit color. Spring onions added to the catalog. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-032 | Crop rotation and clumps | Rotation families and waiting periods; a note (not a block) when a plant goes where its family grew recently; Plan an area for me avoids those spots and plants clumps by default (rows on request) with the rotation reason explained; per-plot rotation advice (Plot insights → Harmony; web Plot tab). | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
 | FR-033 | Seasons and plot history | "Start a new season": plants move to the plot's history; fences, buildings, trees, paths, areas and outline stay. History per season, drawn dashed on request, used for rotation, saved in plan files, undoable. | All | FR-029 | **Implemented — Awaiting Your Confirmation** |
 | FR-034 | Keep my choices | Discarding a proposal leaves the plot and the list alone; "Change selections" returns to the list for the same area; the last list is remembered; "What you usually plant" one-tap additions. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
-| FR-035 | Organised clumps and room for vines | Plan an area for me lays each crop out in rows × columns (20 corn = 4 × 5; 7 tomatoes = 4 + 3) with 45 cm walkways for hose watering; climbers at the back for a trellis; sprawling vines at the sunny side with their runway kept free and shown by an arrow. | All | FR-032 | **Implemented — Awaiting Your Confirmation** |
+| FR-035 | Organized clumps and room for vines | Plan an area for me lays each crop out in rows × columns (20 corn = 4 × 5; 7 tomatoes = 4 + 3) with 45 cm walkways for hose watering; climbers at the back for a trellis; sprawling vines at the sunny side with their runway kept free and shown by an arrow. | All | FR-032 | **Implemented — Awaiting Your Confirmation** |
 | FR-036 | Find, edit and outline | Legend with counts; tap a variety (or a harvest/harmony line on the computer) to circle its plants; edit a planted plant's variety/date or delete it; move/add outline corners and delete the outline; compass with N/E/S/W arrowheads. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-037 | Plan season after season | Choose the season shown (past seasons read only); Plan next season (rotate); Rotation plan for 2–10 seasons; strict rule: no crop where its family grew last season unless there's no room (then said). | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
 | FR-038 | Sun and shade through the day and year | Whole-day sun hours or shade at a chosen time (slider), on today, equinoxes, midsummer, midwinter; tall plants cast shade at mature height; point at a spot for its sun times (computer). | All (Pro on the phone) | FR-006 | **Implemented — Awaiting Your Confirmation** |
@@ -133,12 +133,12 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-040 | Fill the plot | Fill the whole plot and "How many fit?" keeping the list's proportions. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
 | FR-041 | Plot templates | Duplicate a plot with its site and, optionally, plants and history. | All | FR-033 | **Implemented — Awaiting Your Confirmation** |
 | FR-042 | Pests and wildlife in the yard | Asked when a plot is created (deer, rabbits, raccoons, squirrels, groundhogs, gophers, voles, chipmunks, skunks, armadillos, hogs, pets, birds, slugs, insects); Care shows signs, prevention (fence heights, netting, buried wire…) and the plants each goes for. | All | FR-018 | **Implemented — Awaiting Your Confirmation** |
-| FR-043 | Most important plants and checks before planning | ☆ marks plants placed first in the sunniest spots; "Checks before planning" (space, sun, neighbours, zone, rotation, water, pests) before anything is placed. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-043 | Most important plants and checks before planning | ☆ marks plants placed first in the sunniest spots; "Checks before planning" (space, sun, neighbors, zone, rotation, water, pests) before anything is placed. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-044 | Disclaimer | "A guide, not a guarantee" before first use, in help/Settings, the Care tab and the manual. | All | — | **Implemented — Awaiting Your Confirmation** |
 | FR-045 | Watering recommendations | Care → Watering and irrigation: tools, water map, unreached and thirsty plants, per-crop needs, tips, choosing a system. | All | FR-039 | **Implemented — Awaiting Your Confirmation** |
 | FR-047 | Choose clump arrangements | "Arrange as" per crop (e.g. 50 = 5 × 10, 10 × 5, 7 × 7 + 1, 6 × 8 + 2), neater nearby counts; crops kept in one block where possible, any split explained. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
 | FR-048 | Longer rotation plans with variety changes | 1–30 years; "Change a variety…" from any year on. | All | FR-037 | **Implemented — Awaiting Your Confirmation** |
-| FR-049 | Photo turn fix | Turn −180…+180 about the centre; slider and number box in step (the slider used to clamp at 0/100). | All | FR-046 | **Implemented — Awaiting Your Confirmation** |
+| FR-049 | Photo turn fix | Turn −180…+180 about the center; slider and number box in step (the slider used to clamp at 0/100). | All | FR-046 | **Implemented — Awaiting Your Confirmation** |
 | FR-050 | Plot address → Google Maps | Address kept with the plot and in plan files; "Open in Google Maps". | All | FR-046 | **Implemented — Awaiting Your Confirmation** |
 | FR-051 | Replace all of a variety | "Replace…" in the plot's list; one undo step; crowding reported. | All | FR-036 | **Implemented — Awaiting Your Confirmation** |
 | FR-052 | Move the plot list | Drag the "On this plot" box anywhere; remembered; double-click resets. | Computer | FR-036 | **Implemented — Awaiting Your Confirmation** |
@@ -147,6 +147,13 @@ so you can tell me if my understanding is wrong, rather than silently assuming t
 | FR-055 | Plan with growing-season sun | Planner and checks average sun over the growing season; sun lovers choose first and get the sunniest ground; shade display defaults to the growing season. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-056 | Plan B when a plant dies | Varieties ready with the survivors before frost; replace one or all planted that day; Care lists backups. | All | FR-021 | **Implemented — Awaiting Your Confirmation** |
 | FR-057 | Ruler units once | Numbers on ticks, unit shown once. | All | — | **Implemented — Awaiting Your Confirmation** |
+| FR-058 | Tomatoes fit in the free space | Fix: a crop with a disliked neighbor nearby is retried elsewhere and kept in one block instead of being left out or split. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
+| FR-059 | Vine runways kept clear | Runways don't cross other plants, other runways, the plot edge or fences/walls/buildings. | All | FR-035 | **Implemented — Awaiting Your Confirmation** |
+| FR-060 | Several layouts before keeping | ◀ Option / Option ▶ through up to 11 distinct layouts, each with a summary. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-061 | Move and rearrange a whole group | Select a clump (or box-select on the computer), move it, or re-lay it as other rows × columns; rotation plans follow. | All | FR-047 | **Implemented — Awaiting Your Confirmation** |
+| FR-062 | Interface languages, US spelling | US English everywhere; language menu with swappable dictionaries; Spanish started. | All | — | **Partly implemented — Spanish dictionary in progress** |
+| FR-063 | Keep or replace existing plants | When planning over plants (or Change selections): keep and plan around them, or start blank. | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
+| FR-064 | Proposal card movable and foldable | Fold to the title (both); drag by the title (computer). | All | FR-027 | **Implemented — Awaiting Your Confirmation** |
 | FR-046 | Satellite photo under the plot | Open Google Maps (satellite) for the address, add a screenshot, set scale from two points, move, turn, see-through, hide, remove; in plan files and duplicates. | All | FR-002, FR-006 | **Implemented — Awaiting Your Confirmation** |
 | FIX | Obstacles can be moved; undo covers obstacles, areas and outline | From the owner's report: a placed fence, building or tree couldn't be moved or undone. | — | — | **Implemented — Awaiting Your Confirmation** |
 
@@ -253,11 +260,16 @@ This is a proposal, not a commitment — reorder however matters most to you.
 
 ## Change Log for This Document
 
-- **2026-09-27 (season, sun, Plan B)**: "Fill the whole plot" favoured shady parts because sun was measured on the
+- **2026-09-28 (options, groups, languages)**: Tomatoes weren't placed although there was room (a failed antagonist
+  check wasn't retried elsewhere, FR-058); vine runways could cross other squash or run along fences (FR-059). Added
+  layout options (FR-060), group move/rearrange (FR-061), US spelling and interface dictionaries (FR-062), keep or
+  replace existing plants (FR-063) and a movable, foldable proposal card (FR-064).
+
+- **2026-09-27 (season, sun, Plan B)**: "Fill the whole plot" favored shady parts because sun was measured on the
   planning date (late September); it now uses the growing season (FR-055). Added frost dates and a planting calendar
   from NOAA normals (FR-054), Plan B for lost plants (FR-056) and ruler units once (FR-057).
 
-- **2026-09-27 (feedback on the test plot)**: Your file was planned by an earlier version (before organised clumps),
+- **2026-09-27 (feedback on the test plot)**: Your file was planned by an earlier version (before organized clumps),
   which is why crops were scattered; replaying your list in the current planner puts each crop in one block. Added:
   clump arrangement choices and split explanations (FR-047), 1–30-year rotation plans with variety changes (FR-048),
   the photo turn fix (FR-049), plot address to Google Maps (FR-050), Replace all (FR-051), a movable plot list (FR-052),
@@ -276,20 +288,20 @@ This is a proposal, not a commitment — reorder however matters most to you.
   Duplicate plot as a template (FR-041). The user manual was rewritten for the phone and the computer, and two
   subagents were added: requirements-auditor and manual-tester.
 
-- **2026-09-27 (find, edit, organised clumps)**: From your report: outline corners can be moved and the outline
+- **2026-09-27 (find, edit, organized clumps)**: From your report: outline corners can be moved and the outline
   deleted; planted plants can be edited (variety, date on the computer) or deleted; a legend with counts finds plants
-  on the layout (also from the harvest list on the computer); organised row × column clumps with walkways; vines get
+  on the layout (also from the harvest list on the computer); organized row × column clumps with walkways; vines get
   room to run toward the sun and climbers go to the back; bigger N/E/S/W compass with arrowheads.
 
 - **2026-09-27 (seasons, rotation, variety details)**: From your notes on discarding plans, peppers, tomatoes, onions
   and crop rotation: FR-031 to FR-034. Discard no longer loses anything and "Change selections" goes back to your list;
-  your last list and the plants you usually grow are remembered; peppers say sweet or spicy and their colour, tomatoes
+  your last list and the plants you usually grow are remembered; peppers say sweet or spicy and their color, tomatoes
   say cherry or large, onions say bulb or spring (spring onions added); "Start a new season" keeps the plot's fixed
   features and keeps last season as history for crop rotation; Plan an area for me plants clumps by default and keeps
   crops away from where their family grew last year. Database schema 10 (season history).
 
 - **2026-09-27 (shade visibility)**: From your report that shade couldn't be seen: the plot layout is now drawn on a
-  light "paper" background in light and dark mode on both the phone and the computer, and the shade display colours
+  light "paper" background in light and dark mode on both the phone and the computer, and the shade display colors
   each spot by today's sun (yellow = full sun 6+ h, blue = part shade 3–6 h, indigo = shade under 3 h) with a legend.
   Tree crowns are drawn as outlines while shade is shown. The computer page also has a light theme (Auto / Light /
   Dark button). The phone's other screens are still dark; a full light theme for them is a separate item.
@@ -309,7 +321,7 @@ This is a proposal, not a commitment — reorder however matters most to you.
   canvas menu → **Site tools** (plot outline FR-002; sun/shade, flood and slope areas FR-003/004/005;
   trees, fences, walls, buildings FR-006; shade overlay) and **Plot insights** (Site: zone, location,
   orientation, soil FR-013, sunlight FR-007; Harmony FR-011; Suggest FR-014; Care FR-017/018/019;
-  Food FR-016/020/021/022). The area tool has **Recommend for this area** (FR-015); the variety picker greys
+  Food FR-016/020/021/022). The area tool has **Recommend for this area** (FR-015); the variety picker grays
   out clashing varieties (FR-010); the canvas shows a **GUILDS ON/OFF** badge (FR-009); plant details show
   the vendor slot (FR-023/024). **FR-026:** built as option A (my recommendation above): one master switch
   in Settings → Online features, **off by default**, HTTPS only to Open-Meteo and USDA FoodData Central,
