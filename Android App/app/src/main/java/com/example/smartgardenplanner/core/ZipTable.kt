@@ -30,7 +30,7 @@ object ZipTable {
      * "zip|zone" line). Returns null when the ZIP isn't listed or the value isn't a valid zone.
      */
     fun findZone(sortedLines: List<String>, zip: String): String? =
-        findLine(sortedLines, zip)?.split("|")?.let { f -> if (f.size >= 5) f[4] else f.getOrNull(1) }?.trim()?.takeIf { HardinessZones.number(it) != null && (it.endsWith("a") || it.endsWith("b")) }
+        findLine(sortedLines, zip)?.split("|")?.let { f -> if (f.size >= 5) f[4] else f.getOrNull(1) }?.trim()?.takeIf { HardinessZones.isValid(it) }
 
     private fun findLine(sortedLines: List<String>, zip: String): String? {
         if (!isValidZip(zip)) return null

@@ -98,6 +98,7 @@ object I18n {
         val literal = parts.sumOf { it.length }
         /** "{0} ({1})" → "{0} ({1})": only useful when a part is translated. */
         val identity = key == out
+        val hasSemicolon = ';' in key
         /** Matches [t] against the literal parts, returning the pieces between them, or null. */
         fun match(t: String): List<String>? {
             if (!t.startsWith(parts.first()) || !t.endsWith(parts.last()) || t.length < literal) return null
@@ -182,8 +183,13 @@ object I18n {
         val candidates = (byPrefix[t.take(3)].orEmpty() + bySuffix[t.takeLast(3)].orEmpty()).sortedByDescending { it.literal } + loose
         for (tpl in candidates) {
             val groups = tpl.match(t) ?: continue
-            val parts = groups.map { part(it, depth + 1) }
+            // A template that starts with a part ("{0}: {1} in …") never matches across list items ("a; b").
+            if (tpl.parts.first().isEmpty() && !tpl.hasSemicolon && groups.any { "; " in it }) continue
+            // A part in quotes (“{0}”, '{0}') is a name the user typed, e.g. a plot name: it stays as written.
+            val parts = groups.mapIndexed { i, g -> if (tpl.parts[i].endsWith("“") || tpl.parts[i].endsWith("'") || tpl.parts[i].endsWith("\"")) g else part(g, depth + 1) }
             if (tpl.literal == 0 || (tpl.identity && parts == groups)) continue
+            // Loose templates ("{0} and {1}") only when every part is translated, so "rows and columns" isn't touched.
+            if (tpl in loose && parts.indices.any { parts[it] == groups[it] && groups[it].any { c -> c.isLetter() } }) continue
             var out = tpl.out
             parts.forEachIndexed { i, g -> out = out.replace("{$i}", g) }
             return out
@@ -233,7 +239,7 @@ object I18n {
         val colonAt = t.indexOf(": ")
         if (colonAt > 0) {
             val head = t.substring(0, colonAt + 1)
-            val th = exact[head] ?: exact[head.dropLast(1)]?.let { "$it:" }
+            val th = exact[head]
             if (th != null) return th + " " + part(t.substring(colonAt + 2), depth + 1)
         }
         // A plain list, when every item has an entry.
@@ -250,12 +256,19 @@ object I18n {
     /** A piece of a template: translated whole, or as a list ("a, b and c") item by item. */
     private fun part(g: String, depth: Int): String {
         if (g.all { it.isDigit() || it == '.' || it == '-' || it == ' ' || it == ',' }) return g
-        val whole = translate(g.trim(), depth)
-        if (whole != g.trim()) return g.replace(g.trim(), whole)
+        val t = g.trim()
+        if (t.isEmpty() || depth > 8) return g
+        // An entry or template for the whole piece first; then a list item by item; only then the looser rules.
+        direct(t, depth)?.let { return g.replace(t, it) }
         for (sep in listOf("; ", ", ", " · ", " + ")) {
-            if (sep in g) return g.split(sep).joinToString(sep) { part(it, depth + 1) }
+            if (sep in t) {
+                val items = t.split(sep)
+                val out = items.map { part(it, depth + 1) }
+                if (out != items) return g.replace(t, out.joinToString(sep))
+            }
         }
-        return g
+        val whole = fallback(t, depth)
+        return if (whole != t) g.replace(t, whole) else g
     }
 
     /** Share of [texts] that have a translation (for the language menu, e.g. "about 40 % translated"). */

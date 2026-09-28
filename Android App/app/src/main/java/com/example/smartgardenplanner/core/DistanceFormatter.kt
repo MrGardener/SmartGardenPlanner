@@ -38,7 +38,9 @@ object DistanceFormatter {
 
     /** Parses user-entered text (already in the given display unit) back to meters, or null if invalid. */
     fun parseToMeters(text: String, unit: DistanceUnit): Float? {
-        val value = text.toFloatOrNull() ?: return null
-        return displayToMeters(value, unit)
+        // A decimal comma ("3,5") is accepted, as typed in many languages; anything that isn't a finite number is null.
+        val t = text.trim().let { if (it.count { c -> c == ',' } == 1 && '.' !in it) it.replace(',', '.') else it }
+        val value = t.toFloatOrNull()?.takeIf { it.isFinite() } ?: return null
+        return displayToMeters(value, unit).takeIf { it.isFinite() }
     }
 }

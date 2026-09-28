@@ -78,4 +78,16 @@ class RunwaysAndRowsTest {
         fun meanY(prefix: String) = r.placed.filter { it.seed.commonName.startsWith(prefix) }.map { it.y }.average()
         assertTrue(meanY("Sweet Corn") < meanY("Carrot"))
     }
+
+    /** Review finding 2026-09-28: shade alone must not count as a blocked runway. */
+    @Test
+    fun shadeOnTheRunwayDoesNotBlockIt() {
+        val plot = PlotEntity(id = 1, name = "P", lengthM = 10f, widthM = 8f, latitude = 42.3, orientationSet = true)
+        // A tall tree just outside the sunny (south) edge shades part of the ground where runners would go.
+        val tree = SiteFeatureEntity(plotId = 1, featureType = SiteFeatureType.TREE.name, pointsJson = "5,8.5", heightM = 10f, radiusM = 2f)
+        val ctx = PlotContext(plot, emptyList(), listOf(tree), lookup)
+        val r = AutoPlanner.plan(ctx, PlotShape.effectiveOutline(plot), listOf(PlantRequest(v("Winter Squash - Spaghetti"), 2)))
+        assertTrue(r.notes.joinToString(), r.notes.none { it.startsWith("There was no completely free ground") })
+        assertTrue(r.guides.isNotEmpty())
+    }
 }

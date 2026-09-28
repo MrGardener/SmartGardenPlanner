@@ -58,7 +58,7 @@ data class Backdrop(
 
         /** Any angle as −180…180 (190 → −170, −200 → 160). */
         fun normalizeDeg(deg: Float): Float {
-            if (deg.isNaN()) return 0f
+            if (!deg.isFinite()) return 0f
             var d = deg % 360f
             if (d > 180f) d -= 360f
             if (d < -180f) d += 360f
@@ -81,7 +81,7 @@ data class Backdrop(
             val f = s.split(';')
             if (f.size < 6) return null
             val n = f.take(6).map { it.trim().toFloatOrNull() ?: return null }
-            if (n[2] !in MIN_WIDTH_M..MAX_WIDTH_M || n[5] !in 0.05f..20f || n.any { it.isNaN() }) return null
+            if (n.any { !it.isFinite() } || n[2] !in MIN_WIDTH_M..MAX_WIDTH_M || n[5] !in 0.05f..20f) return null
             if (kotlin.math.abs(n[0]) > 10_000f || kotlin.math.abs(n[1]) > 10_000f) return null
             return Backdrop(n[0], n[1], n[2], normalizeDeg(n[3]), n[4].coerceIn(0.1f, 1f), n[5], f.getOrNull(6) != "h")
         }

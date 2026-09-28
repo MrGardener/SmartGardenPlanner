@@ -42,7 +42,7 @@ object OnlineData {
     fun parseZone(json: String): String? {
         val root = MiniJson.parse(json) as? Map<*, *> ?: return null
         val zone = (root["zone"] as? String)?.trim() ?: return null
-        return zone.takeIf { HardinessZones.number(it) != null }
+        return zone.takeIf { HardinessZones.isValid(it) }
     }
 
     /** Sum of the daily precipitation values, or null when the response has none. */
@@ -120,8 +120,12 @@ object MiniJson {
         null
     }
 
+    /** Deepest nesting accepted; deeper input (e.g. a hostile file) is rejected instead of overflowing the stack. */
+    const val MAX_DEPTH = 64
+
     private class Parser(val s: String) {
         var pos = 0
+        private var depth = 0
 
         fun skipWs() {
             while (pos < s.length && s[pos].isWhitespace()) pos++
@@ -131,8 +135,12 @@ object MiniJson {
             skipWs()
             require(pos < s.length) { "unexpected end" }
             return when (val c = s[pos]) {
-                '{' -> obj()
-                '[' -> arr()
+                '{', '[' -> {
+                    require(++depth <= MAX_DEPTH) { "too deep" }
+                    val v = if (c == '{') obj() else arr()
+                    depth--
+                    v
+                }
                 '"' -> str()
                 't' -> literal("true", true)
                 'f' -> literal("false", false)

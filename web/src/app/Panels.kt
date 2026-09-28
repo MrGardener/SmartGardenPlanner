@@ -69,7 +69,7 @@ object Panels {
 
     private fun plot(body: HTMLElement, wp: WebPlot) {
         val p = wp.plot
-        body.add(heading(p.name))
+        body.add(heading(p.name).also { it.setAttribute("translate", "no") })
         body.add(kv("Size", "${p.lengthM.fmt(1)} × ${p.widthM.fmt(1)} m (${PlotShape.areaM2(p).fmt(1)} m²)"))
         body.add(kv("Top edge faces", if (p.orientationSet) compassName(p.northBearingDeg) else "not set (assumes north)"))
         body.add(kv("ZIP / zone", listOfNotNull(p.locationZip, p.hardinessZone?.let { "zone $it" }).joinToString(" · ").ifBlank { "not set" }))

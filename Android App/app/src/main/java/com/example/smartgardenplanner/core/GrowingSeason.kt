@@ -79,7 +79,8 @@ object GrowingSeason {
 
     private fun km(a1: Double, o1: Double, a2: Double, o2: Double): Double {
         val p = PI / 180.0
-        val x = (o2 - o1) * p * cos((a1 + a2) / 2.0 * p)
+        val dLon = ((o2 - o1 + 540.0) % 360.0) - 180.0   // across the 180th meridian the short way
+        val x = dLon * p * cos((a1 + a2) / 2.0 * p)
         val y = (a2 - a1) * p
         return 6371.0 * hypot(x, y)
     }

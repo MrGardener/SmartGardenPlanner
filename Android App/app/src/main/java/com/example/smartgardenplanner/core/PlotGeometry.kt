@@ -154,6 +154,7 @@ object PlotShape {
 
     /** True when (x, y) lies inside the plot (its outline if it has one, else its rectangle). */
     fun contains(plot: PlotEntity, x: Float, y: Float): Boolean {
+        if (!x.isFinite() || !y.isFinite()) return false
         if (x < 0f || y < 0f || x > plot.lengthM || y > plot.widthM) return false
         val custom = outline(plot)
         return custom.isEmpty() || PlotGeometry.pointInPolygon(x, y, custom)

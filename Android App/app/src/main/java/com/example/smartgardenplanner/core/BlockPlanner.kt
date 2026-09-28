@@ -182,6 +182,7 @@ object BlockPlanner {
         val sunKnown = context.barriers.isNotEmpty() || context.areaFeatures.any { SiteFeatureType.of(it.featureType)?.let { t -> t == SiteFeatureType.FULL_SUN || t == SiteFeatureType.PART_SHADE || t == SiteFeatureType.FULL_SHADE } == true }
         val pastByGroup = history.filter { it.group != null && seasonYear - it.seasonYear in 1..it.group!!.waitYears }.groupBy { it.group!! }
 
+        val plotOutline = PlotShape.effectiveOutline(plot)
         val walls = context.features.filter { SiteFeatureType.of(it.featureType)?.let { t -> t.isBarrier && t != SiteFeatureType.TREE } == true }
             .map { PlotGeometry.parsePoints(it.pointsJson) }.filter { it.size >= 2 }
         val existing = context.nodes.mapNotNull { n -> context.seedLookup(n.seedCode)?.let { Placed(it, n.coordinateXM, n.coordinateYM, it.exclusionRadiusM) } }
@@ -239,6 +240,9 @@ object BlockPlanner {
                 val p = toXY(u, v)
                 if (rejected.isNotEmpty() && key(p.x, p.y) in rejected) return false
                 if (!PlotGeometry.pointInPolygon(p.x, p.y, area) || !PlotShape.contains(plot, p.x, p.y)) return false
+                // At least half of the plant's spacing radius inside the area and the plot, so a plant never sits on the
+                // edge or in a spot far too small for it (a squash in a 0.5 m bed).
+                if (PlotGeometry.distanceToPolygonEdge(p.x, p.y, area) < r * 0.5f || PlotGeometry.distanceToPolygonEdge(p.x, p.y, plotOutline) < r * 0.5f) return false
                 if (isBlocked(p.x, p.y, r)) return false
                 if (context.floodZoneAt(p.x, p.y) != null && !crop.floodTolerant) return false
                 // FR-059: a plant's whole circle stays out of every vine runway, not just its centre.
@@ -302,7 +306,7 @@ object BlockPlanner {
                             if (habit != null && !habit.climber) {
                                 // Runway toward the sun, in front of the block: it should be free, inside the plot and sunny.
                                 val front = v0 - blockD - r
-                                var good = 0; var bad = 0
+                                var good = 0; var bad = 0; var shade = 0
                                 // Samples at most 25 cm apart over the whole runway (the block's width plus a plant radius each
                                 // side, out to its full length), edges included.
                                 val nu = ceil((blockW + 2 * r) / 0.25f).toInt().coerceAtLeast(1)
@@ -321,14 +325,16 @@ object BlockPlanner {
                                         // FR-059: the runway must stay inside the plot and clear of fences, walls and buildings.
                                         val walled = walls.any { w -> PlotGeometry.distanceToPolyline(p.x, p.y, w) < 0.4f }
                                         val otherRunway = reserved.any { it.contains(uu, front - t) }
-                                        if (occupied || shaded || walled || otherRunway || !PlotShape.contains(plot, p.x, p.y) || !PlotGeometry.pointInPolygon(p.x, p.y, area)) bad++ else good++
+                                        // Shade doesn't block a runway (vines still grow there); it only makes the spot less good.
+                                        if (occupied || walled || otherRunway || !PlotShape.contains(plot, p.x, p.y) || !PlotGeometry.pointInPolygon(p.x, p.y, area)) bad++
+                                        else { good++; if (shaded) shade++ }
                                     }
                                 }
                                 // FR-059: a runway must be completely free: over no plant (or another runway), inside the plot
                                 // and clear of fences. Any blocked runway ranks below every free one, and is used only when no
                                 // free runway exists (the proposal then says so).
                                 if (good + bad > 0) {
-                                    score += 3.0 * good / (good + bad)
+                                    score += 3.0 * (good - shade) / (good + bad)
                                     if (bad > 0) { score -= 200.0 + 100.0 * bad / (good + bad); runwayBad = true }
                                 }
                             }

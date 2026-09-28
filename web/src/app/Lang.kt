@@ -52,6 +52,7 @@ object Lang {
         }
         val tag = (n as? HTMLElement)?.tagName
         if (tag == "SCRIPT" || tag == "STYLE" || tag == "TEXTAREA") return
+        if ((n as? Element)?.getAttribute("translate") == "no") return
         var c = n.firstChild
         while (c != null) { walk(c); c = c.nextSibling }
     }

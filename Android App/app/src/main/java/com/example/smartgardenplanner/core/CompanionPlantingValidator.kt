@@ -79,8 +79,9 @@ class CompanionPlantingValidator {
                 // where hundreds of distinct botanicalCodes share a small set of species prefixes.
                 val candidatePrefix = speciesPrefix(candidateSeed.botanicalCode)
                 val existingPrefix = speciesPrefix(existingSeed.botanicalCode)
-                val candidateAntagonists = candidateSeed.antagonistCodes.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                val existingAntagonists = existingSeed.antagonistCodes.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                // Codes are compared ignoring case and spaces: custom varieties may be typed as " tom , cor ".
+                val candidateAntagonists = candidateSeed.antagonistCodes.split(",").map { it.trim().uppercase() }.filter { it.isNotEmpty() }
+                val existingAntagonists = existingSeed.antagonistCodes.split(",").map { it.trim().uppercase() }.filter { it.isNotEmpty() }
                 if (existingPrefix in candidateAntagonists || candidatePrefix in existingAntagonists) {
                     // Antagonist conflicts matter within a wider "nearby" radius, not just the spacing circle.
                     val nearbyRadius = fullSpacing * 2.0
@@ -105,6 +106,6 @@ class CompanionPlantingValidator {
 
     /** Extracts the species-level prefix from a cultivar botanicalCode, e.g. "MAR-002" -> "MAR". */
     private fun speciesPrefix(botanicalCode: String): String {
-        return botanicalCode.substringBefore("-")
+        return botanicalCode.substringBefore("-").trim().uppercase()
     }
 }

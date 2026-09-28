@@ -269,7 +269,7 @@ object PlanFileCodec {
                 description = m.text("description", 500) ?: "",
                 locationZip = location?.text("zip", 10)?.takeIf { ZipTable.isValidZip(it) },
                 boundaryJson = if (outlineOk) PlotGeometry.serializePoints(outline!!) else null,
-                hardinessZone = location?.text("hardinessZone", 4)?.takeIf { HardinessZones.number(it) != null },
+                hardinessZone = location?.text("hardinessZone", 4)?.takeIf { HardinessZones.isValid(it) },
                 latitude = lat,
                 longitude = lon,
                 northBearingDeg = (orientation?.num("topFacesDeg")?.toFloat() ?: 0f).let { ((it % 360f) + 360f) % 360f },

@@ -161,7 +161,7 @@ object SunlightEngine {
         northBearingDeg: Float,
         barriers: List<Barrier>
     ): FloatArray {
-        val out = FloatArray(cols * rows)
+        val out = FloatArray(if (cols <= 0 || rows <= 0) 0 else cols * rows)
         for (r in 0 until rows) {
             for (c in 0 until cols) {
                 val x = (c + 0.5f) * lengthM / cols

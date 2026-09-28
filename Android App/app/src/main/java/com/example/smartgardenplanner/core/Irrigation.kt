@@ -78,7 +78,7 @@ object Irrigation {
 
     /** Coverage grid (cols × rows, row-major, cell centres) for the overlay. */
     fun grid(plot: PlotEntity, features: List<SiteFeatureEntity>, cols: Int, rows: Int): Array<WaterSource> =
-        Array(cols * rows) { i ->
+        Array(if (cols <= 0 || rows <= 0) 0 else cols * rows) { i ->
             val c = i % cols; val r = i / cols
             sourceAt((c + 0.5f) * plot.lengthM / cols, (r + 0.5f) * plot.widthM / rows, features, plot.northBearingDeg)
         }

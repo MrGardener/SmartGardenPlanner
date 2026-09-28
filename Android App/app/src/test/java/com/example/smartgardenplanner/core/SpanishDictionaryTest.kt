@@ -16,7 +16,7 @@ class SpanishDictionaryTest {
 
     @After fun backToEnglish() = I18n.use("en", emptyMap())
 
-    private val english = Regex("\\\\b(the|and|of|with|your|plants|are|is|so|they|from|which|toward)\\\\b")
+    private val english = Regex("\\b(the|and|of|with|your|plants|are|is|so|they|from|which|toward)\\b")
 
     @Test
     fun plannerNotesForTheOwnersListComeOutInSpanish() {
@@ -40,5 +40,14 @@ class SpanishDictionaryTest {
         assertEquals("18 (3 filas de 6)", I18n.tr("18 (3 rows of 6)"))
         assertEquals("Colocadas: 3 × Calabaza de invierno - Spaghetti, 49 × Maíz dulce - Honey Select.",
             I18n.tr("Placed: 3 × Winter Squash - Spaghetti, 49 × Sweet Corn - Honey Select."))
+    }
+
+    /** Review finding 2026-09-28: names the user typed (in quotes) are never translated. */
+    @Test
+    fun quotedNamesStayAsTyped() {
+        useSpanish()
+        val out = I18n.tr("Made “Tomato”. The original is unchanged; open the copy from the plot list.")
+        assertTrue(out, out.contains("«Tomato»") && !out.contains("Tomate") && out.startsWith("Se creó"))
+        assertEquals("Planificando…", I18n.tr("Planning…"))
     }
 }

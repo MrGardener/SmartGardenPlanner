@@ -39,7 +39,7 @@ object ShadeTools {
     /** True for cells in shade (or before sunrise / after sunset) at [solarHour]: cols × rows, row-major. */
     fun shadowGridAt(lengthM: Float, widthM: Float, cols: Int, rows: Int, latitude: Double, dayOfYear: Int, northBearingDeg: Float, barriers: List<Barrier>, solarHour: Double): BooleanArray {
         val sun = SunlightEngine.position(latitude, dayOfYear, solarHour)
-        return BooleanArray(cols * rows) { i ->
+        return BooleanArray(if (cols <= 0 || rows <= 0) 0 else cols * rows) { i ->
             val c = i % cols; val r = i / cols
             SunlightEngine.isShaded((c + 0.5f) * lengthM / cols, (r + 0.5f) * widthM / rows, sun, northBearingDeg, barriers)
         }

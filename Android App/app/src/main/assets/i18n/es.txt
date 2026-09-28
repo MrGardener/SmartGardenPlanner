@@ -3263,3 +3263,55 @@ medium hot	medio picante
 hot	picante
 very hot	muy picante
 extremely hot	extremadamente picante
+That's more than {0} plants. Choose a smaller area or a variety with more spacing.	Son más de {0} plantas. Elige una zona más pequeña o una variedad con más espaciado.
+Sand, silt and clay must be numbers.	Arena, limo y arcilla deben ser números.
+Organized clumps: {0}. Each clump is in rows and columns with a {1} cm walkway around it, so you can reach and hose every plant. Next year the clumps can swap places for crop rotation.	Grupos organizados: {0}. Cada grupo está en filas y columnas con un pasillo de {1} cm alrededor, para que puedas llegar a cada planta y regarla con manguera. El año próximo los grupos pueden intercambiarse para rotar cultivos.
+Long rows: {0}. Each crop has its own full-width rows with a {1} cm walkway to the next crop.	Filas largas: {0}. Cada cultivo tiene sus propias filas de todo el ancho, con un pasillo de {1} cm hasta el siguiente cultivo.
+Care:	Cuidados:
+Heavy feeder:	Muy exigente:
+Plan B:	Plan B:
+Rotation plan:	Plan de rotación:
+Sun:	Sol:
+Prevent:	Prevención:
+Treat:	Tratamiento:
+Signs:	Señales:
+Scout:	Vigilar:
+Control:	Control:
+Fertilize:	Abonar:
+Family:	Familia:
+Guild:	Gremio:
+Marking:	Marcando:
+Placing:	Colocando:
+Photo:	Foto:
+Rotation:	Rotación:
+Pests:	Plagas:
+Source:	Fuente:
+Spacing:	Espaciado:
+Texture:	Textura:
+Zone:	Zona:
+Neighbors:	Vecinas:
+Location:	Ubicación:
+Turn:	Giro:
+Current:	Actual:
+Area:	Zona:
+Look for:	Qué buscar:
+Mid-season:	A mitad de temporada:
+Most important:	Lo más importante:
+Most important first:	Lo más importante primero:
+Crop rotation:	Rotación de cultivos:
+Fruiting crop:	Cultivo de fruto:
+Good companions:	Buenas compañeras:
+Avoid nearby:	Evitar cerca:
+Better here:	Mejor aquí:
+Buy seeds:	Comprar semillas:
+Position:	Posición:
+Pantry:	Despensa:
+Thirsty plants:	Plantas sedientas:
+Planning season:	Temporada que se planifica:
+Photo added:	Foto añadida:
+See-through:	Transparencia:
+Now placing:	Colocando ahora:
+Alternate catch-crop:	Cultivo intercalado alternativo:
+Fast-track substitute:	Sustituto rápido:
+From your garden:	De tu huerto:
+Plot area:	Superficie de la parcela:

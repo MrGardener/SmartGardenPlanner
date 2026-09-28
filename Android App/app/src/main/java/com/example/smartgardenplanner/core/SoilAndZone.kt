@@ -29,6 +29,7 @@ object SoilAnalyzer {
 
     /** Checks the three texture fractions add up to about 100 %. Returns an error message or null. */
     fun validateTexture(sand: Float, silt: Float, clay: Float): String? {
+        if (!sand.isFinite() || !silt.isFinite() || !clay.isFinite()) return "Sand, silt and clay must be numbers."
         if (sand < 0f || silt < 0f || clay < 0f) return "Percentages can't be negative."
         val total = sand + silt + clay
         if (total < 97f || total > 103f) return "Sand, silt and clay should add up to 100 % (now ${(total).fmt(0)} %)."
@@ -117,6 +118,11 @@ object HardinessZones {
 
     /** All zone labels offered in the UI. */
     val LABELS: List<String> = (1..13).flatMap { listOf("${it}a", "${it}b") }
+
+    private val LABEL = Regex("^(1[0-3]|[1-9])[ab]$")
+
+    /** True only for a real zone label, "1a" … "13b". */
+    fun isValid(zone: String?): Boolean = zone != null && LABEL.matches(zone)
 
     /** "7b" -> 7, "10a" -> 10. Returns null for anything else. */
     fun number(zone: String?): Int? {

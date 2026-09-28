@@ -80,8 +80,9 @@ object App {
         val plotPicker = if (Store.plots.isNotEmpty()) select(Store.plots.mapIndexed { i, p -> i.toString() to p.plot.name }, Store.current.toString()) {
                         Store.current = it.toInt(); Canvas.selection = null; Store.preview = null; Store.previewArea = null
             Store.viewSeason = null; Store.historyYear = null; Store.rotation = emptyList(); Store.previewMode = PreviewMode.NORMAL; render()
-        }.also { it.setAttribute("aria-label", "Plot") } else null
-        val file = h("span", "file", (if (Store.dirty) "● " else "") + Store.fileName, mapOf("title" to if (Store.dirty) "Unsaved changes" else "Saved"))
+        }.also { it.setAttribute("aria-label", "Plot"); it.setAttribute("translate", "no") } else null
+        // Names the user typed (plots, files) are never translated.
+        val file = h("span", "file", (if (Store.dirty) "● " else "") + Store.fileName, mapOf("title" to if (Store.dirty) "Unsaved changes" else "Saved", "translate" to "no"))
         val wp = Store.plot()
         header.add(h("div", "actions", kids = listOfNotNull(
             button("New plot", "btn") { Dialogs.plotDetails(null) },

@@ -551,7 +551,7 @@ fun DashboardScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text(tr(plot.name), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(plot.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     tr("Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m" +
@@ -562,7 +562,7 @@ fun DashboardScreen(
                                 )
                                 if (plot.description.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(tr(plot.description), fontSize = 12.sp, color = Color.Gray)
+                                    Text(plot.description, fontSize = 12.sp, color = Color.Gray)
                                 }
                             }
                         }
@@ -1343,7 +1343,7 @@ fun CanvasWorkspaceScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(tr(activePlot?.name ?: "Loading Layout..."), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(activePlot?.name ?: tr("Loading Layout..."), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -3770,6 +3770,10 @@ fun CanvasWorkspaceScreen(
                             return@TextButton
                         }
                         val localPoints = autoPopulateEngine.generatePositions(area.width, area.height, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
+                        if (localPoints.isEmpty() && autoPopulateEngine.estimateCount(area.width, area.height, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern) > com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS) {
+                            snackbarMessage = "That's more than ${com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS} plants. Choose a smaller area or a variety with more spacing."
+                            return@TextButton
+                        }
                         // [FIXED] Real bug: this previously only checked generated points against
                         // no-plant paths, never against plants that already existed OUTSIDE the
                         // selected area. That let auto-populate silently create spacing violations
@@ -3892,6 +3896,10 @@ fun CanvasWorkspaceScreen(
                             return@TextButton
                         }
                         val localPoints = autoPopulateEngine.generatePositions(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern)
+                        if (localPoints.isEmpty() && autoPopulateEngine.estimateCount(boundingWidth, boundingHeight, seed.exclusionRadiusM * 2f * settings.spacingMarginMultiplier, chosenPattern) > com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS) {
+                            snackbarMessage = "That's more than ${com.example.smartgardenplanner.core.AutoPopulateEngine.MAX_POINTS} plants. Choose a smaller area or a variety with more spacing."
+                            return@TextButton
+                        }
                             .filter { point -> pointInPolygon(minX + point.xM, minY + point.yM, polygon) }
                         val newNodes = localPoints.fold(emptyList<PlantedNodeEntity>()) { accepted, point ->
                             val absX = minX + point.xM

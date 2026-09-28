@@ -152,7 +152,7 @@ fun PlotInsightsScreen(plotId: Long, database: AppDatabase, onNavigateBack: () -
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text(tr(snapshot?.context?.plot?.name?.let { "Insights: $it" } ?: "Plot insights"), maxLines = 1) },
+                    title = { Text(snapshot?.context?.plot?.name?.let { tr("Insights") + ": " + it } ?: tr("Plot insights"), maxLines = 1) },
                     navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
                     actions = { OnlineBadge(settings.onlineFeaturesEnabled) },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)

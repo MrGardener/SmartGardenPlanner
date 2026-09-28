@@ -47,8 +47,8 @@ data class PlotContext(
 
 /** Species-level relationship helpers, matching the validator's prefix rule. */
 object Relationships {
-    fun prefix(seed: SeedEntity): String = seed.botanicalCode.substringBefore("-")
-    private fun codes(list: String): Set<String> = list.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    fun prefix(seed: SeedEntity): String = seed.botanicalCode.substringBefore("-").trim().uppercase()
+    private fun codes(list: String): Set<String> = list.split(",").map { it.trim().uppercase() }.filter { it.isNotEmpty() }.toSet()
 
     fun areAntagonists(a: SeedEntity, b: SeedEntity): Boolean =
         prefix(b) in codes(a.antagonistCodes) || prefix(a) in codes(b.antagonistCodes)
