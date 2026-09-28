@@ -144,7 +144,9 @@ min(x), top = min(y), width = |Δx|, height = |Δy|. ↑ HLR-AREA-010, HLR-AREA-
 
 **LLR-VALD-040** `speciesCode(code)` shall return the part of `code` before the first "-", or the whole code
 if there is no "-". An antagonist list shall be parsed by splitting on ",", trimming each item and dropping
-empty items. Comparison is exact (case-sensitive). ↑ HLR-RULE-040, HLR-ENC-060
+empty items. Codes are compared after trimming spaces and ignoring case, so " tom " and "TOM" match
+(revised 2026-09-28 by owner decision; a user file with lower-case codes had its rules silently ignored).
+↑ HLR-RULE-040, HLR-ENC-060
 
 **LLR-VALD-050** `areAntagonists(A, B)` shall be true when `speciesCode(B)` is in A's antagonist list, or
 `speciesCode(A)` is in B's. ↑ HLR-RULE-040
@@ -173,9 +175,14 @@ this order:
 
 ↑ HLR-RULE-080, HLR-RULE-090, HLR-PLC-020, HLR-PLC-060, HLR-PLC-080, HLR-TIME-050, HLR-TIME-060, HLR-AREA-070
 
-**LLR-VALD-090** If the variety of the candidate, or of any plant being compared, isn't found by the lookup,
-`validate` shall return `Rejected(DATA_INCONSISTENT)` (error E-DATA-005) rather than skip the plant.
-↑ HLR-RULE-080, HLR-STOR-050
+**LLR-VALD-090** A compared plant whose variety isn't found by the lookup (a deleted custom variety, a file from
+another catalog) shall not be skipped. It is given a spacing radius of `UNKNOWN_VARIETY_RADIUS_M` = 0.3 m, and a
+candidate closer than (candidate radius + 0.3 m) × margin is refused with its id in `unknownVarietyViolations`.
+The clients then show "Unknown variety: the plant here (code …) isn't in your catalog …" with the two fixes: correct
+the catalog (Encyclopedia → Add Variety, with a pointer to the user manual section "Unknown variety"; web: a
+"How to fix (Help)" button that opens that section), or delete that plant ("Delete that plant", one undo step) and
+plant a substitute until the variety exists. This applies to placing, moving and changing the variety of a plant.
+(Revised 2026-09-28 by owner decision.) ↑ HLR-RULE-080, HLR-STOR-050
 
 **LLR-VALD-100** `conflictFlags(plants, lookup, margin)` shall return the set of plant ids that appear in at
 least one pair satisfying LLR-VALD-060, evaluating every unordered pair once. ↑ HLR-RULE-070, HLR-LAY-060
@@ -278,8 +285,12 @@ end = first-frost date − daysToHarvest. The result is:
 
 ↑ HLR-TIME-090
 
-**LLR-WIN-020** `zoneNumber(zone)` shall accept strings matching `^(1[0-3]|[1-9])[ab]?$` and return the
-number. Anything else returns null, and the zone features treat the location as unknown. ↑ HLR-TIME-100
+**LLR-WIN-020** The accepted hardiness-zone labels are exactly those of the bundled ZIP table (`zip_data.txt`, 5th
+field), which is the reference for testing: `1a` … `13b`, matching `^(1[0-3]|[1-9])[ab]$`. `HardinessZones.isValid`
+accepts only these; `HardinessZones.number` returns the number of a valid label and null for anything else,
+including a bare number such as "7" (not in the table), in which case the zone features treat the location as
+unknown. The table check (every zone in the table is valid, every valid label occurs in it) is automated.
+(Revised 2026-09-28 by owner decision.) ↑ HLR-TIME-100
 
 **LLR-REC-010** `recommend(varieties, zone, climate, today)` shall return the varieties with
 zoneMin ≤ zone ≤ zoneMax and a window of OPEN or UPCOMING, sorted by name. ↑ HLR-TIME-100
@@ -483,36 +494,43 @@ distance (Earth radius 6371.0088 km), if that distance ≤ 50 km `[H-TBC-06]`, a
 
 ### 3.1 Database schema (DB)
 
-**LLR-DB-010** The database shall contain these tables (SQLite column types):
-- `plots(id INTEGER PK AUTOINCREMENT, uuid TEXT UNIQUE NOT NULL, name TEXT NOT NULL, length_m REAL NOT NULL,
-  width_m REAL NOT NULL, archived INTEGER NOT NULL DEFAULT 0, zip TEXT, lat REAL, lon REAL,
-  water_x_m REAL NOT NULL DEFAULT 0, water_y_m REAL NOT NULL DEFAULT 0, photo_file TEXT, owner_name TEXT,
-  role TEXT NOT NULL DEFAULT 'OWNER', created_utc INTEGER NOT NULL, modified_utc INTEGER NOT NULL)`
-- `varieties(code TEXT PK, name, family, category, lifecycle TEXT NOT NULL, zone_min, zone_max,
-  germination_days, days_to_harvest INTEGER NOT NULL, radius_m REAL NOT NULL, companions, antagonists, pests,
-  care, watering TEXT NOT NULL DEFAULT '', soil_min_c REAL, soil_max_c REAL, depth_cm REAL, light TEXT,
-  transplant INTEGER NOT NULL DEFAULT 1, sow_offset_days INTEGER NOT NULL DEFAULT 0, color TEXT,
-  source TEXT NOT NULL CHECK(source IN ('BUNDLED','USER')), tier TEXT)`
-- `plants(id INTEGER PK AUTOINCREMENT, plot_id INTEGER NOT NULL REFERENCES plots(id) ON DELETE CASCADE,
-  variety_code TEXT NOT NULL REFERENCES varieties(code) ON DELETE RESTRICT, x_m REAL NOT NULL,
-  y_m REAL NOT NULL, planting_date TEXT NOT NULL, outcome TEXT NOT NULL DEFAULT 'NONE',
-  created_utc INTEGER NOT NULL)`, with indexes on plot_id and variety_code
-- `paths(id INTEGER PK AUTOINCREMENT, plot_id INTEGER NOT NULL REFERENCES plots(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK(kind IN ('RECT','LINE')), x_m, y_m, w_m, h_m REAL, points TEXT, width_m REAL)`,
-  with an index on plot_id
-- `settings(key TEXT PK, value TEXT NOT NULL)`
-- `undo_entries(plot_id INTEGER REFERENCES plots(id) ON DELETE CASCADE, stack TEXT CHECK(stack IN ('UNDO','REDO')),
-  seq INTEGER, snapshot TEXT NOT NULL, PRIMARY KEY(plot_id, stack, seq))`
+**LLR-DB-010** The Room database (schema 12) shall contain these tables; column names are the entity field names,
+types INTEGER (Long, Int, Boolean), REAL (Float, Double) or TEXT, and a column is NOT NULL exactly when its Kotlin
+field is not nullable:
+- `plots`: id (PK, autogenerate), name, lengthM, widthM, description, imagePath?, scaleSource, locationZip?,
+  ownerRole, createdTimestamp, lastModifiedTimestamp, boundaryJson?, hardinessZone?, latitude?, longitude?,
+  northBearingDeg, soilSandPct?, soilSiltPct?, soilClayPct?, soilOrganicPct?, soilPh?, orientationSet, pests?,
+  backdropJson?, address?
+- `planted_nodes`: id (PK), plotId (→ plots, CASCADE), seedCode (→ seeds.botanicalCode, RESTRICT), coordinateXM,
+  coordinateYM, datePlantedEpochMillis, germinationFlagResolved; indexes on plotId and seedCode
+- `seeds`: botanicalCode (PK), commonName, botanicalFamily, exclusionRadiusM, germinationDays, daysToHarvest,
+  companionCodes, antagonistCodes, pestNotes, careNotes, fastTrackAlternateCode?, nurseryTransplantSuitable,
+  catchCropAlternateCode?, colorHex?, plantType, lifecycle, hardinessZoneMin, hardinessZoneMax, isCustom
+- `path_zones`: id (PK), plotId (→ plots, CASCADE), xM, yM, widthM, heightM, label, pathType, pointsJson?
+- `site_features`: id (PK), plotId (→ plots, CASCADE), featureType, pointsJson, label, heightM, radiusM,
+  slopeDirectionDeg, slopeGradePct, floodMonths
+- `planting_history`: id (PK), plotId (→ plots, CASCADE), seasonYear, seedCode, varietyName, family,
+  rotationGroup?, coordinateXM, coordinateYM, radiusM, datePlantedEpochMillis
+- `care_log`: id (PK), plotId (→ plots, CASCADE), taskType, doneAtEpochMillis
+- `nutrition_facts`: speciesKey (PK), energyKcal, proteinG, carbsG, fiberG, vitaminAUg, vitaminCMg, potassiumMg,
+  ironMg, calciumMg, source, updatedEpochMillis
+- `climate_zones`: zipCode (PK), hardinessZone, lastFrostDayOfYear, firstFrostDayOfYear
+- `app_configurations`: configKey (PK), configValue, lastUpdatedTimestamp (settings are rows `settings.*`)
 
-↑ HLR-STOR-020, HLR-STOR-040, HLR-PLOT-060, HLR-VIEW-100, HLR-HIST-050, HLR-PLTN-020
+(? = nullable.) (Revised 2026-09-28 by owner decision: the schema-8 design of the first issue was not adopted; this
+describes the implemented schema 12.) ↑ HLR-STOR-020, HLR-STOR-040, HLR-PLOT-060, HLR-VIEW-100, HLR-HIST-050, HLR-PLTN-020
 
-**LLR-DB-020** `planting_date` shall be stored as ISO `yyyy-MM-dd`. LINE `points` shall be stored as
-`x,y;x,y;…`, with "." decimals, in meters, and at most MAX_POINTS_PER_SHAPE pairs. ↑ HLR-STOR-020, HLR-TIME-010
+**LLR-DB-020** Dates and times shall be stored as UTC epoch milliseconds (INTEGER). Outlines and line points shall be
+stored as `x,y;x,y;…` with "." decimals, in meters, relative to the plot's top-left corner; malformed pairs are
+skipped when read. ↑ HLR-STOR-020, HLR-TIME-010
 
 **LLR-DB-030** Foreign-key enforcement shall be on for every connection. ↑ HLR-STOR-040
 
-**LLR-DB-040** The schema version shall be 8. Room's schema export shall be enabled, and the exported
-schema committed. ↑ HLR-STOR-030
+**LLR-DB-040** The schema version shall be 12. Every entity shall be registered in `AppDatabase`, and a host test
+(`DatabaseSchemaTest`) shall replay the migrations from the version-2 tables and check that they produce exactly
+the entities' columns, types and nullability (Room's schema export stays off; the host test replaces the exported
+schema as the reference). A device test checks `user_version` = 12, every table and foreign keys on.
+↑ HLR-STOR-030
 
 **LLR-DB-050** The database shall be encrypted with SQLCipher 4 using the 32-byte key from LLR-KEY-020. The
 file name shall be `sgp.db`. ↑ HLR-PROT-010
@@ -537,26 +555,22 @@ transaction. ↑ HLR-PLOT-010, HLR-PLOT-060
 
 ### 3.2 Migration (MIG)
 
-**LLR-MIG-010** A migration 7 → 8 shall convert the v20.20 schema, preserving all rows:
-
-| v20.20 (schema 7) | Schema 8 |
-|---|---|
-| `plots` (lengthM, widthM, description, imagePath, locationZip, ownerRole, timestamps) | `plots`: generate a random UUID per row; zip = locationZip; photo_file = null (old unencrypted photos aren't carried over, as none were ever created by the UI); role = ownerRole |
-| `seeds` | `varieties`: isCustom → source (1 → USER, 0 → BUNDLED); colorHex → color; missing new fields → defaults |
-| `planted_nodes` | `plants`: datePlantedEpochMillis → local date in the device time zone at migration time; germinationFlagResolved → outcome (1 → GERMINATED); coordinates copied |
-| `path_zones` | `paths`: pathType → kind; pointsJson → points |
-| `app_configurations` rows `settings.*` | `settings`, with keys renamed per LLR-SETS-010 |
-| `climate_zones` | dropped (replaced by the climate asset, LLR-CATI-060) |
-
-↑ HLR-STOR-030
+**LLR-MIG-010** Migrations shall form one unbroken chain of single steps from schema 2 to schema 12
+(`MIGRATION_2_3` … `MIGRATION_11_12`, all listed in `ALL_MIGRATIONS`), each additive and preserving every row:
+new tables are created, new columns are added with `ALTER TABLE … ADD COLUMN` (a NOT NULL column always with a
+DEFAULT), and `planted_nodes` is rebuilt once (2 → 3) to add its foreign keys, copying its rows.
+Steps: 2→3 plot metadata, seeds, climate_zones, planted_nodes rebuild; 3→4 path_zones; 4→5 seed color;
+5→6 line paths; 6→7 seed tiers and zones; 7→8 plot outline, zone, location, direction, soil, site_features,
+care_log, nutrition_facts; 8→9 orientationSet; 9→10 planting_history; 10→11 pests, backdrop; 11→12 address.
+(Revised 2026-09-28 by owner decision.) ↑ HLR-STOR-030
 
 **LLR-MIG-020** The migration shall run in one transaction. On failure, the database shall stay at
-version 7, unchanged, and E-DATA-002 shall be reported. ↑ HLR-STOR-030, HLR-STOR-050
+version it had before, unchanged, and E-DATA-002 shall be reported. ↑ HLR-STOR-030, HLR-STOR-050
 
-**LLR-MIG-030** A stored version higher than 8 shall not be opened for writing. E-DATA-003 shall be reported,
+**LLR-MIG-030** A stored version higher than 12 shall not be opened for writing. E-DATA-003 shall be reported,
 and no file shall be modified. ↑ HLR-STOR-030
 
-**LLR-MIG-040** Versions below 7 shall be treated as unsupported: E-DATA-003, same handling as
+**LLR-MIG-040** Versions below 2 shall be treated as unsupported: E-DATA-003, same handling as
 LLR-MIG-030. `[TBC-14]` ↑ HLR-STOR-030
 
 ### 3.3 Keys (KEY)

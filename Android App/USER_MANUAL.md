@@ -516,6 +516,22 @@ Reach it from the Dashboard's search icon.
   kind (sweet or spicy, size, color).
 - The spacing, germination and harvest figures are planning estimates; check a seed packet when it matters.
 
+### Unknown variety
+
+A plant can refer to a variety that isn't in your catalog, for example after you delete one of your own varieties,
+or when a plan file came from another catalog. The app can't know how much room that plant needs, so it assumes
+0.3 m and won't place, move or change another plant too close to it. It says "Unknown variety" and shows the plant's
+code. Fix it in one of two ways:
+
+1. **Correct the catalog (Phone):** Encyclopedia → **Add Variety**. Enter the code shown in the message exactly,
+   a name, the family and the spacing, then Save. The plant is recognized when you open the plot again. For the
+   computer planner, save the plan on the phone afterwards and open that file there: plan files carry your own
+   varieties.
+2. **Replace the plant:** in the message, choose **Delete that plant** (Undo brings it back), then plant a
+   substitute in that spot until the variety has been created.
+
+On the computer planner, the message's **How to fix (Help)** button opens this explanation.
+
 ---
 
 ## 12. Settings (Phone)
@@ -588,6 +604,13 @@ see.
 ---
 
 ## Changelog
+
+- **2026-09-28 (checks):**
+  - A plant whose variety is missing from the catalog is no longer ignored: nothing can be placed right on top of it,
+    and the message explains how to fix the catalog or replace that plant (see "Unknown variety").
+  - Hardiness zones are only the labels of the ZIP table (1a to 13b); a bare "7" is not a zone.
+  - Damaged settings, and plan files with out-of-range values or obstacles outside the plot, are corrected or
+    skipped with a message instead of being used.
 
 - **2026-09-28 (runways, rows, Spanish):**
   - Squash and other vines: a runway is used only when it's completely free (no plants, no other runway, inside the

@@ -899,6 +899,8 @@ fun CanvasWorkspaceScreen(
     var pathZonesState by remember { mutableStateOf<List<PathZoneEntity>>(emptyList()) }
     var seedDictionary by remember { mutableStateOf<List<SeedEntity>>(emptyList()) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    // LLR-VALD-090: a nearby plant whose variety isn't in the catalog blocked a change; the dialog offers the fixes.
+    var unknownVarietyNode by remember { mutableStateOf<PlantedNodeEntity?>(null) }
 
     // [FIXED] Was BoundedHistoryStack<List<PlantedNodeEntity>> — nodes only. Now snapshots both
     // nodes and path zones together so Undo/Redo works uniformly for every canvas edit.
@@ -1922,7 +1924,9 @@ fun CanvasWorkspaceScreen(
                                                         )
                                                         val result = validator.validatePlacement(candidateNode, candidateSeed, nodesState, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
 
-                                                        if (!result.isValid) {
+                                                        if (result.unknownVarietyViolations.isNotEmpty()) {
+                                                            unknownVarietyNode = nodesState.find { it.id == result.unknownVarietyViolations.first() }
+                                                        } else if (!result.isValid) {
                                                             val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
                                                             val conflictNode = nodesState.find { it.id == conflictId }
                                                             val conflictSeed = conflictNode?.let { seedFor(it.seedCode) }
@@ -2173,7 +2177,9 @@ fun CanvasWorkspaceScreen(
                                                                     val candidate = node.copy(coordinateXM = realXM, coordinateYM = realYM)
                                                                     val neighbors = nodesState.filter { it.id != id }
                                                                     val result = validator.validatePlacement(candidate, seed, neighbors, { code -> seedFor(code) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
-                                                                    if (!result.isValid) {
+                                                                    if (result.unknownVarietyViolations.isNotEmpty()) {
+                                                                        unknownVarietyNode = neighbors.find { it.id == result.unknownVarietyViolations.first() }
+                                                                    } else if (!result.isValid) {
                                                                         snackbarMessage = "Can't move there — too close to another plant."
                                                                     } else {
                                                                                                                                                 val rotationHit = CropRotation.conflict(realXM, realYM, seed, historyState, Seasons.currentSeason(nodesState, historyState))
@@ -3588,6 +3594,37 @@ fun CanvasWorkspaceScreen(
         }
     }
 
+    unknownVarietyNode?.let { node ->
+        AlertDialog(
+            onDismissRequest = { unknownVarietyNode = null },
+            title = { Text(tr("Unknown variety")) },
+            text = {
+                Column {
+                    Text(tr(com.example.smartgardenplanner.core.CompanionPlantingValidator.unknownVarietyMessage(node.seedCode)))
+                    com.example.smartgardenplanner.core.CompanionPlantingValidator.UNKNOWN_VARIETY_FIXES.forEach {
+                        Spacer(modifier = Modifier.height(8.dp)); Text(tr("• $it"))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        launchSafely {
+                            withContext(SgpExecutors.dbDispatcher) { database.plantedNodeDao().delete(node) }
+                            reloadNodes()
+                            undoStack.push(snapshotNow())
+                            redoStack.clear()
+                            snackbarMessage = "Plant deleted. You can now plant a substitute there; Undo brings it back."
+                        }
+                        unknownVarietyNode = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))
+                ) { Text(tr("Delete that plant")) }
+            },
+            dismissButton = { TextButton(onClick = { unknownVarietyNode = null }) { Text(tr("Close")) } }
+        )
+    }
+
     infoDialogNode?.let { node ->
         val seed = seedFor(node.seedCode)
         AlertDialog(
@@ -3677,7 +3714,9 @@ fun CanvasWorkspaceScreen(
                 val neighbors = nodesState.filter { it.id != node.id }
                 val result = validator.validatePlacement(candidate, seed, neighbors, { c -> seedFor(c) }, settings.spacingMarginMultiplier, effectiveEnforceCompanionRules, activeGuilds)
 
-                if (!result.isValid) {
+                if (result.unknownVarietyViolations.isNotEmpty()) {
+                    unknownVarietyNode = neighbors.find { it.id == result.unknownVarietyViolations.first() }
+                } else if (!result.isValid) {
                     val conflictId = (result.spacingViolations + result.antagonistViolations).firstOrNull()
                     val conflictNode = neighbors.find { it.id == conflictId }
                     val conflictSeed = conflictNode?.let { seedFor(it.seedCode) }

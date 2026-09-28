@@ -18,7 +18,8 @@ class CompanionPlantingValidator {
     data class ValidationResult(
         val isValid: Boolean,
         val spacingViolations: List<Long>,     // IDs of existing nodes whose spacing radius is violated
-        val antagonistViolations: List<Long>   // IDs of existing nodes that are botanical antagonists
+        val antagonistViolations: List<Long>,  // IDs of existing nodes that are botanical antagonists
+        val unknownVarietyViolations: List<Long> = emptyList()  // IDs of nearby nodes whose variety isn't in the catalog
     )
 
     /**
@@ -44,18 +45,27 @@ class CompanionPlantingValidator {
     ): ValidationResult {
         val spacingViolations = mutableListOf<Long>()
         val antagonistViolations = mutableListOf<Long>()
+        val unknownVarietyViolations = mutableListOf<Long>()
 
         for (existing in existingNodes) {
             // Only a saved plant (id != 0) can be "itself". Unsaved candidates all have id 0, e.g. the
             // positions accepted earlier in the same auto-populate batch, and must still be compared.
             if (candidate.id != 0L && existing.id == candidate.id) continue
-            val existingSeed = seedLookup(existing.seedCode) ?: continue
-
             // Double precision plus a small tolerance, so that two spacing circles that exactly touch are
             // allowed (T2-VAL-040). In Float, 0.6f + 0.3f = 0.90000004f, which wrongly rejected a 0.90 m gap.
             val dx = candidate.coordinateXM.toDouble() - existing.coordinateXM.toDouble()
             val dy = candidate.coordinateYM.toDouble() - existing.coordinateYM.toDouble()
             val distance = sqrt(dx * dx + dy * dy)
+
+            // LLR-VALD-090: a plant whose variety isn't in the catalog (a deleted custom variety, a file from another
+            // catalog) is not skipped: it is given a safe-guess radius, and a candidate inside it is refused so the
+            // gardener can fix the variety or replace that plant. Skipping it let a new plant go right on top of it.
+            val existingSeed = seedLookup(existing.seedCode)
+            if (existingSeed == null) {
+                if (distance < (candidateSeed.exclusionRadiusM.toDouble() + UNKNOWN_VARIETY_RADIUS_M) * marginMultiplier - SPACING_TOLERANCE_M)
+                    unknownVarietyViolations.add(existing.id)
+                continue
+            }
 
             val inSameGuild = guilds.isNotEmpty() && GuildCatalog.sharedGuilds(candidateSeed, existingSeed, guilds).isNotEmpty()
             val fullSpacing = (candidateSeed.exclusionRadiusM.toDouble() + existingSeed.exclusionRadiusM.toDouble()) * marginMultiplier
@@ -93,15 +103,29 @@ class CompanionPlantingValidator {
         }
 
         return ValidationResult(
-            isValid = spacingViolations.isEmpty() && antagonistViolations.isEmpty(),
+            isValid = spacingViolations.isEmpty() && antagonistViolations.isEmpty() && unknownVarietyViolations.isEmpty(),
             spacingViolations = spacingViolations,
-            antagonistViolations = antagonistViolations
+            antagonistViolations = antagonistViolations,
+            unknownVarietyViolations = unknownVarietyViolations
         )
     }
 
     companion object {
         /** Distances within 0.1 mm of the required spacing count as meeting it (TBC-20). */
         const val SPACING_TOLERANCE_M = 0.0001
+
+        /** Spacing radius assumed for a plant whose variety isn't in the catalog (LLR-VALD-090). */
+        const val UNKNOWN_VARIETY_RADIUS_M = 0.3
+
+        /** Short message for a placement refused because of a plant whose variety [code] is unknown. */
+        fun unknownVarietyMessage(code: String): String =
+            "Unknown variety: the plant here (code $code) isn't in your catalog, so its spacing can't be checked."
+
+        /** The two ways to fix it, shown with the message (web: Help → Unknown variety; phone: the dialog). */
+        val UNKNOWN_VARIETY_FIXES = listOf(
+            "Fix the catalog: on the phone, open Encyclopedia → Add Variety and enter the missing variety with the code shown and its spacing. A plan saved afterwards carries it to the computer planner. The user manual shows how, under \"Unknown variety\".",
+            "Or delete that plant and put a substitute there until the variety is created."
+        )
     }
 
     /** Extracts the species-level prefix from a cultivar botanicalCode, e.g. "MAR-002" -> "MAR". */

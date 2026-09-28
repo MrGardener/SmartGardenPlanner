@@ -159,6 +159,7 @@ test on a phone with Android 8 or later; clear the app's data first; language En
 | **TP-14.4** | In Move, drag a plant onto another, off the plot, and put a second finger down mid-drag; switch tools mid-drag. | Refused or canceled, plant back at its place, message shown. |
 | **TP-14.5** | Make a change, undo, redo, change again; undo everything; delete a plant and undo; leave and reopen the plot. | Buttons enabled per the stacks; redo cleared by a new change; the deleted plant returns with its id; history empty after reopening. |
 | **TP-14.6** | Plant a crop with a planting date before its germination window (set the phone date forward); mark "It germinated"; change the time zone. | Overdue ring after the window, not on the last day; ring gone when germinated; dates recomputed. |
+| **TP-14.7** | Import a plan file with a plant whose code is not in the catalog (edit a file: change one plant's code to "GONE-001", keep its variety name blank so it isn't mapped; or delete a planted custom variety). Place a plant on top of it, move another plant next to it, change a neighbor's variety; then choose "Delete that plant", Undo, and add the variety in Encyclopedia → Add Variety with code GONE-001 and reopen the plot. | Each change refused with the "Unknown variety" dialog showing the code and the two fixes; "Delete that plant" removes it in one undo step; Undo restores it; after the variety is added, the plant is spaced like any other. |
 
 ### TP-15 — Paths, obstacles, outline, area fill
 

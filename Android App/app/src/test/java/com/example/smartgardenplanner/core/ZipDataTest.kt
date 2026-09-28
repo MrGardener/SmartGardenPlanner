@@ -56,4 +56,18 @@ class ZipDataTest {
         assertNull(ZipTable.findZone(lines, "10002"))
         assertNull(ZipTable.findZone(lines, "10003"))
     }
+
+    @Test
+    fun zoneLabelsFollowTheZipTable() {
+        // LLR-WIN-020: the ZIP table is the guide. Every zone in it is accepted, every accepted label occurs in it,
+        // and bare numbers such as "7" (not in the table) are refused.
+        val zones = asset("zip_data.txt").mapNotNull { it.split("|").getOrNull(4)?.takeIf { z -> z.isNotEmpty() } }
+        val used = zones.toSet()
+        assertTrue(zones.all { HardinessZones.isValid(it) })
+        val all = (1..13).flatMap { n -> listOf("${n}a", "${n}b") }
+        assertEquals("every label 1a..13b is in the table", all.toSet(), used)
+        for (bare in (0..14).map { it.toString() } + listOf("0a", "14a", "7c", "7A", " 7a", "7a ", "07a", ""))
+            assertTrue("'$bare' refused", !HardinessZones.isValid(bare))
+        assertEquals(7, HardinessZones.number("7a")); assertEquals(null, HardinessZones.number("7"))
+    }
 }

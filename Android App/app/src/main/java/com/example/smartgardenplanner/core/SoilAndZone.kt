@@ -125,11 +125,8 @@ object HardinessZones {
     fun isValid(zone: String?): Boolean = zone != null && LABEL.matches(zone)
 
     /** "7b" -> 7, "10a" -> 10. Returns null for anything else. */
-    fun number(zone: String?): Int? {
-        if (zone.isNullOrBlank()) return null
-        val digits = zone.trim().takeWhile { it.isDigit() }
-        return digits.toIntOrNull()?.takeIf { it in 1..13 }
-    }
+    /** The zone number of a label in the ZIP table (1a–13b); anything else, such as a bare "7", has none (LLR-WIN-020). */
+    fun number(zone: String?): Int? = if (isValid(zone)) zone!!.dropLast(1).toInt() else null
 
     /** True when a seed can survive the winter in the given zone. Unknown zone = assume yes. */
     fun isHardy(seed: SeedEntity, zone: String?): Boolean {

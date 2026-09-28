@@ -548,7 +548,9 @@ object Dialogs {
                 val updated = node.copy(seedCode = newSeed.botanicalCode, datePlantedEpochMillis = planted)
                 if (newSeed.botanicalCode != node.seedCode) {
                     val others = wp.plants.filter { it.id != node.id }
-                    val ok = com.example.smartgardenplanner.core.CompanionPlantingValidator().validatePlacement(updated, newSeed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive()).isValid
+                    val r = com.example.smartgardenplanner.core.CompanionPlantingValidator().validatePlacement(updated, newSeed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive())
+                    if (r.unknownVarietyViolations.isNotEmpty()) { others.first { it.id == r.unknownVarietyViolations.first() }.let { o -> window.setTimeout({ unknownVariety(o.id, o.seedCode) }, 0) }; return@save true }
+                    val ok = r.isValid
                     if (!ok) { App.status("${newSeed.commonName} doesn't fit here (spacing or a plant it dislikes nearby). Move it first or choose another variety."); return@save false }
                 }
                 Store.change { p -> p.plants = p.plants.map { if (it.id == node.id) updated else it } }
@@ -842,12 +844,32 @@ object Dialogs {
         para("Plot tab → Satellite photo: open Google Maps in satellite view, take a screenshot of your yard, and add it under the plot. Set the scale with two points a known distance apart, move and turn it to line up, then trace trees, fences and buildings on top."),
         heading("Finding and changing things"),
         para("“On this plot” (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant…) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline."),
+        heading("Unknown variety"),
+        para("A plant whose variety isn't in the catalog (for example a custom variety that was deleted) can't be spacing-checked, so nothing can be placed close to it. " + com.example.smartgardenplanner.core.CompanionPlantingValidator.UNKNOWN_VARIETY_FIXES.joinToString(" ")),
         heading("Keyboard"),
         para("Ctrl+Z undo · Ctrl+Y redo · Delete removes the selection · Enter finishes a shape · Esc cancels · mouse wheel zooms · drag empty space to pan."),
         heading("Disclaimer"),
         para(com.example.smartgardenplanner.core.Disclaimer.TEXT),
         para("Version $WEB_VERSION · uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.", "hint")
     ), listOf("Close" to { true }), wide = true)
+
+    /**
+     * LLR-VALD-090: a placement was refused because a nearby plant's variety [code] isn't in the catalog. Says why and
+     * offers the two fixes: correct the catalog (steps, and Help → Unknown variety) or delete that plant and plant a
+     * substitute until the variety exists.
+     */
+    fun unknownVariety(nodeId: Long, code: String) {
+        App.status(com.example.smartgardenplanner.core.CompanionPlantingValidator.unknownVarietyMessage(code))
+        modal("Unknown variety", listOf(para(com.example.smartgardenplanner.core.CompanionPlantingValidator.unknownVarietyMessage(code))) +
+            com.example.smartgardenplanner.core.CompanionPlantingValidator.UNKNOWN_VARIETY_FIXES.map { para("• $it") }, listOf(
+            "How to fix (Help)" to { window.setTimeout({ help() }, 0); true },
+            "Delete that plant" to {
+                Store.change { p -> p.plants = p.plants.filter { it.id != nodeId } }
+                App.status("Plant deleted. You can now plant a substitute there; Undo brings it back."); App.render(); true
+            },
+            "Close" to { true }
+        ))
+    }
 }
 
 /** Download fallback for browsers without the File System Access API (Firefox, Safari, phones). */
@@ -857,5 +879,5 @@ fun downloadText(name: String, text: String) {
     val a = h("a", attrs = mapOf("href" to url, "download" to name))
     document.body!!.appendChild(a); a.click(); a.parentNode?.removeChild(a)
     window.setTimeout({ org.w3c.dom.url.URL.revokeObjectURL(url) }, 2000)
-}
 
+}

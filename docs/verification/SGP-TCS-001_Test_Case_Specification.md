@@ -53,17 +53,17 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 | | Count |
 |---|---|
 | LLRs | 302 |
-| Test cases | 948 |
-| Regression entries | 29 |
-| LLR status | IMPL 122 · PART 107 · DEV 39 · TGT 29 · OBS 5 |
-| Case results | PASS 470 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 50 |
-| Case kinds | NOM 320 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 25 · RND 49 |
-| Case methods | AUTO 339 · WEB 130 · CI 4 · DEVICE 7 · MANUAL 344 · REVIEW 12 · Planned 112 |
+| Test cases | 950 |
+| Regression entries | 31 |
+| LLR status | IMPL 130 · PART 107 · DEV 31 · TGT 29 · OBS 5 |
+| Case results | PASS 479 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 43 |
+| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 24 · RND 50 |
+| Case methods | AUTO 348 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 342 · REVIEW 12 · Planned 106 |
 
-| LLR status | IMPL 122 · PART 107 · DEV 39 · TGT 29 · OBS 5 |
-| Case results | PASS 470 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 50 |
-| Case kinds | NOM 320 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 25 · RND 49 |
-| Case methods | AUTO 339 · WEB 130 · CI 4 · DEVICE 7 · MANUAL 344 · REVIEW 12 · Planned 112 |
+| LLR status | IMPL 130 · PART 107 · DEV 31 · TGT 29 · OBS 5 |
+| Case results | PASS 479 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 43 |
+| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 24 · RND 50 |
+| Case methods | AUTO 348 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 342 · REVIEW 12 · Planned 106 |
 
 ## 3. Test cases by LLR
 
@@ -264,9 +264,9 @@ No-plant paths are checked by the callers' `isBlocked(x, y, r)` (web and Android
 | TC-VALD-030.2 | BND | Plant whose circle just touches a path edge | Allowed | MANUAL TP-15.3 | MANUAL |
 | TC-VALD-030.3 | INV | Line path with one point | Distance to that point used | MANUAL TP-15.3 | MANUAL |
 
-#### LLR-VALD-040 — DEV
+#### LLR-VALD-040 — IMPL
 
-Species prefix before the first "-"; comparison is case-insensitive and trimmed (changed after a failure: lower-case codes in a user file were ignored).
+Species prefix before the first "-"; codes trimmed and compared ignoring case (LLR revised 2026-09-28 by owner decision).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
@@ -315,16 +315,17 @@ The setting exists; the Pro-tier lock is applied in Settings.
 | TC-VALD-080.3 | RND | Unsaved candidates of one batch (id 0) | Compared with each other | AUTO `CompanionPlantingValidatorTest.unsavedCandidatesInTheSameBatchAreComparedWithEachOther` | PASS |
 | TC-VALD-080.4 | INV | Boundary, path and spacing all violated | Single reason BOUNDARY first per LLR; implementation reports lists | Planned | DEV |
 
-#### LLR-VALD-090 — DEV
+#### LLR-VALD-090 — IMPL
 
-A compared plant whose variety isn't found is skipped (`?: continue`), not rejected.
+A nearby plant with an unknown variety gets a 0.3 m safe-guess radius and blocks placement, with the fixes offered (correct the catalog, or delete that plant and plant a substitute). LLR revised 2026-09-28 by owner decision.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-VALD-090.1 | NOM | All varieties known | Normal validation | AUTO `CompanionPlantingValidatorTest.validatePlacement_passesWhenFarEnoughApart` | PASS |
-| TC-VALD-090.2 | INV | Existing plant with an unknown code at the same spot | Rejected DATA_INCONSISTENT per LLR; implementation allows the placement | Planned | DEV |
-| TC-VALD-090.3 | ALN | Plan file with plants of unknown codes | Mapped by name or skipped and counted on import | AUTO `WebPlanFileCompatTest.reEncodingTheWebFile_keepsEveryPlant` | PASS |
-| TC-VALD-090.4 | BND | Only the candidate's own variety unknown | Rejected DATA_INCONSISTENT per LLR | Planned | DEV |
+| TC-VALD-090.1 | NOM | Candidate 9 m from an unknown plant | Allowed | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
+| TC-VALD-090.2 | BND | On top of it; just inside and exactly at (candidate radius + 0.3 m) × margin; margins 0.5 and 2 | Refused with its id; allowed at the distance; the margin scales it | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
+| TC-VALD-090.3 | RND | 2,000 random positions around an unknown plant | Never allowed inside the distance, always allowed outside | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
+| TC-VALD-090.4 | INV | Known neighbor at the same spot | Ordinary spacing conflict, not an unknown-variety one | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
+| TC-VALD-090.5 | NOM | Phone: place, move and change variety next to an unknown plant; Delete that plant; Undo | Dialog with the two fixes; plant deleted in one undo step; Undo restores it | MANUAL TP-14.7 | MANUAL |
 
 #### LLR-VALD-100 — PART
 
@@ -528,15 +529,15 @@ Replaced by LLR-FROST-020 (`GrowingSeason.window`), which uses hardy and start-i
 | TC-WIN-010.2 | BND | Frost-free station (all zeros) | 365-day season | AUTO `EditingAndSitePropertyTest.growingSeason_windowsForEveryCatalogCropAndAnySeason` | PASS |
 | TC-WIN-010.3 | RND | Every catalog crop × random seasons | Valid window or the "short season" note | AUTO `EditingAndSitePropertyTest.growingSeason_windowsForEveryCatalogCropAndAnySeason` | PASS |
 
-#### LLR-WIN-020 — DEV
+#### LLR-WIN-020 — IMPL
 
-Only full labels 1a–13b are accepted (`HardinessZones.isValid`); a bare "7" is refused (changed after a failure).
+Zone labels are exactly those of the ZIP table (1a–13b); a bare "7" is not a zone (LLR revised 2026-09-28 by owner decision; HardinessZones.number fixed to agree).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-WIN-020.1 | NOM | "7a" | Zone 7 | AUTO `InputRobustnessTest.zones_onlyRealLabels` | PASS |
-| TC-WIN-020.2 | BND | "1a", "13b" | Accepted | AUTO `InputRobustnessTest.zones_onlyRealLabels` | PASS |
-| TC-WIN-020.3 | ALN | "0a", "14a", "7c", "7zz", "7", " 7a", "" | Rejected | AUTO `InputRobustnessTest.zones_onlyRealLabels` | PASS |
+| TC-WIN-020.1 | NOM | Every zone in zip_data.txt | Accepted; all 26 labels 1a–13b occur | AUTO `ZipDataTest.zoneLabelsFollowTheZipTable` | PASS |
+| TC-WIN-020.2 | BND | "1a", "13b"; "0a", "14a" | Accepted; refused | AUTO `InputRobustnessTest.zones_onlyRealLabels` | PASS |
+| TC-WIN-020.3 | ALN | "7", "0"…"14", "7c", "7A", " 7a", "07a", "" | Refused; number("7") is null (it returned 7 before the fix) | AUTO `ZipDataTest.zoneLabelsFollowTheZipTable` | PASS |
 
 #### LLR-REC-010 — PART
 
@@ -853,25 +854,26 @@ Latitude/longitude ranges checked on plan files and in the dialogs.
 
 ### 3.2 `:data` — persistence, keys and files
 
-#### LLR-DB-010 — DEV
+#### LLR-DB-010 — IMPL
 
-Room schema 12 with the v20.20 table names (plots, seeds, planted_nodes, path_zones, site_features, planting_history …), not the LLR's schema 8 tables.
+Schema 12 tables and columns as listed (LLR rewritten 2026-09-28 by owner decision).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-DB-010.1 | NOM | Create a plot and plants, reopen the app | Same rows | DEVICE `AppDatabaseTest.insertAndRetrievePlot_returnsCommittedRecord` | MANUAL |
-| TC-DB-010.2 | BND | Delete a plot with plants | Plants deleted by cascade | DEVICE `AppDatabaseTest.deletingPlot_cascadesToPlantedNodes` | MANUAL |
-| TC-DB-010.3 | INV | LLR table layout (varieties, plants, paths, undo_entries) | Not implemented; decision needed | Planned | DEV |
+| TC-DB-010.1 | NOM | Migrations replayed from schema 2 | Exactly the entities' tables, columns, types and nullability | AUTO `DatabaseSchemaTest.migratedTablesMatchTheEntitiesColumnForColumn` | PASS |
+| TC-DB-010.2 | INV | Entity field added without a migration; a migrated column with the wrong nullability | Detected as a difference | AUTO `DatabaseSchemaTest.theSchemaCheckItselfCatchesAMissingMigration` | PASS |
+| TC-DB-010.3 | BND | Database opened on a device | user_version 12, all 10 tables present | DEVICE `AppDatabaseTest.schema12_hasEveryTableAndForeignKeysOn` | MANUAL |
+| TC-DB-010.4 | NOM | Create a plot and plants on a device, reopen | Same rows | DEVICE `AppDatabaseTest.insertAndRetrievePlot_returnsCommittedRecord` | MANUAL |
 
-#### LLR-DB-020 — DEV
+#### LLR-DB-020 — IMPL
 
-Planting dates are epoch milliseconds; line points are "x,y;x,y" with "." decimals.
+Dates as UTC epoch milliseconds; points as "x,y;x,y" (LLR rewritten 2026-09-28).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
 | TC-DB-020.1 | NOM | Line path with 3 points | Stored and read back | AUTO `RoadmapFeaturesTest.pointsRoundTrip_andMalformedPairsSkipped` | PASS |
 | TC-DB-020.2 | ALN | Stored points with letters, 3 values or NaN | Those pairs skipped | AUTO `InputRobustnessTest.points_malformedPairsAreSkipped` | PASS |
-| TC-DB-020.3 | BND | ISO yyyy-MM-dd planting date column | Not implemented (epoch ms) | Planned | DEV |
+| TC-DB-020.3 | BND | Planting date at epoch 0 and far in the future | No overflow in elapsed days | AUTO `LlrGapTest.germination_isOverdueOnlyAfterTheWholeWindow` | PASS |
 
 #### LLR-DB-030 — IMPL
 
@@ -883,15 +885,15 @@ Room enables foreign keys.
 | TC-DB-030.2 | INV | Insert a plant with an unknown plot id | Rejected by the constraint | MANUAL TP-21.6 | MANUAL |
 | TC-DB-030.3 | BND | Delete the last plot | Empty tables, no orphan rows | MANUAL TP-21.6 | MANUAL |
 
-#### LLR-DB-040 — DEV
+#### LLR-DB-040 — IMPL
 
-Schema version 12; `exportSchema = false`.
+Schema version 12, every entity registered, migrations checked by the host test (LLR rewritten 2026-09-28 by owner decision).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-DB-040.1 | NOM | Fresh install | Database at version 12 | MANUAL TP-21.1 | MANUAL |
-| TC-DB-040.2 | BND | Upgrade from version 8 through 12 | Each migration runs, data kept | MANUAL TP-21.2 | MANUAL |
-| TC-DB-040.3 | INV | Exported schema committed | Not done (export off) | Planned | DEV |
+| TC-DB-040.1 | NOM | AppDatabase | version = 12; the 10 entities registered | AUTO `DatabaseSchemaTest.schemaVersionIs12_andEveryEntityIsRegistered` | PASS |
+| TC-DB-040.2 | BND | Device database after opening | user_version 12, foreign keys on | DEVICE `AppDatabaseTest.schema12_hasEveryTableAndForeignKeysOn` | MANUAL |
+| TC-DB-040.3 | INV | A migration step removed from the chain or ALL_MIGRATIONS | Test fails | AUTO `DatabaseSchemaTest.migrationsFormOneUnbrokenChainTo12_andAreAllRegistered` | PASS |
 
 #### LLR-DB-050 — PART
 
@@ -933,15 +935,15 @@ Database work runs on `SgpExecutors.dbDispatcher`; StrictMode not enabled.
 | TC-DB-080.2 | BND | Rotate the device during a save | Save completes once | MANUAL TP-23.1 | MANUAL |
 | TC-DB-080.3 | INV | StrictMode disk-on-main-thread check | No violations | Planned | PLANNED |
 
-#### LLR-MIG-010 — DEV
+#### LLR-MIG-010 — IMPL
 
-The LLR's 7 → 8 conversion to new tables was not done; migrations 8→9…11→12 add columns and tables in place.
+One chain of single additive steps 2→12 (LLR rewritten 2026-09-28 by owner decision).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-MIG-010.1 | NOM | Upgrade a v8 database with data | All rows kept | MANUAL TP-21.2 | MANUAL |
-| TC-MIG-010.2 | BND | Upgrade an empty database | Succeeds | MANUAL TP-21.2 | MANUAL |
-| TC-MIG-010.3 | INV | Table renames of the LLR | Not implemented | Planned | DEV |
+| TC-MIG-010.1 | NOM | Migration list | MIGRATION_2_3 … MIGRATION_11_12, each one step, all registered | AUTO `DatabaseSchemaTest.migrationsFormOneUnbrokenChainTo12_andAreAllRegistered` | PASS |
+| TC-MIG-010.2 | BND | Every NOT NULL column added by ALTER TABLE | Has a DEFAULT (existing rows stay valid) | AUTO `DatabaseSchemaTest.migratedTablesMatchTheEntitiesColumnForColumn` | PASS |
+| TC-MIG-010.3 | INV | Upgrade a real schema-8 and schema-10 database with data on a device | Every row kept | MANUAL TP-21.2 | MANUAL |
 
 #### LLR-MIG-020 — IMPL
 
@@ -1436,14 +1438,14 @@ Opening a plot starts in the default mode with zoom 1.
 | TC-STATE-030.2 | BND | Open a 1000 m plot | Fits the screen | MANUAL TP-13.1 | MANUAL |
 | TC-STATE-030.3 | INV | Open after leaving with overlays on | Overlays off | MANUAL TP-13.1 | MANUAL |
 
-#### LLR-XFORM-010 — DEV
+#### LLR-XFORM-010 — IMPL
 
-The Android canvas scales X and Y separately to fill the view (known defect DW-0901); the web keeps one scale.
+Both clients draw the plot at one scale for both axes (Android since DW-0901, canvas sized to the plot's aspect).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
 | TC-XFORM-010.1 | NOM | Square plot on the web | Drawn square | WEB `smoke.mjs` «no horizontal scroll at phone width» | PASS |
-| TC-XFORM-010.2 | BND | 10 × 1 m plot on Android | One scale per LLR; stretched today | MANUAL TP-13.2 | DEV |
+| TC-XFORM-010.2 | BND | 10 × 1 m plot on Android, portrait and landscape | Circles stay round | MANUAL TP-13.2 | MANUAL |
 | TC-XFORM-010.3 | RND | Random plot shapes on the web | Circles stay round | MANUAL TP-13.2 | MANUAL |
 
 #### LLR-XFORM-020 — PART
@@ -3176,6 +3178,8 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | REG-27 | Test case review (this spec) | The three seed catalogs had no automated check (a bad line would only show on a phone) | Catalog data test | AUTO `CatalogDataTest.everyLineIsWellFormedAndInRange` | LLR-CATP-020, LLR-CATP-040 |
 | REG-28 | Test case review (this spec) | Plan B with a negative option limit threw an exception | Limit below 0 treated as 0 | AUTO `LlrGapTest.planB_respectsTheFirstFrostAndOddLimits` | LLR-PLANB-060 |
 | REG-29 | Test case review (this spec) | Asking for 0 or a negative number of layouts gave none at all | Count limited to 1–10 before planning | AUTO `LlrGapTest.layoutOptions_countLimitsAndEveryoneStarred` | LLR-OPT-010 |
+| REG-30 | Owner decision on LLR-WIN-020 | `HardinessZones.number("7")` returned 7, so a bare zone not in the ZIP table still counted in the hardiness check | `number` only for labels 1a–13b | AUTO `ZipDataTest.zoneLabelsFollowTheZipTable` | LLR-WIN-020 |
+| REG-31 | LLR review (VALD-090) | A plant with an unknown variety was skipped by the spacing check, so a new plant could be placed right on top of it | 0.3 m safe-guess radius; placement refused with the fixes offered | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | LLR-VALD-090 |
 
 
 ## 5. LLRs that do not match the code (owner decision: keep / improve / delete)
@@ -3188,13 +3192,10 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | LLR-UNIT-040 | DEV | `parseToMeters` trims, accepts one "," as the decimal sign and any finite number; it accepts signs and exponents ("1e3", "-2") the LLR rejects. |
 | LLR-GEO-040 | DEV | `distanceToPolyline` returns `Float.MAX_VALUE` (not +∞) for an empty list. |
 | LLR-GEO-050 | DEV | `pointInPolygon` is plain even-odd ray casting with no on-edge rule; `PlotShape.contains` adds the rectangle check. |
-| LLR-VALD-040 | DEV | Species prefix before the first "-"; comparison is case-insensitive and trimmed (changed after a failure: lower-case codes in a user file were ignored). |
 | LLR-VALD-080 | DEV | `validatePlacement` returns lists of spacing and antagonist conflicts; boundary and path are checked by callers; no ordered single reason. |
-| LLR-VALD-090 | DEV | A compared plant whose variety isn't found is skipped (`?: continue`), not rejected. |
 | LLR-FILL-040 | DEV | Cap is `MAX_POINTS` = 20 000 (returns empty), not 100 000 with a TooManyCandidates error. |
 | LLR-SCHED-010 | DEV | Dates are epoch milliseconds from `PlatformClock`; no injected Clock. |
 | LLR-WIN-010 | DEV | Replaced by LLR-FROST-020 (`GrowingSeason.window`), which uses hardy and start-indoors weeks. |
-| LLR-WIN-020 | DEV | Only full labels 1a–13b are accepted (`HardinessZones.isValid`); a bare "7" is refused (changed after a failure). |
 | LLR-IRR-010 | DEV | Route starts at the plant nearest (0, 0), not at a water source; ties go to the first in list order, not the lowest id. |
 | LLR-IRR-020 | DEV | Length starts at the first plant (no start leg). |
 | LLR-SETS-010 | DEV | Settings are the `AppSettings` fields with keys `settings.*`; several LLR keys differ or are absent (season_end, owner_name, battery_pct, last_variety). |
@@ -3204,10 +3205,6 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | LLR-LTR-010 | DEV | Plants are labeled with short kind names ("Bell red", "Cherry") instead of 3-letter codes. |
 | LLR-AUD-010 | DEV | `SecurityAuditLogger` stores free-text lines (e.g. "KEY_LOSS: …"), not typed JSON entries with seq/time. |
 | LLR-CLIMQ-020 | DEV | Nearest frost station uses an equirectangular distance within 250 km (LLR-FROST-010), not haversine within 50 km. |
-| LLR-DB-010 | DEV | Room schema 12 with the v20.20 table names (plots, seeds, planted_nodes, path_zones, site_features, planting_history …), not the LLR's schema 8 tables. |
-| LLR-DB-020 | DEV | Planting dates are epoch milliseconds; line points are "x,y;x,y" with "." decimals. |
-| LLR-DB-040 | DEV | Schema version 12; `exportSchema = false`. |
-| LLR-MIG-010 | DEV | The LLR's 7 → 8 conversion to new tables was not done; migrations 8→9…11→12 add columns and tables in place. |
 | LLR-AUDS-010 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: encrypted audit files. |
 | LLR-AUDS-030 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: rotation at 1 MB. |
 | LLR-AUDS-040 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: read and verify all files. |
@@ -3216,7 +3213,6 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | LLR-CATI-050 | DEV | No species/families files (see LLR-CATP-030). |
 | LLR-CATI-060 | DEV | Climate data is the text table `zip_data.txt` plus `frost_stations.txt`, not `climate.db`. |
 | LLR-REPO-060 | DEV | Undo history is in memory only (lost when leaving the plot). |
-| LLR-XFORM-010 | DEV | The Android canvas scales X and Y separately to fill the view (known defect DW-0901); the web keeps one scale. |
 | LLR-DRAW-050 | DEV | Ruler ticks every `rulerTickIntervalM` (setting), numbers only with the unit once (LLR-RULER-010); no 1-2-5 rounding by zoom. |
 | LLR-LAYV-100 | DEV | Overlays: sun/shade and water coverage; no weed-risk or route overlay, no water-source marker. |
 | LLR-LAYV-130 | DEV | Perennials outside the zone are blocked (`blocksPlacement`) rather than warned after placement. |

@@ -55174,6 +55174,16 @@ Fast-track substitute:	Sustituto rápido:
 From your garden:	De tu huerto:
 Plot area:	Superficie de la parcela:
 Enter a 5-digit ZIP code, or leave it empty.	Escribe un código postal de 5 dígitos o déjalo vacío.
+Unknown variety	Variedad desconocida
+Unknown variety: the plant here (code {0}) isn't in your catalog, so its spacing can't be checked.	Variedad desconocida: la planta de aquí (código {0}) no está en tu catálogo, así que no se puede comprobar su espaciado.
+Fix the catalog: on the phone, open Encyclopedia → Add Variety and enter the missing variety with the code shown and its spacing.	Corrige el catálogo: en el teléfono, abre Enciclopedia → Añadir variedad e introduce la variedad que falta con el código indicado y su espaciado.
+A plan saved afterwards carries it to the computer planner.	Un plan guardado después la lleva al planificador del computador.
+The user manual shows how, under "Unknown variety".	El manual de usuario explica cómo, en «Variedad desconocida».
+Or delete that plant and put a substitute there until the variety is created.	O borra esa planta y pon un sustituto allí hasta que se cree la variedad.
+A plant whose variety isn't in the catalog (for example a custom variety that was deleted) can't be spacing-checked, so nothing can be placed close to it.	Una planta cuya variedad no está en el catálogo (por ejemplo, una variedad tuya que se borró) no se puede comprobar en espaciado, así que no se puede colocar nada cerca de ella.
+How to fix (Help)	Cómo corregirlo (Ayuda)
+Delete that plant	Borrar esa planta
+Plant deleted. You can now plant a substitute there; Undo brings it back.	Planta borrada. Ahora puedes plantar un sustituto allí; Deshacer la devuelve.
 
 </script>
 <script type="module">
@@ -55240,12 +55250,6 @@ if (typeof Math.hypot === 'undefined') {
     return Math.sqrt(y);
   };
 }
-if (typeof String.prototype.startsWith === 'undefined') {
-  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
-    position = position || 0;
-    return this.lastIndexOf(searchString, position) === position;
-  }});
-}
 if (typeof String.prototype.endsWith === 'undefined') {
   Object.defineProperty(String.prototype, 'endsWith', {value: function (searchString, position) {
     var subjectString = this.toString();
@@ -55255,6 +55259,12 @@ if (typeof String.prototype.endsWith === 'undefined') {
     position -= searchString.length;
     var lastIndex = subjectString.indexOf(searchString, position);
     return lastIndex !== -1 && lastIndex === position;
+  }});
+}
+if (typeof String.prototype.startsWith === 'undefined') {
+  Object.defineProperty(String.prototype, 'startsWith', {value: function (searchString, position) {
+    position = position || 0;
+    return this.lastIndexOf(searchString, position) === position;
   }});
 }
 //endregion
@@ -61284,18 +61294,21 @@ class CarePlanner {
   }
 }
 class ValidationResult {
-  constructor(isValid, spacingViolations, antagonistViolations) {
+  constructor(isValid, spacingViolations, antagonistViolations, unknownVarietyViolations) {
+    unknownVarietyViolations = unknownVarietyViolations === VOID ? emptyList() : unknownVarietyViolations;
     this.isValid_1 = isValid;
     this.spacingViolations_1 = spacingViolations;
     this.antagonistViolations_1 = antagonistViolations;
+    this.unknownVarietyViolations_1 = unknownVarietyViolations;
   }
   toString() {
-    return 'ValidationResult(isValid=' + this.isValid_1 + ', spacingViolations=' + toString_1(this.spacingViolations_1) + ', antagonistViolations=' + toString_1(this.antagonistViolations_1) + ')';
+    return 'ValidationResult(isValid=' + this.isValid_1 + ', spacingViolations=' + toString_1(this.spacingViolations_1) + ', antagonistViolations=' + toString_1(this.antagonistViolations_1) + ', unknownVarietyViolations=' + toString_1(this.unknownVarietyViolations_1) + ')';
   }
   hashCode() {
     var result = getBooleanHashCode(this.isValid_1);
     result = imul_0(result, 31) + hashCode(this.spacingViolations_1) | 0;
     result = imul_0(result, 31) + hashCode(this.antagonistViolations_1) | 0;
+    result = imul_0(result, 31) + hashCode(this.unknownVarietyViolations_1) | 0;
     return result;
   }
   equals(other) {
@@ -61310,58 +61323,70 @@ class ValidationResult {
       return false;
     if (!equals(this.antagonistViolations_1, tmp0_other_with_cast.antagonistViolations_1))
       return false;
+    if (!equals(this.unknownVarietyViolations_1, tmp0_other_with_cast.unknownVarietyViolations_1))
+      return false;
     return true;
   }
 }
 class Companion_11 {
   constructor() {
+    Companion_instance_11 = this;
     this.SPACING_TOLERANCE_M_1 = 1.0E-4;
+    this.UNKNOWN_VARIETY_RADIUS_M_1 = 0.3;
+    this.UNKNOWN_VARIETY_FIXES_1 = listOf_0(['Fix the catalog: on the phone, open Encyclopedia \u2192 Add Variety and enter the missing variety with the code shown and its spacing. A plan saved afterwards carries it to the computer planner. The user manual shows how, under "Unknown variety".', 'Or delete that plant and put a substitute there until the variety is created.']);
+  }
+  unknownVarietyMessage_7jm7cf_k$(code) {
+    return 'Unknown variety: the plant here (code ' + code + ") isn't in your catalog, so its spacing can't be checked.";
   }
 }
 class CompanionPlantingValidator {
+  constructor() {
+    Companion_getInstance_11();
+  }
   validatePlacement_ome8gn_k$(candidate, candidateSeed, existingNodes, seedLookup, marginMultiplier, enforceCompanionRules, guilds) {
     // Inline function 'kotlin.collections.mutableListOf' call
     var spacingViolations = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
     // Inline function 'kotlin.collections.mutableListOf' call
     var antagonistViolations = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var unknownVarietyViolations = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
     var _iterator__ex2g4s = existingNodes.iterator_jk1svi_k$();
     $l$loop_0: while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var existing = _iterator__ex2g4s.next_20eer_k$();
       if (!candidate.id_1.equals(new Long(0, 0)) && existing.id_1.equals(candidate.id_1))
         continue $l$loop_0;
-      var tmp0_elvis_lhs = seedLookup(existing.seedCode_1);
-      var tmp;
-      if (tmp0_elvis_lhs == null) {
-        continue $l$loop_0;
-      } else {
-        tmp = tmp0_elvis_lhs;
-      }
-      var existingSeed = tmp;
       var dx = candidate.coordinateXM_1 - existing.coordinateXM_1;
       var dy = candidate.coordinateYM_1 - existing.coordinateYM_1;
       // Inline function 'kotlin.math.sqrt' call
       var x = dx * dx + dy * dy;
       var distance = Math.sqrt(x);
-      var tmp_0;
+      var existingSeed = seedLookup(existing.seedCode_1);
+      if (existingSeed == null) {
+        if (distance < (candidateSeed.exclusionRadiusM_1 + 0.3) * marginMultiplier - 1.0E-4) {
+          unknownVarietyViolations.add_utx5q5_k$(existing.id_1);
+        }
+        continue $l$loop_0;
+      }
+      var tmp;
       // Inline function 'kotlin.collections.isNotEmpty' call
       if (!guilds.isEmpty_y1axqb_k$()) {
         // Inline function 'kotlin.collections.isNotEmpty' call
-        tmp_0 = !GuildCatalog_getInstance().sharedGuilds_wqr1q8_k$(candidateSeed, existingSeed, guilds).isEmpty_y1axqb_k$();
+        tmp = !GuildCatalog_getInstance().sharedGuilds_wqr1q8_k$(candidateSeed, existingSeed, guilds).isEmpty_y1axqb_k$();
       } else {
-        tmp_0 = false;
+        tmp = false;
       }
-      var inSameGuild = tmp_0;
+      var inSameGuild = tmp;
       var fullSpacing = (candidateSeed.exclusionRadiusM_1 + existingSeed.exclusionRadiusM_1) * marginMultiplier;
-      var tmp_1;
+      var tmp_0;
       if (inSameGuild) {
         var tmp0 = candidateSeed.exclusionRadiusM_1;
         // Inline function 'kotlin.comparisons.maxOf' call
         var b = existingSeed.exclusionRadiusM_1;
-        tmp_1 = Math.max(tmp0, b) * marginMultiplier;
+        tmp_0 = Math.max(tmp0, b) * marginMultiplier;
       } else {
-        tmp_1 = fullSpacing;
+        tmp_0 = fullSpacing;
       }
-      var requiredSpacing = tmp_1;
+      var requiredSpacing = tmp_0;
       if (distance < requiredSpacing - 1.0E-4) {
         spacingViolations.add_utx5q5_k$(existing.id_1);
       }
@@ -61378,8 +61403,8 @@ class CompanionPlantingValidator {
           // Inline function 'kotlin.text.trim' call
           // Inline function 'kotlin.text.uppercase' call
           // Inline function 'kotlin.js.asDynamic' call
-          var tmp$ret$9 = toString_1(trim(isCharSequence(item) ? item : THROW_CCE())).toUpperCase();
-          destination.add_utx5q5_k$(tmp$ret$9);
+          var tmp$ret$10 = toString_1(trim(isCharSequence(item) ? item : THROW_CCE())).toUpperCase();
+          destination.add_utx5q5_k$(tmp$ret$10);
         }
         // Inline function 'kotlin.collections.filter' call
         // Inline function 'kotlin.collections.filterTo' call
@@ -61403,8 +61428,8 @@ class CompanionPlantingValidator {
           // Inline function 'kotlin.text.trim' call
           // Inline function 'kotlin.text.uppercase' call
           // Inline function 'kotlin.js.asDynamic' call
-          var tmp$ret$19 = toString_1(trim(isCharSequence(item_0) ? item_0 : THROW_CCE())).toUpperCase();
-          destination_1.add_utx5q5_k$(tmp$ret$19);
+          var tmp$ret$20 = toString_1(trim(isCharSequence(item_0) ? item_0 : THROW_CCE())).toUpperCase();
+          destination_1.add_utx5q5_k$(tmp$ret$20);
         }
         // Inline function 'kotlin.collections.filter' call
         // Inline function 'kotlin.collections.filterTo' call
@@ -61426,7 +61451,7 @@ class CompanionPlantingValidator {
         }
       }
     }
-    return new ValidationResult(spacingViolations.isEmpty_y1axqb_k$() && antagonistViolations.isEmpty_y1axqb_k$(), spacingViolations, antagonistViolations);
+    return new ValidationResult(spacingViolations.isEmpty_y1axqb_k$() && antagonistViolations.isEmpty_y1axqb_k$() && unknownVarietyViolations.isEmpty_y1axqb_k$(), spacingViolations, antagonistViolations, unknownVarietyViolations);
   }
 }
 class FeedingClass extends Enum {
@@ -70858,45 +70883,7 @@ class HardinessZones {
     return !(zone == null) && this.LABEL_1.matches_evli6i_k$(zone);
   }
   number_ewk75u_k$(zone) {
-    // Inline function 'kotlin.text.isNullOrBlank' call
-    if (zone == null || isBlank(zone))
-      return null;
-    // Inline function 'kotlin.text.trim' call
-    var tmp0 = toString_1(trim(isCharSequence(zone) ? zone : THROW_CCE()));
-    var tmp$ret$3;
-    $l$block: {
-      // Inline function 'kotlin.text.takeWhile' call
-      var inductionVariable = 0;
-      var last = tmp0.length;
-      if (inductionVariable < last)
-        do {
-          var index = inductionVariable;
-          inductionVariable = inductionVariable + 1 | 0;
-          var it = charCodeAt(tmp0, index);
-          if (!isDigit(it)) {
-            tmp$ret$3 = substring(tmp0, 0, index);
-            break $l$block;
-          }
-        }
-         while (inductionVariable < last);
-      tmp$ret$3 = tmp0;
-    }
-    var digits = tmp$ret$3;
-    var tmp0_safe_receiver = toIntOrNull(digits);
-    var tmp;
-    if (tmp0_safe_receiver == null) {
-      tmp = null;
-    } else {
-      // Inline function 'kotlin.takeIf' call
-      var tmp_0;
-      if (1 <= tmp0_safe_receiver ? tmp0_safe_receiver <= 13 : false) {
-        tmp_0 = tmp0_safe_receiver;
-      } else {
-        tmp_0 = null;
-      }
-      tmp = tmp_0;
-    }
-    return tmp;
+    return this.isValid_jqvp0r_k$(zone) ? toInt(dropLast(ensureNotNull(zone), 1)) : null;
   }
   isHardy_dd46d7_k$(seed, zone) {
     var tmp0_elvis_lhs = this.number_ewk75u_k$(zone);
@@ -72169,22 +72156,42 @@ class Canvas {
     var tmp_1 = new CompanionPlantingValidator();
     var tmp_2 = wp.plants_1;
     var result = tmp_1.validatePlacement_ome8gn_k$(node, seed, tmp_2, Canvas$place$lambda, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$());
-    if (!result.isValid_1) {
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!result.unknownVarietyViolations_1.isEmpty_y1axqb_k$()) {
       var tmp0 = wp.plants_1;
-      var tmp$ret$2;
+      var tmp$ret$3;
       $l$block: {
-        // Inline function 'kotlin.collections.firstOrNull' call
+        // Inline function 'kotlin.collections.first' call
         var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
         while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
           var element = _iterator__ex2g4s.next_20eer_k$();
-          if (plus_0(result.spacingViolations_1, result.antagonistViolations_1).contains_aljjnj_k$(element.id_1)) {
-            tmp$ret$2 = element;
+          if (element.id_1.equals(first(result.unknownVarietyViolations_1))) {
+            tmp$ret$3 = element;
             break $l$block;
           }
         }
-        tmp$ret$2 = null;
+        throw NoSuchElementException.new_kotlin_NoSuchElementException_eborbh_k$('Collection contains no element matching the predicate.');
       }
-      var conflict = tmp$ret$2;
+      var n = tmp$ret$3;
+      Dialogs_instance.unknownVariety_y49nuk_k$(n.id_1, n.seedCode_1);
+      return Unit_instance;
+    }
+    if (!result.isValid_1) {
+      var tmp0_0 = wp.plants_1;
+      var tmp$ret$5;
+      $l$block_0: {
+        // Inline function 'kotlin.collections.firstOrNull' call
+        var _iterator__ex2g4s_0 = tmp0_0.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+          var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+          if (plus_0(result.spacingViolations_1, result.antagonistViolations_1).contains_aljjnj_k$(element_0.id_1)) {
+            tmp$ret$5 = element_0;
+            break $l$block_0;
+          }
+        }
+        tmp$ret$5 = null;
+      }
+      var conflict = tmp$ret$5;
       var tmp_3;
       if (conflict == null) {
         tmp_3 = null;
@@ -74220,8 +74227,26 @@ class Dialogs {
     return this.modal$default_uwejiz_k$('Please read: this planner is a guide, not a guarantee', tmp, listOf(to('I understand', Dialogs$disclaimer$lambda(then))));
   }
   help_3u9isx_k$() {
-    var tmp = listOf_0([para('This page is the whole app: it runs in your browser with no install and no account, and works offline. Your plan is kept in this browser as a draft, but the plan FILE is what you keep and share.'), heading('Getting started'), para('1. New plot: give its size, ZIP code and which way the top edge faces.'), para("2. Draw what's there: trees, fences, walls, buildings (with a rough height), and paths."), para('3. Plant: choose a variety on the Plants tab and click the layout. Or drag an area with \u201CPlan an area for me\u201D and list what you want.'), para('4. Save: saves a .sgp.json file. Open it on the Android app (Plots \u2192 Import) or in this page on any computer.'), para("5. When the season ends: Plot tab \u2192 Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. \u201CNames\u201D shows what each plant is (sweet or hot pepper, cherry or large tomato\u2026)."), heading('Moving plans between computer and phone'), para('Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive\u2026). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here.'), heading('Seasons, shade and water'), para('Plot tab \u2192 Seasons: look back at any past season (read only), Plan next season (rotate) to re-plan the plot with the same crops rotated, or a Rotation plan for up to 10 seasons. Shade: choose the day and \u201CWhole day\u201D or \u201CAt a time of day\u201D in the legend; tall plants can cast shade. Water: draw sprinklers, drip lines and hose taps (Plot tab \u2192 Irrigation) and turn on Water to see what gets watered. Plants tab \u2192 Fill the whole plot\u2026 with How many fit?; Plot tab \u2192 Duplicate plot\u2026 for templates.'), heading('Pests, watering and the most important plants'), para('When you create a plot, tick the pests and animals you see in your yard (deer, rabbits, raccoons\u2026); change them in Plot details. The Care tab shows how to keep each one out (fence heights, netting, buried wire\u2026) and which of your plants they go for, plus watering advice for your plants and irrigation. In \u201CPlan an area for me\u201D, tap \u2606 on the plants that matter most: the checks before planning show space, sun, neighbors, zone, rotation and pests, and the starred plants are placed first in the sunniest spots.'), heading('Satellite photo'), para('Plot tab \u2192 Satellite photo: open Google Maps in satellite view, take a screenshot of your yard, and add it under the plot. Set the scale with two points a known distance apart, move and turn it to line up, then trace trees, fences and buildings on top.'), heading('Finding and changing things'), para('\u201COn this plot\u201D (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant\u2026) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline.'), heading('Keyboard'), para('Ctrl+Z undo \xB7 Ctrl+Y redo \xB7 Delete removes the selection \xB7 Enter finishes a shape \xB7 Esc cancels \xB7 mouse wheel zooms \xB7 drag empty space to pan.'), heading('Disclaimer'), para('Smart Garden Planner is a planning aid. Its layouts, sun, shade, watering, pest and planting advice are general guidance based on typical conditions and published gardening references. It does not guarantee any harvest or result: weather, soil, local pests, plant health and many other things are outside its control. Use it to help you decide, not as mandatory instructions. Check local conditions, planting dates and any local rules (for example about fences, trapping, water use or chemicals) yourself, and follow product labels. You are responsible for what you plant and how.'), para('Version 1.0 \xB7 uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.', 'hint')]);
+    var tmp = listOf_0([para('This page is the whole app: it runs in your browser with no install and no account, and works offline. Your plan is kept in this browser as a draft, but the plan FILE is what you keep and share.'), heading('Getting started'), para('1. New plot: give its size, ZIP code and which way the top edge faces.'), para("2. Draw what's there: trees, fences, walls, buildings (with a rough height), and paths."), para('3. Plant: choose a variety on the Plants tab and click the layout. Or drag an area with \u201CPlan an area for me\u201D and list what you want.'), para('4. Save: saves a .sgp.json file. Open it on the Android app (Plots \u2192 Import) or in this page on any computer.'), para("5. When the season ends: Plot tab \u2192 Start a new season. Fences, buildings, trees and paths stay; this year's plants are kept as history so next year's plan can rotate crops. \u201CNames\u201D shows what each plant is (sweet or hot pepper, cherry or large tomato\u2026)."), heading('Moving plans between computer and phone'), para('Save the file, then copy it to the phone (USB, email, Google Drive, OneDrive\u2026). On the phone, use Import plan file. To bring phone plots here, use Export plan file on the phone and Open here.'), heading('Seasons, shade and water'), para('Plot tab \u2192 Seasons: look back at any past season (read only), Plan next season (rotate) to re-plan the plot with the same crops rotated, or a Rotation plan for up to 10 seasons. Shade: choose the day and \u201CWhole day\u201D or \u201CAt a time of day\u201D in the legend; tall plants can cast shade. Water: draw sprinklers, drip lines and hose taps (Plot tab \u2192 Irrigation) and turn on Water to see what gets watered. Plants tab \u2192 Fill the whole plot\u2026 with How many fit?; Plot tab \u2192 Duplicate plot\u2026 for templates.'), heading('Pests, watering and the most important plants'), para('When you create a plot, tick the pests and animals you see in your yard (deer, rabbits, raccoons\u2026); change them in Plot details. The Care tab shows how to keep each one out (fence heights, netting, buried wire\u2026) and which of your plants they go for, plus watering advice for your plants and irrigation. In \u201CPlan an area for me\u201D, tap \u2606 on the plants that matter most: the checks before planning show space, sun, neighbors, zone, rotation and pests, and the starred plants are placed first in the sunniest spots.'), heading('Satellite photo'), para('Plot tab \u2192 Satellite photo: open Google Maps in satellite view, take a screenshot of your yard, and add it under the plot. Set the scale with two points a known distance apart, move and turn it to line up, then trace trees, fences and buildings on top.'), heading('Finding and changing things'), para('\u201COn this plot\u201D (bottom-left of the layout) lists what is planted: click a line to circle those plants. Harvest lines on the Food tab do the same. Double-click a plant (or select it and click Edit plant\u2026) to change its variety or planting date, or delete it. With the Plot outline tool, drag the white corners, double-click an edge to add a corner, or click Delete outline.'), heading('Unknown variety'), para("A plant whose variety isn't in the catalog (for example a custom variety that was deleted) can't be spacing-checked, so nothing can be placed close to it. " + joinToString_0(Companion_getInstance_11().UNKNOWN_VARIETY_FIXES_1, ' ')), heading('Keyboard'), para('Ctrl+Z undo \xB7 Ctrl+Y redo \xB7 Delete removes the selection \xB7 Enter finishes a shape \xB7 Esc cancels \xB7 mouse wheel zooms \xB7 drag empty space to pan.'), heading('Disclaimer'), para('Smart Garden Planner is a planning aid. Its layouts, sun, shade, watering, pest and planting advice are general guidance based on typical conditions and published gardening references. It does not guarantee any harvest or result: weather, soil, local pests, plant health and many other things are outside its control. Use it to help you decide, not as mandatory instructions. Check local conditions, planting dates and any local rules (for example about fences, trapping, water use or chemicals) yourself, and follow product labels. You are responsible for what you plant and how.'), para('Version 1.0 \xB7 uses the same planning rules as the Android app. Hardiness zones: USDA 2023 by ZIP (PRISM Group). ZIP locations: public-domain ZIP centroid data.', 'hint')]);
     return this.modal_ndyh7b_k$('How to use Smart Garden Planner', tmp, listOf(to('Close', Dialogs$help$lambda)), true);
+  }
+  unknownVariety_y49nuk_k$(nodeId, code) {
+    App_instance.status_b46o3c_k$(Companion_getInstance_11().unknownVarietyMessage_7jm7cf_k$(code));
+    var tmp = listOf(para(Companion_getInstance_11().unknownVarietyMessage_7jm7cf_k$(code)));
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = Companion_getInstance_11().UNKNOWN_VARIETY_FIXES_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$0 = para('\u2022 ' + item);
+      destination.add_utx5q5_k$(tmp$ret$0);
+    }
+    var tmp_0 = plus_0(tmp, destination);
+    var tmp_1 = to('How to fix (Help)', Dialogs$unknownVariety$lambda);
+    var tmp_2 = to('Delete that plant', Dialogs$unknownVariety$lambda_0(nodeId));
+    this.modal$default_uwejiz_k$('Unknown variety', tmp_0, listOf_0([tmp_1, tmp_2, to('Close', Dialogs$unknownVariety$lambda_1)]));
   }
 }
 class Lang {
@@ -81149,6 +81174,8 @@ function CareTaskType_FERTILIZE_getInstance() {
 }
 var Companion_instance_11;
 function Companion_getInstance_11() {
+  if (Companion_instance_11 === VOID)
+    new Companion_11();
   return Companion_instance_11;
 }
 function speciesPrefix($this, botanicalCode) {
@@ -84996,12 +85023,31 @@ function moveSelection($this, wp, dx, dy) {
     var others = destination;
     if (!PlotShape_instance.contains_fxfbhl_k$(p, x, y)) {
       App_instance.status_b46o3c_k$("Can't move there: outside the plot.");
+    } else if ($this.blockedByPath_ikq9tn_k$(wp, x, y, seed.exclusionRadiusM_1)) {
+      App_instance.status_b46o3c_k$("Can't move there: it overlaps a no-plant path.");
     } else {
-      if ($this.blockedByPath_ikq9tn_k$(wp, x, y, seed.exclusionRadiusM_1)) {
-        App_instance.status_b46o3c_k$("Can't move there: it overlaps a no-plant path.");
+      var tmp_1 = new CompanionPlantingValidator();
+      var r = tmp_1.validatePlacement_ome8gn_k$(moved, seed, others, Canvas$moveSelection$lambda, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$());
+      // Inline function 'kotlin.collections.isNotEmpty' call
+      if (!r.unknownVarietyViolations_1.isEmpty_y1axqb_k$()) {
+        var tmp$ret$7;
+        $l$block_0: {
+          // Inline function 'kotlin.collections.first' call
+          var _iterator__ex2g4s_1 = others.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+            var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
+            if (element_1.id_1.equals(first(r.unknownVarietyViolations_1))) {
+              tmp$ret$7 = element_1;
+              break $l$block_0;
+            }
+          }
+          throw NoSuchElementException.new_kotlin_NoSuchElementException_eborbh_k$('Collection contains no element matching the predicate.');
+        }
+        // Inline function 'kotlin.let' call
+        var it = tmp$ret$7;
+        Dialogs_instance.unknownVariety_y49nuk_k$(it.id_1, it.seedCode_1);
       } else {
-        var tmp_1 = new CompanionPlantingValidator();
-        if (!tmp_1.validatePlacement_ome8gn_k$(moved, seed, others, Canvas$moveSelection$lambda, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$()).isValid_1) {
+        if (!r.isValid_1) {
           App_instance.status_b46o3c_k$("Can't move there: too close to another plant or a plant it dislikes.");
         } else {
           var tmp_2 = Store_getInstance();
@@ -85014,20 +85060,20 @@ function moveSelection($this, wp, dx, dy) {
   } else {
     if (sel instanceof Feature) {
       var tmp0_1 = wp.features_1;
-      var tmp$ret$6;
-      $l$block_0: {
+      var tmp$ret$11;
+      $l$block_1: {
         // Inline function 'kotlin.collections.firstOrNull' call
-        var _iterator__ex2g4s_1 = tmp0_1.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-          var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
-          if (element_1.id_1.equals(sel.id_1)) {
-            tmp$ret$6 = element_1;
-            break $l$block_0;
+        var _iterator__ex2g4s_2 = tmp0_1.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+          var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
+          if (element_2.id_1.equals(sel.id_1)) {
+            tmp$ret$11 = element_2;
+            break $l$block_1;
           }
         }
-        tmp$ret$6 = null;
+        tmp$ret$11 = null;
       }
-      var tmp2_elvis_lhs = tmp$ret$6;
+      var tmp2_elvis_lhs = tmp$ret$11;
       var tmp_3;
       if (tmp2_elvis_lhs == null) {
         return Unit_instance;
@@ -85059,8 +85105,8 @@ function moveSelection($this, wp, dx, dy) {
         var a_0 = maxValue;
         maxValue = Math.max(a_0, v_0);
       }
-      var tmp$ret$14 = maxValue;
-      var cdx = coerceIn(dx, tmp_4, p.lengthM_1 - tmp$ret$14);
+      var tmp$ret$19 = maxValue;
+      var cdx = coerceIn(dx, tmp_4, p.lengthM_1 - tmp$ret$19);
       // Inline function 'kotlin.collections.minOf' call
       var iterator_1 = pts.iterator_jk1svi_k$();
       if (!iterator_1.hasNext_bitz1p_k$())
@@ -85084,17 +85130,17 @@ function moveSelection($this, wp, dx, dy) {
         var a_2 = maxValue_0;
         maxValue_0 = Math.max(a_2, v_2);
       }
-      var tmp$ret$22 = maxValue_0;
-      var cdy = coerceIn(dy, tmp_5, p.widthM_1 - tmp$ret$22);
+      var tmp$ret$27 = maxValue_0;
+      var cdy = coerceIn(dy, tmp_5, p.widthM_1 - tmp$ret$27);
       var tmp_6 = PlotGeometry_instance;
       // Inline function 'kotlin.collections.map' call
       // Inline function 'kotlin.collections.mapTo' call
       var destination_0 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(pts, 10));
-      var _iterator__ex2g4s_2 = pts.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-        var item = _iterator__ex2g4s_2.next_20eer_k$();
-        var tmp$ret$23 = new PlotPoint(item.x_1 + cdx, item.y_1 + cdy);
-        destination_0.add_utx5q5_k$(tmp$ret$23);
+      var _iterator__ex2g4s_3 = pts.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+        var item = _iterator__ex2g4s_3.next_20eer_k$();
+        var tmp$ret$28 = new PlotPoint(item.x_1 + cdx, item.y_1 + cdy);
+        destination_0.add_utx5q5_k$(tmp$ret$28);
       }
       var moved_0 = f.copy$default_mdimxz_k$(VOID, VOID, VOID, tmp_6.serializePoints_ourzje_k$(destination_0));
       var tmp_7 = Store_getInstance();
@@ -85103,20 +85149,20 @@ function moveSelection($this, wp, dx, dy) {
     } else {
       if (sel instanceof Path) {
         var tmp0_2 = wp.paths_1;
-        var tmp$ret$27;
-        $l$block_1: {
+        var tmp$ret$32;
+        $l$block_2: {
           // Inline function 'kotlin.collections.firstOrNull' call
-          var _iterator__ex2g4s_3 = tmp0_2.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-            var element_2 = _iterator__ex2g4s_3.next_20eer_k$();
-            if (element_2.id_1.equals(sel.id_1)) {
-              tmp$ret$27 = element_2;
-              break $l$block_1;
+          var _iterator__ex2g4s_4 = tmp0_2.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+            var element_3 = _iterator__ex2g4s_4.next_20eer_k$();
+            if (element_3.id_1.equals(sel.id_1)) {
+              tmp$ret$32 = element_3;
+              break $l$block_2;
             }
           }
-          tmp$ret$27 = null;
+          tmp$ret$32 = null;
         }
-        var tmp3_elvis_lhs = tmp$ret$27;
+        var tmp3_elvis_lhs = tmp$ret$32;
         var tmp_8;
         if (tmp3_elvis_lhs == null) {
           return Unit_instance;
@@ -85131,11 +85177,11 @@ function moveSelection($this, wp, dx, dy) {
           var this_0 = PlotGeometry_instance.parsePoints_qx11wv_k$(z.pointsJson_1);
           // Inline function 'kotlin.collections.mapTo' call
           var destination_1 = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(this_0, 10));
-          var _iterator__ex2g4s_4 = this_0.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-            var item_0 = _iterator__ex2g4s_4.next_20eer_k$();
-            var tmp$ret$28 = new PlotPoint(item_0.x_1 + dx, item_0.y_1 + dy);
-            destination_1.add_utx5q5_k$(tmp$ret$28);
+          var _iterator__ex2g4s_5 = this_0.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+            var item_0 = _iterator__ex2g4s_5.next_20eer_k$();
+            var tmp$ret$33 = new PlotPoint(item_0.x_1 + dx, item_0.y_1 + dy);
+            destination_1.add_utx5q5_k$(tmp$ret$33);
           }
           tmp_9 = z.copy$default_i8e1g9_k$(VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, tmp_10.serializePoints_ourzje_k$(destination_1));
         } else {
@@ -85150,11 +85196,11 @@ function moveSelection($this, wp, dx, dy) {
           var tmp0_3 = wp.plants_1;
           // Inline function 'kotlin.collections.filterTo' call
           var destination_2 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
-          var _iterator__ex2g4s_5 = tmp0_3.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-            var element_3 = _iterator__ex2g4s_5.next_20eer_k$();
-            if (sel.ids_1.contains_aljjnj_k$(element_3.id_1)) {
-              destination_2.add_utx5q5_k$(element_3);
+          var _iterator__ex2g4s_6 = tmp0_3.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
+            var element_4 = _iterator__ex2g4s_6.next_20eer_k$();
+            if (sel.ids_1.contains_aljjnj_k$(element_4.id_1)) {
+              destination_2.add_utx5q5_k$(element_4);
             }
           }
           var group = destination_2;
@@ -85163,18 +85209,18 @@ function moveSelection($this, wp, dx, dy) {
           var tmp0_4 = wp.plants_1;
           // Inline function 'kotlin.collections.filterTo' call
           var destination_3 = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
-          var _iterator__ex2g4s_6 = tmp0_4.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
-            var element_4 = _iterator__ex2g4s_6.next_20eer_k$();
-            if (!sel.ids_1.contains_aljjnj_k$(element_4.id_1)) {
-              destination_3.add_utx5q5_k$(element_4);
+          var _iterator__ex2g4s_7 = tmp0_4.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
+            var element_5 = _iterator__ex2g4s_7.next_20eer_k$();
+            if (!sel.ids_1.contains_aljjnj_k$(element_5.id_1)) {
+              destination_3.add_utx5q5_k$(element_5);
             }
           }
           var others_0 = destination_3;
           var tmp_12 = GroupTools_instance;
           var tmp_13 = tmp_12.problems_8ejqi_k$(moved_2, others_0, p, Canvas$moveSelection$lambda_3, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$());
-          var tmp$ret$37;
-          $l$block_2: {
+          var tmp$ret$42;
+          $l$block_3: {
             // Inline function 'kotlin.collections.count' call
             var tmp_14;
             if (isInterface(moved_2, Collection)) {
@@ -85183,24 +85229,24 @@ function moveSelection($this, wp, dx, dy) {
               tmp_14 = false;
             }
             if (tmp_14) {
-              tmp$ret$37 = 0;
-              break $l$block_2;
+              tmp$ret$42 = 0;
+              break $l$block_3;
             }
             var count = 0;
-            var _iterator__ex2g4s_7 = moved_2.iterator_jk1svi_k$();
-            while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
-              var element_5 = _iterator__ex2g4s_7.next_20eer_k$();
+            var _iterator__ex2g4s_8 = moved_2.iterator_jk1svi_k$();
+            while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
+              var element_6 = _iterator__ex2g4s_8.next_20eer_k$();
               var tmp_15 = Canvas_getInstance();
-              var tmp0_safe_receiver = Catalog_getInstance().get_6bo4tg_k$(element_5.seedCode_1);
+              var tmp0_safe_receiver = Catalog_getInstance().get_6bo4tg_k$(element_6.seedCode_1);
               var tmp1_elvis_lhs_0 = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.exclusionRadiusM_1;
-              if (tmp_15.blockedByPath_ikq9tn_k$(wp, element_5.coordinateXM_1, element_5.coordinateYM_1, tmp1_elvis_lhs_0 == null ? 0.3 : tmp1_elvis_lhs_0)) {
+              if (tmp_15.blockedByPath_ikq9tn_k$(wp, element_6.coordinateXM_1, element_6.coordinateYM_1, tmp1_elvis_lhs_0 == null ? 0.3 : tmp1_elvis_lhs_0)) {
                 count = count + 1 | 0;
                 checkCountOverflow(count);
               }
             }
-            tmp$ret$37 = count;
+            tmp$ret$42 = count;
           }
-          var bad = tmp_13 + tmp$ret$37 | 0;
+          var bad = tmp_13 + tmp$ret$42 | 0;
           if (bad > 0) {
             App_instance.status_b46o3c_k$("Can't move the group there: " + bad + ' plant(s) would be outside the plot, on a path, or too close to other plants.');
           } else {
@@ -87108,7 +87154,13 @@ function Dialogs$plant$lambda_1($node) {
 function Dialogs$plant$lambda$lambda_1(it) {
   return Catalog_getInstance().get_6bo4tg_k$(it);
 }
-function Dialogs$plant$lambda$lambda_2($node, $updated) {
+function Dialogs$plant$lambda$lambda_2($o) {
+  return function () {
+    Dialogs_instance.unknownVariety_y49nuk_k$($o.id_1, $o.seedCode_1);
+    return Unit_instance;
+  };
+}
+function Dialogs$plant$lambda$lambda_3($node, $updated) {
   return function (p) {
     var tmp = p;
     // Inline function 'kotlin.collections.map' call
@@ -87174,16 +87226,38 @@ function Dialogs$plant$lambda_2($variety, $date, $node, $wp) {
       }
       var others = destination_0;
       var tmp_2 = new CompanionPlantingValidator();
-      var ok = tmp_2.validatePlacement_ome8gn_k$(updated, newSeed, others, Dialogs$plant$lambda$lambda_1, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$()).isValid_1;
-      var tmp_3;
+      var r = tmp_2.validatePlacement_ome8gn_k$(updated, newSeed, others, Dialogs$plant$lambda$lambda_1, Prefs_instance.get_margin_gizxkn_k$(), Prefs_instance.get_enforceCompanions_jksedc_k$(), Store_getInstance().guildsActive_m7kc8q_k$());
+      // Inline function 'kotlin.collections.isNotEmpty' call
+      if (!r.unknownVarietyViolations_1.isEmpty_y1axqb_k$()) {
+        var tmp$ret$15;
+        $l$block: {
+          // Inline function 'kotlin.collections.first' call
+          var _iterator__ex2g4s_1 = others.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+            var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
+            if (element_1.id_1.equals(first(r.unknownVarietyViolations_1))) {
+              tmp$ret$15 = element_1;
+              break $l$block;
+            }
+          }
+          throw NoSuchElementException.new_kotlin_NoSuchElementException_eborbh_k$('Collection contains no element matching the predicate.');
+        }
+        // Inline function 'kotlin.let' call
+        var o = tmp$ret$15;
+        var tmp_3 = window;
+        tmp_3.setTimeout(Dialogs$plant$lambda$lambda_2(o), 0);
+        return true;
+      }
+      var ok = r.isValid_1;
+      var tmp_4;
       if (!ok) {
         App_instance.status_b46o3c_k$(newSeed.commonName_1 + " doesn't fit here (spacing or a plant it dislikes nearby). Move it first or choose another variety.");
         return false;
       }
-      tmp_1 = tmp_3;
+      tmp_1 = tmp_4;
     }
-    var tmp_4 = Store_getInstance();
-    tmp_4.change_dk0lks_k$(Dialogs$plant$lambda$lambda_2($node, updated));
+    var tmp_5 = Store_getInstance();
+    tmp_5.change_dk0lks_k$(Dialogs$plant$lambda$lambda_3($node, updated));
     App_instance.status_b46o3c_k$('Saved ' + VarietyCatalogTraits_getInstance().displayName_tg12ln_k$(newSeed) + '.');
     App_instance.render_dje1iy_k$();
     return true;
@@ -87632,6 +87706,45 @@ function Dialogs$disclaimer$lambda($then) {
   };
 }
 function Dialogs$help$lambda() {
+  return true;
+}
+function Dialogs$unknownVariety$lambda() {
+  var tmp = window;
+  tmp.setTimeout(Dialogs$unknownVariety$lambda$lambda, 0);
+  return true;
+}
+function Dialogs$unknownVariety$lambda$lambda() {
+  Dialogs_instance.help_3u9isx_k$();
+  return Unit_instance;
+}
+function Dialogs$unknownVariety$lambda$lambda_0($nodeId) {
+  return function (p) {
+    var tmp = p;
+    // Inline function 'kotlin.collections.filter' call
+    var tmp0 = p.plants_1;
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_ony0vx_k$();
+    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      if (!element.id_1.equals($nodeId)) {
+        destination.add_utx5q5_k$(element);
+      }
+    }
+    tmp.plants_1 = destination;
+    return Unit_instance;
+  };
+}
+function Dialogs$unknownVariety$lambda_0($nodeId) {
+  return function () {
+    var tmp = Store_getInstance();
+    tmp.change_dk0lks_k$(Dialogs$unknownVariety$lambda$lambda_0($nodeId));
+    App_instance.status_b46o3c_k$('Plant deleted. You can now plant a substitute there; Undo brings it back.');
+    App_instance.render_dje1iy_k$();
+    return true;
+  };
+}
+function Dialogs$unknownVariety$lambda_1() {
   return true;
 }
 function Dialogs$compassPicker$draw$lambda($chosen, $deg, $onPick, $row) {
@@ -91312,7 +91425,6 @@ UNINITIALIZED_VALUE_instance = new UNINITIALIZED_VALUE();
 Companion_instance_10 = new Companion_10();
 ClumpShapes_instance = new ClumpShapes();
 BlockPlanner_instance = new BlockPlanner();
-Companion_instance_11 = new Companion_11();
 Relationships_instance = new Relationships();
 RecommendationEngine_instance = new RecommendationEngine();
 HarmonyAnalyzer_instance = new HarmonyAnalyzer();

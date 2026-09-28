@@ -224,4 +224,37 @@ class LlrGapTest {
         assertEquals(1, back.bundle!!.plots[0].plants.size)
         assertNull(back.bundle!!.plots[0].plot.latitude); assertNull(back.bundle!!.plots[0].plot.soilPh)
     }
+
+    @Test
+    fun unknownVariety_nearbyPlantIsNeverSkipped() {
+        // LLR-VALD-090: a plant whose code isn't in the catalog used to be skipped, so a new plant could go on top of it.
+        val v = CompanionPlantingValidator()
+        val tomato = TestCatalog.named("Tomato - Brandywine")
+        val unknown = PlantedNodeEntity(id = 7, plotId = 1, seedCode = "GONE-001", coordinateXM = 5f, coordinateYM = 5f)
+        fun at(x: Float, margin: Float = 1f) = v.validatePlacement(PlantedNodeEntity(id = 0, plotId = 1, seedCode = tomato.botanicalCode, coordinateXM = x, coordinateYM = 5f),
+            tomato, listOf(unknown), TestCatalog.lookup, margin)
+        val need = tomato.exclusionRadiusM + CompanionPlantingValidator.UNKNOWN_VARIETY_RADIUS_M.toFloat()
+        // On top of it, and just inside the safe-guess distance: refused, naming that plant.
+        for (x in listOf(5f, 5f + need - 0.01f)) { val r = at(x); assertTrue("$x", !r.isValid); assertEquals(listOf(7L), r.unknownVarietyViolations) }
+        // Exactly at the distance and beyond: allowed.
+        assertTrue(at(5f + need).isValid); assertTrue(at(9f).isValid)
+        // The spacing margin scales the distance, as for known plants.
+        assertTrue(!at(5f + need * 1.5f, margin = 2f).isValid); assertTrue(at(5f + need * 0.6f, margin = 0.5f).isValid)
+        // Known neighbors still give ordinary spacing conflicts, not unknown-variety ones.
+        val known = unknown.copy(seedCode = tomato.botanicalCode)
+        val r = v.validatePlacement(PlantedNodeEntity(id = 0, plotId = 1, seedCode = tomato.botanicalCode, coordinateXM = 5.1f, coordinateYM = 5f), tomato, listOf(known), TestCatalog.lookup)
+        assertTrue(r.unknownVarietyViolations.isEmpty() && r.spacingViolations == listOf(7L))
+        // Random positions: never valid inside the safe-guess distance.
+        val rnd = Random(90)
+        repeat(2000) {
+            val x = rnd.nextFloat() * 10f; val y = rnd.nextFloat() * 10f
+            val d = Math.hypot((x - 5.0), (y - 5.0))
+            val ok = v.validatePlacement(PlantedNodeEntity(id = 0, plotId = 1, seedCode = tomato.botanicalCode, coordinateXM = x, coordinateYM = y), tomato, listOf(unknown), TestCatalog.lookup).isValid
+            if (d < need - 1e-3) assertTrue("($x, $y) $d", !ok)
+            if (d > need + 1e-3) assertTrue("($x, $y) $d", ok)
+        }
+        // The message names the code, and both fixes are offered.
+        assertTrue(CompanionPlantingValidator.unknownVarietyMessage("GONE-001").contains("GONE-001"))
+        assertEquals(2, CompanionPlantingValidator.UNKNOWN_VARIETY_FIXES.size)
+    }
 }

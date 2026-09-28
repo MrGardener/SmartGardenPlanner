@@ -3317,3 +3317,13 @@ Fast-track substitute:	Sustituto rápido:
 From your garden:	De tu huerto:
 Plot area:	Superficie de la parcela:
 Enter a 5-digit ZIP code, or leave it empty.	Escribe un código postal de 5 dígitos o déjalo vacío.
+Unknown variety	Variedad desconocida
+Unknown variety: the plant here (code {0}) isn't in your catalog, so its spacing can't be checked.	Variedad desconocida: la planta de aquí (código {0}) no está en tu catálogo, así que no se puede comprobar su espaciado.
+Fix the catalog: on the phone, open Encyclopedia → Add Variety and enter the missing variety with the code shown and its spacing.	Corrige el catálogo: en el teléfono, abre Enciclopedia → Añadir variedad e introduce la variedad que falta con el código indicado y su espaciado.
+A plan saved afterwards carries it to the computer planner.	Un plan guardado después la lleva al planificador del computador.
+The user manual shows how, under "Unknown variety".	El manual de usuario explica cómo, en «Variedad desconocida».
+Or delete that plant and put a substitute there until the variety is created.	O borra esa planta y pon un sustituto allí hasta que se cree la variedad.
+A plant whose variety isn't in the catalog (for example a custom variety that was deleted) can't be spacing-checked, so nothing can be placed close to it.	Una planta cuya variedad no está en el catálogo (por ejemplo, una variedad tuya que se borró) no se puede comprobar en espaciado, así que no se puede colocar nada cerca de ella.
+How to fix (Help)	Cómo corregirlo (Ayuda)
+Delete that plant	Borrar esa planta
+Plant deleted. You can now plant a substitute there; Undo brings it back.	Planta borrada. Ahora puedes plantar un sustituto allí; Deshacer la devuelve.

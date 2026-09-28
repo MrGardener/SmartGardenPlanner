@@ -731,6 +731,10 @@ object Canvas {
         if (blockedByPath(wp, pt.x, pt.y, seed.exclusionRadiusM)) { App.status("That spot overlaps a no-plant path."); return }
         val node = PlantedNodeEntity(id = 0, plotId = p.id, seedCode = seed.botanicalCode, coordinateXM = pt.x, coordinateYM = pt.y, datePlantedEpochMillis = PlatformClock.nowMillis())
         val result = CompanionPlantingValidator().validatePlacement(node, seed, wp.plants, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive())
+        if (result.unknownVarietyViolations.isNotEmpty()) {
+            val n = wp.plants.first { it.id == result.unknownVarietyViolations.first() }
+            Dialogs.unknownVariety(n.id, n.seedCode); return
+        }
         if (!result.isValid) {
             val conflict = wp.plants.firstOrNull { it.id in (result.spacingViolations + result.antagonistViolations) }
             val other = conflict?.let { Catalog.get(it.seedCode) }
@@ -763,12 +767,17 @@ object Canvas {
                 when {
                     !PlotShape.contains(p, x, y) -> App.status("Can't move there: outside the plot.")
                     blockedByPath(wp, x, y, seed.exclusionRadiusM) -> App.status("Can't move there: it overlaps a no-plant path.")
-                    !CompanionPlantingValidator().validatePlacement(moved, seed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive()).isValid ->
-                        App.status("Can't move there: too close to another plant or a plant it dislikes.")
                     else -> {
-                        Store.change { it.plants = others + moved }
-                        val hit = CropRotation.conflict(x, y, seed, wp.history, wp.season())
-                        App.status(if (hit != null) "Moved. Rotation note: " + CropRotation.warning(hit, CropReference.speciesName(seed)) else "Moved.")
+                        val r = CompanionPlantingValidator().validatePlacement(moved, seed, others, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive())
+                        when {
+                            r.unknownVarietyViolations.isNotEmpty() -> others.first { it.id == r.unknownVarietyViolations.first() }.let { Dialogs.unknownVariety(it.id, it.seedCode) }
+                            !r.isValid -> App.status("Can't move there: too close to another plant or a plant it dislikes.")
+                            else -> {
+                                Store.change { it.plants = others + moved }
+                                val hit = CropRotation.conflict(x, y, seed, wp.history, wp.season())
+                                App.status(if (hit != null) "Moved. Rotation note: " + CropRotation.warning(hit, CropReference.speciesName(seed)) else "Moved.")
+                            }
+                        }
                     }
                 }
             }
