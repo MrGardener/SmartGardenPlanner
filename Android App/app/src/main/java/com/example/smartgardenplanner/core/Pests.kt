@@ -57,7 +57,7 @@ enum class Pest(
         listOf(
             "Cover beds with hardware cloth or wire mesh cages; squirrels climb netting and fences.",
             "Lay chicken wire flat over newly planted seeds and bulbs until they sprout.",
-            "Pick tomatoes when they first colour and ripen them indoors.",
+            "Pick tomatoes when they first color and ripen them indoors.",
             "A water dish nearby can reduce tomato damage in dry weather (they bite for moisture)."
         )
     ),
@@ -131,7 +131,7 @@ enum class Pest(
         )
     ),
     PETS(
-        "Dogs and cats (yours or neighbours')", PestKind.ANIMAL,
+        "Dogs and cats (yours or neighbors')", PestKind.ANIMAL,
         emptySet(),
         "Dug-up beds, trampled plants, droppings in soft soil.",
         listOf(
@@ -164,11 +164,11 @@ enum class Pest(
     APHIDS(
         "Aphids", PestKind.INSECT,
         emptySet(),
-        "Clusters of small green, black or grey insects under leaves and on new shoots; curled, sticky leaves.",
+        "Clusters of small green, black or gray insects under leaves and on new shoots; curled, sticky leaves.",
         listOf(
             "Knock them off with a strong spray of water; repeat every few days.",
             "Plant flowers that feed ladybirds and hoverflies (sweet alyssum, dill, yarrow, calendula) near crops.",
-            "Avoid too much nitrogen fertiliser; soft new growth attracts aphids.",
+            "Avoid too much nitrogen fertilizer; soft new growth attracts aphids.",
             "Insecticidal soap for heavy infestations."
         )
     ),
@@ -236,7 +236,7 @@ enum class Pest(
 
         /** General prevention that suits every garden. */
         val GENERAL_TIPS = listOf(
-            "Walk the garden every day or two: catching damage early is the best defence.",
+            "Walk the garden every day or two: catching damage early is the best defense.",
             "Fence before you plant; animals that find food keep coming back.",
             "Keep the area around the garden tidy: no fallen fruit, open compost or pet food, and short grass.",
             "Crop rotation and mixed planting (companions and flowers) keep insect pests from building up.",

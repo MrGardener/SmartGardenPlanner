@@ -80,6 +80,10 @@ object Prefs {
     var legendPos: Pair<Int, Int>?
         get() = get("legendPos")?.split(",")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }?.let { it[0] to it[1] }
         set(v) { if (v == null) set("legendPos", "") else set("legendPos", "${v.first},${v.second}") }
+    /** Interface language (FR-062): "en", "es"… */
+    var language: String
+        get() = get("language")?.takeIf { l -> com.example.smartgardenplanner.core.I18n.LANGUAGES.any { it.code == l } } ?: "en"
+        set(v) = set("language", v)
     var organic: Boolean
         get() = get("care") != "CONVENTIONAL"
         set(v) = set("care", if (v) "ORGANIC" else "CONVENTIONAL")
@@ -111,6 +115,17 @@ object Store {
     /** A multi-season rotation plan being looked at, and which year is on the layout. */
     var rotation: List<com.example.smartgardenplanner.core.SeasonPlan> = emptyList()
     var rotationIndex = 0
+    /** FR-060: layouts worked out so far for the proposal (label, result), which one is shown, and how to get more. */
+    val planOptions = mutableListOf<Pair<String, AutoPlanResult>>()
+    var planOptionIndex = 0
+    var planMore: (() -> Boolean)? = null
+    var planSummary: ((AutoPlanResult) -> String)? = null
+    /** FR-063: plants the proposal replaces when kept ("start from a blank area"), and the last choice. */
+    var previewReplace: Set<Long> = emptySet()
+    var planReplace = false
+    /** FR-064: the proposal card's place (pixels in the layout) and whether it's folded. */
+    var previewPos: Pair<Int, Int>? = null
+    var previewFolded = false
     /** What the rotation plan was made from, and the user's variety changes: year → (from code → to code) (FR-048). */
     var rotationBase: List<com.example.smartgardenplanner.core.PlantRequest> = emptyList()
     var rotationFirstYear = 0

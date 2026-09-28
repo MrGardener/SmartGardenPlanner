@@ -234,8 +234,22 @@ await btn('Plan it').click();
 await page.locator('#sgp-preview:not(.hidden)').waitFor();
 const proposal = await page.locator('#sgp-preview').innerText();
 check(proposal.includes('Most important first: Sweet Corn'), 'proposal says the most important plants went first');
-check(proposal.includes('4 rows of 5'), 'organised clump: 20 corn in 4 rows of 5');
+check(proposal.includes('4 rows of 5'), 'organized clump: 20 corn in 4 rows of 5');
 check(proposal.includes('walkway'), 'proposal mentions walkways for watering');
+// Several layouts to choose from, and a card that folds and moves.
+check(proposal.includes('Option 1: Suggested') && proposal.includes('plants placed'), 'proposal shows option 1 with its summary');
+await btn('Option ▶').click();
+check((await page.locator('#sgp-preview').innerText()).includes('Option 2:'), 'Option ▶ shows another layout');
+await btn('◀ Option').click();
+check((await page.locator('#sgp-preview').innerText()).includes('Option 1:'), '◀ Option goes back');
+const cardBox = await page.locator('#sgp-preview .pv-head').boundingBox();
+await page.mouse.move(cardBox.x + 30, cardBox.y + 10); await page.mouse.down();
+await page.mouse.move(cardBox.x - 300, cardBox.y - 200, { steps: 5 }); await page.mouse.up();
+const cardMoved = await page.locator('#sgp-preview').boundingBox();
+check(cardMoved.y < cardBox.y - 100, 'proposal card can be dragged out of the way');
+await page.locator('#sgp-preview .pv-head').getByRole('button', { name: '−' }).click();
+check(!(await page.locator('#sgp-preview').innerText()).includes('Keep this plan'), 'proposal card folds to its header');
+await page.locator('#sgp-preview .pv-head').getByRole('button', { name: '+' }).click();
 await btn('Keep this plan').click();
 d = await draft();
 check(d.plots[0].plants.length === 20, `corn planted (${d.plots[0].plants.length})`);
@@ -244,6 +258,27 @@ await page.locator('.plant-legend .pl-row').first().click();
 check(await page.locator('#sgp-svg .find-ring').count() === 20, 'find circles every corn plant');
 await page.keyboard.press('Escape');
 check(await page.locator('#sgp-svg .find-ring').count() === 0, 'Esc clears find');
+// A whole group: select it, rearrange its rows, undo.
+{
+  d = await draft();
+  const c0 = d.plots[0].plants[0];
+  await page.locator('nav.tools').getByRole('button', { name: 'Select / move' }).click();
+  await clickMetres(c0.x, c0.y);
+  await page.locator('nav.tools').getByRole('button', { name: 'Select its group' }).click();
+  check((await page.locator('.status').innerText()).startsWith('20 plants selected'), 'Select its group selects the whole clump');
+  await page.locator('nav.tools').getByRole('button', { name: 'Rearrange group…' }).click();
+  await page.locator('.modal').waitFor();
+  const shapes = await page.locator('.modal .planb').allInnerTexts();
+  check(shapes.some(t => t.startsWith('2 rows of 10')) && shapes.some(t => t.startsWith('5 rows of 4')), `rearrange offers other rows and columns (${shapes.length})`);
+  const fit = page.locator('.modal .planb', { hasText: '— fits' }).filter({ hasNotText: '4 rows of 5' }).first();
+  const label = (await fit.innerText()).split(' — ')[0];
+  await fit.click();
+  d = await draft();
+  const rowsNow = new Set(d.plots[0].plants.map(p => Math.round(p.y * 100))).size;
+  check(d.plots[0].plants.length === 20 && (await page.locator('.status').innerText()).includes('Rearranged 20 plants as ' + label), `group rearranged as ${label} (${rowsNow} rows)`);
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Escape');
+}
 // Replace all corn with another variety, then undo.
 await page.locator('.plant-legend .pl-line').first().getByRole('button', { name: 'Replace…' }).click();
 await page.locator('.modal').waitFor();
@@ -436,7 +471,7 @@ check(Math.abs(d.plots[0].backdrop.x - 0) < 0.05 && Math.abs(d.plots[0].backdrop
 const turnBox = page.locator('.panel-body input[type=number]').last();
 await turnBox.fill('-30'); await turnBox.dispatchEvent('change');
 d = await draft();
-check(Math.abs(d.plots[0].backdrop.rotationDeg + 30) < 0.01 && (await page.locator('.panel-body').innerText()).includes('30° counter-clockwise'), 'photo turned 30° counter-clockwise from the number box');
+check(Math.abs(d.plots[0].backdrop.rotationDeg + 30) < 0.01 && (await page.locator('.panel-body').innerText()).includes('30° counterclockwise'), 'photo turned 30° counterclockwise from the number box');
 await turnBox.fill('180'); await turnBox.dispatchEvent('change');
 d = await draft();
 check(Math.abs(d.plots[0].backdrop.rotationDeg - 180) < 0.01 && await page.locator('.panel-body input[type=range]').last().inputValue() === '180', 'photo turns to 180° and the slider follows');
@@ -464,6 +499,13 @@ for (const t of ['Plot', 'Harmony', 'Care', 'Food', 'Plants']) {
   check(await page.locator('.panel-body').innerText() !== '', `${t} tab renders`);
 }
 await page.screenshot({ path: path.join(shots, 'sgp-web.png') });
+
+// Interface language: Spanish from the dictionary, then back to English.
+await page.locator('select[aria-label="Language"], select[aria-label="Idioma"]').first().selectOption('es');
+check(await page.getByRole('button', { name: 'Nueva parcela' }).count() === 1 && await page.locator('.tabs .tab', { hasText: /^Parcela$/ }).count() === 1, 'interface switches to Spanish from the dictionary');
+check((await page.locator('button[title]').first().getAttribute('title')) !== null, 'hover help still present in Spanish');
+await page.locator('select[aria-label="Language"], select[aria-label="Idioma"]').first().selectOption('en');
+check(await btn('New plot').count() === 1, 'and back to English');
 
 // Save (download) and check the file.
 const [download] = await Promise.all([page.waitForEvent('download'), btn('Save').click()]);

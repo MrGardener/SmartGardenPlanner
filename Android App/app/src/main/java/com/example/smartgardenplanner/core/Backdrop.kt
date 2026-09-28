@@ -69,7 +69,7 @@ data class Backdrop(
         fun describeTurn(deg: Float): String = when {
             kotlin.math.abs(deg) < 0.05f -> "not turned"
             deg > 0f -> "${deg.fmt(0)}° clockwise"
-            else -> "${(-deg).fmt(0)}° counter-clockwise"
+            else -> "${(-deg).fmt(0)}° counterclockwise"
         }
 
         /** A new backdrop covering the plot's width, top-left at the plot's corner. */

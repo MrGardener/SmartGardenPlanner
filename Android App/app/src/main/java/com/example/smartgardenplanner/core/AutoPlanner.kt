@@ -48,7 +48,7 @@ object PlantHeights {
  * is easy to move to another part of the plot next year (crop rotation). ROWS lines crops up by height.
  */
 enum class PlantingLayout(val label: String, val description: String) {
-    CLUMPS("Organised clumps (recommended)", "Each crop is a small block of rows and columns (e.g. 20 corn = 4 rows of 5) with walkways between blocks for watering with a hose. Vines get room to run toward the sun. Next year the blocks can swap places for crop rotation."),
+    CLUMPS("Organized clumps (recommended)", "Each crop is a small block of rows and columns (e.g. 20 corn = 4 rows of 5) with walkways between blocks for watering with a hose. Vines get room to run toward the sun. Next year the blocks can swap places for crop rotation."),
     ROWS("Long rows", "Crops are lined up in long rows by height, tallest at the back. Tidy, but a long row of tomatoes at the back leaves no free place for them next year without shading other plants.")
 }
 
@@ -85,7 +85,71 @@ data class AutoPlanResult(
  *
  * The result is a proposal; nothing is saved until the caller stores it. Pure Kotlin.
  */
+/** One of several layouts to choose from before planting (FR-060). */
+data class PlanOption(val label: String, val result: AutoPlanResult, val placed: Int, val meanSun: Double?, val groups: Int)
+
 object AutoPlanner {
+
+    val VARIANT_LABELS = listOf(
+        "Suggested", "Crops shifted to one side", "Crops shifted to the other side", "Crops in a different order",
+        "Other clump shapes", "Sun first", "Other side, different order", "Other side, other shapes", "Clumps spread out", "Clumps close together"
+    )
+
+    /** Number of layout variants (the clump variants plus long rows). */
+    val VARIANT_COUNT: Int get() = VARIANT_LABELS.size + 1
+    fun variantLabel(v: Int): String = VARIANT_LABELS.getOrNull(v) ?: "Long rows"
+
+    /** One layout variant (FR-060): 0…9 organized-clump variants, 10 = long rows. */
+    fun planVariant(
+        v: Int, context: PlotContext, area: List<PlotPoint>, requests: List<PlantRequest>,
+        isBlocked: (x: Float, y: Float, radiusM: Float) -> Boolean = { _, _, _ -> false },
+        marginMultiplier: Float = 1f, orientationKnown: Boolean = true,
+        history: List<PlantingHistoryEntity> = emptyList(), seasonYear: Int = Seasons.thisYear()
+    ): AutoPlanResult = if (v >= VARIANT_LABELS.size)
+        plan(context, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.ROWS, history = history, seasonYear = seasonYear)
+    else plan(context, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.CLUMPS, history = history, seasonYear = seasonYear, variant = v)
+
+    /** Identity of a layout, to skip variants that came out the same. */
+    fun signature(r: AutoPlanResult): String = r.placed.sortedWith(compareBy({ it.x }, { it.y })).joinToString(";") { "${it.seed.botanicalCode}@${(it.x * 10).toInt()},${(it.y * 10).toInt()}" }
+
+    /** Plants placed, average growing-season sun and crops split into groups, for comparing options. */
+    fun summarize(context: PlotContext, r: AutoPlanResult): String {
+        val ctx = context.forPlanning()
+        val sun = r.placed.mapNotNull { ctx.sunHoursAt(it.x, it.y) }.takeIf { it.isNotEmpty() }?.average()
+        val split = r.notes.count { it.contains(" groups (") }
+        val missing = r.unplaced.values.sum()
+        return listOfNotNull("${r.placed.size} plants placed", sun?.let { "average sun ${it.fmt(1)} h" },
+            if (missing > 0) "$missing didn't fit" else null, if (split > 0) "$split crop(s) split" else "every crop in one block").joinToString(" · ")
+    }
+
+    /**
+     * FR-060: up to [count] (5–10) different layouts for the same list: the suggested one, variants of the organised
+     * clumps (sides, order, shapes, sun first) and long rows, without duplicates. Each says how many plants it placed,
+     * their average growing-season sun and how many crops were split into groups.
+     */
+    fun options(
+        context: PlotContext, area: List<PlotPoint>, requests: List<PlantRequest>,
+        isBlocked: (x: Float, y: Float, radiusM: Float) -> Boolean = { _, _, _ -> false },
+        marginMultiplier: Float = 1f, orientationKnown: Boolean = true,
+        history: List<PlantingHistoryEntity> = emptyList(), seasonYear: Int = Seasons.thisYear(), count: Int = 8
+    ): List<PlanOption> {
+        val ctx = context.forPlanning()
+        val out = mutableListOf<PlanOption>()
+        val seen = HashSet<String>()
+        fun add(label: String, r: AutoPlanResult) {
+            val sig = r.placed.sortedWith(compareBy({ it.x }, { it.y })).joinToString(";") { "${it.seed.botanicalCode}@${(it.x * 10).toInt()},${(it.y * 10).toInt()}" }
+            if (r.placed.isEmpty() || !seen.add(sig)) return
+            val sun = r.placed.mapNotNull { ctx.sunHoursAt(it.x, it.y) }.takeIf { it.isNotEmpty() }?.average()
+            out += PlanOption(label, r, r.placed.size, sun, r.notes.count { it.contains(" groups (") })
+        }
+        for (v in VARIANT_LABELS.indices) {
+            if (out.size >= count) break
+            add(VARIANT_LABELS[v], plan(ctx, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.CLUMPS, history = history, seasonYear = seasonYear, variant = v))
+        }
+        if (out.size < count) add("Long rows", plan(ctx, area, requests, isBlocked, marginMultiplier, orientationKnown, layout = PlantingLayout.ROWS, history = history, seasonYear = seasonYear))
+        return out.take(count.coerceIn(1, 10))
+    }
+
 
     /** Flowers and herbs that attract pollinators and beneficial insects. */
     val POLLINATOR_PLANTS = setOf(
@@ -132,13 +196,14 @@ object AutoPlanner {
         layout: PlantingLayout = PlantingLayout.CLUMPS,
                 history: List<PlantingHistoryEntity> = emptyList(),
         seasonYear: Int = Seasons.thisYear(),
-        strictRotation: Boolean = true
+        strictRotation: Boolean = true,
+        variant: Int = 0
     ): AutoPlanResult {
         val wanted = requests.filter { it.count > 0 }
         if (wanted.isEmpty() || area.size < 3) return AutoPlanResult(emptyList(), emptyMap(), listOf("Nothing to plan."))
         // FR-055: judge sun over the growing season, not on the day the plan is made.
         @Suppress("NAME_SHADOWING") val context = context.forPlanning()
-        if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear, strictRotation)
+        if (layout == PlantingLayout.CLUMPS) return BlockPlanner.plan(context, area, wanted, isBlocked, marginMultiplier, orientationKnown, history, seasonYear, strictRotation, variant)
         val notes = mutableListOf<String>()
         val plot = context.plot
 
@@ -279,7 +344,7 @@ object AutoPlanner {
         if (speciesByHeight.size > 1) {
             notes += "Tallest plants (${speciesByHeight.take(2).joinToString(", ") { CropReference.speciesName(it) }}) are on the $backName side and the shortest (${CropReference.speciesName(speciesByHeight.last())}) on the sunny side, so tall plants don't shade short ones."
         }
-        notes += "Crops are in long rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Organised clumps make rotation easier."
+        notes += "Crops are in long rows by height. Rows are harder to rotate: next year the tall row has nowhere to go without shading the others. Organized clumps make rotation easier."
         if (rotationAvoided > 0 || rotationStuck > 0) {
             notes += if (rotationStuck == 0) "Crop rotation: no crop was put where its family grew in the last seasons."
             else "Crop rotation: $rotationStuck plant(s) had to go where the same family grew recently (not enough other room). Consider a different area for them."

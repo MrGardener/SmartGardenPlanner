@@ -2889,7 +2889,7 @@ fun CanvasWorkspaceScreen(
                 },
                                 onDismiss = {
                     autoPlanArea = null; planForMe = false; canvasMode = CanvasMode.PLACE_NODE; nextSeasonMode = false
-                    if (planRows.isNotEmpty()) snackbarMessage = "Plan cancelled. Your list is kept for next time."
+                    if (planRows.isNotEmpty()) snackbarMessage = "Plan canceled. Your list is kept for next time."
                 }
             )
         }
@@ -3084,7 +3084,7 @@ fun CanvasWorkspaceScreen(
                         // FR-049: slider and number box in step; + clockwise, − counter-clockwise, 180° at most either way.
                         var turn by remember(placement.rotationDeg) { mutableFloatStateOf(placement.rotationDeg) }
                         var turnText by remember(placement.rotationDeg) { mutableStateOf(kotlin.math.round(placement.rotationDeg).toInt().toString()) }
-                        Text("Turn: ${com.example.smartgardenplanner.core.Backdrop.describeTurn(turn)} (+ clockwise, − counter-clockwise)", fontSize = 12.sp)
+                        Text("Turn: ${com.example.smartgardenplanner.core.Backdrop.describeTurn(turn)} (+ clockwise, − counterclockwise)", fontSize = 12.sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Slider(value = turn, onValueChange = { turn = kotlin.math.round(it); turnText = turn.toInt().toString() }, valueRange = -180f..180f,
                                 onValueChangeFinished = { val t = turn; savePhotoPlacement { it.turned(t) } }, modifier = Modifier.weight(1f))

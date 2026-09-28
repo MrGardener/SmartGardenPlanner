@@ -71,7 +71,7 @@ class ShapesSwapRotationTest {
         val b = Backdrop(xM = 0f, yM = 0f, widthM = 10f, aspect = 0.5f).turned(180f)
         assertEquals(180f, Backdrop.parse(b.encode())!!.rotationDeg, 1e-3f)
         assertEquals("30° clockwise", Backdrop.describeTurn(30f))
-        assertEquals("45° counter-clockwise", Backdrop.describeTurn(-45f))
+        assertEquals("45° counterclockwise", Backdrop.describeTurn(-45f))
         // Old files stored 0–360: 350 reads as 10° counter-clockwise.
         assertEquals(-10f, Backdrop.parse("0;0;10;350;0.6;0.5")!!.rotationDeg, 1e-3f)
         // Scaling about a point keeps that point fixed even when turned.

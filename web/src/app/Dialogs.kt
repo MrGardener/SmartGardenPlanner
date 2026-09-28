@@ -48,6 +48,7 @@ object Dialogs {
         back.on("keydown") { if (it.asDynamic().key == "Escape") { it.stopPropagation(); close() } }
         document.body!!.appendChild(back)
         Tips.apply(back)
+        Lang.apply(back)
         open = back
         (box.querySelector("input, select, textarea") as? HTMLElement ?: box.querySelector("button") as? HTMLElement)?.focus()
     }
@@ -170,7 +171,7 @@ object Dialogs {
     /** Height, crown, slope or flood details for a site feature; saves it (new) or updates it. */
     fun feature(entity: SiteFeatureEntity, isNew: Boolean) {
         val t = SiteFeatureType.of(entity.featureType) ?: return
-        val labelIn = input(entity.label, placeholder = "optional, e.g. Neighbour's oak")
+        val labelIn = input(entity.label, placeholder = "optional, e.g. Neighbor's oak")
         val height = numberField(entity.heightM)
         val radius = numberField(entity.radiusM)
         val grade = numberField(entity.slopeGradePct, "1")
@@ -194,7 +195,7 @@ object Dialogs {
             SiteFeatureType.HOSE_BIB -> body += label("Hose length, m", radius)
             else -> {}
         }
-        if (t.isBarrier) body += label("Height, m (roughly is fine: fence 1.8, 1-storey house 5, 2-storey 8)", height)
+        if (t.isBarrier) body += label("Height, m (roughly is fine: fence 1.8, 1-story house 5, 2-story 8)", height)
         if (t == SiteFeatureType.TREE) body += label("Crown radius, m", radius)
         if (t == SiteFeatureType.SLOPE) {
             body += label("Grade %", grade)
@@ -328,7 +329,7 @@ object Dialogs {
             }
                         list.add(h("div", "row wrap", kids = listOf(
                 button("+ Add a plant", "btn") { rows += Row(null, 3); draw() },
-                button("How many fit?", "btn", "Keep the proportions of your list and fill the area with as many as fit in organised clumps") {
+                button("How many fit?", "btn", "Keep the proportions of your list and fill the area with as many as fit in organized clumps") {
                     val reqs = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count.coerceAtLeast(1)) } }
                     if (reqs.isEmpty()) { App.status("Add at least one plant first."); return@button }
                     val fit = com.example.smartgardenplanner.core.RotationPlanner.howManyFit(ctx, area, reqs, { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin)
@@ -364,6 +365,20 @@ object Dialogs {
         }
         drawLayout()
         val warn = mutableListOf<HTMLElement>()
+        // FR-063: plants already in this area — keep them and plan around them, or plan the area from blank.
+        val inArea = if (nextSeason) emptyList() else wp.plants.filter { com.example.smartgardenplanner.core.PlotGeometry.pointInPolygon(it.coordinateXM, it.coordinateYM, area) }
+        var replaceExisting = Store.planReplace && inArea.isNotEmpty()
+        if (inArea.isNotEmpty()) {
+            val keep = (h("input", attrs = mapOf("type" to "radio", "name" to "sgp-keep")) as HTMLInputElement).also { it.checked = !replaceExisting }
+            val blank = (h("input", attrs = mapOf("type" to "radio", "name" to "sgp-keep")) as HTMLInputElement).also { it.checked = replaceExisting }
+            keep.on("change") { if (keep.checked) { replaceExisting = false; Store.planReplace = false } }
+            blank.on("change") { if (blank.checked) { replaceExisting = true; Store.planReplace = true } }
+            warn += h("div", "field keep-choice", kids = listOf(
+                h("span", "lbl", "${inArea.size} plants are already in this area"),
+                h("label", "check", kids = listOf(keep, h("span", text = "Keep them where they are and plan around them"))),
+                h("label", "check", kids = listOf(blank, h("span", text = "Start from a blank area: the new plan replaces them when you keep it")))
+            ))
+        }
         if (!wp.plot.orientationSet) warn += para("The plot's direction isn't set, so the planner assumes the top edge faces north. Set it in Plot details for accurate shade and tall-plants-at-the-back.", "warn")
         if (wp.plot.latitude == null) warn += para("No ZIP/latitude: sun angles use 40° N.", "hint")
                 if (planHistory.isNotEmpty()) warn += para("Past seasons on this plot are used for crop rotation: no crop goes where its family grew last season, and families stay away from their recent spots.", "hint")
@@ -372,18 +387,34 @@ object Dialogs {
             para("Area: ${areaM2.fmt(1)} m². List what you want and how many; the planner places them for sun, pollination and watering, with tall plants at the back. Tap ☆ on the plants that matter most: they're placed first, in the sunniest spots.", "hint"),
             usualBox
         ) + warn + list + checksBox + layoutBox, listOf(
-            "Cancel" to { remember(); Store.previewArea = null; App.status("Plan cancelled. Your list is kept for next time."); App.render(); true },
+            "Cancel" to { remember(); Store.previewArea = null; App.status("Plan canceled. Your list is kept for next time."); App.render(); true },
             "Plan it" to plan@{
                 val requests = rows.mapNotNull { r -> r.seed?.let { PlantRequest(it, r.count, r.priority, r.shape?.takeIf { sh -> sh.sum() == r.count }) } }.filter { it.count > 0 }
                 if (requests.isEmpty()) { App.status("Add at least one plant with a count."); return@plan false }
                 remember()
                 Prefs.lastPlan = Store.planRows.toList()
-                                val result = AutoPlanner.plan(
-                    ctx, area, requests,
-                    isBlocked = { x, y, r -> Canvas.blockedByPath(wp, x, y, r) },
-                    marginMultiplier = Prefs.margin, orientationKnown = wp.plot.orientationSet,
-                    layout = layout, history = planHistory, seasonYear = planYear
-                )
+                val replaceIds = if (replaceExisting) inArea.map { it.id }.toSet() else emptySet()
+                val planCtx = if (replaceIds.isEmpty()) ctx else ctx.copy(nodes = ctx.nodes.filter { it.id !in replaceIds })
+                // FR-060: the suggested layout first; "Option ▶" works out other layouts on request.
+                val first = if (layout == PlantingLayout.ROWS) AutoPlanner.planVariant(AutoPlanner.VARIANT_COUNT - 1, planCtx, area, requests, { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin, wp.plot.orientationSet, planHistory, planYear)
+                    else AutoPlanner.planVariant(0, planCtx, area, requests, { x, y, r -> Canvas.blockedByPath(wp, x, y, r) }, Prefs.margin, wp.plot.orientationSet, planHistory, planYear)
+                Store.planOptions.clear(); Store.planOptions += (if (layout == PlantingLayout.ROWS) AutoPlanner.variantLabel(AutoPlanner.VARIANT_COUNT - 1) else AutoPlanner.variantLabel(0)) to first
+                Store.planOptionIndex = 0
+                val tried = mutableSetOf(if (layout == PlantingLayout.ROWS) AutoPlanner.VARIANT_COUNT - 1 else 0)
+                val seen = mutableSetOf(AutoPlanner.signature(first))
+                Store.planMore = {
+                    var found = false
+                    for (v in 0 until AutoPlanner.VARIANT_COUNT) {
+                        if (v in tried) continue
+                        tried += v
+                        val r = AutoPlanner.planVariant(v, planCtx, area, requests, { x, y, rr -> Canvas.blockedByPath(wp, x, y, rr) }, Prefs.margin, wp.plot.orientationSet, planHistory, planYear)
+                        if (r.placed.isNotEmpty() && seen.add(AutoPlanner.signature(r))) { Store.planOptions += AutoPlanner.variantLabel(v) to r; found = true; break }
+                    }
+                    found
+                }
+                Store.planSummary = { r -> AutoPlanner.summarize(planCtx, r) }
+                Store.previewReplace = replaceIds
+                val result = first
                 Store.preview = result; Store.previewArea = area; Store.previewMode = mode
                 previewCard()
                 App.render(); true
@@ -408,11 +439,34 @@ object Dialogs {
         card.clear()
                 val wpNow = Store.plot()
         val rotation = Store.previewMode == PreviewMode.ROTATION
-        card.add(h("h3", "h", when (Store.previewMode) {
-            PreviewMode.NEXT_SEASON -> "Next season's plan (not planted yet)"
-            PreviewMode.ROTATION -> "Rotation plan: ${Store.rotation.getOrNull(Store.rotationIndex)?.year} (${Store.rotationIndex + 1} of ${Store.rotation.size})"
-            else -> "Proposed planting (not planted yet)"
-        }))
+        // FR-064: drag the card by its header anywhere over the layout; − folds it to its header.
+        val head = h("div", "pv-head", attrs = mapOf("title" to "Drag to move this card out of the way; − folds it up"), kids = listOf(
+            h("span", "grip", "⠿"),
+            h("h3", "h grow", when (Store.previewMode) {
+                PreviewMode.NEXT_SEASON -> "Next season's plan (not planted yet)"
+                PreviewMode.ROTATION -> "Rotation plan: ${Store.rotation.getOrNull(Store.rotationIndex)?.year} (${Store.rotationIndex + 1} of ${Store.rotation.size})"
+                else -> "Proposed planting (not planted yet)"
+            }),
+            button(if (Store.previewFolded) "+" else "−", "btn small", if (Store.previewFolded) "Show the card" else "Fold the card up to see the plot") { Store.previewFolded = !Store.previewFolded; previewCard() }
+        ))
+        card.add(head)
+        draggableBy(card, head, { Store.previewPos = it }, Store.previewPos)
+        if (Store.previewFolded) { card.classList.remove("hidden"); Tips.apply(card); return }
+        // FR-060: several layouts to choose from before keeping one.
+        if (!rotation && Store.planOptions.size > 0) {
+            val i = Store.planOptionIndex
+            val (label, _) = Store.planOptions[i]
+            card.add(h("div", "row wrap opt-nav", kids = listOf(
+                button("◀ Option", "btn small", "Previous layout") { if (i > 0) { Store.planOptionIndex = i - 1; Store.preview = Store.planOptions[i - 1].second; previewCard(); App.render() } },
+                h("b", text = "Option ${i + 1}: $label"),
+                button("Option ▶", "btn small", "Another way to place the same plants (up to ${AutoPlanner.VARIANT_COUNT})") {
+                    if (i + 1 < Store.planOptions.size || Store.planMore?.invoke() == true) { Store.planOptionIndex = i + 1; Store.preview = Store.planOptions[i + 1].second; previewCard(); App.render() }
+                    else App.status("No other layout is different from the ones shown: these are all the options for this list and area.")
+                }
+            )))
+            card.add(para(Store.planSummary?.invoke(r) ?: "", "hint"))
+            if (Store.previewReplace.isNotEmpty()) card.add(para("Keeping this plan replaces the ${Store.previewReplace.size} plants already in this area.", "warn"))
+        }
         if (rotation) Store.rotation.getOrNull(Store.rotationIndex)?.summary?.forEach { card.add(para("• $it", "hint")) }
         body.forEach { card.add(it) }
         card.add(h("div", "row wrap", kids = listOfNotNull(
@@ -426,9 +480,9 @@ object Dialogs {
                         // Close this season (plants → history), then plant the new one: one undo step.
                         if (wp.plants.isNotEmpty()) wp.history = wp.history + com.example.smartgardenplanner.core.Seasons.archive(wp.plot.id, wp.plants, wp.season(), { Catalog.get(it) }).map { it.copy(id = Store.newId()) }
                         wp.plants = fresh
-                    } else wp.plants = wp.plants + fresh
+                    } else wp.plants = wp.plants.filter { it.id !in Store.previewReplace } + fresh
                 }
-                Store.preview = null; Store.previewArea = null; Store.previewMode = PreviewMode.NORMAL; Store.rotation = emptyList()
+                Store.preview = null; Store.previewArea = null; Store.previewMode = PreviewMode.NORMAL; Store.rotation = emptyList(); Store.previewReplace = emptySet(); Store.planOptions.clear()
                 hide()
                 App.status(if (newSeason) "New season ${wpNow?.season()} started with ${plan.placed.size} plants; last season is in the history. Undo reverses this." else "Added ${plan.placed.size} plants. Undo removes them all in one step.")
                 App.render()
@@ -449,6 +503,8 @@ object Dialogs {
             }
         )))
         card.classList.remove("hidden")
+        Tips.apply(card)
+        Lang.apply(card)
     }
 
     // ------------------------------------------------------------------ planted plants
@@ -489,6 +545,31 @@ object Dialogs {
                 App.render(); true
             }
         ))
+    }
+
+    /** FR-061: lay a selected group out as other rows × columns, around the same center. */
+    fun rearrangeGroup(ids: Set<Long>) {
+        val wp = Store.plot() ?: return
+        val group = wp.plants.filter { it.id in ids }
+        if (group.size < 2) { App.status("Select at least 2 plants."); return }
+        val options = com.example.smartgardenplanner.core.ClumpShapes.options(group.size)
+        val others = wp.plants.filter { it.id !in ids }
+        val list = h("div", "plan-b")
+        options.forEach { o ->
+            val moved = com.example.smartgardenplanner.core.GroupTools.rearranged(group, o.rows, { Catalog.get(it) }, Prefs.margin) ?: return@forEach
+            val bad = com.example.smartgardenplanner.core.GroupTools.problems(moved, others, wp.plot, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive())
+            list.add(button(o.label + (if (bad > 0) " — $bad plant(s) wouldn't fit here" else " — fits"), if (bad > 0) "btn planb" else "btn planb", if (bad > 0) "Move the group to more open ground first, or pick another shape" else "Use this arrangement") {
+                if (bad > 0) { App.status("${o.label} doesn't fit where the group is: $bad plant(s) would be outside the plot or too close to others. Move the group first."); return@button }
+                Store.change { it.plants = others + moved }
+                close()
+                Canvas.selection = Selection.Group(moved.map { it.id }.toSet())
+                App.status("Rearranged ${moved.size} plants as ${o.label}. Future rotation plans start from where they are now. Undo reverses it.")
+                App.render()
+            })
+        }
+        modal("Rearrange ${group.size} plants", listOf(
+            para("Choose rows × columns for the selected plants. They stay centered where they are now, at their normal spacing.", "p"), list
+        ), listOf("Cancel" to { true }), wide = true)
     }
 
     /** FR-054: sowing and planting windows from the plot's frost dates, for what's planted (or common crops). */
@@ -745,7 +826,7 @@ object Dialogs {
         heading("Seasons, shade and water"),
         para("Plot tab → Seasons: look back at any past season (read only), Plan next season (rotate) to re-plan the plot with the same crops rotated, or a Rotation plan for up to 10 seasons. Shade: choose the day and “Whole day” or “At a time of day” in the legend; tall plants can cast shade. Water: draw sprinklers, drip lines and hose taps (Plot tab → Irrigation) and turn on Water to see what gets watered. Plants tab → Fill the whole plot… with How many fit?; Plot tab → Duplicate plot… for templates."),
         heading("Pests, watering and the most important plants"),
-        para("When you create a plot, tick the pests and animals you see in your yard (deer, rabbits, raccoons…); change them in Plot details. The Care tab shows how to keep each one out (fence heights, netting, buried wire…) and which of your plants they go for, plus watering advice for your plants and irrigation. In “Plan an area for me”, tap ☆ on the plants that matter most: the checks before planning show space, sun, neighbours, zone, rotation and pests, and the starred plants are placed first in the sunniest spots."),
+        para("When you create a plot, tick the pests and animals you see in your yard (deer, rabbits, raccoons…); change them in Plot details. The Care tab shows how to keep each one out (fence heights, netting, buried wire…) and which of your plants they go for, plus watering advice for your plants and irrigation. In “Plan an area for me”, tap ☆ on the plants that matter most: the checks before planning show space, sun, neighbors, zone, rotation and pests, and the starred plants are placed first in the sunniest spots."),
         heading("Satellite photo"),
         para("Plot tab → Satellite photo: open Google Maps in satellite view, take a screenshot of your yard, and add it under the plot. Set the scale with two points a known distance apart, move and turn it to line up, then trace trees, fences and buildings on top."),
         heading("Finding and changing things"),

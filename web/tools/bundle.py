@@ -79,7 +79,8 @@ select.inp{width:auto;max-width:100%}
 .issue.high{border-color:var(--danger)}.issue.medium{border-color:var(--warn)}
 details.pest,details.soil{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:4px 8px;margin:2px 0}
 summary{cursor:pointer}
-.preview{position:absolute;right:12px;bottom:12px;max-width:420px;max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.pv-head{display:flex;align-items:center;gap:8px;user-select:none;touch-action:none}.pv-head .h{margin:0}.pv-head .grip{color:var(--muted)}.opt-nav{align-items:center;margin:6px 0}.keep-choice{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}
+.preview{position:absolute;right:12px;bottom:12px;max-width:min(420px, calc(100% - 24px));max-height:60%;overflow:auto;background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .hidden{display:none}
 .plant-legend{position:absolute;left:10px;bottom:10px;max-width:min(300px, calc(100% - 20px));max-height:45%;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:12px}
 .pl-head{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:move;user-select:none;touch-action:none}.pl-head .grip{color:var(--muted);font-size:14px}.pl-line{display:flex;gap:4px;align-items:center}.pl-line .btn.small{padding:2px 6px;font-size:11px;white-space:nowrap}
@@ -157,6 +158,7 @@ def main() -> None:
         data_block('sgp-zipzones', os.path.join(ASSETS, 'zip_zones.txt')),
         data_block('sgp-ziplocs', os.path.join(ASSETS, 'zip_locations.txt')),
         data_block('sgp-frost', os.path.join(ASSETS, 'frost_stations.txt')),
+        data_block('sgp-i18n-es', os.path.join(ASSETS, 'i18n', 'es.txt')),
         '<script type="module">\n', js, '\n</script>\n</body>\n</html>\n',
     ]
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)

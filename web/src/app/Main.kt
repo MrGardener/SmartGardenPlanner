@@ -18,7 +18,7 @@ object App {
     private lateinit var plantLegend: HTMLElement
     private var legendOpen = true
 
-    fun status(text: String) { if (::statusLine.isInitialized) statusLine.textContent = text }
+    fun status(text: String) { if (::statusLine.isInitialized) statusLine.textContent = Lang.tr(text) }
 
     fun applyTheme() {
         val root = document.documentElement ?: return
@@ -26,6 +26,7 @@ object App {
     }
 
     fun start() {
+        Lang.init()
         applyTheme()
         val root = byId("app")
         root.clear()
@@ -70,6 +71,7 @@ object App {
         Panels.render(panel)
         Canvas.render()
         Tips.apply(kotlinx.browser.document.body!!)
+        Lang.apply(kotlinx.browser.document.body!!)
     }
 
     private fun renderHeader() {
@@ -91,10 +93,11 @@ object App {
             button("↷", "btn icon", "Redo (Ctrl+Y)") { if (Store.redo()) render() }.also { if (wp?.redo?.isEmpty() != false) it.setAttribute("disabled", "") },
                         button(if (Canvas.showShade) "Shade: on" else "Shade: off", if (Canvas.showShade) "btn on" else "btn", "Show sun and shade over the whole day or at a chosen time, from obstacles and tall plants") { Canvas.showShade = !Canvas.showShade; render() },
             button(if (Store.showWater) "Water: on" else "Water: off", if (Store.showWater) "btn on" else "btn", "Show what sprinklers, drip lines and hoses reach, and which plants need a watering can") { Store.showWater = !Store.showWater; render() },
-            button(when (Prefs.theme) { "light" -> "☀ Light"; "dark" -> "☾ Dark"; else -> "◐ Auto" }, "btn", "Page colours: follow the system, light or dark. The layout itself stays light so shade is easy to see.") {
+            button(when (Prefs.theme) { "light" -> "☀ Light"; "dark" -> "☾ Dark"; else -> "◐ Auto" }, "btn", "Page colors: follow the system, light or dark. The layout itself stays light so shade is easy to see.") {
                 Prefs.theme = when (Prefs.theme) { "auto" -> "light"; "light" -> "dark"; else -> "auto" }
                 applyTheme(); render()
             },
+            select(com.example.smartgardenplanner.core.I18n.LANGUAGES.map { it.code to "🌐 " + it.name }, Prefs.language) { Lang.use(it); render() }.also { it.setAttribute("aria-label", "Language"); it.title = "Language of the interface (texts without a translation stay in English)" },
             button("?", "btn icon", "Help") { Dialogs.help() },
             file
         )))
@@ -271,6 +274,12 @@ object App {
                 if (Canvas.tool == Tool.OUTLINE) tools.add(button("Delete outline", "tool danger", "Remove the outline; the plot becomes the full rectangle (undoable)") { Canvas.deleteOutline() })
         (Canvas.selection as? Selection.Plant)?.let { sel ->
             Store.plot()?.plants?.firstOrNull { it.id == sel.id }?.let { n -> tools.add(button("Edit plant…", "tool primary", "Change variety or planting date, or delete (double-click a plant also works)") { Dialogs.plant(n) }) }
+        }
+        // FR-061: whole groups.
+        (Canvas.selection as? Selection.Plant)?.let { sel -> Store.plot()?.let { wp -> tools.add(button("Select its group", "tool", "Select every plant of this clump, to move it or change its rows") { Canvas.selectGroupOf(wp, sel.id) }) } }
+        (Canvas.selection as? Selection.Group)?.let { sel ->
+            tools.add(h("span", "hint", "${sel.ids.size} plants selected"))
+            tools.add(button("Rearrange group…", "tool primary", "Lay the selected plants out as other rows and columns (e.g. 4 rows of 5 → 2 rows of 10)") { Dialogs.rearrangeGroup(sel.ids) })
         }
         if (Canvas.selection is Selection.Feature) {
             val f = Store.plot()?.features?.firstOrNull { it.id == (Canvas.selection as Selection.Feature).id }

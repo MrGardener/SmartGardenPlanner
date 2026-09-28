@@ -71,3 +71,34 @@ fun select(options: List<Pair<String, String>>, selected: String?, onChange: (St
 fun label(text: String, field: Node): HTMLElement = h("label", "field", kids = listOf(h("span", "lbl", text), field))
 fun para(text: String, cls: String = "p"): HTMLElement = h("p", cls, text)
 fun heading(text: String): HTMLElement = h("h3", "h", text)
+
+/**
+ * Lets [box] (absolutely positioned inside its parent) be dragged by [handle], kept inside the parent. [onDrop] gets the
+ * new left/top in pixels; [pos] (if any) is applied now. Clicks on buttons in the handle still work.
+ */
+fun draggableBy(box: HTMLElement, handle: HTMLElement, onDrop: (Pair<Int, Int>) -> Unit, pos: Pair<Int, Int>?) {
+    val parent = box.parentElement as? HTMLElement
+    if (pos != null && parent != null) {
+        box.style.left = "${pos.first.coerceIn(0, (parent.clientWidth - 120).coerceAtLeast(0))}px"
+        box.style.top = "${pos.second.coerceIn(0, (parent.clientHeight - 40).coerceAtLeast(0))}px"
+        box.style.right = "auto"; box.style.bottom = "auto"
+    }
+    var start: DoubleArray? = null
+    handle.style.cursor = "move"
+    handle.on("pointerdown") { e ->
+        val me = e as org.w3c.dom.events.MouseEvent
+        if ((me.target as? Element)?.closest("button") != null) return@on
+        start = doubleArrayOf(me.clientX.toDouble(), me.clientY.toDouble(), box.offsetLeft.toDouble(), box.offsetTop.toDouble())
+        handle.asDynamic().setPointerCapture(me.asDynamic().pointerId)
+        me.preventDefault()
+    }
+    handle.on("pointermove") { e ->
+        val s0 = start ?: return@on
+        val me = e as org.w3c.dom.events.MouseEvent
+        val p = box.parentElement as? HTMLElement ?: return@on
+        val x = (s0[2] + me.clientX - s0[0]).coerceIn(0.0, (p.clientWidth - 120).toDouble().coerceAtLeast(0.0))
+        val y = (s0[3] + me.clientY - s0[1]).coerceIn(0.0, (p.clientHeight - 40).toDouble().coerceAtLeast(0.0))
+        box.style.left = "${x.toInt()}px"; box.style.top = "${y.toInt()}px"; box.style.right = "auto"; box.style.bottom = "auto"
+    }
+    handle.on("pointerup") { if (start != null) { start = null; onDrop(box.offsetLeft to box.offsetTop) } }
+}

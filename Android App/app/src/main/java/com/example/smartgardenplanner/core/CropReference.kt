@@ -21,7 +21,7 @@ enum class SunNeed(val label: String, val minHours: Float) {
 
 enum class HomesteadRole(val label: String) {
     CALORIE("Calories / staple"), PROTEIN("Protein"), LEAFY("Leafy greens"), VITC("Vitamin C"),
-    VITA("Vitamin A"), ALLIUM("Alliums (flavour, storage)"), FRUIT("Fruit"), HERB("Herbs")
+    VITA("Vitamin A"), ALLIUM("Alliums (flavor, storage)"), FRUIT("Fruit"), HERB("Herbs")
 }
 
 data class Nutrients(

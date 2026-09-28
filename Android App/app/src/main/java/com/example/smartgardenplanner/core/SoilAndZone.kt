@@ -81,7 +81,7 @@ object SoilAnalyzer {
             tips += "Texture: ${texture.label} (drainage ${texture.drainage})."
             when (texture.drainage) {
                 "fast" -> tips += "Sandy soil drains fast and loses nutrients. Add 5–8 cm of compost each year and mulch to hold moisture; water more often in smaller amounts."
-                "slow", "very slow" -> tips += "Heavy soil drains slowly and compacts. Add compost and coarse organic matter (leaf mould, bark fines), avoid working it when wet, and consider raised beds for crops that dislike wet feet."
+                "slow", "very slow" -> tips += "Heavy soil drains slowly and compacts. Add compost and coarse organic matter (leaf mold, bark fines), avoid working it when wet, and consider raised beds for crops that dislike wet feet."
                 "moderate" -> tips += "Silty soil is fertile but crusts easily. Keep it covered with mulch and add compost to improve structure."
                 else -> tips += "Good texture. Keep it that way with yearly compost and by not walking on the beds."
             }

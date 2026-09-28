@@ -48,6 +48,8 @@ sealed interface Selection {
     data class Plant(val id: Long) : Selection
     data class Path(val id: Long) : Selection
     data class Feature(val id: Long) : Selection
+    /** FR-061: several plants selected together (Shift+drag, or "Select its group"). */
+    data class Group(val ids: Set<Long>) : Selection
 }
 
 /** The plot layout drawn as SVG, in metres, with the editing tools. */
@@ -67,6 +69,7 @@ object Canvas {
     private var dragStart: PlotPoint? = null           // rectangle tools, panning and moving
     private var dragNow: PlotPoint? = null
     private var dragMoved = false
+    private var bandStart: PlotPoint? = null           // FR-061: Shift+drag selection box
     private var panOrigin: DoubleArray? = null
     private var vb = doubleArrayOf(0.0, 0.0, 10.0, 10.0) // viewBox x, y, w, h (metres)
     private var fittedFor: Long = -1
@@ -182,7 +185,8 @@ object Canvas {
                         Store.historyYear?.let { y -> drawHistory(wp, y, fs) }
             // While previewing next season or a rotation year, this season's plants are hidden: that plan replaces them.
             val replacing = Store.preview != null && Store.previewMode != PreviewMode.NORMAL
-            if (!replacing) wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id, fs = fs) }
+            val groupIds = (selection as? Selection.Group)?.ids.orEmpty()
+            if (!replacing) wp.plants.forEach { drawPlant(it, selected = (selection as? Selection.Plant)?.id == it.id || it.id in groupIds, fs = fs) }
             if (Store.showWater) drawDryRings(wp, fs)
         }
         Store.preview?.placed?.forEach { pl ->
@@ -511,7 +515,13 @@ object Canvas {
                 val plant = hitPlant(wp, pt)
                 val path = if (plant == null) hitPath(wp, pt) else null
                 val feature = if (plant == null && path == null) hitFeature(wp, pt) else null
+                // FR-061: Shift+drag on empty ground draws a box that selects the plants inside it.
+                if (plant == null && (e.asDynamic().shiftKey as? Boolean) == true) {
+                    bandStart = pt; dragStart = pt; dragNow = pt; selection = null; App.render(); return
+                }
+                val group = selection as? Selection.Group
                 selection = when {
+                    plant != null && group != null && plant.id in group.ids -> group
                     plant != null -> Selection.Plant(plant.id)
                     path != null -> Selection.Path(path.id)
                     feature != null -> Selection.Feature(feature.id)
@@ -538,7 +548,13 @@ object Canvas {
         if (start == null) { hover(pt); return }
         dragNow = pt
         if (dist(start.x, start.y, pt) > 0.02f) dragMoved = true
-                if ((tool == Tool.SELECT && selection == null) || Store.viewSeason != null) {
+                if (bandStart != null) {
+            render()
+            val a = bandStart!!
+            svg.add(s("rect", "x" to min(a.x, pt.x), "y" to min(a.y, pt.y), "width" to abs(pt.x - a.x), "height" to abs(pt.y - a.y), "fill" to "#f97316", "fill-opacity" to 0.08, "stroke" to "#f97316", "stroke-dasharray" to "6 4", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke", "class" to "band"))
+            return
+        }
+        if ((tool == Tool.SELECT && selection == null) || Store.viewSeason != null) {
             val o = panOrigin ?: return
             val scale = vb[2] / (svg.asDynamic().clientWidth as Double).coerceAtLeast(1.0)
             vb[0] = o[2] - (e.clientX - o[0]) * scale
@@ -563,6 +579,9 @@ object Canvas {
             is Selection.Plant -> wp.plants.firstOrNull { it.id == sel.id }?.let { n ->
                 svg.add(s("circle", "cx" to n.coordinateXM + dx, "cy" to n.coordinateYM + dy, "r" to (Catalog.get(n.seedCode)?.exclusionRadiusM ?: 0.3f), "fill" to "none", "stroke" to "#f97316", "stroke-dasharray" to "4 3", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
             }
+            is Selection.Group -> wp.plants.filter { it.id in sel.ids }.forEach { n ->
+                svg.add(s("circle", "cx" to n.coordinateXM + dx, "cy" to n.coordinateYM + dy, "r" to (Catalog.get(n.seedCode)?.exclusionRadiusM ?: 0.3f), "fill" to "none", "stroke" to "#f97316", "stroke-dasharray" to "4 3", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
+            }
             is Selection.Feature -> wp.features.firstOrNull { it.id == sel.id }?.let { f ->
                 val pts = PlotGeometry.parsePoints(f.pointsJson).map { PlotPoint(it.x + dx, it.y + dy) }
                 svg.add(s("polyline", "points" to (pts + pts.take(1)).joinToString(" ") { "${it.x},${it.y}" }, "fill" to "none", "stroke" to "#f97316", "stroke-dasharray" to "4 3", "stroke-width" to 2, "vector-effect" to "non-scaling-stroke"))
@@ -578,6 +597,14 @@ object Canvas {
         dragStart = null; dragNow = null; panOrigin = null
         if (wp == null) return
         Store.viewSeason?.let { y -> if (!dragMoved) App.status("You are looking at season $y (read only). Choose the planning season on the Plot tab to make changes."); return }
+        val band = bandStart
+        if (band != null) {
+            bandStart = null
+            val picked = com.example.smartgardenplanner.core.GroupTools.inRect(wp.plants, band.x, band.y, pt.x, pt.y)
+            selection = if (picked.isEmpty()) null else Selection.Group(picked.map { it.id }.toSet())
+            App.status(if (picked.isEmpty()) "No plants in that box." else "${picked.size} plants selected. Drag one of them to move them all, or Rearrange group… to change the rows.")
+            App.render(); return
+        }
         when (tool) {
             Tool.SELECT -> if (dragMoved && start != null) moveSelection(wp, pt.x - start.x, pt.y - start.y) else App.render()
             Tool.PLANT -> place(wp, pt)
@@ -760,8 +787,26 @@ object Canvas {
                 else z.copy(xM = (z.xM + dx).coerceIn(0f, p.lengthM - z.widthM), yM = (z.yM + dy).coerceIn(0f, p.widthM - z.heightM))
                 Store.change { it.paths = it.paths.map { x -> if (x.id == z.id) moved else x } }
             }
+            is Selection.Group -> {
+                val group = wp.plants.filter { it.id in sel.ids }
+                val moved = com.example.smartgardenplanner.core.GroupTools.moved(group, dx, dy)
+                val others = wp.plants.filter { it.id !in sel.ids }
+                val bad = com.example.smartgardenplanner.core.GroupTools.problems(moved, others, p, { Catalog.get(it) }, Prefs.margin, Prefs.enforceCompanions, Store.guildsActive()) +
+                    moved.count { n -> blockedByPath(wp, n.coordinateXM, n.coordinateYM, Catalog.get(n.seedCode)?.exclusionRadiusM ?: 0.3f) }
+                if (bad > 0) App.status("Can't move the group there: $bad plant(s) would be outside the plot, on a path, or too close to other plants.")
+                else { Store.change { it.plants = others + moved }; App.status("Moved ${moved.size} plants. Future rotation plans start from where they are now.") }
+            }
             null -> {}
         }
+        App.render()
+    }
+
+    /** FR-061: select every plant of the selected plant's clump. */
+    fun selectGroupOf(wp: WebPlot, id: Long) {
+        val n = wp.plants.firstOrNull { it.id == id } ?: return
+        val g = com.example.smartgardenplanner.core.GroupTools.groupOf(wp.plants, n) { Catalog.get(it) }
+        selection = Selection.Group(g.map { it.id }.toSet())
+        App.status("${g.size} plants selected. Drag one of them to move the whole group, or Rearrange group… to change its rows.")
         App.render()
     }
 
@@ -772,6 +817,7 @@ object Canvas {
                 is Selection.Plant -> wp.plants = wp.plants.filter { it.id != sel.id }
                 is Selection.Path -> wp.paths = wp.paths.filter { it.id != sel.id }
                 is Selection.Feature -> wp.features = wp.features.filter { it.id != sel.id }
+                is Selection.Group -> wp.plants = wp.plants.filter { it.id !in sel.ids }
             }
         }
         selection = null

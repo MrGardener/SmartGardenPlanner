@@ -1,0 +1,185 @@
+# Smart Garden Planner — Spanish dictionary (FR-062). One entry per line: US English<TAB>Español.
+# Texts not listed here stay in English. {0}, {1}… stand for numbers and names in the text.
+# Header and files
+Smart Garden Planner	Planificador de Huerto Inteligente
+New plot	Nueva parcela
+Open…	Abrir…
+Save	Guardar
+Save as…	Guardar como…
+Shade: on	Sombra: sí
+Shade: off	Sombra: no
+Water: on	Agua: sí
+Water: off	Agua: no
+◐ Auto	◐ Automático
+☀ Light	☀ Claro
+☾ Dark	☾ Oscuro
+Language	Idioma
+# Tools
+Select / move	Seleccionar / mover
+Plant	Plantar
+No-plant path	Pasillo sin plantas
+Tree	Árbol
+Fence / wall / building	Cerca / muro / edificio
+Sun / shade / flood / slope area	Zona de sol / sombra / inundación / pendiente
+Plot outline	Contorno de la parcela
+Plan an area for me	Planifícame una zona
+Irrigation	Riego
+Satellite photo	Foto satelital
+Names: on	Nombres: sí
+Names: off	Nombres: no
+Fit	Ajustar
+Finish (Enter)	Terminar (Intro)
+Cancel (Esc)	Cancelar (Esc)
+Delete outline	Borrar contorno
+Edit plant…	Editar planta…
+Edit selected…	Editar selección…
+Delete selected	Borrar selección
+Select its group	Seleccionar su grupo
+Rearrange group…	Reorganizar grupo…
+{0} plants selected	{0} plantas seleccionadas
+# Tabs
+Plot	Parcela
+Plants	Plantas
+Harmony	Armonía
+Care	Cuidados
+Food	Alimentos
+# Plot tab
+Size	Tamaño
+Top edge faces	El borde superior mira al
+ZIP / zone	Código postal / zona
+Latitude	Latitud
+Edit details…	Editar datos…
+Duplicate…	Duplicar…
+Delete plot	Borrar parcela
+Open in Google Maps	Abrir en Google Maps
+Growing season	Temporada de cultivo
+Planting calendar…	Calendario de siembra…
+Seasons & crop rotation	Temporadas y rotación de cultivos
+Season shown on the layout	Temporada que se muestra
+Plan next season (rotate)…	Planificar la próxima temporada (rotar)…
+Rotation plan for several seasons…	Plan de rotación para varias temporadas…
+Start a new season (empty)…	Empezar una temporada nueva (vacía)…
+Templates	Plantillas
+Duplicate plot…	Duplicar parcela…
+Draw what's on the site	Dibuja lo que hay en el terreno
+On this plot	En esta parcela
+Soil	Suelo
+Settings (this browser)	Ajustes (este navegador)
+Set scale…	Fijar escala…
+Move photo	Mover foto
+Hide	Ocultar
+Show	Mostrar
+Remove photo	Quitar foto
+Add photo…	Añadir foto…
+Open Google Maps (satellite)	Abrir Google Maps (satélite)
+Address to look up	Dirección a buscar
+See-through (%)	Transparencia (%)
+Sprinkler	Aspersor
+Drip line / soaker hose	Línea de goteo / manguera exudante
+Hose tap	Grifo de manguera
+Water map: on	Mapa de riego: sí
+Water map: off	Mapa de riego: no
+# Plants tab
+Plant tool	Herramienta plantar
+Fill the whole plot…	Llenar toda la parcela…
+All types	Todos los tipos
+Suggested for this plot	Sugeridas para esta parcela
+# Care tab
+Pests and animals in your yard	Plagas y animales en tu jardín
+Watering and irrigation	Riego y sistemas de riego
+Watering schedule	Calendario de riego
+When to plant (your frost dates)	Cuándo plantar (tus fechas de helada)
+Plan B: if a plant dies	Plan B: si una planta muere
+Pests and diseases to watch	Plagas y enfermedades a vigilar
+Watering tips	Consejos de riego
+Choosing sprinklers, drip or hose	Elegir aspersores, goteo o manguera
+How much water your plants need	Cuánta agua necesitan tus plantas
+Keeping animals out: general tips	Mantener alejados a los animales: consejos generales
+Deer	Venados
+Rabbits	Conejos
+Raccoons	Mapaches
+Squirrels	Ardillas
+Birds (crows, starlings, robins…)	Aves (cuervos, estorninos, petirrojos…)
+Slugs and snails	Babosas y caracoles
+Aphids	Pulgones
+Moles	Topos
+# Food tab
+Expected harvest	Cosecha esperada
+Recipes from your garden	Recetas de tu huerto
+Homestead starter list	Lista básica para autoabastecimiento
+# Plan an area
+Plan this area for me	Planifica esta zona por mí
+Fill the whole plot	Llenar toda la parcela
++ Add a plant	+ Añadir una planta
+How many fit?	¿Cuántas caben?
+Plan it	Planificar
+Checks before planning	Comprobaciones antes de planificar
+How should each crop be arranged?	¿Cómo se organiza cada cultivo?
+Organized clumps (recommended)	Grupos ordenados (recomendado)
+Long rows	Hileras largas
+Arrange as	Organizar como
+Neater counts:	Cantidades más ordenadas:
+What you usually plant (tap to add)	Lo que sueles plantar (toca para añadir)
+{0} plants are already in this area	Ya hay {0} plantas en esta zona
+Keep them where they are and plan around them	Dejarlas donde están y planificar alrededor
+Start from a blank area: the new plan replaces them when you keep it	Empezar con la zona vacía: el plan nuevo las reemplaza al guardarlo
+Proposed planting (not planted yet)	Siembra propuesta (aún no plantada)
+Next season's plan (not planted yet)	Plan de la próxima temporada (aún no plantado)
+Keep this plan	Quedarme con este plan
+Change selections	Cambiar la selección
+Discard	Descartar
+◀ Option	◀ Opción
+Option ▶	Opción ▶
+Option {0}: {1}	Opción {0}: {1}
+Suggested	Sugerida
+Crops shifted to one side	Cultivos desplazados a un lado
+Crops shifted to the other side	Cultivos desplazados al otro lado
+Crops in a different order	Cultivos en otro orden
+Other clump shapes	Otras formas de grupo
+Sun first	Primero el sol
+◀ Year	◀ Año
+Year ▶	Año ▶
+Change a variety…	Cambiar una variedad…
+Close	Cerrar
+Cancel	Cancelar
+OK	Aceptar
+Add	Añadir
+Delete	Borrar
+Delete plant	Borrar planta
+Plan B…	Plan B…
+Plant Plan B	Plantar el Plan B
+Create plot	Crear parcela
+Duplicate	Duplicar
+Make the plan	Hacer el plan
+Replace…	Reemplazar…
+I understand	Entendido
+Please read: this planner is a guide, not a guarantee	Por favor, lee: este planificador es una guía, no una garantía
+How to use Smart Garden Planner	Cómo usar el Planificador de Huerto Inteligente
+Disclaimer	Aviso
+# New plot dialog
+Name	Nombre
+USDA hardiness zone	Zona de rusticidad del USDA
+Which way does the TOP edge of the plot face?	¿Hacia dónde mira el borde SUPERIOR de la parcela?
+Soil (optional)	Suelo (opcional)
+Plot details	Datos de la parcela
+# Legend and messages
+On this plot ({0})	En esta parcela ({0})
+Click a name to find those plants. “Replace…” swaps them all for another variety.	Haz clic en un nombre para encontrar esas plantas. «Reemplazar…» las cambia todas por otra variedad.
+Direct sun over the day:	Sol directo durante el día:
+Full sun (6+ h)	Sol pleno (6+ h)
+Part shade (3–6 h)	Semisombra (3–6 h)
+Shade (under 3 h)	Sombra (menos de 3 h)
+Growing season (middle)	Temporada de cultivo (mitad)
+Today	Hoy
+Whole day (hours of sun)	Todo el día (horas de sol)
+At a time of day	A una hora del día
+Tall plants cast shade	Las plantas altas dan sombra
+Nothing on the plot changed	No cambió nada en la parcela
+Welcome! Create a plot or open a .sgp.json plan file. Press ? for help.	¡Bienvenido! Crea una parcela o abre un archivo .sgp.json. Pulsa ? para ver la ayuda.
+Last spring frost: around {0} (1 year in 10 as late as {1}).	Última helada de primavera: hacia el {0} (1 año de cada 10, tan tarde como el {1}).
+First fall frost: around {0} (1 year in 10 as early as {1}).	Primera helada de otoño: hacia el {0} (1 año de cada 10, tan pronto como el {1}).
+Growing season: about {0} frost-free days.	Temporada de cultivo: unos {0} días sin heladas.
+Other side, different order	Al otro lado, en otro orden
+Other side, other shapes	Al otro lado, otras formas
+Clumps spread out	Grupos separados
+Clumps close together	Grupos juntos

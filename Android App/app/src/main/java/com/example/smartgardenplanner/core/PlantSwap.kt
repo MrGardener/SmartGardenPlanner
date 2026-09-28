@@ -35,7 +35,7 @@ object PlantSwap {
         if (from != null && to.exclusionRadiusM > from.exclusionRadiusM + 0.005f) {
             messages += "${to.commonName} needs ${(to.exclusionRadiusM * 200).toInt()} cm between plants (was ${(from.exclusionRadiusM * 200).toInt()} cm)."
         }
-        if (crowded > 0) messages += "$crowded of them now crowd a neighbour (spacing or a plant they don't get along with). Harmony lists them; move or remove some, or Undo."
+        if (crowded > 0) messages += "$crowded of them now crowd a neighbor (spacing or a plant they don't get along with). Harmony lists them; move or remove some, or Undo."
         HardinessZones.describe(to, zone)?.let { messages += it }
         return Result(out, changed, crowded, messages)
     }

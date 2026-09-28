@@ -91,7 +91,7 @@ object PlanChecks {
         for (i in seeds.indices) for (j in i + 1 until seeds.size) {
             if (Relationships.areAntagonists(seeds[i], seeds[j])) clashes += "${CropReference.speciesName(seeds[i])} and ${CropReference.speciesName(seeds[j])}"
         }
-        if (clashes.isNotEmpty()) out += PlanCheck(Severity.MEDIUM, "Neighbours: ${clashes.take(3).joinToString("; ")} grow poorly together. They'll be kept apart, which uses more room.")
+        if (clashes.isNotEmpty()) out += PlanCheck(Severity.MEDIUM, "Neighbors: ${clashes.take(3).joinToString("; ")} grow poorly together. They'll be kept apart, which uses more room.")
 
         // Hardiness.
         wanted.map { it.seed }.distinctBy { it.botanicalCode }.forEach { s ->

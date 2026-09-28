@@ -47,8 +47,8 @@ object Photo {
         )))
         body.add(slider("See-through (%)", (b.opacity * 100).toInt(), 10, 100, "Lower = more see-through, so your drawing stays easy to see") { v -> update(wp) { it.copy(opacity = v / 100f) } })
         // FR-049: slider and number box move together; + turns clockwise, − counter-clockwise, 180° at most either way.
-        body.add(slider("Turn (degrees: + clockwise, − counter-clockwise)", kotlin.math.round(b.rotationDeg).toInt(), -180, 180,
-            "Turn the photo about its centre to line it up with your plot. Type a number or drag; 0 = not turned") { v -> update(wp) { it.turned(v.toFloat()) } })
+        body.add(slider("Turn (degrees: + clockwise, − counterclockwise)", kotlin.math.round(b.rotationDeg).toInt(), -180, 180,
+            "Turn the photo about its center to line it up with your plot. Type a number or drag; 0 = not turned") { v -> update(wp) { it.turned(v.toFloat()) } })
         body.add(para("Now: " + Backdrop.describeTurn(b.rotationDeg) + ".", "hint"))
         if (Store.draftWithoutPhotos) body.add(para("The photo is too big to keep in this browser's draft; it's kept while the page is open and in your saved file. Save to keep it.", "warn"))
     }

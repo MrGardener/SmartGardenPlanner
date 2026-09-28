@@ -430,7 +430,7 @@ private fun SiteTab(
             val cy = plot.widthM / 2f
             val today = SunlightEngine.directSunHours(cx, cy, lat, ctx.dayOfYear, plot.northBearingDeg, barriers)
             val summer = SunlightEngine.directSunHours(cx, cy, lat, SunlightEngine.midsummerDay(lat), plot.northBearingDeg, barriers)
-            Text("Plot centre, clear sky: ~${"%.1f".format(today)} h direct sun today, ~${"%.1f".format(summer)} h at midsummer.", fontSize = 13.sp)
+            Text("Plot center, clear sky: ~${"%.1f".format(today)} h direct sun today, ~${"%.1f".format(summer)} h at midsummer.", fontSize = 13.sp)
             Text("${barriers.size} barrier${if (barriers.size == 1) "" else "s"} and ${ctx.areaFeatures.size} marked area${if (ctx.areaFeatures.size == 1) "" else "s"} on this plot. Add them on the canvas: menu → Site tools.", fontSize = 11.sp, color = Color.Gray)
 
             var measured by remember(plot.id) { mutableStateOf<List<Double>?>(null) }

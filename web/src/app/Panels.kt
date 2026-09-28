@@ -252,7 +252,7 @@ object Panels {
                 r.plantCounts.forEach { (n, c) -> body.add(findable(kv(n, c.toString()), n)) }
         if (r.issues.isNotEmpty()) body.add(heading("To look at"))
         r.issues.forEach { i -> body.add(h("div", "issue ${i.severity.name.lowercase()}", kids = listOf(h("b", text = i.severity.label + ": "), h("span", text = i.text)))) }
-        if (r.goodPairs.isNotEmpty()) { body.add(heading("Good neighbours")); r.goodPairs.forEach { body.add(para("✓ $it", "hint")) } }
+        if (r.goodPairs.isNotEmpty()) { body.add(heading("Good neighbors")); r.goodPairs.forEach { body.add(para("✓ $it", "hint")) } }
         if (r.recommendations.isNotEmpty()) { body.add(heading("Ideas")); r.recommendations.forEach { body.add(para("• $it", "hint")) } }
         if (r.issues.none { it.severity == Severity.HIGH } && r.plantCounts.isNotEmpty()) body.add(para("No serious problems found.", "ok"))
     }
