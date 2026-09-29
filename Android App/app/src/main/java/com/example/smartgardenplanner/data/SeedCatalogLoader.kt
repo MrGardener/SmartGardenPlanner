@@ -22,9 +22,9 @@ import com.example.smartgardenplanner.core.SeedEntity
  * spot-checking against a seed packet for anything you're relying on precisely.
  */
 enum class CatalogTier(val assetFileName: String, val displayName: String, val varietyCount: Int) {
-    BASIC("seed_catalog_basic.txt", "Basic (250 varieties)", 250),
-    STANDARD("seed_catalog_standard.txt", "Standard (600 varieties)", 600),
-    PRO("seed_catalog_pro.txt", "Pro (2,936 varieties)", 2936)
+    BASIC("seed_catalog_basic.txt", "Basic (253 varieties)", 253),
+    STANDARD("seed_catalog_standard.txt", "Standard (603 varieties)", 603),
+    PRO("seed_catalog_pro.txt", "Pro (2,939 varieties)", 2939)
 }
 
 class SeedCatalogLoader(private val context: Context) {

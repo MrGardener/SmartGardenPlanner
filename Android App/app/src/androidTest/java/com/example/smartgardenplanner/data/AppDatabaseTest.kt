@@ -78,4 +78,16 @@ class AppDatabaseTest {
         assertNotNull(seed)
         assertEquals("Tomato", seed?.commonName)
     }
+
+    /** LLR-DB-010/040: the opened database is schema 12 with every table and foreign keys on. */
+    @Test
+    fun schema12_hasEveryTableAndForeignKeysOn() {
+        val sql = db.openHelper.writableDatabase
+        sql.query("PRAGMA user_version").use { c -> c.moveToFirst(); assertEquals(12, c.getInt(0)) }
+        val tables = mutableSetOf<String>()
+        sql.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { c -> while (c.moveToNext()) tables += c.getString(0) }
+        for (t in listOf("plots", "planted_nodes", "seeds", "climate_zones", "path_zones", "site_features", "care_log",
+                "nutrition_facts", "planting_history", "app_configurations")) assertTrue("table $t", t in tables)
+        sql.query("PRAGMA foreign_keys").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
+    }
 }

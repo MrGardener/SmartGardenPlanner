@@ -1,6 +1,5 @@
 package com.example.smartgardenplanner.core
 
-import java.util.concurrent.TimeUnit
 
 /**
  * [NEW] Implements T2-FUN-080 / T2-DAT-070 / HLR-DAT-080 / HLR-DAT-090: on user-declared
@@ -22,8 +21,8 @@ class GerminationContingencyEngine {
     }
 
     /** Returns whether a node has exceeded its expected germination window and should surface an alert. */
-    fun isGerminationOverdue(node: PlantedNodeEntity, seed: SeedEntity, nowEpochMillis: Long = System.currentTimeMillis()): Boolean {
-        val elapsedDays = TimeUnit.MILLISECONDS.toDays(nowEpochMillis - node.datePlantedEpochMillis)
+    fun isGerminationOverdue(node: PlantedNodeEntity, seed: SeedEntity, nowEpochMillis: Long = PlatformClock.nowMillis()): Boolean {
+        val elapsedDays = (nowEpochMillis - node.datePlantedEpochMillis) / 86_400_000L
         return elapsedDays > seed.germinationDays && !node.germinationFlagResolved
     }
 

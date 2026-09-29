@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document ID | SGP-RSM-001 |
-| Revision | A — **Provisionally adopted** 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
+| Revision | B — §4 adds the requirements written after the baseline (2026-09-27). Rev A provisionally adopted 2026-09-27 by Project Owner direction; formal review pending (SGP-DWR-001 WP-01) |
 | Baseline assessed | Source at commit `074117f`; requirements from `smart_garden_planner_master_plan.md` (v20.18) and Knowledge Base Part 11 |
 | Method | Requirement text extracted by script from the sources above; statuses assigned by code inspection (not by test) |
 
@@ -224,3 +224,76 @@ requirement or is extraneous code to be removed. Found by inspection:
 | `StorageViewModel` | `ui/StorageViewModel.kt` | Only used by the vault card; remove or give it a requirement. DW-0702 |
 | `SeedDataset.starterSeeds`, `WorkspaceUiState`, `security/SecurityKeyManager.kt` | various | Dead code: remove. DW-0706, DW-1201 |
 | Settings screen as a 5th destination | `SettingsScreen.kt` | HLR-UI-020 lists four destinations; add Settings. DW-0302 |
+
+## 4. Requirements added since the baseline (Revision B, 2026-09-27)
+
+Revision B adds the system requirements written after the baseline commit, from the owner's requests of
+2026-09-27 (FEATURE_ROADMAP FR-027 … FR-067). T2-FUN-260 was revised (1–30 seasons instead of 2–10, and variety changes) at the owner's request. Their status is the "Now" line of SGP-SYS-REQ-001, assessed by code
+inspection and by the automated tests named in the Verification Plan and Test Specification (§ added-feature tests);
+source at commit `1f2a58a` plus the changes of that day. The HLR/LLR for each is listed in the trace tables of
+SGP-SW-HLR-001 / SGP-SW-LLR-001 (`python3 tools/req_trace.py --check`: no gaps).
+
+| ID | Requirement (title) | Status | Evidence / notes |
+|---|---|---|---|
+| T2-FUN-100 | No-plant paths | **NONE** | Implemented; had no requirement (IMPL). Parent: existing functionality (User Manual §2). |
+| T2-FUN-110 | Auto-populate an area | **NONE** | Implemented; had no requirement (IMPL). Parent: existing functionality; FEATURE_ROADMAP FR-001. |
+| T2-FUN-120 | Change a plant's variety | **NONE** | Implemented (IMPL). Parent: existing functionality. |
+| T2-FUN-130 | Variety colours and legend | **NONE** | Implemented (IMPL). Parent: existing functionality. |
+| T2-FUN-140 | Ruler | **NONE** | Ruler exists but doesn't follow zoom/pan (PART). Parent: existing functionality. |
+| T2-FUN-150 | Plot list | **NONE** | Implemented (units always shown in metres) (PART). Parent: existing functionality. |
+| T2-FUN-160 | Plan an area for me | **IMPL** | IMPL (AutoPlanner; layout "Plan an area for me"). Parent: owner request 2026-09-27 (FEATURE_ROADMAP FR-027). |
+| T2-FUN-170 | Plot compass direction | **IMPL** |  Parent: owner request 2026-09-27 (FR-028). |
+| T2-FUN-180 | Obstacles that cast shade | **IMPL** |  Parent: FEATURE_ROADMAP FR-006; owner request 2026-09-27 (relocation). |
+| T2-FUN-190 | Undo covers every layout change | **IMPL** |  Parent: owner problem report 2026-09-27 (undo did not remove a placed building, tree or fence). |
+| T2-FUN-200 | Say what each variety is | **IMPL** |  Parent: owner request 2026-09-27 (FR-031). |
+| T2-FUN-210 | Crop rotation and clumps | **IMPL** |  Parent: owner request 2026-09-27 (FR-032). |
+| T2-FUN-220 | Seasons and plot history | **IMPL** |  Parent: owner request 2026-09-27 (FR-033). |
+| T2-FUN-240 | Organised clumps and room for vines | **IMPL** |  Parent: owner request 2026-09-27 (FR-035). |
+| T2-FUN-250 | Find, edit and outline | **IMPL** |  Parent: owner problem report 2026-09-27 (FR-036). |
+| T2-FUN-260 | Plan season after season | **IMPL** |  Parent: owner request 2026-09-27 (FR-037). |
+| T2-FUN-270 | Sun and shade through the day and year | **IMPL** | IMPL (phone: no per-spot sun times). Parent: owner request 2026-09-27 (FR-038). |
+| T2-FUN-280 | Irrigation coverage | **IMPL** |  Parent: owner request 2026-09-27 (FR-039). |
+| T2-FUN-290 | Fill the plot | **IMPL** |  Parent: owner request 2026-09-27 (FR-040). |
+| T2-FUN-300 | Plot templates | **IMPL** |  Parent: owner request 2026-09-27 (FR-041). |
+| T2-FUN-310 | Pests and wildlife in the yard | **IMPL** |  Parent: owner request 2026-09-27 (FR-042). Advice is general and non-lethal first (FC-23). |
+| T2-FUN-320 | Most important plants and checks before planning | **IMPL** |  Parent: owner request 2026-09-27 (FR-043). |
+| T2-FUN-330 | Disclaimer | **IMPL** |  Parent: owner request 2026-09-27 (FR-044). Wording to be confirmed by the owner (and legal review if the app is distributed). |
+| T2-FUN-340 | Watering recommendations | **IMPL** |  Parent: owner request 2026-09-27 (FR-045). |
+| T2-FUN-410 | Growing season and planting calendar | **IMPL** |  Parent: owner request 2026-09-27 (FR-054). Also closes T2-DAT-080 (offline frost dates). |
+| T2-FUN-420 | Plan for the growing season's sun | **IMPL** |  Parent: owner problem report 2026-09-27 (FR-055). Root cause: sun was judged on the day the plan was made (late September: long tree shadows). |
+| T2-FUN-430 | Plan B when a plant dies | **IMPL** |  Parent: owner request 2026-09-27 (FR-056); computes T2-FUN-080 (a)/(c). |
+| T2-FUN-440 | Several layouts to choose from | **IMPL** |  Parent: owner request 2026-09-28 (FR-060). Up to 11 variants, identical ones skipped. |
+| T2-FUN-450 | Keep or replace what's already there | **IMPL** |  Parent: owner request 2026-09-28 (FR-063). |
+| T2-FUN-460 | Proposal card out of the way | **IMPL** |  Parent: owner problem report 2026-09-28 (FR-064). Phone: fold only. |
+| T2-FUN-470 | Work with a whole group of plants | **IMPL** |  Parent: owner request 2026-09-28 (FR-061). Phone: group chosen from plant details, no box select. |
+| T2-FUN-480 | Interface language and US English | **IMPL** |  Parent: owner request 2026-09-28 (FR-062). US spelling; Spanish covers interface, advice, notes, species, pest and care notes (run-time text translated piece by piece); CI coverage check. Native-speaker review pending (docs/I18N_PLAN.md). |
+| T2-FUN-360 | Replace all plants of a variety | **IMPL** |  Parent: owner request 2026-09-27 (FR-051). |
+| T2-FUN-370 | Plot list out of the way | **IMPL** |  Parent: owner request 2026-09-27 (FR-052). Computer only (the phone list is in a menu). |
+| T2-FUN-380 | Choose how clumps are arranged | **IMPL** |  Parent: owner request 2026-09-27 (FR-047). The owner's test file was made before organised clumps existed (irregular placement); the current planner keeps each crop of that list in one block (checked by replaying it). |
+| T2-FUN-390 | Help on every control | **IMPL** |  Parent: owner problem report 2026-09-27 (FR-053: drip line couldn't be finished). |
+| T2-FUN-400 | Plot address and Google Maps | **IMPL** |  Parent: owner request 2026-09-27 (FR-050). |
+| T2-FUN-350 | Satellite photo under the plot | **IMPL** | IMPL (phone: photo clipped to the plot; not undoable). Parent: owner request 2026-09-27 (FR-046). No live map tiles (API key and terms). |
+| T2-FUN-230 | Keep the gardener's choices | **IMPL** |  Parent: owner request 2026-09-27 (FR-034). |
+| T2-DAT-150 | Encyclopedia | **IMPL** | IMPL (search by name/family only). Parent: existing functionality. |
+| T2-DAT-160 | Dates and time zones | **NONE** | Uses raw milliseconds; untested for time zone changes (PART). Parent: review finding (GAP §4.5). |
+| T2-DAT-220 | Catalog data quality | **NONE** | Values unverified; 15 Basic references unresolved (PART). Parent: review finding (GAP §4.5); PSSA. |
+| T2-CON-070 | Data kept across app updates | **NONE** | Migrations exist; untested (PART). Parent: review finding. |
+| T2-CON-080 | Responsiveness | **NONE** | Not measured; startup work runs on the main thread (NONE). Parent: review finding. |
+| T2-VAL-040 | Spacing rule | **NONE** | Implemented, but touching circles are wrongly refused due to rounding (SVP §7.4), and the message Parent: ConOps §5.3; KB Part 11. |
+| T2-VAL-050 | Paths are kept clear | **IMPL** |  Parent: existing functionality. |
+| T2-ENV-040 | Back button behaviour | **NONE** | Back exits the app from every screen (NONE). Parent: review finding (HLR-UI-080 intent). |
+| T2-ENV-050 | Display adaptation | **NONE** | Not handled (NONE). Parent: review finding (Android 16). |
+| T2-ENV-060 | Accessibility | **NONE** | Partial (NONE formally). Parent: review finding. |
+| T2-SEC-050 | Backups and lost keys | **NONE** | Restoring a backup makes the app crash at every start (NONE). Parent: review finding (REVAMP PLT-06). |
+| T2-PLT-040 | Portable planner for computers | **PART** | PART (2026-09-27): single-file planner `web/dist/smart-garden-planner.html` (option A), built from the Parent: owner request 2026-09-27. |
+
+### 4.1 Baseline statuses changed by the 2026-09-27 work
+
+A full re-assessment of §1–§2 against the current code has not been done (use the `requirements-auditor` subagent,
+`.claude/agents/requirements-auditor.md`). Known changes:
+
+| ID | Baseline | Now | Why |
+|---|---|---|---|
+| T2-FUN-050 | PART | IMPL | The plot is drawn at one scale for both axes (uniform scale), so spacing circles are true to size. |
+| T2-FUN-060 | PART | PART | Sprinklers, drip lines / soaker hoses and hose taps can now be drawn with a coverage map (T2-FUN-280); the route overlay is still greedy and not over a field image. |
+| T2-FUN-030 | PART | PART | The planting date can be edited on the computer planner (HLR-FIND-020); still auto-set and not editable on the phone. |

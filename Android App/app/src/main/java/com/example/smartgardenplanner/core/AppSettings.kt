@@ -41,9 +41,71 @@ data class AppSettings(
     val tiltAbortDegrees: Float = 5.0f,
     val lowLightLuxThreshold: Float = 10f,
     val gpsAccuracyGateMeters: Float = 15f,
-    val storageFloorPercent: Float = 5f
+    val storageFloorPercent: Float = 5f,
+
+    // --- Roadmap features ---
+    val guildsEnabled: Boolean = false,          // FR-009 (Pro): interplanting guilds, off by default
+    val householdSize: Int = 4,                  // FR-016/022: people the garden should feed
+    val carePreference: String = "ORGANIC",      // FR-017/018: "ORGANIC" | "CONVENTIONAL"
+    val careRemindersEnabled: Boolean = false,   // FR-019 (Pro): daily watering/fertilizing notifications
+    val rainSkipThresholdMm: Float = 5f,         // FR-019: this much rain counts as a watering
+    val onlineFeaturesEnabled: Boolean = false,  // FR-026: master switch for network access, off by default
+    val usdaApiKey: String = "DEMO_KEY",         // FR-020: FoodData Central key (DEMO_KEY is rate-limited)
+    val preferredVendorId: String = "",          // FR-024 (Pro)
+    val planLayout: String = "CLUMPS",           // FR-032: "CLUMPS" | "ROWS" for Plan an area for me
+    val lastPlanList: String = "",               // FR-034: last Plan-an-area list, "CODE:count,CODE:count"
+    val showPlantLabels: Boolean = true,         // FR-031: short names (e.g. "Bell red", "Cherry") on the layout
+    val disclaimerAccepted: Boolean = false,     // FR-044: the "guide, not a guarantee" notice was read
+    val language: String = "en"                  // FR-062: interface language (I18n.LANGUAGES code)
 ) {
+    val carePreferenceEnum: CarePreference
+        get() = if (carePreference == CarePreference.CONVENTIONAL.name) CarePreference.CONVENTIONAL else CarePreference.ORGANIC
+
+    val planLayoutEnum: PlantingLayout
+        get() = PlantingLayout.entries.firstOrNull { it.name == planLayout } ?: PlantingLayout.CLUMPS
+
+    /** The remembered plan list as (variety code, count) pairs. */
+    val lastPlanRows: List<Pair<String, Int>>
+        get() = lastPlanList.split(",").mapNotNull { e -> e.split(":").takeIf { it.size == 2 }?.let { (c, n) -> n.toIntOrNull()?.let { c to it } } }
+
+    /**
+     * The same settings with every value the Settings screen could not have produced replaced by its
+     * default: numbers that are not finite or are outside the slider range, unknown tier, care, layout
+     * or language codes. Used on every load, so a damaged settings row can't reach the planner or the canvas.
+     */
+    fun sanitized(): AppSettings {
+        val d = DEFAULT
+        fun f(v: Float, lo: Float, hi: Float, def: Float) = if (v.isFinite() && v in lo..hi) v else def
+        fun i(v: Int, lo: Int, hi: Int, def: Int) = if (v in lo..hi) v else def
+        val zMin = f(zoomMin, 0.1f, 1f, d.zoomMin)
+        val zMax = f(zoomMax, 1f, 8f, d.zoomMax)
+        return copy(
+            catalogTier = catalogTier.takeIf { it in TIERS } ?: d.catalogTier,
+            spacingMarginMultiplier = f(spacingMarginMultiplier, 0.3f, 2f, d.spacingMarginMultiplier),
+            rulerFontSizeSp = f(rulerFontSizeSp, 8f, 28f, d.rulerFontSizeSp),
+            rulerTickIntervalM = f(rulerTickIntervalM, 0.25f, 5f, d.rulerTickIntervalM),
+            zoomMin = if (zMin < zMax) zMin else d.zoomMin,
+            zoomMax = if (zMin < zMax) zMax else d.zoomMax,
+            zoomStep = f(zoomStep, 0.05f, 1f, d.zoomStep),
+            undoHistoryDepth = i(undoHistoryDepth, 5, 100, d.undoHistoryDepth),
+            minPlotDimensionM = f(minPlotDimensionM, 0.01f, 5f, d.minPlotDimensionM),
+            maxPlotDimensionM = f(maxPlotDimensionM, 10f, 2000f, d.maxPlotDimensionM),
+            tiltAbortDegrees = f(tiltAbortDegrees, 1f, 20f, d.tiltAbortDegrees),
+            lowLightLuxThreshold = f(lowLightLuxThreshold, 1f, 50f, d.lowLightLuxThreshold),
+            gpsAccuracyGateMeters = f(gpsAccuracyGateMeters, 3f, 100f, d.gpsAccuracyGateMeters),
+            storageFloorPercent = f(storageFloorPercent, 1f, 25f, d.storageFloorPercent),
+            householdSize = i(householdSize, 1, 12, d.householdSize),
+            carePreference = carePreference.takeIf { p -> CarePreference.entries.any { it.name == p } } ?: d.carePreference,
+            rainSkipThresholdMm = f(rainSkipThresholdMm, 1f, 25f, d.rainSkipThresholdMm),
+            planLayout = planLayout.takeIf { p -> PlantingLayout.entries.any { it.name == p } } ?: d.planLayout,
+            language = language.takeIf { c -> I18n.LANGUAGES.any { it.code == c } } ?: d.language
+        )
+    }
+
     companion object {
         val DEFAULT = AppSettings()
+        val TIERS = listOf("BASIC", "STANDARD", "PRO")
+
+        fun encodePlanRows(rows: List<Pair<String, Int>>): String = rows.joinToString(",") { "${it.first}:${it.second}" }
     }
 }

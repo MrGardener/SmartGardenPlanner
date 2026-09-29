@@ -157,4 +157,86 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 
 // [FIXED] Same class of ordering mistake caught and fixed in earlier rounds — keep
 // ALL_MIGRATIONS below every migration it references, always.
-val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+/**
+ * Schema 8: roadmap features. Adds plot outline, hardiness zone, location, orientation and soil columns
+ * to plots, and the site_features (FR-003 to FR-006), care_log (FR-019) and nutrition_facts (FR-020)
+ * tables. The SQL matches what Room generates for the entities, including defaults, foreign keys and
+ * indices, so Room's schema check passes after the migration.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN boundaryJson TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN hardinessZone TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN latitude REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN longitude REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN northBearingDeg REAL NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilSandPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilSiltPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilClayPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilOrganicPct REAL")
+        db.execSQL("ALTER TABLE plots ADD COLUMN soilPh REAL")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `site_features` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `featureType` TEXT NOT NULL, `pointsJson` TEXT NOT NULL DEFAULT '', " +
+                "`label` TEXT NOT NULL DEFAULT '', `heightM` REAL NOT NULL DEFAULT 0, `radiusM` REAL NOT NULL DEFAULT 0, " +
+                "`slopeDirectionDeg` REAL NOT NULL DEFAULT 0, `slopeGradePct` REAL NOT NULL DEFAULT 0, " +
+                "`floodMonths` TEXT NOT NULL DEFAULT '', " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_site_features_plotId` ON `site_features` (`plotId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `care_log` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `taskType` TEXT NOT NULL, `doneAtEpochMillis` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_care_log_plotId` ON `care_log` (`plotId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `nutrition_facts` (`speciesKey` TEXT NOT NULL, `energyKcal` REAL NOT NULL, " +
+                "`proteinG` REAL NOT NULL, `carbsG` REAL NOT NULL, `fiberG` REAL NOT NULL, `vitaminAUg` REAL NOT NULL, " +
+                "`vitaminCMg` REAL NOT NULL, `potassiumMg` REAL NOT NULL, `ironMg` REAL NOT NULL, `calciumMg` REAL NOT NULL, " +
+                "`source` TEXT NOT NULL, `updatedEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`speciesKey`))"
+        )
+    }
+}
+
+/** Schema 9: records whether the user has set the plot's compass orientation (FR-028). */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN orientationSet INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+/**
+ * Schema 10: season history (FR-033). Adds planting_history; the SQL matches what Room generates for
+ * PlantingHistoryEntity (no defaults, one nullable column, cascade on plot delete, index on plotId).
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `planting_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`plotId` INTEGER NOT NULL, `seasonYear` INTEGER NOT NULL, `seedCode` TEXT NOT NULL, " +
+                "`varietyName` TEXT NOT NULL, `family` TEXT NOT NULL, `rotationGroup` TEXT, " +
+                "`coordinateXM` REAL NOT NULL, `coordinateYM` REAL NOT NULL, `radiusM` REAL NOT NULL, " +
+                "`datePlantedEpochMillis` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`plotId`) REFERENCES `plots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_planting_history_plotId` ON `planting_history` (`plotId`)")
+    }
+}
+
+/** Schema 11: pests seen in the yard (FR-042) and the satellite photo placement (FR-046) on plots. */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN pests TEXT")
+        db.execSQL("ALTER TABLE plots ADD COLUMN backdropJson TEXT")
+    }
+}
+
+/** Schema 12: the plot's street address (FR-050), used to open the yard in Google Maps. */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE plots ADD COLUMN address TEXT")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)

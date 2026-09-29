@@ -1,0 +1,75 @@
+name: Portable web planner
+
+# Builds web/dist/smart-garden-planner.html from the shared core and the web shell, checks the committed copy
+# is up to date, and drives it in headless Chromium (web/tests/smoke.mjs). CROSS_PLATFORM_PLAN.md W2-W4.
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - "Android App/app/src/main/java/com/example/smartgardenplanner/core/**"
+      - "Android App/app/src/main/assets/**"
+      - ".github/workflows/web-planner.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "Android App/app/src/main/java/com/example/smartgardenplanner/core/**"
+      - "Android App/app/src/main/assets/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Build and browser smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/sgp-kotlin
+          key: sgp-kotlin-2.2.10
+      - name: Build the single-file planner
+        working-directory: web
+        run: sh build.sh
+      - name: Committed HTML matches the source
+        # The Kotlin/JS compiler's output varies in order between runs: the interface list inside
+        # initMetadataForClass(...) lines and the order of some top-level blocks (e.g. polyfills). Neither changes
+        # behaviour, so the comparison ignores those lines and compares the remaining lines as a sorted multiset:
+        # any added, removed or edited line (code or embedded data) still fails the check.
+        run: |
+          norm() { grep -v '^initMetadataForClass(' "$1" | LC_ALL=C sort; }
+          git show HEAD:web/dist/smart-garden-planner.html > "$RUNNER_TEMP/committed.html"
+          if ! diff -q <(norm "$RUNNER_TEMP/committed.html") <(norm web/dist/smart-garden-planner.html) > /dev/null; then
+            echo "::error::web/dist/smart-garden-planner.html is out of date. Run web/build.sh and commit it."
+            diff <(norm "$RUNNER_TEMP/committed.html") <(norm web/dist/smart-garden-planner.html) | cut -c1-300 | head -40
+            exit 1
+          fi
+      - name: Browser smoke test
+        working-directory: web
+        run: |
+          npm install --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+          SGP_SHOTS="$RUNNER_TEMP" node tests/smoke.mjs
+      - name: Adversarial browser tests (bad input, hostile files, undo storm, random monkey run)
+        working-directory: web
+        run: node tests/adversarial.mjs
+      - name: Spanish coverage (no English sentences left on the main screens)
+        working-directory: web
+        run: node tests/i18n_coverage.mjs
+      - name: Upload planner and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-garden-planner-web
+          path: |
+            web/dist/smart-garden-planner.html
+            ${{ runner.temp }}/*.png

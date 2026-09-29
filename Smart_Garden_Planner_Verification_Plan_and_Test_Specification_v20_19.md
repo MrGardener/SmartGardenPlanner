@@ -8,6 +8,7 @@
 ---
 
 ## 1. Document Index & Structural Roadmap
+* **A1. Added-feature verification — requirements written 2026-09-27 (at the end of this document)**
 * **2. Comprehensive DAL A Test Suite Matrix for Requirement [T2-FUN-010]**
 * **3. Comprehensive DAL A Test Suite Matrix for Requirement [T2-FUN-020]**
 * **4. Comprehensive DAL A Test Suite Matrix for Requirement [T2-FUN-025]**
@@ -16857,3 +16858,67 @@
   3. Fire full algorithmic execution sequence call chain loop and capture generated low-level hardware registers response payloads, compiler instruction logs, database states, and bit-level telemetry outputs.
   4. Verify structural alignment properties of output metrics against the primary source-code reference constraints and object-code paths.
 * **Objective Pass Criteria Metrics:** Captured runtime attributes must mirror target standards perfectly, demonstrating full branch autonomy and MCDC requirement satisfaction. Any computational latency overflow, independent decision variation discrepancy, data skewing, or unhandled software exception propagation triggers an immediate case block verification failure.
+
+## A1. Added-feature verification — requirements written 2026-09-27 (Revision addendum)
+
+This addendum maps each requirement added on 2026-09-27 (SGP-SYS-REQ-001 T2-FUN-160 … T2-FUN-300, T2-PLT-040) to the
+automated tests that exercise it today. Two automated suites exist and run in CI on every pull request:
+
+- **Host JVM tests** (JUnit 4) of the shared `core/` package: `Android App/app/src/test/java/com/example/smartgardenplanner/core/`,
+  run by `./gradlew testDebugUnitTest` (workflow `android-ci.yml`). 104 tests, all passing.
+- **Browser smoke test** of the computer planner (`web/tests/smoke.mjs`, Playwright + headless Chromium, workflow
+  `web-planner.yml`): drives the real single-file page through the listed flows. 83 checks, all passing. The page runs
+  the same `core/` source compiled to JavaScript, so these checks also exercise the shared rules on a second compiler.
+
+**Status of this evidence:** these are development tests, not credit-taking requirements-based tests in the sense of
+SGP-SVP-001 (they were written by the same author as the code: independence not satisfied, DEV-04; no structural
+coverage measured; Android UI flows are checked by build and code inspection only, with no instrumented test yet —
+SGP-DWR-001). They are listed so the gaps are visible.
+
+| Requirement | Host JVM tests (class.method) | Browser smoke checks | Android UI |
+|---|---|---|---|
+| T2-FUN-160 Plan an area for me | AutoPlanAndPlanFileTest.tallPlantsGoNorth…, tallPlantsFollowTheCompass…, southernHemisphere…, everyPlacementPassesTheNormalRules, cornIsPlantedAsABlock, pollinatorsAreSpread…, shadedSpotsAreAvoided…, reportsWhatDoesNotFit | "plan dialog suggests", "preview shows placed plants", "plan kept", "one undo removes the whole plan" | inspection |
+| T2-FUN-170 Plot compass direction | AutoPlanAndPlanFileTest.tallPlantsFollowTheCompass… | "orientation saved", "compass has four arrowheads" | inspection |
+| T2-FUN-180 Obstacles that cast shade | RoadmapFeaturesTest.wallSouthOfPoint_castsShadeInWinter, rotatedPlot_movesTheShade | "tree added/moved", "shade overlay drawn", "tree casts part shade or shade" | inspection |
+| T2-FUN-190 Undo covers every change | — | "undo puts the tree back", "undo removes the tree", "redo brings it back", "undo restores the outline", "undo reverts the variety change" | inspection |
+| T2-FUN-200 Say what each variety is | SeasonsRotationTest.peppersSaySweetOrSpicy…, tomatoesSayCherryOrLarge…, everyCatalogPepperTomatoAndOnionHasDetails | "search sweet bell…", "three spring onions", "variety kind shown", "plant names shown" | inspection |
+| T2-FUN-210 Crop rotation and clumps | SeasonsRotationTest.rotationGroups…, conflictFinds…, autoPlannerKeepsCropsAway…, clumpsAreMoreCompact…, archive…AdviceDescribes…, longRowsAreDetected…; BlockPlannerTest.* | "clumps / rows choice offered", "proposal explains clumps", "rotation note when a tomato goes where tomatoes grew", "rotation advice names last year's families" | inspection |
+| T2-FUN-220 Seasons and plot history | SeasonsRotationTest.archiveKeeps…, currentSeasonComesAfter…, planFileRoundTripsHistory | "season closed", "tree kept for next season", "past season shown faded", "undo reopens the closed season", "saved file has the season history" | inspection |
+| T2-FUN-230 Keep the gardener's choices | SeasonsRotationTest.usualVarietiesAreTheMostPlantedSpecies | "plan list remembered", "change selections keeps the edited list", "discard leaves the plot unchanged" | inspection |
+| T2-FUN-240 Organised clumps and vines | BlockPlannerTest.shapesAreRowsByColumns, twentyCornAreFourRowsOfFive…, sevenTomatoes…, clumpsOfDifferentCropsKeepAWalkway, vinesGoToTheSunnyEdge… | "organised clump: 20 corn in 4 rows of 5", "proposal mentions walkways" | inspection |
+| T2-FUN-250 Find, edit and outline | — (UI) | "legend lists what is planted", "find circles every corn plant", "Esc clears find", "harvest line finds its plants", "plant variety changed", "outline drawn / corner moved / deleted" | inspection |
+| T2-FUN-260 Plan season after season | RotationPlannerTest.fiveSeasonsNeverPutAFamily…, lastListComesFrom…, strictRuleIsRelaxedOnly… | "season shown read-only", "past season cannot be edited", "this season archived, next season planted", "no corn where corn grew last season", "rotation plan shows year 1 of 5 / steps to year 2", "looking at the rotation plan changes nothing" | inspection |
+| T2-FUN-270 Sun and shade through the day | ShadeIrrigationTest.tallPlantsShadeTheirNorthernNeighbours, shadowAtATimeAndSunWindowsFollowTheSun; LayoutPaletteTest.* | "time-of-day slider shown", "shade at the chosen time drawn" | inspection |
+| T2-FUN-280 Irrigation coverage | ShadeIrrigationTest.sprinklerDripAndHoseCoverage, irrigationTravelsInPlanFiles | "sprinkler added", "water map shows the sprinkler's wet area", "plants out of reach are circled" | inspection |
+| T2-FUN-290 Fill the plot | ShadeIrrigationTest.howManyFitKeepsTheProportions | "how many fit estimates the numbers" | inspection |
+| T2-FUN-300 Plot templates | — (UI) | "duplicate carries the site and history", "copy deleted, original kept", "duplicate carries the photo and pests" | inspection |
+| T2-FUN-310 Pests and wildlife | PestsChecksBackdropTest.pestsRoundTripOnThePlotAndPointAtThePlantsAtRisk | "new plot asks which pests visit the yard", "pests saved with the plot", "Care shows deer fencing advice", "Care names the plants raccoons go for", "pests can be changed on the Care tab" | inspection |
+| T2-FUN-320 Most important plants and checks | PestsChecksBackdropTest.checksBeforePlanningWarnAboutSpaceSunAndPests, mostImportantPlantsGetTheSunniestSpots | "checks shown before planning", "starred plant listed as most important", "checks warn about the yard's pests", "proposal says the most important plants went first" | inspection |
+| T2-FUN-330 Disclaimer | PestsChecksBackdropTest.wateringAdviceNamesUncoveredAndThirstyPlants (text) | "disclaimer shown before first use", "disclaimer says results are not guaranteed", "help repeats the disclaimer", "Care repeats the short disclaimer" | inspection |
+| T2-FUN-340 Watering recommendations | PestsChecksBackdropTest.wateringAdviceNamesUncoveredAndThirstyPlants | "Care shows watering with the irrigation tools" | inspection |
+| T2-FUN-410 / T2-DAT-080 Growing season and calendar | SeasonPlanBSunTest.frostDatesComeFromTheNearestNoaaStation, plantingWindowsFollowTheFrostDates | "growing season and frost dates shown for the ZIP", "planting calendar lists planting windows" | inspection; data spot check (SGP-DWR-001) |
+| T2-FUN-420 Plan for the growing season's sun | SeasonPlanBSunTest.plannerJudgesSunOverTheGrowingSeasonNotOnTheDayItIsRun | (proposal and checks use it) | inspection |
+| T2-FUN-430 Plan B | SeasonPlanBSunTest.planBOffersFasterVarietiesThatCatchUpWithTheSurvivors | "Plan B suggests replacements", "Plan B shows days to harvest and timing", "Plan B replaced the lost plant", "undo reverts Plan B" | inspection |
+| T2-FUN-140 (ruler units) | — (UI) | "ruler ticks show numbers only, unit once" | inspection |
+| T2-FUN-240 (antagonist retry, vine runways) | OptionsGroupsI18nTest.tomatoesFindRoomAwayFromTheirAntagonist_inOneBlock, vinesKeepTheirRunwayClearOfOtherPlantsAndFences | (proposal) | inspection |
+| T2-FUN-240 (strict runways, long rows) | RunwaysAndRowsTest.runwaysNeverCrossPlantsOtherRunwaysOrThePlotEdge_inEveryLayout, longRowsAreRealRowsWithWalkways | (proposal) | inspection |
+| T2-FUN-480 (complete Spanish) | SpanishDictionaryTest.plannerNotesForTheOwnersListComeOutInSpanish, namesListsBulletsAndDates | tests/i18n_coverage.mjs (CI: no English sentence left on the main screens) | native-speaker review (I18N_PLAN) |
+| T2-FUN-440 Several layouts | OptionsGroupsI18nTest.severalDifferentLayoutsAreOffered | "proposal shows option 1 with its summary", "Option ▶ shows another layout", "◀ Option goes back" | inspection (phone) |
+| T2-FUN-450 Keep or replace | — (UI) | "plan dialog asks to keep or replace the plants there", "proposal warns how many plants it replaces", "nothing is removed before the plan is kept", "blank area: new plan replaced the old plants", "one undo brings the replaced plants back" | inspection (phone) |
+| T2-FUN-460 Proposal card out of the way | — (UI) | "proposal card can be dragged out of the way", "proposal card folds to its header" | inspection (phone) |
+| T2-FUN-470 Groups | OptionsGroupsI18nTest.aGroupCanBeFoundMovedAndRearranged | "Select its group selects the whole clump", "rearrange offers other rows and columns", "group rearranged as …" | inspection (phone) |
+| T2-FUN-480 Language and US English | OptionsGroupsI18nTest.theInterfaceTranslatesFromADictionary_andFallsBackToEnglish | "interface switches to Spanish from the dictionary", "hover help still present in Spanish", "photo turned 30° counterclockwise from the number box" | inspection: spelling review of interface strings; dictionary review by a speaker (I18N_PLAN) |
+| T2-FUN-360 Replace all | ShapesSwapRotationTest.replaceAllSwapsEveryPlantOfAVarietyInOneStep | "replace all changes every corn plant at once", "one undo puts the old variety back" | inspection |
+| T2-FUN-370 Plot list out of the way | — (UI) | "On this plot box dragged and its place remembered", "no horizontal scroll at phone width" | n/a (computer only) |
+| T2-FUN-380 Clump arrangements | ShapesSwapRotationTest.fiftyPlantsCanBeArrangedTheWayTheGardenerLikes, theChosenArrangementIsUsed_andASplitIsExplained | "clump arrangements offered", "organised clump: 20 corn in 4 rows of 5" | inspection |
+| T2-FUN-390 Help on every control | — (UI) | "every button has hover help", "every button in the plan dialog has hover help", "drip line shows a Finish button", "drip line added with its 3 points", "after Finish the tool goes back to Select / move" | n/a (computer only) |
+| T2-FUN-400 Plot address and Google Maps | PestsChecksBackdropTest.satellitePhotoCalibratesAndTravelsInThePlanFile (URL) | "Open in Google Maps button on the Plot tab" | inspection |
+| T2-FUN-260 (revised) Rotation up to 30 years with changes | ShapesSwapRotationTest.rotationPlanCanSwapAVarietyFromAChosenYearOn | "rotation plan for 12 seasons", "variety change keeps the year shown", "variety swapped from that year on" | inspection |
+| T2-FUN-350 Satellite photo | PestsChecksBackdropTest.satellitePhotoCalibratesAndTravelsInThePlanFile | "Plot tab has a satellite photo section", "button to open Google Maps in satellite view", "photo added across the plot width", "photo drawn under the plot", "scale set from two points", "photo moved by dragging", "photo turned 30° counter-clockwise from the number box", "photo turns to 180° and the slider follows", "saved file has the satellite photo and pests"; ShapesSwapRotationTest.photoTurnStaysWithin180EitherWayAndTurnsAboutItsCentre | inspection |
+| T2-PLT-020 Plan files | AutoPlanAndPlanFileTest.planFile_*; SeasonsRotationTest.planFileRoundTripsHistory; ShadeIrrigationTest.irrigationTravelsInPlanFiles; WebPlanFileCompatTest.* | "saved file has the plan-file header", "re-opened file has the same history" | inspection |
+| T2-PLT-040 Portable planner | WebPlanFileCompatTest.* (a web-saved file decodes on the JVM) | whole suite; "no horizontal scroll at phone width"; "no script errors" | n/a |
+| T2-DAT-190 Tiered catalog | SeasonsRotationTest.everyCatalogPepperTomatoAndOnionHasDetails (Pro file, 3 spring onions) | "three spring onions in the catalog" | inspection |
+
+**Open verification work** (SGP-DWR-001): instrumented Android UI tests for the flows above on the target; independent
+review of these tests (DEV-04); structural coverage of `core/` (JaCoCo, DEV-07); a JVM/JS shared test-vector run of
+the planner and sun model (docs/CROSS_PLATFORM_PLAN.md W3).

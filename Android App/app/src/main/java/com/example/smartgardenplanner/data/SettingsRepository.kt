@@ -27,6 +27,19 @@ class SettingsRepository(private val repository: SecurityRepository) {
         const val LOW_LIGHT_LUX = "settings.lowLightLuxThreshold"
         const val GPS_ACCURACY = "settings.gpsAccuracyGateMeters"
         const val STORAGE_FLOOR = "settings.storageFloorPercent"
+        const val GUILDS = "settings.guildsEnabled"
+        const val HOUSEHOLD = "settings.householdSize"
+        const val CARE_PREF = "settings.carePreference"
+        const val REMINDERS = "settings.careRemindersEnabled"
+        const val RAIN_MM = "settings.rainSkipThresholdMm"
+        const val ONLINE = "settings.onlineFeaturesEnabled"
+        const val USDA_KEY = "settings.usdaApiKey"
+        const val VENDOR = "settings.preferredVendorId"
+        const val PLAN_LAYOUT = "settings.planLayout"
+        const val LAST_PLAN = "settings.lastPlanList"
+        const val PLANT_LABELS = "settings.showPlantLabels"
+        const val DISCLAIMER = "settings.disclaimerAccepted"
+        const val LANGUAGE = "settings.language"
     }
 
     suspend fun load(): AppSettings {
@@ -47,8 +60,21 @@ class SettingsRepository(private val repository: SecurityRepository) {
             tiltAbortDegrees = floatOrDefault(Keys.TILT_ABORT, defaults.tiltAbortDegrees),
             lowLightLuxThreshold = floatOrDefault(Keys.LOW_LIGHT_LUX, defaults.lowLightLuxThreshold),
             gpsAccuracyGateMeters = floatOrDefault(Keys.GPS_ACCURACY, defaults.gpsAccuracyGateMeters),
-            storageFloorPercent = floatOrDefault(Keys.STORAGE_FLOOR, defaults.storageFloorPercent)
-        )
+            storageFloorPercent = floatOrDefault(Keys.STORAGE_FLOOR, defaults.storageFloorPercent),
+            guildsEnabled = boolOrDefault(Keys.GUILDS, defaults.guildsEnabled),
+            householdSize = intOrDefault(Keys.HOUSEHOLD, defaults.householdSize),
+            carePreference = repository.fetchConfig(Keys.CARE_PREF)?.configValue ?: defaults.carePreference,
+            careRemindersEnabled = boolOrDefault(Keys.REMINDERS, defaults.careRemindersEnabled),
+            rainSkipThresholdMm = floatOrDefault(Keys.RAIN_MM, defaults.rainSkipThresholdMm),
+            onlineFeaturesEnabled = boolOrDefault(Keys.ONLINE, defaults.onlineFeaturesEnabled),
+            usdaApiKey = repository.fetchConfig(Keys.USDA_KEY)?.configValue ?: defaults.usdaApiKey,
+            preferredVendorId = repository.fetchConfig(Keys.VENDOR)?.configValue ?: defaults.preferredVendorId,
+            planLayout = repository.fetchConfig(Keys.PLAN_LAYOUT)?.configValue ?: defaults.planLayout,
+            lastPlanList = repository.fetchConfig(Keys.LAST_PLAN)?.configValue ?: defaults.lastPlanList,
+            showPlantLabels = boolOrDefault(Keys.PLANT_LABELS, defaults.showPlantLabels),
+            disclaimerAccepted = boolOrDefault(Keys.DISCLAIMER, defaults.disclaimerAccepted),
+            language = repository.fetchConfig(Keys.LANGUAGE)?.configValue ?: defaults.language
+        ).sanitized()
     }
 
     suspend fun save(settings: AppSettings) {
@@ -68,6 +94,19 @@ class SettingsRepository(private val repository: SecurityRepository) {
         repository.saveConfig(Keys.LOW_LIGHT_LUX, settings.lowLightLuxThreshold.toString())
         repository.saveConfig(Keys.GPS_ACCURACY, settings.gpsAccuracyGateMeters.toString())
         repository.saveConfig(Keys.STORAGE_FLOOR, settings.storageFloorPercent.toString())
+        repository.saveConfig(Keys.GUILDS, settings.guildsEnabled.toString())
+        repository.saveConfig(Keys.HOUSEHOLD, settings.householdSize.toString())
+        repository.saveConfig(Keys.CARE_PREF, settings.carePreference)
+        repository.saveConfig(Keys.REMINDERS, settings.careRemindersEnabled.toString())
+        repository.saveConfig(Keys.RAIN_MM, settings.rainSkipThresholdMm.toString())
+        repository.saveConfig(Keys.ONLINE, settings.onlineFeaturesEnabled.toString())
+        repository.saveConfig(Keys.USDA_KEY, settings.usdaApiKey)
+        repository.saveConfig(Keys.VENDOR, settings.preferredVendorId)
+        repository.saveConfig(Keys.PLAN_LAYOUT, settings.planLayout)
+        repository.saveConfig(Keys.LAST_PLAN, settings.lastPlanList)
+        repository.saveConfig(Keys.PLANT_LABELS, settings.showPlantLabels.toString())
+        repository.saveConfig(Keys.DISCLAIMER, settings.disclaimerAccepted.toString())
+        repository.saveConfig(Keys.LANGUAGE, settings.language)
     }
 
     suspend fun resetToDefaults() {

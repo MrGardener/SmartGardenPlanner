@@ -25,9 +25,9 @@
 
 Terms used:
 - **Plant:** a placed instance of a variety on a plot.
-- **Spacing radius:** the variety's radius in metres.
+- **Spacing radius:** the variety's radius in meters.
 - **Species code:** the part of a variety code before the first "-".
-- **Display unit:** metres or inches, per the setting.
+- **Display unit:** meters or inches, per the setting.
 - **Unfinished work:** points of a path or area being drawn, a plant being dragged, or text typed in an
   open dialog.
 
@@ -56,7 +56,7 @@ invalid, with a message giving the allowed range in the display unit. → T2-VAL
 ask for confirmation before creating or resizing the plot. It shall do nothing if the user declines.
 → T2-VAL-015
 
-**HLR-PLOT-060** On creation, the software shall store the dimensions in metres (converted per HLR-NAV-090),
+**HLR-PLOT-060** On creation, the software shall store the dimensions in meters (converted per HLR-NAV-090),
 record the creation and last-modified date/time, and open the new plot's layout screen.
 → T2-FUN-020, T2-DAT-120, T2-CFG-100
 
@@ -64,9 +64,9 @@ record the creation and last-modified date/time, and open the new plot's layout 
 → T2-FUN-070
 
 **HLR-PLOT-080** The software shall let the user change a plot's length and width (same validation as
-creation). It shall refuse the change if any plant centre or any part of a path would lie outside the new
+creation). It shall refuse the change if any plant center or any part of a path would lie outside the new
 boundary, listing the affected plants and paths and changing nothing. Accepted changes keep all plant and
-path positions (in metres), and the layout is redrawn at the new scale.
+path positions (in meters), and the layout is redrawn at the new scale.
 → T2-FUN-070, T2-VAL-017, T2-INT-010
 
 **HLR-PLOT-090** The software shall let the user delete a plot after a confirmation that states the number of
@@ -94,11 +94,11 @@ season length) shall, for a plot without a location, say that a location is need
 ## 2. Layout display (LAY)
 
 **HLR-LAY-010** The layout screen shall draw the plot as a rectangle, using a single scale factor for both
-axes: at zoom 1, pixels per metre = min(available width ÷ length, available height ÷ width). The plot is
-centred in the available area. → T2-FUN-040
+axes: at zoom 1, pixels per meter = min(available width ÷ length, available height ÷ width). The plot is
+centered in the available area. → T2-FUN-040
 
 **HLR-LAY-020** Each plant shall be drawn at its position as:
-- a marker in its variety colour (HLR-VIEW-070), showing the variety letter code (HLR-NAV-080)
+- a marker in its variety color (HLR-VIEW-070), showing the variety letter code (HLR-NAV-080)
 - a spacing circle of radius (spacing radius × scale) around the marker
 
 → T2-FUN-040, T2-FUN-050, T2-ENV-060
@@ -180,20 +180,20 @@ shall be refused, or truncated for a fill (HLR-AREA-090), with a message. → T2
 
 ## 4. Placement rules (RULE)
 
-**HLR-RULE-010 (boundary)** A plant position (x, y), in metres from the plot's top-left corner, is inside the
+**HLR-RULE-010 (boundary)** A plant position (x, y), in meters from the plot's top-left corner, is inside the
 plot when 0 ≤ x ≤ length and 0 ≤ y ≤ width `[TBC-19: centre rule]`. → T2-VAL-020
 
 **HLR-RULE-020 (spacing)** Two plants A and B are in spacing conflict when
 d < (rA + rB) × m − 0.0001 m `[TBC-20]`, where:
-- d is the distance between their centres
+- d is the distance between their centers
 - rA and rB are their spacing radii
 - m is the spacing margin (HLR-SET-020)
 
 Distances shall be computed in double precision. → T2-VAL-040, T2-CFG-040
 
 **HLR-RULE-030 (path clearance)** A plant is in path conflict when its spacing circle overlaps a path:
-- for a rectangular path: the distance from the plant centre to the rectangle is less than its radius
-- for a line path: the distance from the plant centre to the path's centre line is less than
+- for a rectangular path: the distance from the plant center to the rectangle is less than its radius
+- for a line path: the distance from the plant center to the path's center line is less than
   (path width ÷ 2 + radius)
 
 → T2-VAL-050
@@ -267,7 +267,7 @@ Areas with a side below 0.05 m are ignored. → T2-FUN-110
 
 → T2-FUN-110
 
-**HLR-AREA-080** Candidate positions shall be generated with a centre-to-centre spacing
+**HLR-AREA-080** Candidate positions shall be generated with a center-to-centre spacing
 s = 2 × spacing radius × spacing margin:
 - **Rows:** a square grid.
 - **Hexagonal:** rows s × √3/2 apart, every second row offset by s/2.
@@ -279,13 +279,13 @@ s = 2 × spacing radius × spacing margin:
 **HLR-AREA-090** "Fill" shall store all accepted positions as one change (one undo step), up to the plot
 limit (HLR-PLC-110). It shall then report "placed N of M" and switch to the Plant tool. → T2-FUN-110, T2-VAL-030, T2-CON-030
 
-## 6. Views: zoom, ruler, colours, overlays (VIEW)
+## 6. Views: zoom, ruler, colors, overlays (VIEW)
 
 **HLR-VIEW-010** The layout shall support zoom levels between the configured minimum and maximum
 (HLR-SET-020):
 - two-finger pinch `[TBC-26]`
 - "+" and "−" buttons that change the zoom by the configured step
-- a "Recenter" button, shown when the zoom isn't 1 or the view is panned, restoring zoom 1 and the centred
+- a "Recenter" button, shown when the zoom isn't 1 or the view is panned, restoring zoom 1 and the centered
   view
 
 Zooming changes no stored data. → T2-INT-070, T2-CFG-070
@@ -307,10 +307,10 @@ stay aligned with the plot at every zoom and pan position:
 and ruler consistent.] → T2-FUN-140
 
 **HLR-VIEW-060** The software shall offer a legend of the varieties placed on the current plot, with each
-variety's colour, letter code, name and plant count. → T2-FUN-130
+variety's color, letter code, name and plant count. → T2-FUN-130
 
-**HLR-VIEW-070** A variety's colour shall be its user-chosen colour (one of 16 presets) when set. Otherwise it
-is an automatic colour derived from the variety code, which is the same on every start. → T2-FUN-130
+**HLR-VIEW-070** A variety's color shall be its user-chosen color (one of 16 presets) when set. Otherwise it
+is an automatic color derived from the variety code, which is the same on every start. → T2-FUN-130
 
 **HLR-VIEW-080** When "Weed-risk area" is switched on:
 - The software shall shade the plot area outside all plants' spacing circles and outside all paths
@@ -414,9 +414,9 @@ still allow it. → T2-DAT-100
 ## 9. Catalog and encyclopedia (ENC)
 
 **HLR-ENC-010** The software shall include three bundled catalog tiers:
-- Basic: 250 varieties
-- Standard: 600 varieties, containing all of Basic
-- Pro: 2,936 varieties, containing all of Standard
+- Basic: 253 varieties
+- Standard: 603 varieties, containing all of Basic
+- Pro: 2,939 varieties, containing all of Standard
 
 Basic is active after first installation. → T2-DAT-190
 
@@ -464,7 +464,7 @@ all are valid):
 - a zone range 1–13 with minimum ≤ maximum
 - companions and antagonists chosen from the species list
 - pest, care and watering text
-- an optional colour
+- an optional color
 
 → T2-DAT-060, T2-DAT-065, T2-DAT-220
 
@@ -567,7 +567,7 @@ written as one transaction, so that after a forced stop at any moment the stored
 or none of it. → T2-CON-030
 
 **HLR-STOR-020** Stored values shall use:
-- distances in metres
+- distances in meters
 - durations in days
 - planting dates as calendar dates
 - timestamps in UTC
@@ -615,8 +615,11 @@ be read on this device. It offers two choices:
 
 It shall not crash and shall not delete data without that confirmation. → T2-SEC-050, T2-ERR-010
 
-**HLR-PROT-050** The software shall not declare the Internet permission and shall make no network
-connections. The built app shall contain no analytics, telemetry, crash-reporting or advertising components.
+**HLR-PROT-050** The software shall make network connections only through one gateway component, only
+while the "Online features" setting is on (default off), and only over HTTPS to the allow-listed hosts
+(api.open-meteo.com, archive-api.open-meteo.com, api.nal.usda.gov); it shall show an indicator while a
+connection is in progress. The built app shall contain no analytics, telemetry, crash-reporting or
+advertising components.
 → T2-CON-010, T2-CON-020
 
 **HLR-PROT-060** The software shall append an audit log entry for each of these events, with UTC date/time,
@@ -683,12 +686,12 @@ app. On the layout screen with unfinished work, it first asks "Discard unfinishe
 confirmed. → T2-ENV-040
 
 **HLR-NAV-030** Rotating the device, or changing display or font size, shall keep the current screen, plot,
-tool, zoom level, the plot point at the centre of the view, and any unfinished work. It shall change no stored
+tool, zoom level, the plot point at the center of the view, and any unfinished work. It shall change no stored
 data. → T2-ENV-010
 
 **HLR-NAV-040** After the system stops the app in the background, reopening it shall restore:
 - the same screen and plot
-- the tool, zoom and view centre
+- the tool, zoom and view center
 - unfinished points
 - text typed in an open dialog
 - the undo history (HLR-HIST-050)
@@ -708,13 +711,13 @@ Plants shall be announced by a screen reader as "variety name, planted date". �
 the plot, drawn on its plant markers and shown in the legend. `[TBC-22]` → T2-ENV-060, T2-FUN-130
 
 **HLR-NAV-090** Every distance the software shows or accepts shall be in the display unit:
-- metres shown with 2 decimals
+- meters shown with 2 decimals
 - inches shown with 1 decimal
 - conversion uses 1 in = 0.0254 m exactly
 
-Values typed by the user are converted to metres once, when stored. → T2-CFG-100
+Values typed by the user are converted to meters once, when stored. → T2-CFG-100
 
-**HLR-NAV-100** The layout screen shall offer a one-tap switch between metres and inches, which changes the
+**HLR-NAV-100** The layout screen shall offer a one-tap switch between meters and inches, which changes the
 display unit setting. → T2-CFG-100
 
 ## 17. Settings (SET)
@@ -726,7 +729,7 @@ feature is unavailable on the device or not yet present `[TBC-30]`. → T2-CFG-0
 
 | Setting | Range | Default | Used by | → T2 |
 |---|---|---|---|---|
-| Display unit | metres / inches | metres | NAV-090 | CFG-100 |
+| Display unit | meters / inches | meters | NAV-090 | CFG-100 |
 | Catalog tier | Basic / Standard / Pro | Basic | ENC-020 | DAT-190 |
 | Spacing margin | 0.30–2.00 × (step 0.05) | 1.00 × | RULE-020, AREA-080 | CFG-040 |
 | Enforce companion rules | on / off (Pro only) | on | RULE-060 | CFG-050 |
@@ -787,6 +790,338 @@ the user interface or on Android, and shall give identical results when run on a
 **HLR-PLTN-020** The stored data model shall be documented with each field's meaning, type, unit and range,
 independently of Android types. → T2-PLT-010
 
+## 18b. Automatic planting, direction, obstacles and plan files (AUTO / ORNT / OBST / PORT) (added 2026-09-27)
+
+**HLR-AUTO-010** The layout shall offer "Plan an area for me": the user selects a rectangle or polygon, then
+builds a list of varieties (from the variety picker, with incompatible varieties marked) with a count of 1–500
+each. → T2-FUN-160
+
+**HLR-AUTO-020** The planner shall place taller varieties toward the side of the area farthest from the midday
+sun and shorter varieties toward the sunny side. The sun side shall be computed from the plot's compass
+direction and the hemisphere of its latitude (northern if unknown). → T2-FUN-160, T2-FUN-170
+
+**HLR-AUTO-030** The planner shall prefer positions whose estimated direct sun (marked areas first, then
+obstacle shade) meets each variety's sun need, and shall not place a flood-intolerant variety in a flood area.
+→ T2-FUN-160, T2-FUN-180
+
+**HLR-AUTO-040** The planner shall keep plants of the same species together, plant sweet corn, grain amaranth and
+quinoa as compact blocks, place pollinator flowers and herbs from the list near insect-pollinated crops and apart
+from each other, group plants with the same watering interval, and favor positions near companions.
+→ T2-FUN-160
+
+**HLR-AUTO-050** Every proposed position shall pass the same boundary, outline, path, spacing and companion
+checks as a hand placement, including against plants already on the plot and earlier proposed positions.
+→ T2-FUN-160
+
+**HLR-AUTO-060** The proposal shall be drawn on the layout without being stored, with a summary of placed and
+unplaced counts per species and an explanation of the decisions (height direction, sun data used, blocks,
+pollinators or a recommendation to add them, watering groups, missing direction). "Plant them" stores all
+proposed plants as one undo step; "Change selections" returns to the list with the same area and entries; "Discard"
+drops only the proposal, leaving the plot unchanged and the list remembered. → T2-FUN-160, T2-FUN-230
+
+**HLR-VAR-010** For peppers, tomatoes and onions the software shall show, next to the variety name in the picker,
+the plan-for-me list and proposal, and the web planner's lists: the kind in everyday words (e.g. "Sweet bell pepper",
+"Chile pepper (spicy)", "Cherry tomato", "Beefsteak tomato", "Paste / sauce tomato", "Bulb onion", "Spring onion"),
+the heat level for spicy peppers, and the ripe color. Every pepper, tomato and onion variety in the catalog shall
+have these details. → T2-FUN-200
+
+**HLR-VAR-020** The layout shall offer "Show plant names" (on by default), drawing a short name under each plant (the
+kind and color, e.g. "Bell red", "Cherry orange", "Spring", else the species name), and shall fill each plant's center
+dot with its ripe fruit color when known. The catalog shall contain three spring onion varieties in every tier, and
+varieties added to a tier shall reach existing installs at start-up without changing existing entries. → T2-FUN-200,
+T2-DAT-190
+
+**HLR-ROT-010** Annual vegetables and fruit shall belong to a rotation family by botanical family (legumes, cabbage
+family, nightshades, squash family, corn and grains, onion family, carrot family, beet family, lettuce family), each
+with a waiting period of 1 to 3 years; perennials, flowers and herbs have none. Placing or moving a plant within reach
+of a past planting of its family, inside the waiting period, shall succeed and show a note naming the earlier crop and
+season, the reason and the family that should go there instead. → T2-FUN-210
+
+**HLR-ROT-020** "Plan an area for me" shall penalise positions where the same family grew within its waiting period
+(more strongly the more recent), report whether any plant still had to go there, and shall arrange crops as organized clumps
+(HLR-BLK-010) by default or as long rows when chosen, stating the choice's effect on next year's rotation. → T2-FUN-210, T2-FUN-160
+
+**HLR-ROT-030** The software shall give per-plot rotation advice: the families of the last season and where they
+grew in compass terms, which family should follow in each spot, this season's plants that break the rotation, and a
+note when a family was grown as one long row. → T2-FUN-210
+
+**HLR-SEAS-010** "Start a new season" shall ask for the season year (default: the season being planned), move all of
+the plot's plants into its history with that year, keep every other item of the plot, and be one undo step. The season
+being planned is the year most current plants were planted (this year if none), and always after the last closed
+season. → T2-FUN-220
+
+**HLR-SEAS-020** Each plot's history shall be listed per season (counts per species), shown on request as dashed
+circles for a chosen past season on the layout, exported and imported with plan files, and deleted only with its plot.
+→ T2-FUN-220, T2-PLT-020
+
+**HLR-MEM-010** The plan-for-me list shall start from the list being edited, else the last list used (kept across
+sessions), else the varieties planted most often, else suggestions; the most-planted varieties (one per species, up to
+8, counted over all plots and past seasons) shall be offered as one-tap additions; the clumps/rows choice shall be
+remembered. → T2-FUN-230
+
+**HLR-BLK-010** In "Organized clumps" mode (the default) each requested variety shall be placed as a block of rows ×
+columns (rows = ⌊√n⌋, columns = ⌈n / rows⌉, front row shortest) at a pitch of twice its spacing radius × the margin;
+rows run across the sun direction; plants of different crops shall be at least a 45 cm walkway further apart than the
+spacing rule requires; a block that can't fit whole is split into further blocks; the proposal names each block's
+rows. → T2-FUN-240
+
+**HLR-BLK-020** Climbing crops shall be placed at the back (away from the midday sun) with a note to put up a trellis;
+sprawling vines, each with a runway length, shall be placed before the other crops toward the sunny side with that
+runway in front of them kept free of plants, inside the plot and out of shade (< 3 h), reserved against later blocks,
+drawn on the proposal as a dashed area with an arrow, and explained in a note. → T2-FUN-240
+
+**HLR-FIND-010** The layout shall offer a legend of the varieties planted on the plot with counts and kinds; choosing
+one shall circle its plants in orange, dim the others and show how many, until chosen again or cleared. On the
+computer, the harvest and harmony lines shall do the same for their species. → T2-FUN-250
+
+**HLR-FIND-020** A planted plant shall be editable: its variety can be changed (the new variety must pass the spacing
+and companion rules at that position) and it can be deleted; on the computer the planting date can also be changed.
+Each edit is one undo step. → T2-FUN-250
+
+**HLR-OUTL-010** With the outline tool, the corners of an existing outline shall be shown and can be moved (drag on the
+computer; tap a corner then its new place on the phone), a corner can be added by double-clicking an edge (computer),
+and "Delete outline" returns the plot to its full rectangle. A change that would make the outline invalid is refused
+with the reason; each change is one undo step. → T2-FUN-250
+
+**HLR-CMP-010** The compass on the layout shall show four half-filled arrowheads with the letters N, E, S and W, rotated
+by the plot's direction; north shall be red when the direction is set and gray "N?" when it isn't. → T2-FUN-250,
+T2-FUN-170
+
+**HLR-SEAS-030** The software shall let the user choose the season shown on the layout: the season being planned
+(editable) or any past season of the plot, which is drawn like planted plants and cannot be changed (every edit is
+refused with a message) until the planning season is chosen again. → T2-FUN-260, T2-FUN-220
+
+**HLR-SEAS-040** "Plan next season (rotate)" shall plan the whole plot (outline) for the next season from the current
+season's plant list (else the last closed season's), with the current plants treated as history of the current
+season and the plot otherwise empty, and show the proposal without the current plants. Keeping it shall, in one undo
+step, move the current plants into history and plant the proposal. → T2-FUN-260
+
+**HLR-SEAS-050** "Rotation plan" shall plan 1 to 30 consecutive seasons (the user types how many) from the same list, each with the history of
+the real seasons plus the seasons planned before it, show one season at a time with a per-family location summary, and
+change nothing unless the user uses the first season, which acts as HLR-SEAS-040's keep. "Change a variety…" shall
+replace one variety with another from the season shown onward (same count) and work the plan out again. → T2-FUN-260
+
+**HLR-ROT-040** When "Plan an area for me" places plants it shall not place a plant within reach of a planting of its
+rotation family (or, for plants without a family, its species) from the previous season; only when a crop can't be
+placed otherwise is the rule relaxed for the rest of that crop, and the proposal says so. → T2-FUN-260, T2-FUN-210
+
+**HLR-SHD-010** The shade display shall offer the day (growing season — the default, HLR-SUN-020 —, today, spring equinox,
+midsummer, autumn equinox, midwinter) and
+the mode: whole day (sun-hour bands, HLR-OBST-030) or at a time of day chosen between sunrise and sunset, showing the
+cells in shade at that moment and the sun's direction and height. → T2-FUN-270
+
+**HLR-SHD-020** When "plants cast shade" is on (default), every planted crop with a mature height of 0.5 m or more
+shall cast shade as a round crown of 0.8 × its spacing radius at that height. → T2-FUN-270
+
+**HLR-SHD-030** On the computer, pointing at a spot with the shade display on shall report when that spot gets direct
+sun that day (solar-time intervals). → T2-FUN-270
+
+**HLR-IRR-010** The software shall support three irrigation items: sprinkler (point; throw radius 0.5–30 m; pattern
+full, 270°, 180° or 90°; compass direction of the pattern's middle), drip line / soaker hose (polyline; wetted half-width
+0.05–2 m) and hose tap (point; hose length 1–60 m), placed, edited, moved, deleted and undone like obstacles, and
+exported and imported in plan files. → T2-FUN-280, T2-PLT-020
+
+**HLR-IRR-020** The water map shall color each part of the plot by its best source (drip, then sprinkler, then hose
+reach) and ring every plant no source reaches. → T2-FUN-280
+
+**HLR-IRR-030** The irrigation summary shall give the number of plants per source (with species), the number needing
+hand watering, and a warning naming leaf-disease-prone crops a sprinkler wets. → T2-FUN-280
+
+**HLR-FILL-010** "Fill the whole plot" shall open "Plan an area for me" for the plot's outline; "How many fit?" shall
+replace the list's counts with the numbers that fit when the list's proportions are kept, all of which can then be
+placed. → T2-FUN-290
+
+**HLR-TPL-010** "Duplicate plot" shall create a new plot with a chosen name and the same size, direction, location,
+soil, outline, paths, site features and irrigation, and, if chosen, the current plants and the history; the original is
+unchanged. → T2-FUN-300
+
+**HLR-FROST-010** The system shall find the plot's nearest NOAA 1991–2020 normals station within 250 km of its
+latitude/longitude and show the last spring frost (50 % and 10 %), first fall frost (50 % and 10 %), frost-free days,
+the station, its distance and elevation (computer: Plot tab → Growing season; phone: Plot insights → Site), or say why
+it can't. → T2-DAT-080, T2-FUN-410
+
+**HLR-FROST-020** The planting calendar shall give for a crop: start indoors (transplant crops, weeks before the last
+frost), plant out (hardy crops from weeks before the last frost, tender crops from a week after it) until the last day
+that still ripens before the first frost, a fall sowing for hardy crops where there's room, and a note (hardy, tender,
+or too slow for the season). → T2-FUN-410
+
+**HLR-SUN-010** Planning and plan checks shall average sun hours over three days of the growing season (from the frost
+dates, else mid-May, midsummer and early August, hemisphere-adjusted). → T2-FUN-420
+
+**HLR-SUN-020** In organized clumps, full-sun crops choose before part-shade and shade crops within each group; a sun
+shortfall weighs more than the tall-at-the-back preference; full-sun (and starred) crops prefer the sunniest fitting
+spot, and part-shade/shade crops avoid ground with much more sun than they need. The shade display's "Growing season"
+day is the middle of the season. → T2-FUN-420, T2-FUN-270
+
+**HLR-PLANB-010** "Plan B" (computer: plant card; phone: plant details and the germination dialog) shall list up to six
+varieties ready around the survivors' harvest (planting day + days to harvest) and, where frost dates are known, before
+the first frost (hardy crops up to 3 weeks after): same species first, then food crops of the same family, else quick
+catch crops; each with days to harvest and ready date. Choosing one replaces the plant (or, if ticked, all of that
+variety planted the same day) with today's date, as one undo step. Care lists faster varieties per planted crop. → T2-FUN-430, T2-FUN-080
+
+**HLR-RULER-010** The ruler shall label ticks with numbers only and show the unit once (computer: "(m)" where the rulers
+meet; phone: at the 0 mark). → T2-FUN-140
+
+**HLR-BLK-030** A vine's runway (the block's width plus a plant radius each side, out to the runway length) shall be
+checked at points at most 25 cm apart, edges included; a point is blocked when it is within a plant's spacing radius,
+inside another runway, outside the area or plot, or within 0.4 m of a fence, wall or building. An anchor with any
+blocked point shall rank below every anchor with a free runway; when no free runway exists the proposal shall say which
+vines' runways are partly blocked. → T2-FUN-240
+
+**HLR-BLK-050** "Long rows" shall use the clump planner with rows as wide as the area allows (plants per row = ⌊(area
+width − r) / pitch⌋ + 1), tallest crops at the back, the 45 cm walkway between crops, the same runway and antagonist
+rules, and a note that tall rows limit next year's rotation. → T2-FUN-240, T2-FUN-210
+
+**HLR-BLK-040** When a block's cells fail a companion/antagonist check, those cells shall be excluded and the block
+tried again elsewhere (up to 25 times) before the rest is reported as not fitting; a block that only partly passes
+shall be withdrawn and retried whole (up to 8 times) before it's split. → T2-FUN-240, T2-FUN-160
+
+**HLR-OPT-010** The proposal shall offer "◀ Option" / "Option ▶" to step through layouts of the same list (variants:
+suggested, shifted to one side, the other side, different order, other shapes, sun first, other side + order, other
+side + shapes, spread out, close together, long rows), computed on request, skipping any that places the same plants in
+the same spots, each shown with its name and a summary (placed, didn't fit, average sun hours); "Keep this plan" stores
+the one shown. → T2-FUN-440
+
+**HLR-KEEP-010** The planning dialog shall, when plants are inside the area (and it isn't a next-season plan), offer
+"Keep them where they are and plan around them" (default) or "Start from a blank area"; with the latter the planner
+ignores those plants, the proposal warns how many it replaces, and keeping the plan deletes them and stores the new
+plants in one undo step. → T2-FUN-450
+
+**HLR-CARD-010** The proposal card shall have a fold button (− / +) that reduces it to its title, and on the computer a
+title bar that drags it anywhere in the window; its place and fold state last for the session. → T2-FUN-460
+
+**HLR-GRP-010** A group shall be the plants of one variety connected by gaps of at most 1.6 × their spacing (computer:
+"Select its group" on a selected plant, or Shift + drag a box; phone: plant details → "Group…"). Clicking a plant of a
+selected group keeps the group selected; clicking elsewhere selects one plant as before. → T2-FUN-470
+
+**HLR-GRP-020** Dragging a selected group (computer) or, after "Move the whole group", any of its plants in Move Mode
+(phone, until Move Mode is turned off) shall move all of it by the same offset if every plant stays inside the plot,
+off paths and within the spacing and companion rules; otherwise nothing moves and the reason is shown. → T2-FUN-470
+
+**HLR-GRP-030** "Rearrange group…" shall list every rows × columns arrangement of the group's size, marking the ones
+that don't fit; choosing one lays the group out at its spacing, centered where it was, rows running left to right, as
+one undo step. Season and rotation plans use the stored positions. → T2-FUN-470
+
+**HLR-LANG-010** Every interface text shall be written in US English spelling; the plan file keeps its "metres" value
+for compatibility. → T2-FUN-480
+
+**HLR-LANG-030** A dictionary shall also translate text built at run time: a variety "Species - Cultivar" (species
+translated, a cultivar kept unless it is a plain description with an entry), template parts, comma lists, a leading
+bullet or symbol, a final full stop or colon, several sentences in one text, "A — B" and "Label: rest". The Spanish
+dictionary shall cover every interface text, advice text, planner note, catalog species, pest note and care note; a
+browser check shall fail when an English sentence remains on the main screens in Spanish. → T2-FUN-480
+
+**HLR-LANG-020** Texts shall be translated through a dictionary per language ("English<TAB>Translation" lines, with
+{0}, {1}… templates for numbers and names); texts without an entry stay in English; the language choice is remembered
+(computer: this browser; phone: Settings) and applied at once (phone: the screen is rebuilt). → T2-FUN-480
+
+**HLR-SWAP-010** Each line of the plot's variety list shall offer "Replace…": choosing another variety changes every plant
+of that variety on the plot in one undo step, keeping positions and dates, refusing perennials that can't survive the
+zone, and reporting the new spacing and how many plants now crowd a neighbor. → T2-FUN-360
+
+**HLR-LEG-010** (Computer) The "On this plot" box shall be dragged by its header anywhere inside the layout, keep its
+place in this browser (clamped to the layout when the window shrinks), and go back to the corner on a double-click of its
+header. → T2-FUN-370
+
+**HLR-ARR-010** In organized clumps, each row of the plan list with a count of 2 or more shall offer the arrangements of
+`ClumpShapes.options` and "let the planner choose", and up to three nearby counts that make a neat rectangle (which set
+the count and arrangement). A chosen arrangement is used for that crop's first block. → T2-FUN-380
+
+**HLR-ARR-020** Without a chosen arrangement, before splitting a crop the planner shall try other tidy arrangements that
+fit in one block and say which it used; whenever a crop ends up in more than one group, the proposal shall name the crop,
+the group sizes and the reason. → T2-FUN-380
+
+**HLR-HELP-010** (Computer) Every button shall have hover text (its own, or from `Tips` by label); clicking an active
+placing tool (not Select or Plan an area) turns it off; while a drip line is being drawn Finish (Enter) and Cancel (Esc)
+are shown, a double-click's repeated point is dropped, and Finish returns to Select / move. → T2-FUN-390
+
+**HLR-ADDR-010** The plot shall store an optional street address (up to 200 characters), edited in Plot details
+(computer) or remembered from the satellite-photo dialog; "Open in Google Maps" (computer Plot tab; phone menu) opens it,
+or the plot's coordinates, in the browser or Maps app. The address travels in plan files (`location.address`). → T2-FUN-400
+
+**HLR-YARD-010** Creating a plot (and editing its details on the computer) shall offer a tick list of the pests and
+animals in `Pest` (animals, birds, insects and slugs); the choice is stored with the plot, travels in plan files and
+duplicates, and can be changed on the Care tab. → T2-FUN-310
+
+**HLR-YARD-020** The Care section shall show, for each chosen pest, its signs, its prevention tips (with fence heights
+and materials where relevant) and the planted species it is known to go for, plus general tips; with none chosen it
+shall invite the user to choose. → T2-FUN-310
+
+**HLR-PRIO-010** Each row of the plan list shall have a "most important" mark; marked plants shall be placed before all
+others and weighted strongly toward spots with at least their needed sun hours, and the proposal shall say so with their
+average sun hours when sun is known. → T2-FUN-320
+
+**HLR-CHK-010** The plan dialog shall show "Checks before planning", recomputed as the list changes, from `PlanChecks`:
+space (with walkways) against the area, area with enough sun per sun need against the space those plants need, known
+antagonist pairs, hardiness, last season's families, a wide watering mix, the yard's pests that go for listed plants, and
+the plants marked most important; the most serious first. → T2-FUN-320
+
+**HLR-DISC-010** The disclaimer text (`Disclaimer`) shall be shown before first use until acknowledged ("I understand"),
+repeated in help (computer), Settings (phone) and the user manual, and shortened at the top of the Care section. → T2-FUN-330
+
+**HLR-WADV-010** The Care section shall show "Watering and irrigation": buttons to place a sprinkler, drip line or hose
+tap and to turn the water map on (computer; the phone points to the layout menu), the irrigation summary, plot-specific
+advice from `WateringAdvice.forPlot`, each planted species' water need, general watering tips and how to choose a
+system. → T2-FUN-340
+
+**HLR-SAT-010** "Satellite photo" shall open Google Maps in the user's browser (address search, or the plot's
+coordinates in satellite view) only when the user asks, and shall add a picked image (PNG, JPEG or WebP) scaled to at most
+1600 px on its longest side, placed across the plot's width at its top-left corner. → T2-FUN-350
+
+**HLR-SAT-020** The user shall be able to set the photo's scale by tapping two points and entering their real distance
+(0.1–2000 m; the first point stays put), drag the photo to move it, turn it about its center (+ clockwise, −
+counterclockwise, at most 180° either way, with a slider and a number box kept in step), set how see-through it is
+(10–100 %), hide or show it, and remove it. The photo is drawn under the grid and everything else. → T2-FUN-350
+
+**HLR-SAT-030** The photo's placement shall be stored on the plot and the image kept with it (phone: a file per plot;
+computer: in the plan and the browser draft when it fits), carried by plan files as a checked data URL and by
+"Duplicate". → T2-FUN-350
+
+**HLR-ORNT-010** The plot creator and a "Plot direction and ZIP" dialog shall let the user choose which compass
+direction the plot's top edge faces, by eight shortcuts or a bearing slider (5° steps). The choice is stored with
+a flag recording that it was set. → T2-FUN-170
+
+**HLR-ORNT-020** The layout shall draw a compass arrow pointing to north (plot top edge = the stored bearing) and,
+while the direction is not set, show a warning that opens the direction dialog. → T2-FUN-170
+
+**HLR-ORNT-030** Entering a 5-digit ZIP shall set the plot's latitude/longitude from the bundled ZIP table without
+a network connection, and its hardiness zone from the bundled 2023 USDA/PRISM ZIP zone table (also offline);
+only a ZIP missing from that table may use the allow-listed online zone service when Online features are on.
+→ T2-FUN-090
+
+**HLR-OBST-010** An existing obstacle or site area shall offer Edit, Delete and Move. Move places it so that its
+anchor (a tree's trunk, otherwise the center of its points) is at the next tapped position, keeping all its
+points inside the plot. → T2-FUN-180
+
+**HLR-OBST-020** Adding, editing, moving and deleting an obstacle or site area, and saving or resetting the plot
+outline, shall each push one undo step; undo and redo shall restore plants, paths, obstacles, site areas and the
+outline together. → T2-FUN-190
+
+**HLR-OBST-030** The estimated-shade display shall be readable in light and dark mode on the phone and the computer:
+the plot shall be drawn on a light background in both modes, each part of the plot shall be colored by its sun band
+for today (full sun 6 h or more, part shade 3 to under 6 h, shade under 3 h) in colors that also differ in
+lightness, and a legend shall name the bands (and, for HLR-SHD-010, the chosen day and time) while the display is on. Both clients shall take the bands and colors
+from the shared core. [Derived: owner report 2026-09-27, shade could not be seen on the dark layout.]
+→ T2-FUN-180, T2-PLT-030
+
+**HLR-PORT-010** The software shall save one plot, or all plots, to a Smart Garden plan file (format version 1,
+docs/PLAN_FILE_FORMAT.md) at a location chosen with the system file picker. → T2-DAT-110, T2-PLT-020
+
+**HLR-PORT-020** Opening a plan file shall reject it whole if the format name is wrong, the version is newer than
+supported, or it isn't valid JSON; otherwise every value is range-checked, invalid items are skipped and listed,
+and the plots are stored as new plots in one transaction (never overwriting existing plots). Plants whose variety
+isn't in the catalog (by code, then by name) are skipped and counted. → T2-DAT-110, T2-SEC-020
+
+**HLR-PORT-030** A browser-based planner, delivered as one self-contained HTML file that needs no install,
+account, server or network connection, shall read and write the same plan files and use the same planning rules,
+compiled from the same source as the Android app (docs/CROSS_PLATFORM_PLAN.md). → T2-PLT-040, T2-PLT-030
+
+**HLR-PORT-040** The browser planner shall provide plot creation (size, ZIP, zone, direction, soil), placing,
+moving and deleting plants, no-plant paths, obstacles with heights, site areas and an outline, undo/redo of every
+change, a shade overlay, "Plan an area for me", and harmony, suggestions, care and food information; placements
+shall pass the same checks as on the phone. Work in progress shall be kept in the browser between visits, and
+saving shall work in browsers without file-system access (download). → T2-PLT-040, T2-FUN-160, T2-PLT-020
+
 ## 19. Suspended — measurement (MEAS) [Suspended: decision D-03]
 
 **HLR-MEAS-010 [Suspended]** Placeholder for the measuring method's software requirements:
@@ -828,14 +1163,47 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 | T2-FUN-050 | Spacing zone display | Active | HLR-LAY-020 |
 | T2-FUN-060 | Irrigation route suggestion | Active | HLR-VIEW-090, HLR-VIEW-100 |
 | T2-FUN-070 | Edit and delete plots and plants | Active | HLR-PLOT-070, HLR-PLOT-080, HLR-PLOT-090, HLR-PLOT-100, HLR-PLC-040, HLR-PLC-070, HLR-STOR-040 |
-| T2-FUN-080 | Germination alert and Plan B | Active | HLR-LAY-050, HLR-PLC-040, HLR-RULE-080, HLR-TIME-030, HLR-TIME-040, HLR-TIME-050, HLR-TIME-060, HLR-TIME-070, HLR-TIME-080, HLR-SET-020 |
-| T2-FUN-090 | Plot location | Active | HLR-PLOT-110, HLR-PLOT-120, HLR-PLOT-130 |
+| T2-FUN-080 | Germination alert and Plan B | Active | HLR-LAY-050, HLR-PLC-040, HLR-RULE-080, HLR-TIME-030, HLR-TIME-040, HLR-TIME-050, HLR-TIME-060, HLR-TIME-070, HLR-TIME-080, HLR-SET-020, HLR-PLANB-010 |
+| T2-FUN-090 | Plot location | Active | HLR-PLOT-110, HLR-PLOT-120, HLR-PLOT-130, HLR-ORNT-030 |
 | T2-FUN-100 | No-plant paths | Active | HLR-AREA-010, HLR-AREA-020, HLR-AREA-030 |
 | T2-FUN-110 | Auto-populate an area | Active | HLR-RULE-080, HLR-AREA-050, HLR-AREA-060, HLR-AREA-070, HLR-AREA-080, HLR-AREA-090 |
 | T2-FUN-120 | Change a plant's variety | Active | HLR-PLC-060, HLR-RULE-080 |
-| T2-FUN-130 | Variety colours and legend | Active | HLR-VIEW-060, HLR-VIEW-070, HLR-NAV-080 |
-| T2-FUN-140 | Ruler | Active | HLR-VIEW-040, HLR-VIEW-050 |
+| T2-FUN-130 | Variety colors and legend | Active | HLR-VIEW-060, HLR-VIEW-070, HLR-NAV-080 |
+| T2-FUN-140 | Ruler | Active | HLR-VIEW-040, HLR-VIEW-050, HLR-RULER-010 |
 | T2-FUN-150 | Plot list | Active | HLR-PLOT-010, HLR-PLOT-020, HLR-NAV-010 |
+| T2-FUN-160 | Plan an area for me | Active | HLR-AUTO-010, HLR-AUTO-020, HLR-AUTO-030, HLR-AUTO-040, HLR-AUTO-050, HLR-AUTO-060, HLR-ROT-020, HLR-BLK-040, HLR-PORT-040 |
+| T2-FUN-170 | Plot compass direction | Active | HLR-AUTO-020, HLR-CMP-010, HLR-ORNT-010, HLR-ORNT-020 |
+| T2-FUN-180 | Obstacles that cast shade | Active | HLR-AUTO-030, HLR-OBST-010, HLR-OBST-030 |
+| T2-FUN-190 | Undo covers every layout change | Active | HLR-OBST-020 |
+| T2-FUN-200 | Say what each variety is | Active | HLR-VAR-010, HLR-VAR-020 |
+| T2-FUN-210 | Crop rotation and clumps | Active | HLR-ROT-010, HLR-ROT-020, HLR-ROT-030, HLR-ROT-040, HLR-BLK-050 |
+| T2-FUN-220 | Seasons and plot history | Active | HLR-SEAS-010, HLR-SEAS-020, HLR-SEAS-030 |
+| T2-FUN-240 | Organized clumps and room for vines | Active | HLR-BLK-010, HLR-BLK-020, HLR-BLK-030, HLR-BLK-050, HLR-BLK-040 |
+| T2-FUN-250 | Find, edit and outline | Active | HLR-FIND-010, HLR-FIND-020, HLR-OUTL-010, HLR-CMP-010 |
+| T2-FUN-260 | Plan season after season | Active | HLR-SEAS-030, HLR-SEAS-040, HLR-SEAS-050, HLR-ROT-040 |
+| T2-FUN-270 | Sun and shade through the day and year | Active | HLR-SHD-010, HLR-SHD-020, HLR-SHD-030, HLR-SUN-020 |
+| T2-FUN-280 | Irrigation coverage | Active | HLR-IRR-010, HLR-IRR-020, HLR-IRR-030 |
+| T2-FUN-290 | Fill the plot | Active | HLR-FILL-010 |
+| T2-FUN-300 | Plot templates | Active | HLR-TPL-010 |
+| T2-FUN-310 | Pests and wildlife in the yard | Active | HLR-YARD-010, HLR-YARD-020 |
+| T2-FUN-320 | Most important plants and checks before planning | Active | HLR-PRIO-010, HLR-CHK-010 |
+| T2-FUN-330 | Disclaimer | Active | HLR-DISC-010 |
+| T2-FUN-340 | Watering recommendations | Active | HLR-WADV-010 |
+| T2-FUN-350 | Satellite photo under the plot | Active | HLR-SAT-010, HLR-SAT-020, HLR-SAT-030 |
+| T2-FUN-410 | Growing season and planting calendar | Active | HLR-FROST-010, HLR-FROST-020 |
+| T2-FUN-420 | Plan for the growing season's sun | Active | HLR-SUN-010, HLR-SUN-020 |
+| T2-FUN-430 | Plan B when a plant dies | Active | HLR-PLANB-010 |
+| T2-FUN-440 | Several layouts to choose from | Active | HLR-OPT-010 |
+| T2-FUN-450 | Keep or replace what's already there | Active | HLR-KEEP-010 |
+| T2-FUN-460 | Proposal card out of the way | Active | HLR-CARD-010 |
+| T2-FUN-470 | Work with a whole group of plants | Active | HLR-GRP-010, HLR-GRP-020, HLR-GRP-030 |
+| T2-FUN-480 | Interface language and US English | Active | HLR-LANG-010, HLR-LANG-030, HLR-LANG-020 |
+| T2-FUN-360 | Replace all plants of a variety | Active | HLR-SWAP-010 |
+| T2-FUN-370 | Plot list out of the way | Active | HLR-LEG-010 |
+| T2-FUN-380 | Choose how clumps are arranged | Active | HLR-ARR-010, HLR-ARR-020 |
+| T2-FUN-390 | Help on every control | Active | HLR-HELP-010 |
+| T2-FUN-400 | Plot address and Google Maps | Active | HLR-ADDR-010 |
+| T2-FUN-230 | Keep the gardener's choices | Active | HLR-AUTO-060, HLR-MEM-010 |
 | T2-DAT-010 | Harvest date | Active | HLR-PLC-040, HLR-TIME-020 |
 | T2-DAT-020 | Pests | Active | HLR-ENC-050 |
 | T2-DAT-030 | Companions and antagonists | Active | HLR-ENC-050, HLR-ENC-060 |
@@ -844,20 +1212,20 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 | T2-DAT-060 | Custom varieties | Active | HLR-ENC-070, HLR-ENC-080, HLR-ENC-090, HLR-STOR-040 |
 | T2-DAT-065 | Botanical family is mandatory | Active | HLR-TIME-050, HLR-ENC-070 |
 | T2-DAT-070 | Concurrent fallback pathways | Merged | — (merged into T2-FUN-080) |
-| T2-DAT-080 | Offline climate data | Active | HLR-CLIM-010, HLR-CLIM-020, HLR-CLIM-030 |
+| T2-DAT-080 | Offline climate data | Active | HLR-CLIM-010, HLR-CLIM-020, HLR-CLIM-030, HLR-FROST-010 |
 | T2-DAT-090 | Planting windows | Active | HLR-PLOT-130, HLR-TIME-090 |
 | T2-DAT-100 | Climate-suited recommendations | Active | HLR-PLOT-130, HLR-TIME-100 |
-| T2-DAT-110 | Export and import | Active | HLR-EXP-010 |
+| T2-DAT-110 | Export and import | Active | HLR-EXP-010, HLR-PORT-010, HLR-PORT-020 |
 | T2-DAT-120 | Ownership information | Active | HLR-PLOT-060, HLR-EXP-010, HLR-EXP-060 |
 | T2-DAT-130 | Import conflicts | Active | HLR-EXP-040 |
 | T2-DAT-140 | Roles | Active | HLR-EXP-050 |
 | T2-DAT-150 | Encyclopedia | Active | HLR-ENC-040, HLR-ENC-050, HLR-NAV-010 |
 | T2-DAT-160 | Dates and time zones | Active | HLR-TIME-010, HLR-TIME-030, HLR-STOR-020 |
-| T2-DAT-190 | Tiered catalog | Active | HLR-ENC-010, HLR-SET-020 |
+| T2-DAT-190 | Tiered catalog | Active | HLR-ENC-010, HLR-SET-020, HLR-VAR-020 |
 | T2-DAT-200 | Tier switch keeps user data | Active | HLR-ENC-020, HLR-ENC-030, HLR-ENC-080 |
 | T2-DAT-210 | Species-level companion rules | Active | HLR-RULE-040 |
 | T2-DAT-220 | Catalog data quality | Active | HLR-ENC-060, HLR-ENC-070, HLR-ENC-100, HLR-ENC-110 |
-| T2-CON-010 | Offline only | Active | HLR-PROT-050 |
+| T2-CON-010 | Offline first | Active | HLR-PROT-050 |
 | T2-CON-020 | No tracking | Active | HLR-PROT-050 |
 | T2-CON-030 | Edits are saved immediately and completely | Active | HLR-AREA-090, HLR-HIST-040, HLR-STOR-010 |
 | T2-CON-040 | Photo size limit | Active | HLR-CAM-030 |
@@ -879,7 +1247,7 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 | T2-ENV-020 | Interruptions don't lose work | Active | HLR-HIST-050, HLR-NAV-040 |
 | T2-ENV-025 | Location accuracy gate | Active | HLR-PLOT-120, HLR-SET-020 |
 | T2-ENV-030 | Low-light warning | Active | HLR-CAM-060, HLR-SET-020 |
-| T2-ENV-040 | Back button behaviour | Active | HLR-NAV-020 |
+| T2-ENV-040 | Back button behavior | Active | HLR-NAV-020 |
 | T2-ENV-050 | Display adaptation | Active | HLR-NAV-050, HLR-NAV-060 |
 | T2-ENV-060 | Accessibility | Active | HLR-LAY-020, HLR-NAV-070, HLR-NAV-080 |
 | T2-INT-010 | Resizing redraws at the new scale | Active | HLR-PLOT-080 |
@@ -898,7 +1266,7 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 | T2-ERR-020 | Low storage blocks new photos | Active | HLR-CAM-070, HLR-SET-020 |
 | T2-ERR-030 | Image processing failure | Active | HLR-CAM-040, HLR-CAM-090 |
 | T2-SEC-010 | Encrypted data | Active | HLR-CAM-030, HLR-PROT-010, HLR-PROT-020 |
-| T2-SEC-020 | Validate imports | Active | HLR-EXP-030 |
+| T2-SEC-020 | Validate imports | Active | HLR-EXP-030, HLR-PORT-020 |
 | T2-SEC-030 | Audit log | Active | HLR-ENC-020, HLR-PROT-060, HLR-PROT-070, HLR-PROT-080, HLR-EXP-030, HLR-NAV-010 |
 | T2-SEC-040 | Signed exports | Active | HLR-EXP-020 |
 | T2-SEC-050 | Backups and lost keys | Active | HLR-PROT-030, HLR-PROT-040 |
@@ -907,8 +1275,9 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 | T2-SAF-030 | Continue or cancel | Active | HLR-CAM-080 |
 | T2-SAF-040 | Record overrides | Active | HLR-CAM-080, HLR-PROT-060 |
 | T2-PLT-010 | Platform-neutral data model | Active | HLR-STOR-020, HLR-PLTN-020 |
-| T2-PLT-020 | Documented exchange format | Active | HLR-EXP-010 |
-| T2-PLT-030 | Rules independent of the screen | Active | HLR-PLTN-010 |
+| T2-PLT-020 | Documented exchange format | Active | HLR-EXP-010, HLR-SEAS-020, HLR-IRR-010, HLR-PORT-010, HLR-PORT-040 |
+| T2-PLT-030 | Rules independent of the screen | Active | HLR-PLTN-010, HLR-OBST-030, HLR-PORT-030 |
+| T2-PLT-040 | Portable planner for computers | Active | HLR-PORT-030, HLR-PORT-040 |
 | T2-CFG-010 | One settings screen | Active | HLR-NAV-010, HLR-SET-010 |
 | T2-CFG-020 | Settings persist | Active | HLR-SET-030 |
 | T2-CFG-030 | Reset to defaults | Active | HLR-SET-040 |
@@ -922,8 +1291,8 @@ Generated by script from the `→` links above. §22 gives the coverage check.
 
 ## 22. Coverage check
 
-- HLRs: **140**.
-- System requirements: 99 in SGP-SYS-REQ-001 (94 active, 4 suspended, 1 merged).
+- HLRs: **215**.
+- System requirements: 133 in SGP-SYS-REQ-001 (128 active, 4 suspended, 1 merged).
 - Active or suspended system requirements with no HLR: **0**.
 - HLRs with no system parent: **0**.
 - Trace links to unknown system IDs: **0**.

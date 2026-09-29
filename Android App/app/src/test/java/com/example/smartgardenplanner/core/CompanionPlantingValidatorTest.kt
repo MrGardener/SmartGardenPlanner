@@ -89,4 +89,49 @@ class CompanionPlantingValidatorTest {
 
         assertTrue(result.isValid)
     }
+
+    // --- Spacing boundary (SGP-SVP-001 §7.4, TC-PLC-001; T2-VAL-040) ---------------------------------
+
+    private val radius06 = SeedEntity(botanicalCode = "AAA-001", commonName = "A", botanicalFamily = "F", exclusionRadiusM = 0.6f)
+    private val radius03 = SeedEntity(botanicalCode = "BBB-001", commonName = "B", botanicalFamily = "F", exclusionRadiusM = 0.3f)
+    private val boundaryLookup: (String) -> SeedEntity? = { code -> listOf(radius06, radius03).find { it.botanicalCode == code } }
+    private val anchor = PlantedNodeEntity(id = 1, plotId = 1, seedCode = "AAA-001", coordinateXM = 1.0f, coordinateYM = 1.0f)
+
+    private fun spacingValid(x: Float, y: Float, margin: Float = 1.0f): Boolean {
+        val candidate = PlantedNodeEntity(id = 2, plotId = 1, seedCode = "BBB-001", coordinateXM = x, coordinateYM = y)
+        return validator.validatePlacement(candidate, radius03, listOf(anchor), boundaryLookup, margin).isValid
+    }
+
+    @Test
+    fun spacingBoundary_touchingCirclesAreAllowed() {
+        // 0.90 m apart with radii 0.6 + 0.3. Rejected before the fix because 0.6f + 0.3f = 0.90000004f.
+        assertTrue(spacingValid(1.90f, 1.0f))
+    }
+
+    @Test
+    fun spacingBoundary_justInsideIsRejected() {
+        assertFalse(spacingValid(1.89f, 1.0f))
+    }
+
+    @Test
+    fun spacingBoundary_ruleIsAxisIndependent() {
+        assertTrue(spacingValid(1.0f, 1.95f))
+        assertFalse(spacingValid(1.0f, 1.85f))
+    }
+
+    @Test
+    fun spacingBoundary_marginScalesRequiredDistance() {
+        assertTrue(spacingValid(1.46f, 1.0f, margin = 0.5f))   // 0.46 >= 0.45
+        assertFalse(spacingValid(2.79f, 1.0f, margin = 2.0f))  // 1.79 < 1.80
+    }
+
+    @Test
+    fun unsavedCandidatesInTheSameBatchAreComparedWithEachOther() {
+        // Auto-populate validates new positions against ones accepted earlier in the same batch; all of
+        // them are unsaved (id = 0) and must not be skipped as "the same plant".
+        val acceptedEarlier = PlantedNodeEntity(id = 0, plotId = 1, seedCode = "BBB-001", coordinateXM = 1.0f, coordinateYM = 1.0f)
+        val next = PlantedNodeEntity(id = 0, plotId = 1, seedCode = "BBB-001", coordinateXM = 1.1f, coordinateYM = 1.0f)
+        val result = validator.validatePlacement(next, radius03, listOf(acceptedEarlier), boundaryLookup)
+        assertFalse(result.isValid)
+    }
 }

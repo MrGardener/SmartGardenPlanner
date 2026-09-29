@@ -1,0 +1,50 @@
+zip_data.txt — one line per US ZIP code: zip|latitude|longitude|state|hardiness zone (sorted by ZIP).
+A field is empty when that source has no value for the ZIP. Merged from the two sources below on 2026-09-28;
+no values were changed.
+
+=== Latitude, longitude, state ===
+zip_locations.txt — US ZIP code approximate centres (zip|latitude|longitude|state), 42,249 entries.
+
+Derived from the "zipcodes" package version 8.0.0 (https://github.com/davglass/zipcodes), whose US data
+comes from the free federalgovernmentzipcodes.us database. Coordinates rounded to 3 decimals.
+Used by the app only to estimate a plot's latitude/longitude from its ZIP code (sun angles, weather).
+
+Software License Agreement (BSD License)
+
+Copyright (c) 2007, Dav Glass <davglass@gmail.com>.
+All rights reserved.
+
+Redistribution and use of this software in source and binary forms, with or without modification, are
+permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the
+  following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+  following disclaimer in the documentation and/or other materials provided with the distribution.
+
+* The name of Dav Glass may not be used to endorse or promote products derived from this software without
+  specific prior written permission of Dav Glass.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+=== Hardiness zone ===
+zip_zones.txt — USDA plant hardiness zone for each ZIP code (zip|zone), 40,502 entries
+(contiguous US 39,921; Alaska 272; Hawaii 133; Puerto Rico 176).
+
+Source: 2023 USDA Plant Hardiness Zone Map, ZIP code tables (phzm_us/ak/hi/pr_zipcode_2023.csv),
+by the PRISM Climate Group, Oregon State University, for the USDA Agricultural Research Service.
+Supplied by the project owner on 2026-09-27; merged without changes to zone values (only zip|zone kept).
+
+Suggested citation: USDA Plant Hardiness Zone Map, 2023. Agricultural Research Service, U.S. Department of
+Agriculture. Accessed from https://planthardiness.ars.usda.gov/. Data by the PRISM Climate Group,
+Oregon State University.
+
+Note: a ZIP's zone is its representative value; zones can vary within a ZIP code area (elevation, water).

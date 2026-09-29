@@ -104,6 +104,25 @@ For each HLR (and the T2 requirements under the SVVP):
 Every test case lists its requirement IDs. A test that traces to no requirement is either given a
 requirement or deleted.
 
+### 5.1 Automated suites in the repository (development tests, 2026-09-27)
+
+| Suite | Scope | Runs | Notes |
+|---|---|---|---|
+| Host JVM tests (`Android App/app/src/test/.../core/`) | Shared planning rules in `core/` | `android-ci.yml` on every PR (`testDebugUnitTest`) | Pure Kotlin; representative of `:core` logic per §6.2. |
+| Browser smoke test (`web/tests/smoke.mjs`) | The computer planner end to end, including the same `core/` compiled to JavaScript | `web-planner.yml` on every PR touching `web/`, `core/` or assets | Playwright + Chromium (tool assessment SGP-TQP-001). Also checks the committed HTML matches a fresh build (compared ignoring the compiler's nondeterministic ordering). |
+| Requirements trace check (`tools/req_trace.py --check`) | T2 → HLR → LLR links, orphans, duplicates | `requirements-trace.yml` on every PR | TQL-5 if credit is taken (DW-1403). |
+| Browser adversarial test (`web/tests/adversarial.mjs`) | Refused dialog values, hostile plan files, undo storm, seeded random ("monkey") run | `web-planner.yml` | `SGP_SEED` repeats a random run. |
+| Spanish coverage (`web/tests/i18n_coverage.mjs`) | No English sentence left on the main screens in Spanish | `web-planner.yml` | |
+| Test case trace check (`tools/tc_trace.py --check`) | LLR → test case → test / procedure (SGP-TCS-001, SGP-TPR-001) | `requirements-trace.yml` on every PR and every merge to main | Fails if an LLR has fewer than 3 cases, lacks a limit or an invalid/random case, or names a test or procedure step that doesn't exist. TQL-5 if credit is taken (DW-1403). |
+
+These suites are development tests: no credit is taken from them until the requirements-based test procedures of §7
+exist, are independently reviewed (DEV-04) and are run per §9. The LLR-to-test-case mapping is SGP-TCS-001 (every LLR
+has at least three cases: nominal, a limit, and an invalid, alphanumeric or random case) and the procedures that run
+them are SGP-TPR-001. Every failure found becomes an entry of the SGP-TCS-001 regression register with an automated
+test, re-run after every merge. Two project subagents support the process (tool output, not review
+evidence, SGP-CB-001 §6): `requirements-auditor` (gaps and contradictions between requirements, code and documents)
+and `manual-tester` (the interface against the user manual), in `.claude/agents/`.
+
 ## 6. Verification environment
 
 ### 6.1 Environments

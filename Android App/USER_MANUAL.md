@@ -1,252 +1,692 @@
 # Smart Garden Planner — User Manual
 
-**Version:** tracks the app's own version (currently v20.20+, updated through the ongoing dev session)
-**Status:** Living document — updated whenever functionality is added, changed, or removed. If a
-feature described here doesn't match what you see in the app, the manual is out of date; flag it.
+**Covers:** the Android app and the portable computer planner (`web/dist/smart-garden-planner.html`), as of
+2026-09-27 (database schema 12, plan file format 1).
+**Status:** Living document, updated with every change. If something here doesn't match what you see, the manual is
+out of date: please flag it. The `manual-tester` subagent checks the computer planner against this manual on request.
+
+Where the two versions differ, this manual says **Phone:** and **Computer:**. Both use the same planning rules and
+open the same plan files.
+
+> **Please read — a guide, not a guarantee.** Smart Garden Planner is a planning aid. Its layouts, sun, shade,
+> watering, pest and planting advice are general guidance based on typical conditions and published gardening
+> references. It does not guarantee any harvest or result: weather, soil, local pests, plant health and many other
+> things are outside its control. Use it to help you decide, not as mandatory instructions. Check local conditions,
+> planting dates and any local rules (for example about fences, trapping, water use or chemicals) yourself, and follow
+> product labels. You are responsible for what you plant and how. Both versions show this notice before first use
+> (**I understand**); read it again under **?** help (computer) or **Settings → About this planner** (phone).
 
 ---
 
-## 1. Getting Started
+## 1. The idea in one minute
 
-### Dashboard
-The home screen. Shows every plot you've created as a list. From here:
-- **Create New Plot** (bottom-right button) → goes to the Creator screen.
-- **Search icon** (top bar) → Botanical Encyclopedia.
-- **Tune/sliders icon** (top bar) → Settings.
-- **Settings/gear icon** (top bar) → the hardware-encrypted key-value vault card (unrelated to
-  app Settings — this is a low-level debug tool for the underlying secure storage).
-- Tap any plot in the list to open it in the Canvas.
-
-### Creator (making a new plot)
-1. Enter a plot name.
-2. Enter length and width in meters. Bounds are configurable in Settings → Plot Validation
-   (default: 0.05m–1000m).
-3. Choose a scale source: **Manual Dimensions Entry** (type the numbers, as above) or **Device
-   IMU Sensor Measuring** (walk/measure with the phone's motion sensors — this option exists in
-   the picker but the underlying calibration/measurement flow is not yet reachable from the UI;
-   use Manual for now).
-4. Tap **Initialize Workspace** once both dimensions are valid.
+1. Make a **plot**: its size, which way it faces and its ZIP code.
+2. Draw what's **fixed** there: fences, walls, buildings, trees, paths, sunny or shady areas, and your sprinklers,
+   drip lines and hose tap. These stay with the plot year after year.
+3. **Plant**, either one plant at a time or with **Plan an area for me**, which decides where everything goes.
+4. At the end of the year, **start the next season**. The plants become history, and next year's plan rotates the
+   crops so no family goes back where it just grew.
 
 ---
 
-## 2. The Canvas
+## 2. Getting started
 
-The Canvas is where you lay out a plot: place plants, mark paths, and auto-fill areas.
+### Phone
+- **Dashboard** (home screen) lists your plots.
+  - **Create New Plot** makes a new one.
+  - The folder icon is **Open plan file**.
+  - The disk icon is **Save all plots to a file**.
+  - The search icon opens the **Encyclopedia**; the sliders icon opens **Settings**.
+- **Creating a plot:**
+  1. Enter a name, the length (left to right) and the width (top to bottom) in meters.
+  2. Choose **Which way does the top edge of the plot face?** by tapping one of N, NE, E, SE, S, SW, W, NW. Stand
+     at the bottom edge and look across the plot; the direction you face is the answer.
+  3. Tick **What pests or animals do you see regularly in your yard?** (deer, rabbits, raccoons, squirrels,
+     groundhogs, birds, slugs, insects…). Plot insights → **Care** then shows how to keep them away (§8a).
+  4. Optionally enter the **ZIP code**. It fills in the USDA hardiness zone (2023 map) and the latitude, with no
+     internet needed.
+  5. Tap **Initialize Spatial Workspace**.
+- You can change the direction and ZIP later from the layout menu (☰) → **Plot direction and ZIP…**.
 
-### Modes
-The canvas has three interaction modes, switched via the **menu icon** (☰) in the top bar:
-- **Place plants** (default)
-- **Draw / edit no-plant path**
-- **Select area to auto-populate**
-
-Two more toggles, independent of the three modes above, live as icons directly in the top bar:
-- **Move Mode** (lock icon) — off by default. Turn on to drag-reposition already-placed plants.
-- **Zoom/Pan Mode** (magnifying-glass icon) — off by default. Turn on to zoom and pan the canvas.
-
-**Move Mode and Zoom/Pan Mode are mutually exclusive** with each other and with the three canvas
-modes' own gestures — turning one on turns the others off. This is deliberate: it keeps touch
-gestures from competing with each other.
-
-### Placing plants
-1. Make sure you're in **Place plants** mode and Move/Zoom-Pan are both off.
-2. Pick a variety from the list at the bottom of the screen. The currently-selected variety is
-   shown above the canvas ("Now placing: ...") so it's never ambiguous.
-3. **Double-tap** anywhere on the canvas to place it there.
-4. If placement is rejected, the message tells you exactly which existing plant conflicts and by
-   how much distance. See **Settings → Spacing & Placement** if you want to loosen or tighten
-   that rule (below).
-5. **Single-tap** an existing plant to open its detail dialog: shows planted date and expected
-   harvest date, and offers **Change Variety** or **Delete**.
-6. If a plant's germination window has passed with no resolution, it shows a red ring on the
-   canvas. Tapping it opens a **Recovery Plan** dialog instead of the normal detail dialog, with
-   up to three fallback options (fast-track substitute, nursery-transplant restart, alternate
-   catch-crop), sourced from that variety's Encyclopedia entry.
-
-### Moving a plant
-1. Turn on **Move Mode** (lock icon, top bar).
-2. Drag any existing plant to a new spot. It follows your finger live.
-3. On release, the new position is validated the same way a new placement would be — if it
-   conflicts, it snaps back and tells you why.
-4. Turn Move Mode back off when done, to avoid accidental repositioning later.
-
-### Drawing a no-plant path
-1. Switch to **Draw / edit no-plant path** mode via the menu.
-2. Choose a path style, also in the menu: **Straight** (drag a rectangle) or **Curved** (tap a
-   sequence of points, then **Finish Path** and set a width).
-3. Tap an existing path (of either style) to edit its width or delete it.
-4. Plants cannot be placed (individually or via auto-populate) anywhere their spacing circle
-   would overlap a path zone — not just where their center point lands.
-
-### Auto-populating an area
-1. Switch to **Select area to auto-populate** mode.
-2. Drag a rectangle over the area you want filled.
-3. In the dialog: pick a variety (defaults to whatever you had selected in Place-plants mode) and
-   a packing pattern — **Lines** (simple grid) or **Hexagon** (denser packing). A live count
-   estimate updates as you change these.
-4. Tap **Populate**. Points that would conflict with existing plants or paths are silently
-   skipped, and you're told how many were placed vs. skipped.
-5. The canvas automatically switches back to Place-plants mode afterward, so you can immediately
-   tap/edit what was just placed.
-
-### Zoom & Pan
-1. Turn on **Zoom/Pan Mode** (magnifying-glass icon, top bar).
-2. A floating **+ / −** control appears in the bottom-right corner of the canvas (fixed position,
-   doesn't move around). A **recenter** button appears above it whenever you're not at 1.0x zoom.
-3. Drag anywhere on the canvas to pan while zoomed in.
-4. Turn Zoom/Pan Mode back off to return to normal plant/path/area interactions.
-
-### Overlays
-In the menu (☰), under "Overlays":
-- **Show weed-risk mask** — highlights every part of the plot NOT covered by a plant's spacing
-  radius (a sprout appearing there is very likely a weed).
-- **Show irrigation route** — draws a suggested drip-line route connecting every planted node,
-  nearest-neighbor from an assumed water source at the plot's origin corner.
-
-Both are off by default and don't affect placement/validation — display only.
-
-### Ruler
-Meter-calibrated tick marks along the top and left edges of the canvas. Text size and tick
-spacing are both configurable — see **Settings → Canvas Display**.
+### Computer
+- Double-click `smart-garden-planner.html`. It runs in any modern browser (Chrome, Edge, Firefox, Safari), offline,
+  with nothing to install.
+- **New plot** asks for the same details: name, size, ZIP, which way the top edge faces, **the pests and animals you
+  see in your yard**, and soil. **Edit details…** on the Plot tab changes them later.
+- **Open…** opens a `.sgp.json` plan file. You can also drop one onto the page.
+- **Save** writes the plan file:
+  - In Chrome and Edge, you pick where it goes and later saves update that same file.
+  - Other browsers download it instead.
+- The planner also remembers your work in the browser between visits. The file is what you keep and share.
+- **?** opens the help.
 
 ---
 
-## 3. Botanical Encyclopedia
+## 3. The layout
 
-Reachable from the Dashboard's search icon. Browse, search, and manage the variety dictionary
-that the Canvas draws from.
+The plot is drawn to scale on a light background in both light and dark mode, with a meter ruler along the top and
+left (the ticks show numbers only; the unit is written once: "(m)" where the two rulers meet on the computer, next to
+the 0 on the phone) and a **compass** at the top right. The compass has four arrowheads (N, E, S, W) turned to your plot's
+direction. North is red once the direction is set, and gray with "N?" until you set it.
 
-- **Search bar** filters by common name or botanical family.
-- Tap a variety card to see full details: family, spacing, germination/harvest windows, care
-  notes, pests, and companion/antagonist plants.
-- **Edit** button (in the detail dialog) lets you change anything about that variety, including
-  its spacing/exclusion radius and its canvas color.
-- **Add Variety** (bottom-right button) creates a brand-new custom entry — code, name, family,
-  spacing, germination/harvest days, companions/antagonists, care notes, and a color.
-- **Canvas color**: pick from 16 preset swatches, or leave on **"A" (Auto)** to get a color
-  automatically derived from the variety's code. Use a manual color if two varieties happen to
-  get similar automatic colors.
-- Anything you add or edit here is permanently protected from the tiered catalog system below —
-  switching catalog tiers never touches your own varieties.
+### Placing, changing and moving plants
+- **Choosing what to plant:**
+  - **Phone:** tap **Choose a Variety to Place** and pick Category → Species → Cultivar.
+  - **Computer:** use the **Plants** tab. Search accepts everyday words such as "sweet bell", "cherry tomato",
+    "spring onion" or "hot".
+- **Planting:**
+  - **Phone:** double-tap the layout.
+  - **Computer:** choose the **Plant** tool and click.
+  - A placement that breaks a rule is refused, and the message says why: too close to another plant, a plant it
+    dislikes nearby, outside the outline, on a no-plant path, or a perennial that won't survive the zone.
+- **Changing a plant:**
+  - **Phone:** tap a plant to see its details (kind, planted date, expected harvest), with **Change Variety** and
+    **Delete**.
+  - **Computer:** double-click a plant (or select it and click **Edit plant…**) to change its variety or planting
+    date, or delete it.
+- **Moving:**
+  - **Phone:** turn on **Move Mode** (lock icon) and drag.
+  - **Computer:** use **Select / move** and drag.
+  - The new spot is checked with the same rules.
+- **Moving or rearranging a whole group** (for example a clump of 20 corn). Moving one plant at a time still works as
+  before.
+  - **Computer:** select a plant and click **Select its group** (all touching plants of that variety), or hold
+    **Shift** and drag a box around any plants. Drag any plant of the group to move all of it. **Rearrange group…**
+    lists every rows × columns layout of the group's size (20 plants: 4 rows of 5, 2 rows of 10, 1 row of 20…) and
+    marks the ones that don't fit there; pick one and the group is laid out again around the same center. Click an
+    empty spot or another plant to go back to single plants.
+  - **Phone:** tap a plant → **Group…**. **Move the whole group** turns on Move Mode: drag any plant of the group and
+    the whole group follows. Turn Move Mode off when done; after that, dragging moves single plants again. The same
+    dialog lists the rows × columns layouts.
+  - A move or rearrangement that would put a plant outside the plot, on a path, or too close to another plant is
+    refused with the reason. Each is one undo step. Next season's plan and the rotation plans start from where the
+    plants are now.
+- **Undo / Redo** covers every change: plants, paths, obstacles, areas, outline, irrigation and seasons. On the
+  computer, use **Ctrl+Z / Ctrl+Y**.
+- **Crop-rotation note:** if you plant a crop where its family grew recently, it is still planted, but a note says
+  what grew there, when, why it matters and what would do better (see §5).
 
-### Tiered seed catalog (Basic / Standard / Pro)
-The Encyclopedia is backed by a real, bundled reference catalog spanning vegetables, fruit,
-herbs, flowers, and ornamentals — annuals and perennials — across USDA hardiness zones 3–11.
-Most entries are named cultivars of a smaller set of species (e.g. "Tomato - Brandywine,"
-"Tomato - Cherokee Purple," "Tomato - San Marzano" are three separate catalog entries), which is
-how real commercial seed catalogs reach hundreds of "varieties" from a much smaller number of
-actual species — this app's catalog is generated the same way, using common, real, widely-sold
-cultivar names as a reference point (Burpee's catalog was used as a rough guide for realistic,
-recognizable naming), not scraped or independently verified against any single source. Treat the
-spacing/germination/harvest figures as reasonable planning estimates, not authoritative agronomic
-data — worth spot-checking a seed packet for anything you're relying on precisely.
+### What each plant is
+- Peppers say **sweet or spicy** (with a heat level from mild to extremely hot), their shape (bell, horn, chile) and
+  their ripe color.
+- Tomatoes say **cherry, salad, slicing, beefsteak or paste**, with their color.
+- Onions say **bulb onion or spring onion**. Three spring onions are in every catalog size.
+- **Plant names:** short names such as "Bell red", "Cherry orange" or "Spring" can be shown under each plant.
+  - **Phone:** menu → **Show plant names**.
+  - **Computer:** the **Names** tool.
+- The dot in the middle of each plant is the **fruit color**, so red and yellow bell peppers look different.
 
-Three tiers, chosen in **Settings → Catalog**:
-- **Basic — 250 varieties.** The default on first install. Covers the most commonly grown
-  vegetables, herbs, and flowers.
-- **Standard — 600 varieties.** Basic's set plus a broader spread of less-common vegetables,
-  fruit, and ornamentals.
-- **Pro — 2,936 varieties.** The full catalog: 322 species spanning vegetables, fruit, herbs,
-  flowers, and ornamentals, with deep cultivar lists for high-diversity crops (tomatoes, peppers,
-  lettuce, apples, roses, dahlias, tulips, etc.), plus microgreens/sprouting seed, wildflower/
-  native species, succulents/houseplants, ornamental grasses, and flowering shrubs/trees.
+### Finding plants
+- **Phone:** the menu's **Legend (this plot)** lists every variety planted with its count and kind. Tap one to
+  circle its plants in orange. The button that appears ("Showing … — tap to clear") turns it off.
+- **Computer:** the **On this plot** box at the bottom left does the same. Click a line; click it again or press
+  **Esc** to clear. Lines on the **Food** tab (expected harvest) and the **Harmony** tab also find their plants.
+  - **Move the box** out of the way by dragging its header (⠿) anywhere over the layout; it stays there next time.
+    Double-click the header to put it back in the corner. **−** folds it up.
 
-Switching tiers **replaces** the bundled (non-custom) portion of your seed dictionary with the
-new tier's set — it does not add on top of what's there. Anything you've personally created or
-edited through **Add Variety** / **Edit** is never touched by a tier switch, regardless of tier.
-Switching can take a few seconds for the Pro tier given the volume of data involved.
+### Replacing a variety everywhere at once
+Changed your mind about a variety? **Replace…** next to it in the list (computer: **On this plot** box; phone: menu →
+**Legend (this plot)**) changes **every** plant of that variety to the one you choose, in one step:
+- They keep their places and planting dates. **Undo** puts them all back.
+- Other varieties of the same plant are offered first (computer), or use the usual variety picker (phone).
+- If the new variety needs more room or doesn't get along with a neighbor, the message says how many plants now crowd
+  a neighbor and the new spacing; Harmony lists them so you can move or remove some.
+- Perennials that won't survive your zone are refused.
 
-### Choosing a variety (Category → Species → Cultivar)
-With a catalog this large, picking a variety is a 3-step flow everywhere you're asked to choose
-one (placing a plant, changing a plant's variety, auto-populating an area):
-1. **Category** — Vegetable, Fruit, Herb, Flower, or Ornamental.
-2. **Species** — e.g. Tomato, Pepper, Asiatic Lily, Lilac. Shows how many cultivars each has.
-3. **Cultivar** — the specific named variety, e.g. San Marzano, Big Boy, Madame Lemoine.
-Each step has a search box (from step 2 onward) to jump straight to what you're looking for
-instead of scrolling.
+### No-plant paths
+- **Phone:** menu → **Draw / edit no-plant path**. Drag a rectangle (Straight), or tap points and then **Finish
+  Path** (Curved). Tap a path to edit or delete it.
+- **Computer:** the **No-plant path** tool (drag a rectangle).
+- No plant's spacing circle may overlap a path.
+
+### Site tools: outline, areas, obstacles, irrigation
+- **Plot outline** (for plots that aren't rectangles):
+  - **Phone:** menu → **Draw plot outline**. Tap the corners in order, then **Finish Outline**. To change it, open
+    the tool again, tap a corner (it turns orange), then tap where it should go. Menu → **Delete outline (back to
+    the full rectangle)** removes it.
+  - **Computer:** the **Plot outline** tool. Drag the white corners, double-click an edge to add a corner, or click
+    corners in order and press Enter to redraw. **Delete outline** removes it.
+- **Sun / shade / flood / slope areas:**
+  - **Phone:** menu → **Mark sun / shade / flood / slope area**.
+  - **Computer:** the **Sun / shade / flood / slope area** tool (types on the Plot tab).
+  - Flood areas take the months they flood; slopes take a grade and downhill direction.
+- **Trees, fences, walls, buildings**, each with a rough height (fence 1.8 m, one-storey house 5 m):
+  - **Phone:** menu → **Place tree / fence / wall / building**.
+  - **Computer:** the **Tree** and **Fence / wall / building** tools.
+  - These cast shade.
+- **Irrigation** (§7):
+  - **Phone:** menu → **Irrigation** → **Place sprinkler / drip line / hose tap**.
+  - **Computer:** Plot tab → **Irrigation**.
+- **Editing any obstacle, area or irrigation item:**
+  - **Phone:** tap it with its tool active to **Edit**, **Delete** or **Move** it.
+  - **Computer:** select it and drag it, or click **Edit selected…**.
+
+### Satellite photo: trace your real yard
+Instead of guessing where trees, fences and buildings are, put a satellite photo of your yard under the plot and
+trace on top of it.
+
+1. **Open the photo tools:**
+   - **Computer:** Plot tab → **Satellite photo** (or the **Satellite photo** tool on the left).
+   - **Phone:** menu → **Satellite photo…**.
+2. Type your address and tap **Open Google Maps (satellite)**. Google Maps opens in your browser or the Maps app.
+   The address is kept with the plot, so next time **Open in Google Maps** (computer: Plot tab, under Edit details;
+   phone: menu) goes straight there. You can also type it in **Edit details…** (computer).
+   Switch to **Satellite** if it isn't already, zoom in until your yard fills the screen, and take a screenshot
+   (Windows: Win+Shift+S · Mac: Cmd+Shift+4 · phone: the usual screenshot buttons). Keep the Google Maps **scale bar**
+   in the picture if you can.
+3. **Add photo…** (computer) or **Choose photo…** (phone) and pick the screenshot. It appears under the plot, as
+   wide as the plot to start with.
+4. **Set the scale:** click or tap two points on the photo whose real distance you know (the two ends of the scale
+   bar, or both ends of a fence you've measured), then enter that distance in meters (1 ft = 0.3048 m). The photo
+   grows or shrinks to match; the first point stays where it is.
+5. **Move** it by dragging (the **Move photo** / **Move** button, or the Satellite photo tool) until it lines up with
+   your plot, and **Turn** it if your plot isn't square to the map: drag the slider or type a number, from **−180**
+   (counterclockwise) to **+180** (clockwise); **0** is not turned. The photo turns about its center, and the slider
+   and the number always match. **See-through** makes the photo lighter so your
+   drawing stays easy to see. **Hide** / **Show** and **Remove photo** do what they say.
+6. Now draw the trees, fences, buildings, outline and beds on top of what you see.
+
+Notes:
+- The planner never downloads map pictures itself: it only opens Google Maps when you ask, and uses your own
+  screenshot. The photo is a tracing aid; shade is still worked out from the obstacles you draw.
+- The photo is kept with the plot, goes into plan files and is copied by **Duplicate**.
+- **Computer:** every photo change can be undone. Large photos may not fit in the browser's draft; the Plot tab says
+  so, and **Save** keeps the photo in your file.
+- **Phone:** the photo shows inside the plot rectangle only, and photo changes can't be undone (just move it back).
+
+### Other overlays (Phone menu → Overlays)
+- **Show site areas and barriers**
+- **Show sun and shade** (§6)
+- **Show water map** (§7)
+- **Show weed-risk mask**: highlights ground no plant's spacing covers, where weeds are likely.
+- **Show irrigation route**: a suggested drip route through every plant.
 
 ---
 
-## 4. Settings
+## 4. Plan an area for me, and Fill the whole plot
 
-Reachable from the Dashboard's tune/sliders icon. Every numeric or behavioral value that used to
-be a fixed constant in the app now lives here, organized into sections. Changes save immediately
-— there's no separate "Save" button. A reset icon (top bar) resets everything to defaults.
+For when you know *what* you want but not *where*.
 
-### Catalog
-See §3 above for full detail. Pick Basic (250), Standard (600), or Pro (2,936) varieties. Shows
-the current count of bundled varieties loaded. Your own custom varieties are never affected.
-
-### Units
-Meters or Inches — a quick-toggle appears right on the Canvas header (tap "[in]"/"[m]" next to
-the plot size), or in Settings → Units for the same control. Everything is still stored
-internally in meters; only what you see and type is converted.
-
-### Spacing & Placement
-- **Spacing margin** (0.3x–2.0x, default 1.0x): scales the plant-to-plant spacing rule. The
-  default (1.0x) is the standard non-overlap rule — two plants' spacing circles are allowed to
-  just touch, not overlap. Lower this if you want to pack plants tighter than that and are
-  comfortable with the tradeoff; raise it to be more conservative than the default.
-- **Enforce companion/antagonist rules**: turn off to ignore "these two dislike each other"
-  warnings (spacing is still enforced either way).
-
-### Canvas Display
-- **Ruler text size**, **ruler tick spacing** — self-explanatory.
-- **Minimum/maximum zoom**, **zoom step** — controls the bounds and increment of the +/- buttons.
-- **Undo history depth** — how many steps back Undo/Redo can go.
-
-### Plot Validation
-- **Minimum/maximum plot dimension** — the length/width bounds enforced on the Creator screen.
-
-### Sensors & Hardware
-Tilt-abort threshold, low-light lux threshold, GPS accuracy gate, storage floor percentage.
-**Not yet connected to any active screen** — the camera/sensor capture UI hasn't been built yet
-(it's next on the list). These are here now so the settings exist by the time that screen lands,
-rather than needing another retrofit later.
+1. **Choose the area:**
+   - **Phone:** tap **✨ Plan an area for me** and drag over the area (or tap its corners in custom-shape mode).
+   - **Computer:** use the **Plan an area for me** tool and drag.
+   - To plan everything at once, use **Fill the whole plot…**. It's a button on both.
+   - **Plants already in the area?** (also after **Change selections**) The dialog asks: **Keep them where they are
+     and plan around them** (the default), or **Start from a blank area**. With a blank area, the proposal says how
+     many plants it replaces; they're only removed when you keep the plan, and one **Undo** brings them back.
+2. **List what you want and how many.** The list starts as follows:
+   - with your **last list**, which is remembered;
+   - otherwise with **what you usually plant** (the varieties you grow most, over all plots and seasons), which are
+     also offered as one-tap buttons.
+3. **How many fit?** keeps the proportions of your list and fills the area: for example, 2 corn for every 1 lettuce
+   becomes 24 corn and 12 lettuce. Change any number afterwards.
+4. **Mark what matters most:** tap **☆** next to the plants you care about most (it turns into an orange **★**). They
+   are placed first, in the sunniest spots that suit them, before anything else takes that space.
+5. **Checks before planning** appear under the list and update as you change it, most serious first (⚠ serious,
+   • worth a look, ✓ fine):
+   - **Space:** how much of the area your list needs, walkways included, and whether it will all fit.
+   - **Sun:** for full-sun, part-shade and shade plants, how much of the area gets enough sun compared with what
+     they need (only when trees, fences, buildings or sun/shade areas are drawn; otherwise it tells you so).
+   - **Neighbors** that grow poorly together, **zone** (hardiness) warnings, **rotation** (families that grew here
+     last season), a wide **watering** mix, and **pests** from your yard that go for the plants on your list.
+   - **Most important:** which plants you've starred.
+   Use them to change counts, star different plants or pick another area before you decide.
+6. **Arrange as** (organized clumps): under each plant, choose how its clump is laid out before anything is planted,
+   for example 50 plants as **5 rows of 10**, **10 rows of 5**, **7 rows of 7 + 1 row of 1**, **6 rows of 8 + 1 row of
+   2** or **1 row of 50**; or **Let the planner choose**. **Neater counts** suggests nearby numbers that make a tidy
+   rectangle (48 = 6 rows of 8, 49 = 7 rows of 7): tap one to use it. (Phone: **Arrange: … ▾** under each plant.)
+   Rows run across the plot, and the first row is at the back (away from the sun).
+7. **How should each crop be arranged?**
+   - **Organized clumps (recommended):** each crop is a small block of rows and columns at its own spacing (20 corn
+     = 4 rows of 5; 7 tomatoes = a row of 4 and a row of 3), with a **45 cm walkway** between crops so you can walk
+     round and water with a hose. Next year the blocks can swap places.
+   - **Long rows:** each crop gets its own straight rows running the full width of the area, tallest crops at the
+     back, with the same 45 cm walkway between crops. Tidy, but harder to rotate: a tall row at the back can only
+     trade places next year with a crop of similar height, or it would shade the rest. The proposal says so.
+8. **Plan it** shows a proposal as dashed circles. Nothing is planted yet. The card explains every decision:
+   - Tall crops are on the side away from the midday sun (north in the northern hemisphere).
+   - Sun lovers get the sunniest spots.
+   - Pollinator flowers are next to crops that need bees.
+   - Sweet corn is planted as a block.
+   - Plants with similar watering needs are together.
+   - Crops are kept off spots their family used recently.
+   - The plants you starred went first, with their average sun hours.
+   - Each crop is kept in **one block** where it can be. If a block of the default shape doesn't fit, other tidy
+     shapes are tried first (and named). If a crop still has to be split, the card says so: which crop, how many in
+     each group, and why (for example "Tomato is in 2 groups (4 + 3): no single block of 7 fitted in the free ground").
+     Choose another arrangement, a bigger area or fewer plants to keep them together.
+   - **Climbers** (pole beans, peas) are at the back, with a note to put up a trellis there.
+   - **Sprawling vines** (watermelon, squash, pumpkin, cucumber, melon, sweet potato, gourds) are on the sunny side,
+     with their runway toward the sun kept free (about 2 m for watermelon), shown by a **green arrow**. Guide the
+     runners that way. A runway is only used when it is **completely free**: no plants on it, not over another
+     vine's runway (so two squash blocks don't grow into each other), not past the edge of the plot and not along a
+     fence, wall or building. If there's no free ground left for a vine's runners, the card says which vine, so you
+     can choose a bigger area, fewer plants, or grow that vine up a trellis.
+   - A crop that doesn't get along with something nearby (for example tomatoes next to potatoes) is moved to other free
+     ground and kept as one block where the area allows, instead of being split or left out.
+   - **See other layouts:** **Option ▶** works out another way to place the same list (crops shifted to one side or
+     the other, in another order, other clump shapes, sun first, spread out, close together, long rows) and **◀
+     Option** goes back. Each shows its name and a summary: how many were placed, how many didn't fit, and the
+     average sun. Layouts that come out the same are skipped, so you see up to 11 different ones. Only the one on
+     screen is kept.
+   - **Move the card out of the way:** **−** folds it to its title bar and **+** opens it again. On the computer,
+     drag the card by its title bar anywhere on the screen. The proposal stays drawn on the layout.
+9. Choose:
+   - **Keep this plan** (**Plant them** on the phone) plants everything as one undo step.
+   - **Change selections** goes back to your list for the same area.
+   - **Discard** drops only the proposal. Your plot and your list stay as they are.
 
 ---
 
-## 5. Known Gaps (as of this version)
+## 5. Seasons, history and crop rotation
 
-- Camera capture has no screen yet — the underlying capture/downscale/permission logic exists in
-  code but nothing in the UI calls it.
-- IMU sensor-based plot measurement is selectable in the Creator screen's dropdown but not
-  actually wired to a calibration/measurement flow.
-- GPS-based climate lookup doesn't exist yet — only a ZIP-code lookup table does, and nothing in
-  the UI currently reads from it either.
-- Ownership/role fields exist on each plot but nothing reads or enforces them yet.
+A plot keeps its fixed features every year and remembers every past season.
+
+| I want to… | Phone | Computer |
+|---|---|---|
+| See which seasons I have | Plot insights → **Harmony** → Seasons & crop rotation | **Plot** tab → Seasons & crop rotation (each season lists its plants and where each family grew) |
+| Look at a past season | Menu → **Season shown: …** (tap to cycle). The layout shows that season, read-only; tap the banner to return | Plot tab → **Season shown on the layout** → a past year (read-only). **Back to …** returns |
+| See last year faintly while planning | Menu → **Past season on layout** | Plot tab → **Also show a past season faintly** |
+| End this season and start empty | Menu → **Start a new season (empty)…** | Plot tab → **Start a new season (empty)…** |
+| Re-plan next year with the same crops, rotated | Menu → **Plan next season (rotate)…** | Plot tab → **Plan next season (rotate)…** |
+| See the next 1 to 30 years | Menu → **Rotation plan for several seasons…** (type how many) | Plot tab → **Rotation plan for several seasons…** (type how many) |
+| Grow something different in some years | In the rotation plan: **Change a variety…** | In the rotation plan: **Change a variety…** |
+| Keep a template or try another plan | Menu → **Duplicate this plot…** | Plot tab → **Duplicate…** (top, next to Edit details) or **Duplicate plot…** under Templates |
+
+**Which season am I in?** The season being planned is the year this season's plants were planted (this year if
+there are none). It is always the year after the last season you closed. You plan that season; past seasons are for
+looking at.
+
+**Plan next season (rotate)** reuses this season's list (or your last closed season's), plans the whole plot, and
+shows the proposal. Choosing **Start next season** (**Start next season with this plan** on the computer) does the
+following in one undo step:
+1. Moves this season's plants into history.
+2. Plants the new layout.
+
+**Rotation plan** plans several seasons in a row from the same list and shows one year at a time: ◀ / ▶, or
+**Year ▶** on the computer. Type how many years you want, **1 to 30**. Nothing changes until you choose **Use <first
+year> now**. The plan is worked out again each time from your plot, so it follows any changes you make.
+
+**Change a variety…** (while looking at a year of the plan): pick a variety on the list and the one to grow instead.
+From that year on, every year uses the new one (same number of plants) and the plan is worked out again with crop
+rotation, for example when you're tired of a tomato or already have plenty of something. The years before stay as
+they were. **Clear all changes** goes back to your original list.
+
+**The rotation rules:**
+- Vegetables belong to rotation families, each with a waiting period:
+  - legumes: 2 years
+  - cabbage family: 3
+  - nightshades (tomato, pepper, eggplant, potato): 3
+  - squash family: 2
+  - corn and grains: 2
+  - onion family: 3
+  - carrot family: 3
+  - beet and spinach family: 2
+  - lettuce family: 1
+- Flowers, herbs and perennials don't rotate.
+- **Plan an area for me never puts a crop where its family grew last season**, as long as anything else fits. If
+  nothing else fits, the card says so.
+- Older seasons, still within the family's waiting period, are avoided more weakly the further back they are.
+- Planting by hand is never blocked. You get a note instead.
+- The advice (Harmony tab on the phone, Plot tab on the computer) tells you:
+  - what grew where last season, in compass terms;
+  - which family should go there next (legumes → cabbage family → fruiting crops → roots and onions → legumes);
+  - which of this season's plants break the rotation;
+  - when last season used one long row.
+- History is saved in plan files and is never removed by later seasons. It is deleted only with its plot.
+
+---
+
+## 6. Sun and shade
+
+Turn it on:
+- **Phone:** menu → **Show sun and shade** (Pro tier).
+- **Computer:** **Shade** in the top bar.
+
+Choose:
+- **The day:** **Growing season** (the default: the middle of your growing season, from your frost dates; the date is
+  shown), today, spring equinox, midsummer (longest day), autumn equinox or midwinter (shortest day). The sun is much
+  lower in autumn and winter, so shade reaches much further: a plot that is sunny all summer can look shady in late
+  September. That's why planning uses the growing season (below), not today.
+- **Whole day:** each spot is colored by the hours of direct sun it gets from sunrise to sunset:
+  - yellow = full sun (6 h or more)
+  - blue = part shade (3 to 6 h)
+  - dark indigo = shade (under 3 h)
+
+  **Computer:** point at a spot to see *when* it gets sun, e.g. "Sun 7:15–11:30 and 14:00–18:45".
+- **At a time of day:** a slider from sunrise to sunset shows where the shade is at that moment, and where the sun
+  is. Slide it to watch the shade move across the plot.
+- **Plants' shade** (on by default): planted crops cast shade at their **mature height** (corn about 2.2 m, tomatoes
+  1.5 m, pole beans 2 m), so you can see how much tall plants shade their neighbors. Low crops (under 0.5 m) are
+  ignored.
+- **Phone:** tap the blue words in the legend to change the day, switch between whole day and time of day, or turn
+  plants' shade on and off.
+
+Times are **solar time**: noon is when the sun is due south (due north in the southern hemisphere), which can be up
+to an hour or so from clock time. Clouds are not modeled.
+
+**How planning uses the sun.** "Plan an area for me", "Fill the whole plot", the rotation plan and the checks before
+planning judge sun over your **growing season**: the average of three days spread between your last spring frost and
+first fall frost (mid-May, midsummer and early August if the frost dates aren't known). Crops that need full sun choose
+first and get the sunniest spots that suit them; a lack of sun counts for more than keeping tall plants at the back;
+lettuce and other part-shade crops take the less sunny ground and leave the sunniest spots to the sun lovers.
+
+---
+
+## 7. Irrigation: sprinklers, drip lines and hoses
+
+Draw what you have and see what gets watered.
+
+- **Sprinkler:** tap or click where it stands, then set:
+  - how far it throws water (meters);
+  - its pattern: full, three-quarter, half or quarter circle;
+  - for a part circle, which way the middle of the spray points.
+- **Drip line / soaker hose:** tap or click points along it, then **Finish** (computer: the **Finish (Enter)** button
+  in the tool bar, Enter, or a double-click on the last point; phone: **Finish**). Then set the wetted strip either
+  side (drip about 0.3 m, soaker about 0.2 m). After Finish the tool goes back to Select / move; **Cancel (Esc)**
+  drops the points.
+- **Computer:** click a sprinkler, drip line or hose tap button again to stop placing; every button shows what it
+  does when you rest the pointer on it.
+- **Hose tap:** tap where the tap is and give the hose length. Anywhere within that distance counts as reachable
+  (in a straight line; walls or beds in the way are not modeled).
+
+Turn on the **water map** (phone menu → **Show water map**, or **Water** in the computer's top bar):
+- Wet areas are colored by source: drip, sprinkler, or hose reach.
+- **Plants no source reaches get a red dashed ring**: they need a watering can.
+
+### Watering recommendations (Care tab)
+**Care → Watering and irrigation** brings it all together:
+- **Computer:** buttons to add a **sprinkler**, **drip line** or **hose tap** and to turn the **water map** on, right
+  there. **Phone:** the section points to the layout menu → Irrigation and **Show water map**.
+- Once irrigation is drawn: plants per source, the plants **no sprinkler, drip line or hose reaches** (they need a
+  watering can), and a warning when a sprinkler wets the leaves of crops prone to blight or mildew (tomatoes,
+  potatoes, squash, cucumbers, melons, peppers), where a drip line is better.
+- Advice for your plot: which plants aren't reached and how to cover them, your **thirsty** plants to check first in
+  hot weather, and where drip or a soaker hose would help.
+- **How much water your plants need:** each crop's need (high, moderate or low, in cm and inches a week).
+- **Watering tips** (about 2.5 cm / 1 in a week, water deeply and less often, in the morning at the base, finger test,
+  mulch) and **Choosing sprinklers, drip or hose**.
+- Below that, the **watering schedule** for what's planted.
+
+---
+
+## 8. Growing season, planting calendar and Plan B
+
+### Your growing season
+From your plot's ZIP code the planner finds the nearest NOAA weather station (1991–2020 averages) and shows:
+- **Last spring frost:** the average date (half of years the last frost is earlier, half later) and the "1 year in 10"
+  late date.
+- **First fall frost:** the average date and the "1 year in 10" early date.
+- **Growing season:** the number of frost-free days between them.
+- Which station was used, how far away it is and its elevation (a station much higher or lower than your garden can be
+  a week or two off).
+
+Where: **Computer:** Plot tab → **Growing season**. **Phone:** Plot insights → **Site** → Growing season. The ZIP code
+is needed (Edit details… / Plot direction and ZIP…).
+
+### Planting calendar
+**Planting calendar…** (computer) or **Planting calendar** (phone) lists, for each crop on the plot (or common crops if
+nothing is planted yet):
+- **start indoors:** for crops usually grown from transplants (tomatoes, peppers, eggplant, cabbage family, onions,
+  basil…), the two weeks to sow seeds indoors;
+- **plant out from … (last chance …):** hardy crops (peas, spinach, onions, lettuce, carrots…) can go out several weeks
+  before the last frost; frost-tender crops (tomatoes, peppers, squash, beans, corn, basil) a week after it. The last
+  chance is the latest date that still ripens before the first fall frost;
+- **fall crop:** for hardy crops, a second sowing that matures in the cool of autumn, where there's room;
+- a note when a variety is too slow for your season, with what to do (faster variety, start indoors, cover).
+The Care tab repeats this for what's planted (**When to plant (your frost dates)**). The dates are averages: watch the
+forecast and cover tender plants on cold nights.
+
+### Plan B: when a plant dies
+Plants get eaten, rot or never come up. Plan B keeps the harvest on track:
+1. Open the plant that died (computer: double-click it or **Edit plant…**; phone: tap it → **Plan B**, or from the
+   germination alert).
+2. **Plan B** shows when the plants that survived should be ready, and lists varieties that, **planted today**, will be
+   ready at about the same time and before the first frost: other varieties of the same crop first (usually faster
+   ones), then quick crops of the same family. Each shows its days to harvest and when it would be ready ("ready with
+   the others", or how many days before or after).
+3. Choose one. It goes in the same spot with today's planting date. Tick **Replace all … planted the same day** to swap
+   every plant of that variety planted that day. **Undo** reverses it.
+
+The Care tab's **Plan B: if a plant dies** lists, for each crop you grow, the faster varieties worth keeping seed of,
+so you're ready before anything happens.
+
+---
+
+## 8a. Pests and animals in your yard
+
+Tell the planner which pests and animals visit your yard, and the **Care** section tells you how to keep them out.
+
+- **Where:** when you create a plot, or later on **Care → Pests and animals in your yard** (tap to tick or untick);
+  computer: also **Edit details…**.
+- **The list:** deer; rabbits; raccoons; squirrels; groundhogs (woodchucks); gophers; voles and mice; chipmunks;
+  skunks and opossums; armadillos; wild boar / feral hogs; dogs and cats; birds; slugs and snails; aphids; cabbage
+  worms; tomato hornworms; squash bugs and vine borers; beetles (cucumber, flea, Japanese, potato); moles.
+- **For each one you tick:**
+  - which of **your** plants it goes for (for example "Raccoons — goes for your Sweet Corn, Tomato");
+  - the **signs** of damage to look for;
+  - **how to prevent it**, such as fence height and type (deer: 2.4 m / 8 ft, or two shorter fences about 1.5 m apart;
+    rabbits: 60–90 cm chicken wire buried 15 cm; groundhogs: 1–1.2 m fence with a floppy top and an L-shaped buried
+    footer; raccoons: a low two-wire electric fence around corn and melons), netting, row covers, hardware cloth,
+    raised beds, repellents and timing.
+- **General tips** for every garden are listed too.
+- **Plan an area for me** warns you when a pest you ticked goes for a plant on your list.
+- Check local rules before trapping or using an electric fence, and choose methods that are safe for pets, children
+  and wildlife. This is general guidance (see the notice at the top of this manual).
+
+---
+
+## 9. Templates: duplicating a plot
+
+**Duplicate** copies the plot, much like duplicating a browser tab. The copy keeps the size, direction, ZIP, soil,
+outline, fences, buildings, trees, paths, areas, irrigation, your yard's pests and the satellite photo. You choose whether it also takes this season's
+plants and the history, so crop rotation carries on in the copy. Change the copy freely; the original stays as it
+was.
+
+---
+
+## 10. Plot insights (Phone) and the side tabs (Computer)
+
+**Phone:** menu → **Plot insights**. **Computer:** the tabs on the right.
+
+- **Site** (phone) / **Plot** (computer): zone, location, direction, soil (with improvement tips), sunlight;
+  satellite photo, seasons, templates and irrigation (computer).
+- **Harmony:** a score, clashes, good neighbors, ideas; and on the phone, **Seasons & crop rotation**.
+- **Suggest** (phone) / **Plants** (computer): varieties that suit the plot or an area.
+- **Care:** the disclaimer in short; **pests and animals in your yard** (§8a); **when to plant** and **Plan B** (§8); **watering and irrigation** (§7); the
+  watering schedule; the feeding plan (organic or conventional); and plant pests and diseases to watch for.
+- **Food:** expected harvest, what it feeds, recipes from your garden, and a homestead starter list for your
+  household size.
+
+---
+
+## 11. Encyclopedia and catalog
+
+Reach it from the Dashboard's search icon.
+
+- **Browsing:** search, see details (family, spacing, germination and harvest, care, pests, companions and
+  antagonists), edit, or **Add Variety**. A canvas color is optional (16 presets, or Auto).
+- **Catalog sizes** (Settings → Catalog):
+  - **Basic 253**
+  - **Standard 603**
+  - **Pro 2,939** varieties
+- **Switching size:** replaces the bundled entries, but never your own. New bundled varieties (such as the spring
+  onions) are added automatically when the app starts.
+- **Choosing a variety:** always Category → Species → Cultivar, with search. Peppers, tomatoes and onions show their
+  kind (sweet or spicy, size, color).
+- The spacing, germination and harvest figures are planning estimates; check a seed packet when it matters.
+
+### Unknown variety
+
+A plant can refer to a variety that isn't in your catalog, for example after you delete one of your own varieties,
+or when a plan file came from another catalog. The app can't know how much room that plant needs, so it assumes
+0.3 m and won't place, move or change another plant too close to it. It says "Unknown variety" and shows the plant's
+code. Fix it in one of two ways:
+
+1. **Correct the catalog (Phone):** Encyclopedia → **Add Variety**. Enter the code shown in the message exactly,
+   a name, the family and the spacing, then Save. The plant is recognized when you open the plot again. For the
+   computer planner, save the plan on the phone afterwards and open that file there: plan files carry your own
+   varieties.
+2. **Replace the plant:** in the message, choose **Delete that plant** (Undo brings it back), then plant a
+   substitute in that spot until the variety has been created.
+
+On the computer planner, the message's **How to fix (Help)** button opens this explanation.
+
+---
+
+## 12. Settings (Phone)
+
+Changes save immediately; the reset icon restores the defaults.
+
+- **About this planner:** the disclaimer.
+- **Language:** English or Español. The screen is rebuilt in the chosen language: menus, buttons, advice, the
+  planner's explanations, plant names and the catalog's pest and care notes. Registered variety names (for example
+  "Honey Select" or "Golden California Wonder") stay as published; plain ones such as "Mid-Season" are translated.
+- **Catalog:** Basic, Standard or Pro.
+- **Units:** meters or inches. Also switchable from the "[in]/[m]" chip on the layout header.
+- **Spacing & placement:**
+  - the spacing margin (0.3× to 2.0×);
+  - companion rules on or off (Pro);
+  - guild planting (Pro). Also switchable from the "GUILDS ON/OFF" chip.
+- **Canvas display:** ruler text size and tick spacing, zoom limits and step, undo depth.
+- **Plot validation:** minimum and maximum plot size.
+- **Household & care:**
+  - household size;
+  - organic or conventional advice;
+  - daily care reminders (Pro);
+  - how much rain counts as a watering.
+- **Online features:** off by default. When on, the app may fetch weather, hardiness zone and nutrition data.
+- **Sensors & hardware:** reserved for the measuring features, not yet connected.
+
+**Computer:** the language menu is in the top bar (English / Español); the choice is remembered in this browser.
+Similar settings are on the Plot tab: companion rules, guilds, spacing margin, organic care. The page's
+own colors (**Auto / Light / Dark**) are in the top bar. The layout itself always stays light so shade is easy to
+see.
+
+---
+
+## 13. Moving plans between phone and computer
+
+- **Computer → phone:**
+  1. **Save** on the computer.
+  2. Copy the `.sgp.json` file to the phone (USB, email, Drive, OneDrive).
+  3. On the phone: Dashboard → **Open plan file**.
+- **Phone → computer:**
+  1. On the phone, use menu → **Save this plot as a file…** (or **Save all plots to a file** on the Dashboard).
+  2. On the computer: **Open…**, or drop the file onto the page.
+- **What travels in the file:** plants, paths, obstacles, areas, irrigation, outline, direction, ZIP, soil, the
+  **season history**, your yard's **pests** and the **satellite photo**.
+- **Opening a file never overwrites anything.** The phone adds the file's plots as new plots. On the computer,
+  opening a file replaces what's open, so save first.
+
+---
+
+## 14. Known gaps
+
+- **Camera capture and phone-sensor measuring** of plot size are not connected yet (use the typed size).
+- **Phone:** you can't drag outline corners (tap a corner, then its new place) or add corners. You can't change a
+  plant's planting date. Pointing at a spot to see its sun hours is computer-only.
+- **Rotation plans** are shown but not stored as future seasons. They are worked out again when you open them.
+- **Irrigation:** hose reach is a straight line. Water pressure, flow and run times are not modeled.
+- **Shade:** clear-sky, solar time, and approximate plant heights.
+- **Variety details** (sweet or spicy, size, color) cover peppers, tomatoes and onions only.
+- **Ownership and roles** on plots are not used yet.
+- **Satellite photo:** there is no live map layer (Google's map pictures can't be used offline or without an API key);
+  you add your own screenshot. On the phone the photo is clipped to the plot rectangle and its changes aren't
+  undoable.
+- **Units on the computer:** meters only (the phone can show inches).
+- **Languages:** English and Spanish only for now. Registered variety names aren't translated. Dates show the day and
+  a short month (e.g. "12 may"). The Spanish is reviewed by the planner's tests, not yet by a native speaker.
+- **Phone:** the proposal card folds but can't be dragged; a group is chosen from a plant's details (no box select).
+- **Frost dates** are US-only (NOAA stations), from the nearest station within 250 km, without adjusting for elevation
+  or local frost pockets.
 
 ---
 
 ## Changelog
 
-- **This version**: Massively expanded the tiered catalog — Basic 100→250, Standard 250→600, Pro
-  604→2,936 varieties, now covering 322 species (up from 160) including microgreens/sprouting
-  seed, wildflower/native species, succulents/houseplants, ornamental grasses, and flowering
-  shrubs/trees, alongside deeper cultivar lists for high-diversity crops. Replaced every flat
-  variety-selection list (place plant, change variety, auto-populate) with a 3-step Category →
-  Species → Cultivar picker with search at each step — a flat list of up to 2,936 items was no
-  longer usable. The options-menu color legend is now bounded to varieties actually placed on the
-  current plot instead of iterating the entire catalog.
-- Replaced the original 5-seed starter dictionary with a full tiered catalog —
-  Basic (100), Standard (250), and Pro (604) varieties — spanning vegetables, fruit, herbs,
-  flowers, and ornamentals across USDA zones 3–11, switchable any time from Settings → Catalog
-  without affecting your own custom varieties. Companion/antagonist matching was updated to work
-  at the species level (any cultivar of a species now correctly counts for its companion/
-  antagonist relationships, not just one specific exact match) — necessary for this to actually
-  function against a catalog with hundreds of cultivar-level entries.
-- Fixed a real bug where planted nodes appeared to disappear when zooming in —
-  caused by the scroll container and the canvas-size measurement sharing the same layout node,
-  which corrupted the size calculation. Zoom controls and the zoom hint no longer move when
-  panning. The ruler's tick spacing now gets finer as you zoom in. Added a distance unit setting
-  (Meters/Inches) — a quick-toggle chip on the Canvas header, plus a full Settings section;
-  storage is still always meters internally, only display and input are converted. Creator screen,
-  Canvas header, and Encyclopedia now all respect the chosen unit.
-- Added Settings screen (5th screen) and made every previously-hardcoded value configurable
-  through it. Added zoom/pan (buttons + drag, gated behind a dedicated mode toggle). Moved zoom
-  controls to a fixed floating cluster in the canvas's bottom-right corner. Made the
-  spacing-margin rule and companion/antagonist enforcement configurable — directly in response to
-  the strict default rule being too rigid for some real placements.
-- Prior versions: recovery-plan UI, custom variety add/edit, ruler, no-plant paths (straight and
-  curved), auto-populate (line/hex), plant color-coding, drag-to-reposition, weed-mask and
-  irrigation-route overlays. See the project's own dev-log knowledge base for the detailed
-  history of fixes and additions before this manual existed.
+- **2026-09-28 (checks):**
+  - A plant whose variety is missing from the catalog is no longer ignored: nothing can be placed right on top of it,
+    and the message explains how to fix the catalog or replace that plant (see "Unknown variety").
+  - Hardiness zones are only the labels of the ZIP table (1a to 13b); a bare "7" is not a zone.
+  - Damaged settings, and plan files with out-of-range values or obstacles outside the plot, are corrected or
+    skipped with a message instead of being used.
+
+- **2026-09-28 (runways, rows, Spanish):**
+  - Squash and other vines: a runway is used only when it's completely free (no plants, no other runway, inside the
+    plot, away from fences); otherwise the proposal says which vine has no free room.
+  - **Long rows** are now real rows: each crop in full-width rows, tallest at the back, with walkways.
+  - Spanish covers the whole interface: advice, the planner's explanations, plant names, and the catalog's pest and
+    care notes.
+  - The ZIP data (location, state and hardiness zone) is one table, which makes the computer planner file smaller.
+
+- **2026-09-28 (options, groups, languages):**
+  - All interface text uses **US English** spelling (neighbor, color, center, meters).
+  - **Up to 11 layouts** to compare before keeping a plan; the proposal card folds and (computer) moves.
+  - **Keep or replace** the plants already in the area when planning or changing selections.
+  - **Groups:** select a whole clump, move it, or rearrange it as other rows × columns.
+  - Tomatoes (and any crop with a disliked neighbor) now find room in one block in the free space; vine runways stay
+    clear of other plants, other runways and fences.
+  - **Language** choice (Spanish started; more can be added with a dictionary file).
+
+- **2026-09-27 (season, sun and Plan B):**
+  - Planning judges sun over the **growing season** (it used to use today's date, so a plan made in autumn favored the
+    wrong spots); sun lovers choose first and get the sunniest ground. The shade display defaults to "Growing season".
+  - **Growing season** and **planting calendar** from NOAA 1991–2020 frost dates for your ZIP's nearest station.
+  - **Plan B** for plants that die: varieties that catch up with the survivors before the first frost.
+  - Ruler ticks show numbers only; the unit is shown once.
+
+- **2026-09-27 (your feedback on the test plot):**
+  - **Replace…** in the plot's list changes every plant of a variety at once.
+  - The computer's **On this plot** box can be dragged out of the way.
+  - **Arrange as**: choose rows × columns for each clump before planting, with neater counts suggested; crops are kept
+    in one block where possible, and any split is explained.
+  - **Rotation plan** for 1 to 30 years, with **Change a variety…** from any year on.
+  - Satellite photo **turn** fixed: −180…+180 about the photo's center, with a number box that follows the slider.
+  - **Drip lines** have a Finish button and stop adding points after Finish; tool buttons turn off when clicked
+    again; every button on the computer shows what it does on hover.
+  - The plot's **address** is kept and **Open in Google Maps** goes straight there. Database schema 12.
+
+- **2026-09-27 (yard, checks and photo):**
+  - A **disclaimer** before first use: the planner is a guide, not a guarantee.
+  - **Pests and animals in your yard**: asked when you create a plot; Care shows signs, prevention (fencing and more)
+    and the plants at risk.
+  - **Watering and irrigation** on the Care tab, with the irrigation tools and water map, and per-plant water needs.
+  - **☆ Most important** plants, placed first in the sunniest spots, and **Checks before planning**.
+  - **Satellite photo** under the plot: open Google Maps, add a screenshot, set its scale, move and turn it, and
+    trace your yard. Database schema 11.
+
+- **2026-09-27 (seasons and water):**
+  - Look back at any past season.
+  - **Plan next season (rotate)**, and **Rotation plan** for several seasons. Rotation now never reuses last
+    season's spot for the same family when anything else fits.
+  - Shade by time of day and by day of the year, with tall plants casting shade.
+  - **Fill the whole plot** and **How many fit?**
+  - **Duplicate plot** as a template.
+  - **Irrigation:** sprinklers, drip lines and hose taps, with a water map and a hand-watering list.
+- **2026-09-27 (find and edit):**
+  - Organized clumps (rows × columns with walkways), room for vines to run toward the sun, climbers at the back.
+  - Legend with **find**.
+  - Edit or delete planted plants.
+  - Move or add outline corners and delete the outline.
+  - N/E/S/W compass.
+- **2026-09-27 (seasons and varieties):**
+  - Discarding a proposal keeps your plot and list; **Change selections**.
+  - The last list and what you usually plant are remembered.
+  - Sweet or spicy, size and color for peppers, tomatoes and onions; spring onions added.
+  - **Start a new season** and season history.
+  - Crop-rotation notes and advice.
+  - Clumps or rows. Database schema 10.
+- **2026-09-27 (computer and shade):** the portable computer planner; shade shown on a light layout with colored
+  sun bands in light and dark mode.
+- **2026-09-27 (guided planting):** Plan an area for me, plot direction and ZIP (offline zone), plan files, obstacles
+  that can be moved and undone.
+- **2026-09-27 (roadmap):** site tools (outline, sun, shade, flood and slope areas, trees and buildings), plot
+  insights (site, harmony, suggestions, care, food), guilds, gray-out of incompatible varieties, care reminders,
+  online features.
+- **Earlier:**
+  - tiered catalog (Basic, Standard and Pro), 3-step variety picker
+  - zoom and pan, settings, units
+  - recovery plans for failed germination, custom varieties
+  - ruler, no-plant paths, auto-populate
+  - moving plants, weed-mask and irrigation-route overlays

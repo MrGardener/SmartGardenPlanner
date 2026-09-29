@@ -1,5 +1,6 @@
 package com.example.smartgardenplanner.ui
 
+import com.example.smartgardenplanner.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -86,7 +87,7 @@ fun EncyclopediaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Botanical Encyclopedia", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Botanical Encyclopedia"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -98,7 +99,7 @@ fun EncyclopediaScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { isCreatingNew = true },
-                text = { Text("Add Variety") },
+                text = { Text(tr("Add Variety")) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) }
             )
         }
@@ -112,7 +113,7 @@ fun EncyclopediaScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("Search by name or family") },
+                label = { Text(tr("Search by name or family")) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -122,7 +123,7 @@ fun EncyclopediaScreen(
             if (filteredSeeds.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        "No botanical records found. Tap \"Add Variety\" to create one.",
+                        tr("No botanical records found. Tap \"Add Variety\" to create one."),
                         color = Color.Gray,
                         modifier = Modifier.align(androidx.compose.ui.Alignment.Center)
                     )
@@ -148,11 +149,11 @@ fun EncyclopediaScreen(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(seed.commonName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Text(seed.botanicalFamily, fontSize = 12.sp, color = Color.LightGray)
+                                    Text(tr(seed.commonName), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(tr(seed.botanicalFamily), fontSize = 12.sp, color = Color.LightGray)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        "Spacing: ${com.example.smartgardenplanner.core.DistanceFormatter.format(seed.exclusionRadiusM, distanceUnit)} • Germination: ~${seed.germinationDays}d • Harvest: ~${seed.daysToHarvest}d",
+                                        tr("Spacing: ${com.example.smartgardenplanner.core.DistanceFormatter.format(seed.exclusionRadiusM, distanceUnit)} • Germination: ~${seed.germinationDays}d • Harvest: ~${seed.daysToHarvest}d"),
                                         fontSize = 11.sp,
                                         color = Color.Gray
                                     )
@@ -207,34 +208,34 @@ fun EncyclopediaScreen(
 private fun SeedDetailDialog(seed: SeedEntity, distanceUnit: com.example.smartgardenplanner.core.DistanceUnit, dictionary: List<SeedEntity>, onDismiss: () -> Unit, onEdit: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(seed.commonName, fontWeight = FontWeight.Bold) },
+        title = { Text(tr(seed.commonName), fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("Family: ${seed.botanicalFamily}")
+                Text(tr("Family: ${seed.botanicalFamily}"))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Spacing (exclusion radius): ${com.example.smartgardenplanner.core.DistanceFormatter.format(seed.exclusionRadiusM, distanceUnit)}")
-                Text("Germination window: ~${seed.germinationDays} days")
-                Text("Days to harvest: ~${seed.daysToHarvest} days")
+                Text(tr("Spacing (exclusion radius): ${com.example.smartgardenplanner.core.DistanceFormatter.format(seed.exclusionRadiusM, distanceUnit)}"))
+                Text(tr("Germination window: ~${seed.germinationDays} days"))
+                Text(tr("Days to harvest: ~${seed.daysToHarvest} days"))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Care: ${seed.careNotes.ifBlank { "No notes on file." }}")
+                Text(tr("Care: ${seed.careNotes.ifBlank { "No notes on file." }}"))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Pests: ${seed.pestNotes.ifBlank { "No notes on file." }}")
+                Text(tr("Pests: ${seed.pestNotes.ifBlank { "No notes on file." }}"))
                 Spacer(modifier = Modifier.height(8.dp))
                 // [FIXED — FR-008] Was raw codes ("BAS,MAR,CAR"), meaningless to a human reader.
                 // Resolved to real species names via CompanionNameResolver.
-                Text("Good companions: ${com.example.smartgardenplanner.core.CompanionNameResolver.resolveToDisplayNames(seed.companionCodes, dictionary)}")
-                Text("Avoid nearby: ${com.example.smartgardenplanner.core.CompanionNameResolver.resolveToDisplayNames(seed.antagonistCodes, dictionary)}")
+                Text(tr("Good companions: ${com.example.smartgardenplanner.core.CompanionNameResolver.resolveToDisplayNames(seed.companionCodes, dictionary)}"))
+                Text(tr("Avoid nearby: ${com.example.smartgardenplanner.core.CompanionNameResolver.resolveToDisplayNames(seed.antagonistCodes, dictionary)}"))
             }
         },
         confirmButton = {
             TextButton(onClick = onEdit) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Edit")
+                Text(tr("Edit"))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text(tr("Close")) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp)
@@ -279,7 +280,7 @@ private fun SeedEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "Add Variety" else "Edit ${existing.commonName}") },
+        title = { Text(tr(if (existing == null) "Add Variety" else "Edit ${existing.commonName}")) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -288,7 +289,7 @@ private fun SeedEditDialog(
                 OutlinedTextField(
                     value = botanicalCode,
                     onValueChange = { if (existing == null) botanicalCode = it.uppercase().replace(" ", "-") },
-                    label = { Text("Code (unique, e.g. VEG-001)") },
+                    label = { Text(tr("Code (unique, e.g. VEG-001)")) },
                     enabled = existing == null, // the code is the primary key; don't allow changing it on edit
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -296,21 +297,21 @@ private fun SeedEditDialog(
                 OutlinedTextField(
                     value = commonName,
                     onValueChange = { commonName = it },
-                    label = { Text("Common name") },
+                    label = { Text(tr("Common name")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = botanicalFamily,
                     onValueChange = { botanicalFamily = it },
-                    label = { Text("Botanical family") },
+                    label = { Text(tr("Botanical family")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = exclusionRadiusText,
                     onValueChange = { exclusionRadiusText = it },
-                    label = { Text("Spacing / exclusion radius (m)") },
+                    label = { Text(tr("Spacing / exclusion radius (m)")) },
                     isError = exclusionRadiusText.isNotEmpty() && !radiusValid,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -319,14 +320,14 @@ private fun SeedEditDialog(
                     OutlinedTextField(
                         value = germinationDaysText,
                         onValueChange = { germinationDaysText = it },
-                        label = { Text("Germination (days)") },
+                        label = { Text(tr("Germination (days)")) },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
                         value = daysToHarvestText,
                         onValueChange = { daysToHarvestText = it },
-                        label = { Text("Harvest (days)") },
+                        label = { Text(tr("Harvest (days)")) },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
@@ -334,34 +335,34 @@ private fun SeedEditDialog(
                 OutlinedTextField(
                     value = companionCodes,
                     onValueChange = { companionCodes = it },
-                    label = { Text("Good companions (comma-separated codes)") },
+                    label = { Text(tr("Good companions (comma-separated codes)")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = antagonistCodes,
                     onValueChange = { antagonistCodes = it },
-                    label = { Text("Avoid nearby (comma-separated codes)") },
+                    label = { Text(tr("Avoid nearby (comma-separated codes)")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = pestNotes,
                     onValueChange = { pestNotes = it },
-                    label = { Text("Pest notes") },
+                    label = { Text(tr("Pest notes")) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = careNotes,
                     onValueChange = { careNotes = it },
-                    label = { Text("Care notes") },
+                    label = { Text(tr("Care notes")) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 // [NEW] Manual color override — resolves the "two different vegetables ended up
                 // the same color" report, since automatic hash-based assignment has no collision
                 // protection.
-                Text("Canvas color", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Gray)
+                Text(tr("Canvas color"), fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Gray)
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                     columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(8),
                     modifier = Modifier.heightIn(max = 90.dp),
@@ -395,7 +396,7 @@ private fun SeedEditDialog(
                                 .clickable { selectedColor = null },
                             contentAlignment = androidx.compose.ui.Alignment.Center
                         ) {
-                            Text("A", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.White)
+                            Text(tr("A"), fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.White)
                         }
                     }
                 }
@@ -427,10 +428,10 @@ private fun SeedEditDialog(
                     )
                     onSave(result)
                 }
-            ) { Text("Save") }
+            ) { Text(tr("Save")) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(tr("Cancel")) }
         },
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp)

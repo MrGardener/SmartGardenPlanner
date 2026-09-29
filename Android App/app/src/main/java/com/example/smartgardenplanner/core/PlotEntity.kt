@@ -32,7 +32,27 @@ data class PlotEntity(
     @ColumnInfo(defaultValue = "OWNER")
     val ownerRole: String = "OWNER",             // [NEW] T2-DAT-140: OWNER | CONTRIBUTOR | VIEWER
     @ColumnInfo(defaultValue = "0")
-    val createdTimestamp: Long = System.currentTimeMillis(),
+    val createdTimestamp: Long = PlatformClock.nowMillis(),
     @ColumnInfo(defaultValue = "0")
-    val lastModifiedTimestamp: Long = System.currentTimeMillis()
+    val lastModifiedTimestamp: Long = PlatformClock.nowMillis(),
+    // --- Schema 8 (MIGRATION_7_8): roadmap features ---
+    val boundaryJson: String? = null,            // FR-002: custom outline "x1,y1;x2,y2;..." inside the length x width box
+    val hardinessZone: String? = null,           // FR-014: USDA zone, e.g. "7a"
+    val latitude: Double? = null,                // FR-006/007/019: site location for sun and weather
+    val longitude: Double? = null,
+    @ColumnInfo(defaultValue = "0")
+    val northBearingDeg: Float = 0f,             // FR-006: compass bearing of the plot's top edge (0 = top faces north)
+    val soilSandPct: Float? = null,              // FR-013: soil composition, percent
+    val soilSiltPct: Float? = null,
+    val soilClayPct: Float? = null,
+    val soilOrganicPct: Float? = null,
+    val soilPh: Float? = null,
+    // --- Schema 9 (MIGRATION_8_9) ---
+    @ColumnInfo(defaultValue = "0")
+    val orientationSet: Boolean = false,         // FR-028: true once the user has said which way the plot faces
+    // --- Schema 11 (MIGRATION_10_11) ---
+    val pests: String? = null,                   // FR-042: pests seen in the yard, "DEER,RABBIT,…" (see Pest)
+    val backdropJson: String? = null,            // FR-046: satellite photo placement (see Backdrop)
+    // --- Schema 12 (MIGRATION_11_12) ---
+    val address: String? = null                  // FR-050: street address, to open the yard in Google Maps
 )

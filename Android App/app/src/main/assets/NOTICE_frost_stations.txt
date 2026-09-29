@@ -1,0 +1,16 @@
+frost_stations.txt — average frost dates by weather station
+
+Source: NOAA National Centers for Environmental Information (NCEI), U.S. Climate Normals 1991-2020,
+annual/seasonal normals by station (v1.0.1): ANN-TMIN-PRBLST-T32FP50 / -T32FP10 (last spring 32 F
+freeze, 50 % and 10 % probability) and ANN-TMIN-PRBFST-T32FP50 / -T32FP10 (first fall 32 F freeze).
+NOAA data are U.S. Government works and are in the public domain.
+
+Format: name|latitude|longitude|elevation_ft|lastSpring50|lastSpring10|firstFall50|firstFall10
+Dates are day of year (non-leap, 1-365). A station with all four dates 0 is effectively frost-free.
+6,500 stations: those nearest to at least one U.S. ZIP code.
+
+How it was made: the station values were taken from a mechanical extraction of the NCEI archive
+us-climate-normals_1991-2020_v1.0.1_annualseasonal_multivariate_by-station_c20230404.tar.gz (the
+NCEI site was not reachable from the build environment). To re-derive or spot-check: read those
+four columns plus LATITUDE, LONGITUDE, ELEVATION and NAME from each station CSV in that archive.
+Spot checks against NCEI published values are recorded in SGP-DWR-001.
