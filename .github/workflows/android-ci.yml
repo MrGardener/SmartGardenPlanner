@@ -16,10 +16,17 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch replaces a build still running.
+concurrency:
+  group: android-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Assemble, unit tests, lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only for publishing the phone APK to its pre-release (last step)
     defaults:
       run:
         working-directory: "Android App"
@@ -43,3 +50,27 @@ jobs:
             Android App/app/build/reports/
             Android App/app/build/test-results/
           if-no-files-found: ignore
+      # The phone needs a plain .apk (a zipped Actions artifact can't be installed without extracting it).
+      # Each branch has one pre-release, "phone-build-<branch>", replaced by every successful build, so its
+      # download link stays the same: .../releases/download/phone-build-<branch>/smart-garden-planner-debug.apk
+      # Pull requests from forks have a read-only token and skip this step.
+      - name: Publish the APK for phone testing (plain .apk on the branch's pre-release)
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          tag="phone-build-$(printf '%s' "$BRANCH" | tr -c 'A-Za-z0-9._-' '-')"
+          apk="$RUNNER_TEMP/smart-garden-planner-debug.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$apk"
+          notes="Debug build of \`$BRANCH\` at ${SHA:0:7}, built $(date -u '+%Y-%m-%d %H:%M UTC') by $RUN_URL
+
+          On the phone: tap **smart-garden-planner-debug.apk** below, open the download, allow installing from
+          this source if asked, then Install. Each build is signed with a new test key: uninstall the old app first
+          (this deletes its data). For testing only; not a release."
+          gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$tag" "$apk" --target "$SHA" --prerelease --title "Phone build: $BRANCH" --notes "$notes"
+          echo "APK: ${{ github.server_url }}/${{ github.repository }}/releases/download/$tag/smart-garden-planner-debug.apk" >> "$GITHUB_STEP_SUMMARY"

@@ -70,7 +70,9 @@ object Panels {
     private fun plot(body: HTMLElement, wp: WebPlot) {
         val p = wp.plot
         body.add(heading(p.name).also { it.setAttribute("translate", "no") })
-        body.add(kv("Size", "${p.lengthM.fmt(1)} × ${p.widthM.fmt(1)} m (${PlotShape.areaM2(p).fmt(1)} m²)"))
+        // LLR-ROUND-030: "Ø 0.40 m" for a round plot.
+        body.add(kv("Size", PlotShape.describeSize(p, com.example.smartgardenplanner.core.DistanceUnit.METERS) +
+            " (" + com.example.smartgardenplanner.core.AreaFormatter.format(PlotShape.areaM2(p).toDouble(), com.example.smartgardenplanner.core.DistanceUnit.METERS) + ")"))
         body.add(kv("Top edge faces", if (p.orientationSet) compassName(p.northBearingDeg) else "not set (assumes north)"))
         body.add(kv("ZIP / zone", listOfNotNull(p.locationZip, p.hardinessZone?.let { "zone $it" }).joinToString(" · ").ifBlank { "not set" }))
         p.latitude?.let { body.add(kv("Latitude", "${it.fmt(2)}°")) }

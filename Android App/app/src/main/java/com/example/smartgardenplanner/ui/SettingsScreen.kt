@@ -59,6 +59,7 @@ fun SettingsScreen(
     var catalogSeedCount by remember { mutableStateOf(0) }
     var isSwitchingTier by remember { mutableStateOf(false) }
     var tierMessage by remember { mutableStateOf<String?>(null) }
+    var auditReadout by remember { mutableStateOf<com.example.smartgardenplanner.core.AuditReadout?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -103,7 +104,12 @@ fun SettingsScreen(
                         notInTier.count { it in planted }
                     }
                 }
+                val from = settings.catalogTier
                 update(settings.copy(catalogTier = tier.name))
+                withContext(SgpExecutors.dbDispatcher) {
+                    com.example.smartgardenplanner.data.SecurityAuditLogger(context).record(
+                        com.example.smartgardenplanner.core.AuditType.TIER_SWITCH, mapOf("from" to from, "to" to tier.name, "kept" to kept))
+                }
                 tierMessage = if (kept > 0) {
                     "Switched to ${tier.name}. $kept varieties from the previous tier were kept because they are planted."
                 } else {
@@ -158,6 +164,11 @@ fun SettingsScreen(
         ) {
             SettingsSection(title = "About this planner") {
                 Text(tr(com.example.smartgardenplanner.core.Disclaimer.TEXT), fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                // LLR-ABOUT-010: the security audit log, newest first, with a Verify action (LLR-AUDS-040).
+                OutlinedButton(onClick = {
+                    scope.launch { auditReadout = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.SecurityAuditLogger(context).read() } }
+                }) { Text(tr("Security audit log")) }
             }
             SettingsSection(title = "Language", note = "Texts without a translation stay in English.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -486,6 +497,39 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
         }
+    }
+
+    auditReadout?.let { r ->
+        AlertDialog(
+            onDismissRequest = { auditReadout = null },
+            title = { Text(tr("Security audit log")) },
+            text = {
+                Column {
+                    val verdict = when (val v = r.verdict) {
+                        is com.example.smartgardenplanner.core.AuditVerdict.Intact -> "✓ The log is intact (${r.entries.size} entries)."
+                        is com.example.smartgardenplanner.core.AuditVerdict.Broken -> "⚠ Problem at entry ${v.seq}: ${v.reason}."
+                        is com.example.smartgardenplanner.core.AuditVerdict.Unreadable -> "⚠ Unreadable at entry ${v.seq}."
+                    }
+                    Text(tr(verdict), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (r.entries.isEmpty()) Text(tr("No entries yet."), fontSize = 12.sp)
+                    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                        items(r.entries.asReversed()) { e ->
+                            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                Text("${e.seq} · ${e.time.replace('T', ' ').removeSuffix("Z")} UTC · ${e.type.name}", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Text(e.details, fontSize = 11.sp, color = Color.Gray)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch { auditReadout = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.SecurityAuditLogger(context).read() } }
+                }) { Text(tr("Verify")) }
+            },
+            dismissButton = { TextButton(onClick = { auditReadout = null }) { Text(tr("Close")) } }
+        )
     }
 }
 

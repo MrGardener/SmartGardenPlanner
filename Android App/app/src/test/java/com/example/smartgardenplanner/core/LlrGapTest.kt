@@ -90,7 +90,8 @@ class LlrGapTest {
     @Test
     fun units_convertAndParseAtTheLimits() {
         // Nominal: 1 m shows as 1.00 m or 39.37 in, and comes back as 1 m.
-        assertEquals("1.00m", DistanceFormatter.format(1f, DistanceUnit.METERS))
+        assertEquals("1.00 m", DistanceFormatter.format(1f, DistanceUnit.METERS))
+        assertEquals("39.4 in", DistanceFormatter.format(1f, DistanceUnit.INCHES))
         assertEquals(39.37f, DistanceFormatter.metersToDisplay(1f, DistanceUnit.INCHES), 0.01f)
         assertEquals(1f, DistanceFormatter.parseToMeters("39.3701", DistanceUnit.INCHES)!!, 1e-4f)
         // Limits: 0, the smallest plot side and the largest, in both units, round trip within 0.01 %.
@@ -143,7 +144,7 @@ class LlrGapTest {
         repeat(5000) {
             val m = rnd.nextDouble(0.0, 2000.0).toFloat()
             for (u in DistanceUnit.entries) {
-                val back = DistanceFormatter.parseToMeters(DistanceFormatter.metersToDisplay(m, u).toString(), u)!!
+                val back = DistanceFormatter.parseToMeters(DistanceFormatter.metersToDisplay(m, u).toDouble().fmt(5), u)!!
                 assertEquals("$m $u", m, back, m * 1e-4f + 1e-5f)
             }
         }
@@ -256,5 +257,32 @@ class LlrGapTest {
         // The message names the code, and both fixes are offered.
         assertTrue(CompanionPlantingValidator.unknownVarietyMessage("GONE-001").contains("GONE-001"))
         assertEquals(2, CompanionPlantingValidator.UNKNOWN_VARIETY_FIXES.size)
+    }
+
+    @Test
+    fun units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents() {
+        // LLR-UNIT-030 (owner decision 2026-10-14): a space before the unit, "." always, 2 decimals in m, 1 in inches.
+        assertEquals("0.00 m", DistanceFormatter.format(0f, DistanceUnit.METERS))
+        assertEquals("0.01 m", DistanceFormatter.format(0.005f, DistanceUnit.METERS))   // half-up, though 0.005f is 0.00499…
+        assertEquals("0.00 m", DistanceFormatter.format(0.0049f, DistanceUnit.METERS))
+        assertEquals("1000.00 m", DistanceFormatter.format(1000f, DistanceUnit.METERS))
+        assertEquals("0.0 in", DistanceFormatter.format(0f, DistanceUnit.INCHES))
+        assertEquals("39370.1 in", DistanceFormatter.format(1000f, DistanceUnit.INCHES))
+        assertEquals("1.000 m", DistanceFormatter.format(1f, DistanceUnit.METERS, decimals = 3))
+        // LLR-UNIT-040: digits with at most one "." or ",", at least one digit, at most 12 characters, after trimming.
+        for ((t, want) in listOf("2" to 2f, "2.5" to 2.5f, "2,5" to 2.5f, "  7 " to 7f, "1." to 1f, ".5" to 0.5f, ",5" to 0.5f,
+                "123456789012" to 123456789012f, "0" to 0f, "0007" to 7f))
+            assertEquals(t, want, DistanceFormatter.parseToMeters(t, DistanceUnit.METERS)!!, want * 1e-6f)
+        for (t in listOf("-2", "+2", "1e3", "1E3", "2e-1", "1,000.5", "1.000,5", "1 000", "1_000", "1234567890123", ".", ",",
+                "", "  ", "2m", "m2", "2 m", "½", "٣", "２", "0x1A", "∞", "1.5.", "NaN"))
+            assertNull("'$t' refused", DistanceFormatter.parseToMeters(t, DistanceUnit.METERS))
+        // Random strings never throw and are either refused or a finite number of at most 12 characters.
+        val rnd = Random(30)
+        val chars = "0123456789.,-+eE x"
+        repeat(5000) {
+            val t = String(CharArray(rnd.nextInt(0, 16)) { chars[rnd.nextInt(chars.length)] })
+            val r = DistanceFormatter.parseToMeters(t, DistanceUnit.INCHES)
+            if (r != null) assertTrue("'$t'", r.isFinite() && r >= 0f && t.trim().length <= 12 && t.trim().none { it in "-+eEx " })
+        }
     }
 }

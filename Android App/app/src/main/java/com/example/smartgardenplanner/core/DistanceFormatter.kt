@@ -30,17 +30,30 @@ object DistanceFormatter {
         }
     }
 
-    /** Formats a meters value for display, e.g. "3.25m" or "128.0in", respecting the chosen unit. */
-    fun format(meters: Float, unit: DistanceUnit, decimals: Int = 2): String {
-        val value = metersToDisplay(meters, unit)
-        return value.fmt(decimals) + unit.suffix
+    /**
+     * LLR-UNIT-030: the display value rounded half-up, a space, then the unit: "3.25 m" (2 decimals) or "128.0 in"
+     * (1 decimal) unless [decimals] is given. The decimal sign is always "." (owner decision 2026-10-14).
+     */
+    fun format(meters: Float, unit: DistanceUnit, decimals: Int = if (unit == DistanceUnit.METERS) 2 else 1): String {
+        val value = metersToDisplay(meters, unit).toDouble()
+        // A Float such as 0.005f is stored as 0.00499999…; the tiny nudge makes it round half-up as it reads.
+        val nudged = value + kotlin.math.sign(value) * kotlin.math.abs(value) * 1e-7
+        return nudged.fmt(decimals) + " " + unit.suffix
     }
 
-    /** Parses user-entered text (already in the given display unit) back to meters, or null if invalid. */
+    /**
+     * LLR-UNIT-040: parses what the user typed (in the display unit) to meters, or null. The text is trimmed and must
+     * be at most [MAX_CHARS] characters of digits with at most one decimal sign ("." or ",") and at least one digit:
+     * no sign, no exponent, no grouping separator, nothing else ("-2", "1e3", "1,000.5" and "12 m" are refused).
+     */
     fun parseToMeters(text: String, unit: DistanceUnit): Float? {
-        // A decimal comma ("3,5") is accepted, as typed in many languages; anything that isn't a finite number is null.
-        val t = text.trim().let { if (it.count { c -> c == ',' } == 1 && '.' !in it) it.replace(',', '.') else it }
-        val value = t.toFloatOrNull()?.takeIf { it.isFinite() } ?: return null
+        val t = text.trim()
+        if (t.length > MAX_CHARS || !NUMBER.matches(t)) return null
+        val value = t.replace(',', '.').toFloatOrNull()?.takeIf { it.isFinite() } ?: return null
         return displayToMeters(value, unit).takeIf { it.isFinite() }
     }
+
+    /** Longest text [parseToMeters] reads. */
+    const val MAX_CHARS = 12
+    private val NUMBER = Regex("^(\\d+([.,]\\d*)?|[.,]\\d+)$")
 }

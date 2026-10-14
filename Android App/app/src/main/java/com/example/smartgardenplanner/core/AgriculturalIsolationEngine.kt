@@ -224,50 +224,6 @@ class DatabaseSecurityPackager(private val keyManager: SecurityKeyManager, priva
     }
 }
 
-// --- TAMPER-EVIDENT FORENSIC LOGGING (hash-chained: each entry now covers the prior entry's hash too) ---
-class SecurityAuditLogger(private val context: Context) {
-    private val auditLogFile = File(context.filesDir, "sgp_security_audit.log")
-
-    fun appendLog(message: String) {
-        val timestamp = System.currentTimeMillis()
-        val previousHash = lastHash()
-        val formattedMessage = "[$timestamp] $message"
-        val entryHash = calculateHash(previousHash + formattedMessage)
-        auditLogFile.appendText("$formattedMessage||$entryHash\n")
-    }
-
-    /** Full-chain verification: deleting or reordering ANY prior line now invalidates every hash after it. */
-    fun verifyChainIntegrity(): Boolean {
-        if (!auditLogFile.exists()) return true
-        var runningHash = "GENESIS"
-        val lines = auditLogFile.readLines()
-        for (line in lines) {
-            if (line.isBlank()) continue
-            val parts = line.split("||")
-            if (parts.size != 2) return false
-            val message = parts[0]
-            val hash = parts[1]
-            val expected = calculateHash(runningHash + message)
-            if (expected != hash) return false
-            runningHash = hash
-        }
-        return true
-    }
-
-    private fun lastHash(): String {
-        if (!auditLogFile.exists()) return "GENESIS"
-        val lines = auditLogFile.readLines().filter { it.isNotBlank() }
-        if (lines.isEmpty()) return "GENESIS"
-        return lines.last().split("||").getOrElse(1) { "GENESIS" }
-    }
-
-    private fun calculateHash(input: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(input.toByteArray(StandardCharsets.UTF_8))
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
-}
-
 // --- TELEMETRY SPATIAL INTEGRATION ENGINE ---
 class SensorMeasurementEngine(private val context: Context) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager

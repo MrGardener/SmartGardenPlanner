@@ -1,0 +1,19 @@
+{
+  "format": "smart-garden-plan",
+  "version": 1,
+  "exportedAt": "2026-10-14T12:00:00Z",
+  "app": "Smart Garden Planner test file",
+  "units": "metres",
+  "plots": [
+    {
+      "name": "Unknown variety test",
+      "lengthM": 6,
+      "widthM": 4,
+      "orientation": { "topFacesDeg": 180, "set": true },
+      "plants": [
+        { "code": "TOM-001", "variety": "Tomato - Brandywine", "x": 1.5, "y": 2, "plantedAt": "2026-05-15T12:00:00Z" },
+        { "code": "GONE-001", "x": 3, "y": 2, "plantedAt": "2026-05-15T12:00:00Z" }
+      ]
+    }
+  ]
+}

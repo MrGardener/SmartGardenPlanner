@@ -113,6 +113,9 @@ summary{cursor:pointer}
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(480px,100%);max-height:100%;display:flex;flex-direction:column}
 .modal.wide{width:min(680px,100%)}
+.measure-holder{max-height:58vh;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#111}
+.measure-photo{width:100%;height:auto;display:block;cursor:crosshair}
+.measure-size{font-weight:600;margin:4px 0}
 .modal-title{margin:0;padding:14px 16px 6px;font-size:18px}
 .modal-body{padding:4px 16px;overflow:auto;display:flex;flex-direction:column;gap:4px}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px}

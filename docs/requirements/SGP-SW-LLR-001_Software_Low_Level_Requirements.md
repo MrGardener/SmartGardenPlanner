@@ -83,17 +83,21 @@ by a space and the suffix:
 - METERS: 2 decimals, suffix "m"
 - INCHES: 1 decimal, suffix "in"
 
-The decimal separator shall be the locale's. ↑ HLR-NAV-090, HLR-RULE-090, HLR-LAY-040
+The decimal separator shall be "." in every language (owner decision 2026-10-14; implemented by
+`DistanceFormatter.format`, which nudges Float values by 10⁻⁷ relative so that, for example, 0.005 m shows as
+"0.01 m"). ↑ HLR-NAV-090, HLR-RULE-090, HLR-LAY-040
 
 **LLR-UNIT-040** `parseDistance(text, unit)` shall:
 - trim the text
 - accept only digits with at most one decimal separator ("." or ",") and at least one digit
 - reject signs, exponents, grouping separators, empty text and more than 12 characters
 
-It returns meters (via LLR-UNIT-020), or `null` if rejected. ↑ HLR-PLOT-030, HLR-PLOT-040, HLR-NAV-090
+It returns meters (via LLR-UNIT-020), or `null` if rejected. Implemented by `DistanceFormatter.parseToMeters`
+(owner decision 2026-10-14). ↑ HLR-PLOT-030, HLR-PLOT-040, HLR-NAV-090
 
 **LLR-UNIT-050** `formatArea(m2, unit)` shall return m² with 2 decimals for METERS, and ft² with 1 decimal
-for INCHES, where ft² = m² / 0.09290304. ↑ HLR-VIEW-080
+for INCHES, where ft² = m² / 0.09290304. Implemented by `AreaFormatter.format` (half-up rounding, "—" for a
+negative or non-finite area); used for measured plots (LLR-PMEAS-040). ↑ HLR-VIEW-080
 
 ### 2.3 Geometry (GEO)
 
@@ -937,7 +941,11 @@ Invalid fields show an error text with the range formatted in the display unit. 
 are valid. ↑ HLR-PLOT-030, HLR-PLOT-040
 
 **LLR-EDIT-020** On save, if L or W < UNUSUAL_MIN_M or > UNUSUAL_MAX_M, a confirmation dialog shall be shown.
-Cancel returns to the form unchanged. ↑ HLR-PLOT-050
+Cancel returns to the form unchanged. Implemented by `PlotLimits.isUnusual` (UNUSUAL_MIN_M = 0.30, UNUSUAL_MAX_M =
+200), and for a round plot `PlotLimits.isUnusualRound` (only above 200 m); the question names the size as
+`PlotLimits.questionSize` ("8.00 m × 5.00 m" or "Ø 0.20 m"): the phone shows "Is that size right?" with "Yes, create it" / "Change it"; the computer shows the question in
+the New plot or Plot details dialog and creates or saves only on a second click with the same sizes (Plot details
+asks only when the sizes changed). ↑ HLR-PLOT-050
 
 **LLR-EDIT-030** Saving a new plot shall call `createPlot` with a new UUID, the dimensions in meters and
 created = modified = now, then navigate to Layout(newId), replacing the editor in the back stack. ↑ HLR-PLOT-060
@@ -1675,13 +1683,107 @@ check, the spacing margin and the plot's `orientationSet` to `AutoPlanner.plan`,
 with a keep/discard card, and add all kept plants in one undo step. The side panel shall show
 `HarmonyAnalyzer`, `RecommendationEngine`, `CarePlanner` and `FoodPlanner` output for the current plot, and the
 shade overlay `SunlightEngine.sunHoursGrid` for today. ↑ HLR-PORT-040
+### 5.10 Measuring a plot from a photo (PMEAS) (added 2026-10-14)
+
+Decision D-03: a reference object in a photo. Core code: `core/PhotoMeasure.kt` (shared by the phone and the
+computer); phone UI: `ui/PhotoMeasureScreen.kt` and the plot creator; computer UI: `web/src/app/Measure.kt`.
+
+**LLR-PMEAS-010** `PhotoMeasure.homography(src, dst)` shall solve the 8 unknowns of the plane-to-plane mapping
+from 4 point pairs (direct linear transform, h33 = 1) by Gaussian elimination with partial pivoting, on
+coordinates scaled to about ±1 for accuracy. It shall return null when the system is singular (pivot below
+1e-12) or a result is not finite. `Homography.map(p)` shall return null when the point is on or beyond the
+horizon (w ≤ 1e-9). ↑ HLR-MEAS-020
+
+**LLR-PMEAS-020** `measure(reference, longM, shortM, plot, imageWidth, imageHeight, tapErrorPx)` shall return
+`Failed(reason)` and no size when:
+- the reference does not have exactly 4 points
+- longM or shortM is not finite, not above 0 or above 100 m
+- the plot has fewer than 2 or more than `MAX_CORNERS` (20) points
+- the image width or height is 0 or less
+- a point is not finite or lies off the photo
+- the reference corners are not convex in tap order (crossing, or three in a line)
+- a corner maps beyond the horizon, the plot corners cross, or the outline fails `PlotGeometry.validateOutline`
+- with 3 or more plot points, the length or width is under `MIN_SIDE_M` (0.05 m, the default minimum of
+  T2-CFG-090, so a pot can be measured); or either is over `MAX_SIDE_M` (1000 m). ↑ HLR-MEAS-020
+
+**LLR-PMEAS-030** The ground rectangle shall be (0,0), (longM,0), (longM,±shortM), (0,±shortM), with the sign of
+the reference's signed area in the photo, so the plot is never mirrored. The plot points shall be mapped through
+the homography. Two points shall give one distance (widthM = 0, no outline). With 3 or more, the points shall be
+rotated (never reflected) so the first edge runs along +x, then moved so the smallest x and y are 0; length =
+largest x, width = largest y, area by the shoelace formula, sides in tap order. Four corners within 6° of square,
+with opposite sides within 6 % of each other, make a rectangle and return no outline; any other shape returns its
+outline. ↑ HLR-MEAS-020
+
+**LLR-PMEAS-040** The ± range shall come from 64 repeats with every point moved up to `tapErrorPx` in a random
+direction (fixed seed 20261014, so the same taps always give the same answer): two times the root mean square of
+the larger of the length and width changes, and the same for the area. If a quarter or more of the repeats can't
+be measured, the range shall be infinite and shown as "± unknown: retake the photo". Warnings shall be added when
+the reference's longer diagonal is under 8 % of the photo's diagonal, when the plot's larger side is over 12 times
+the reference's long side, and when the range is unknown or over 10 % of the larger side. `describe(m, unit)` shall
+give "L × W unit (± r unit), area" (LLR-UNIT-030/050), "Distance: d unit (± r unit)" for two points, and add
+" (± unknown: retake the photo)" and " (not a rectangle: outline kept)" at the end when they apply. ↑ HLR-MEAS-020
+
+**LLR-PMEAS-050** Phone: New plot shall offer "Take a photo" (camera permission asked at that moment; if refused, a
+message says a gallery photo still works) and "Choose a photo" (system photo picker). A camera photo shall be
+written to `cache/measure/` through the FileProvider and deleted once decoded. The photo shall be decoded to at
+most 2048 px on its longer side, turned upright from its EXIF orientation, and kept in memory only. The
+full-screen dialog shall offer the reference choice (custom sizes typed in the display unit, parsed by
+LLR-UNIT-040), pinch zoom 1–8× with panning, taps converted to photo pixels, "Undo last tap", "Start over",
+"Fit photo", the step text, the result with its warnings, and "Use these sizes" ("Use as the length" for two
+points), enabled only with a result. Using it shall fill the length and width fields in the display unit (2
+decimals); the plot shall be saved with `scaleSource = "PHOTO"` and with the outline only if it still fits inside
+the saved sizes and passes `validateOutline`; editing a field drops the outline. tapErrorPx = 8 dp at the current
+zoom. ↑ HLR-MEAS-020
+
+**LLR-PMEAS-060** Computer: New plot shall offer "Measure from a photo…", which opens a file chooser (PNG, JPEG,
+WebP) and reads the photo in the browser only. The dialog shall show the photo as SVG, convert clicks to photo
+pixels with the inverse screen transform, ignore clicks off the photo, and offer the same references, Zoom (fit,
+2×, 4×), "Undo last click", "Start over", the step text and the result. tapErrorPx = 4 screen pixels at the current
+size. "Use these sizes" (refused with a reason for fewer than 3 plot corners) shall reopen New plot with the name
+typed so far, the sizes rounded to the centimeter and the outline; editing a size drops the outline; the plot is
+saved with `scaleSource = "PHOTO"`. ↑ HLR-MEAS-020
+
+### 5.11 Round plots (ROUND) (added 2026-10-14)
+
+Owner direction: a pot can be round, and may be the only plot in an apartment. A round plot is a square
+diameter × diameter box whose outline (`boundaryJson`, FR-002) is a circle, so every outline-aware rule (placement,
+fill, planning, shade, plan files) applies unchanged and no database change is needed. Code: `core/PlotGeometry.kt`
+(`PlotShape`).
+
+**LLR-ROUND-010** `PlotShape.circleOutline(d)` shall return `ROUND_SEGMENTS` (64) corners on the circle of
+diameter d centered at (d/2, d/2), starting at the top and going clockwise on screen, each clamped to [0, d].
+`ROUND_MIN_DIAMETER_M` = 0.05 and `ROUND_MAX_DIAMETER_M` = 1000. `PlotGeometry.validateOutline` shall reject an
+outline under `MIN_OUTLINE_AREA_M2` (0.0001 m², 1 cm²) instead of 0.01 m², so a 5 cm pot (about 20 cm²) is a valid
+outline. ↑ HLR-PLOT-140
+
+**LLR-ROUND-020** `PlotShape.roundDiameter(plot)` shall return the length when the length is finite and above 0,
+the width is within 0.01 % of it, the outline has at least 32 corners, and every corner is within 1 % of the radius
+from the box's center; otherwise null. Plan files keep round plots round with no extra field: the outline is
+written to 4 decimals, which stays within that 1 % down to 5 cm. ↑ HLR-PLOT-140
+
+**LLR-ROUND-030** For a round plot, `PlotShape.areaM2` shall return π·d²/4 and `PlotShape.describeSize(plot, unit)`
+"Ø " + `formatDistance(d)`; for other plots "L × W unit" (LLR-UNIT-030). The phone's plot list shall show
+"Size: …" with "round" (or "custom outline") and the zone; the phone's layout header "Plot Layout Size: …"; the
+computer's Plot tab "Size: … (area)" with the area from LLR-UNIT-050. ↑ HLR-PLOT-140
+
+**LLR-ROUND-040** Creating and editing:
+- Phone (plot creator): "Shape" chips "Rectangle" / "Round: a pot or a round bed". Round shows one "Diameter"
+  field in the display unit (LLR-UNIT-040) within the Settings plot limits; the plot is saved with length = width =
+  d and the circle outline. A photo measurement fills the diameter with the larger measured side.
+- Computer (New plot and Plot details): a "Shape" menu; only the chosen shape's fields are on the page; the diameter
+  must be 0.05–1000 m ("The diameter must be between 0.05 and 1000 m."), and a rectangle's sides 0.05–1000 m
+  (T2-CFG-090 default minimum). Saving a round plot writes the circle outline; turning a round plot into a
+  rectangle drops it. A change of shape or size on an existing plot that leaves plants outside is refused with
+  "n plant(s) would be outside the new shape or size. Move or delete them first."
+- Both: the size question (LLR-EDIT-020) for a round plot only above 200 m. ↑ HLR-PLOT-140
+
 ---
 
 ## 6. Deferred LLRs
 
 - HLR-EXP-010 … 060 (export/import/roles) and HLR-CAM-100 (corner correction) are **[Future]**. Their LLRs will
   be written when they are scheduled.
-- HLR-MEAS-010 is **[Suspended]** pending decision D-03.
+- HLR-MEAS-010 is **[Suspended]**: what it still covers (T2-VAL-012, T2-PRE-030) can't arise today (decision D-03, 2026-10-14).
 
 ## 7. Error catalog
 
@@ -1738,6 +1840,7 @@ Generated by script from the `↑` links above.
 | HLR-PLOT-110 | Active | LLR-CLIMQ-010, LLR-CLIMQ-030, LLR-EDIT-050 |
 | HLR-PLOT-120 | Active | LLR-EDIT-050, LLR-LOCS-010 |
 | HLR-PLOT-130 | Active | LLR-LAYV-120 |
+| HLR-PLOT-140 | Active | LLR-ROUND-010, LLR-ROUND-020, LLR-ROUND-030, LLR-ROUND-040 |
 | HLR-LAY-010 | Active | LLR-GEO-010, LLR-XFORM-010 |
 | HLR-LAY-020 | Active | LLR-DRAW-010, LLR-DRAW-020 |
 | HLR-LAY-030 | Active | LLR-PHOTO-070, LLR-DRAW-010 |
@@ -1939,12 +2042,13 @@ Generated by script from the `↑` links above.
 | HLR-PORT-020 | Active | LLR-PFILE-020, LLR-PFILE-030 |
 | HLR-PORT-030 | Active | LLR-WEB-010, LLR-WEB-020 |
 | HLR-PORT-040 | Active | LLR-WEB-030, LLR-WEB-040 |
+| HLR-MEAS-020 | Active | LLR-PMEAS-010, LLR-PMEAS-020, LLR-PMEAS-030, LLR-PMEAS-040, LLR-PMEAS-050, LLR-PMEAS-060 |
 | HLR-MEAS-010 | Suspended | deferred (§6) |
 
 ## 10. Coverage check
 
-- LLRs: **302**. Duplicate LLR IDs: **0**.
-- HLRs: 215 (207 active, 7 future, 1 suspended).
+- LLRs: **312**. Duplicate LLR IDs: **0**.
+- HLRs: 217 (209 active, 7 future, 1 suspended).
 - Active HLRs with no LLR: **0**.
 - HLRs intentionally deferred (§6): HLR-CAM-100, HLR-EXP-010, HLR-EXP-020, HLR-EXP-030, HLR-EXP-040, HLR-EXP-050, HLR-EXP-060, HLR-MEAS-010.
 - LLRs with no HLR parent: **0**.

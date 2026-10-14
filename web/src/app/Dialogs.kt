@@ -13,6 +13,13 @@ import com.example.smartgardenplanner.core.PlantedNodeEntity
 import com.example.smartgardenplanner.core.PlatformClock
 import com.example.smartgardenplanner.core.PlotEntity
 import com.example.smartgardenplanner.core.PlotPoint
+import com.example.smartgardenplanner.core.PlotGeometry
+import com.example.smartgardenplanner.core.PhotoMeasure
+import com.example.smartgardenplanner.core.PhotoMeasurement
+import com.example.smartgardenplanner.core.DistanceUnit
+import com.example.smartgardenplanner.core.DistanceFormatter
+import com.example.smartgardenplanner.core.PlotLimits
+import com.example.smartgardenplanner.core.PlotShape
 import com.example.smartgardenplanner.core.RecommendationEngine
 import com.example.smartgardenplanner.core.SeedEntity
 import com.example.smartgardenplanner.core.SiteFeatureEntity
@@ -67,6 +74,12 @@ object Dialogs {
     fun confirm(title: String, text: String, yes: String, onYes: () -> Unit) =
         modal(title, listOf(para(text)), listOf("Cancel" to { true }, yes to { onYes(); true }))
 
+    /** Smallest plot side on the computer: the default minimum of T2-CFG-090 (the phone's setting). */
+    private const val MIN_PLOT_M = 0.05f
+
+    /** A measured size rounded to the centimeter for the New plot fields. */
+    private fun photoSize(m: Double): Float = (kotlin.math.round(m * 100.0) / 100.0).toFloat()
+
     private fun numberField(value: Float?, step: String = "0.1"): HTMLInputElement =
         input(value?.let { if (it == kotlin.math.floor(it)) it.toInt().toString() else it.toString() } ?: "", "number").also { it.setAttribute("step", step) }
 
@@ -85,11 +98,33 @@ object Dialogs {
 
     // ------------------------------------------------------------------ plots
 
-    /** New plot, or edit the current plot's details when [existing] is given. */
-    fun plotDetails(existing: PlotEntity?) {
-        val name = input(existing?.name ?: "My garden")
-        val length = numberField(existing?.lengthM ?: 6f)
-        val width = numberField(existing?.widthM ?: 4f)
+    /**
+     * New plot, or edit the current plot's details when [existing] is given. [presetName] and [measured] come back from
+     * "Measure from a photo" (LLR-PMEAS-060).
+     */
+    fun plotDetails(existing: PlotEntity?, presetName: String? = null, measured: PhotoMeasurement? = null) {
+        val name = input(existing?.name ?: presetName ?: "My garden")
+        val length = numberField(existing?.lengthM ?: measured?.let { photoSize(it.lengthM) } ?: 6f)
+        val width = numberField(existing?.widthM ?: measured?.let { photoSize(it.widthM) } ?: 4f)
+        // LLR-ROUND-040: a round plot (a pot or a round bed) is given by its diameter.
+        val wasRound = existing?.let { PlotShape.roundDiameter(it) }
+        val diameter = numberField(wasRound ?: 0.4f, "0.01")
+        var round = wasRound != null
+        val sizeRow = h("div", "grid2", kids = listOf(label("Length (left–right), m", length), label("Width (top–bottom), m", width)))
+        val diameterRow = label("Diameter (across the pot or bed), m", diameter)
+        val shape = select(listOf("RECT" to "Rectangle (or draw an outline later)", "ROUND" to "Round: a pot or a round bed"), if (round) "ROUND" else "RECT") {}
+        // An outline measured from the photo is kept only while the sizes stay as measured.
+        var outline = measured?.outline
+        // T2-VAL-015 / LLR-EDIT-020: an allowed but unusual size needs a second click on the save button.
+        val unusualNote = para("", "warn").also { it.style.display = "none" }
+        var unusualAccepted: Pair<Float, Float>? = null
+        length.on("input") { outline = null; unusualNote.style.display = "none" }; width.on("input") { outline = null; unusualNote.style.display = "none" }
+        val measureRow: HTMLElement? = if (existing != null) null else h("div", "field", kids = listOf(
+            button("Measure from a photo…", title = "No tape measure? Lay something of known size on the ground, take one photo and click the corners.") {
+                Measure.pick(name.value)
+            },
+            para(if (measured != null) "Measured from the photo: " + PhotoMeasure.describe(measured, DistanceUnit.METERS) else "No tape measure? Measure the plot in a photo.", "hint")
+        ))
         val zip = input(existing?.locationZip ?: "", placeholder = "e.g. 48104")
         val address = input(existing?.address ?: "", placeholder = "e.g. 123 Main St, Ann Arbor, MI (optional)")
         address.title = "Used by “Open in Google Maps” to find your yard for a satellite screenshot. Stays in your plan file only."
@@ -129,9 +164,23 @@ object Dialogs {
             h("summary", text = "Soil (optional)"),
             h("div", "grid3", kids = listOf(label("Sand %", sand), label("Silt %", silt), label("Clay %", clay), label("Organic matter %", organic), label("pH", ph)))
         ))
-        val body = listOf(
+        // Only the fields of the chosen shape are on the page.
+        val sizeHolder = h("div", "size-fields")
+        fun showShape() {
+            sizeHolder.clear()
+            sizeHolder.add(if (round) diameterRow else sizeRow)
+            measureRow?.style?.display = if (round) "none" else ""
+            unusualNote.style.display = "none"
+        }
+        shape.on("change") { round = shape.value == "ROUND"; showShape() }
+        diameter.on("input") { unusualNote.style.display = "none" }
+        showShape()
+        val body = listOfNotNull(
             label("Name", name),
-            h("div", "grid2", kids = listOf(label("Length (left–right), m", length), label("Width (top–bottom), m", width))),
+            label("Shape", shape),
+            sizeHolder,
+            unusualNote,
+            measureRow,
             label("ZIP code (fills in zone and latitude, offline)", zip), zoneInfo,
             label("Address (optional, to open your yard in Google Maps)", address),
             label("USDA hardiness zone", zone),
@@ -143,9 +192,23 @@ object Dialogs {
         modal(if (existing == null) "New plot" else "Plot details", body, listOf(
             "Cancel" to { true },
             (if (existing == null) "Create plot" else "Save") to save@{
-                val l = Numbers.parse(length.value); val w = Numbers.parse(width.value)
+                val d = if (round) Numbers.parse(diameter.value) else null
+                val l = if (round) d else Numbers.parse(length.value); val w = if (round) d else Numbers.parse(width.value)
                 if (name.value.isBlank()) { App.status("Give the plot a name."); return@save false }
-                if (l == null || w == null || l < 0.5f || w < 0.5f || l > 1000f || w > 1000f) { App.status("Length and width must be between 0.5 and 1000 m."); return@save false }
+                if (round && (d == null || d < PlotShape.ROUND_MIN_DIAMETER_M || d > PlotShape.ROUND_MAX_DIAMETER_M)) { App.status("The diameter must be between 0.05 and 1000 m."); return@save false }
+                // T2-CFG-090: 0.05 m (the default minimum) to 1000 m, so small pots and beds fit.
+                if (l == null || w == null || l < MIN_PLOT_M || w < MIN_PLOT_M || l > 1000f || w > 1000f) { App.status("Length and width must be between 0.05 and 1000 m."); return@save false }
+                val resized = existing == null || existing.lengthM != l || existing.widthM != w
+                val unusual = if (round) PlotLimits.isUnusualRound(l) else PlotLimits.isUnusual(l, w)
+                if (resized && unusual && unusualAccepted != (l to w)) {
+                    unusualAccepted = l to w
+                    unusualNote.textContent = Lang.tr("The plot is " + PlotLimits.questionSize(l, w, round, DistanceUnit.METERS) +
+                        ", which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.") + " " +
+                        Lang.tr(if (existing == null) "Click “Create plot” again to create it." else "Click “Save” again to keep it.")
+                    unusualNote.style.display = ""
+                    unusualNote.scrollIntoView()
+                    return@save false
+                }
                 val zipText = zip.value.trim()
                 if (zipText.isNotEmpty() && !ZipTable.isValidZip(zipText)) { App.status("Enter a 5-digit ZIP code, or leave it empty."); return@save false }
                 val s = Numbers.parse(sand.value); val si = Numbers.parse(silt.value); val c = Numbers.parse(clay.value)
@@ -156,9 +219,18 @@ object Dialogs {
                 val org = Numbers.parse(organic.value); val phV = Numbers.parse(ph.value)
                 if (org != null && org !in 0f..100f) { App.status("Organic matter must be 0–100 %."); return@save false }
                 if (phV != null && phV !in 3f..10f) { App.status("pH must be between 3 and 10."); return@save false }
-                val base = existing ?: PlotEntity(name = "", lengthM = l, widthM = w)
+                val base = existing ?: PlotEntity(name = "", lengthM = l, widthM = w,
+                    scaleSource = if (measured != null) "PHOTO" else "MANUAL",
+                    boundaryJson = outline?.map { PlotPoint(it.x.coerceIn(0f, l), it.y.coerceIn(0f, w)) }
+                        ?.takeIf { PlotGeometry.validateOutline(it) == null }?.let { PlotGeometry.serializePoints(it) })
+                // A round plot's outline is its circle; turning a round plot into a rectangle drops it.
+                val boundary = when {
+                    round -> PlotGeometry.serializePoints(PlotShape.circleOutline(l))
+                    wasRound != null -> null
+                    else -> base.boundaryJson
+                }
                 val updated = base.copy(
-                    name = name.value.trim(), lengthM = l, widthM = w,
+                    name = name.value.trim(), lengthM = l, widthM = w, boundaryJson = boundary,
                     locationZip = zipText.ifBlank { null }, hardinessZone = zone.value.ifBlank { null },
                     latitude = lat, longitude = lon,
                     northBearingDeg = bearing ?: base.northBearingDeg, orientationSet = bearing != null || base.orientationSet,
@@ -167,6 +239,12 @@ object Dialogs {
                     pests = com.example.smartgardenplanner.core.Pest.encode(chosenPests),
                     address = address.value.trim().take(200).ifBlank { null }
                 )
+                // LLR-ROUND-040 / LLR-EDIT-040: a new shape or size may not leave plants outside the plot.
+                val cur = Store.plot()
+                if (existing != null && cur != null && (resized || boundary != existing.boundaryJson)) {
+                    val outside = cur.plants.count { !PlotShape.contains(updated, it.coordinateXM, it.coordinateYM) }
+                    if (outside > 0) { App.status("$outside plant(s) would be outside the new shape or size. Move or delete them first."); return@save false }
+                }
                 if (existing == null) Store.addPlot(updated) else Store.change { it.plot = updated }
                 Canvas.selection = null
                 App.render(); true

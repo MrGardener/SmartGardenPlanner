@@ -1,7 +1,7 @@
 # Smart Garden Planner — User Manual
 
 **Covers:** the Android app and the portable computer planner (`web/dist/smart-garden-planner.html`), as of
-2026-09-27 (database schema 12, plan file format 1).
+2026-10-14 (database schema 12, plan file format 1).
 **Status:** Living document, updated with every change. If something here doesn't match what you see, the manual is
 out of date: please flag it. The `manual-tester` subagent checks the computer planner against this manual on request.
 
@@ -59,6 +59,60 @@ open the same plan files.
   - Other browsers download it instead.
 - The planner also remembers your work in the browser between visits. The file is what you keep and share.
 - **?** opens the help.
+
+### Round plots: pots and round beds
+
+A plot can be round: a pot on a balcony (even your only plot), a half barrel, or a round bed.
+
+- **Phone:** in **Create New Plot**, choose **Shape → Round: a pot or a round bed** and type the **diameter** (the
+  distance across the top of the pot).
+- **Computer:** in **New plot** (or **Edit details…** later), set **Shape** to **Round: a pot or a round bed** and
+  type the diameter.
+
+The layout shows the circle; plants go only inside it. The size shows as **Ø 0.40 m** with the circle's area.
+Sizes from 5 cm to 1000 m are accepted, and a pot is not asked about being small. On the computer, a new diameter
+or shape that would leave a plant outside is refused until you move or delete that plant. Round plots stay round
+in plan files on both versions.
+
+To measure a pot from a photo on the phone, choose Round first, then tap two points straight across the pot.
+
+### No tape measure? Measure the plot from a photo
+
+Both versions can work out a plot's size from one photo, when something of known size lies flat on the ground in
+it.
+
+1. **Lay a reference flat on the ground,** on or next to the plot: a 4 × 8 ft raised bed, a 1 × 1 m square of
+   string or tape, a 2 × 2 ft paving slab, or a sheet of Letter or A4 paper. Anything else works too if you know its
+   two sides ("Something else", then type them).
+2. **Take one photo from as high as you can, looking down.** Standing at the edge with the phone at head height,
+   aimed down at about 45°, works. Keep every corner of the plot in the picture.
+3. **Phone:** in **Create New Plot**, under "No tape measure? Measure the plot in a photo", tap **Take a photo** (the
+   app asks for the camera the first time) or **Choose a photo**. **Computer:** in **New plot**, click
+   **Measure from a photo…** and pick the photo.
+4. Choose the **reference**, then tap (or click) **its 4 corners in order around it, starting along a long side**.
+5. Tap **the plot's corners in order around it**. Two points measure a single distance instead.
+6. Read the result, for example **8.00 × 5.00 m (± 0.12 m), 40.00 m²**. The **±** is how far off it may be if your
+   taps were a little off. A plot that isn't a rectangle keeps its outline: "(not a rectangle: outline kept)".
+7. **Use these sizes** puts them into the plot form. Check them, change them if you like, and create the plot.
+
+Tips:
+- **Phone:** pinch to zoom for precise taps; **Undo last tap**, **Start over** and **Fit photo** help.
+  **Computer:** use **Zoom** (2× or 4×) and **Undo last click**.
+- The bigger the reference looks in the photo, the better. A sheet of paper for a whole yard gives a wide ± and the
+  warning "The reference is small in the photo…".
+- "The result may be off by more than 10%" or "± unknown: retake the photo" means: take it again from higher up,
+  looking more down at the ground, with a bigger reference.
+- It assumes flat ground. On a slope the far side comes out a little short or long.
+- The photo is used only while you measure. It isn't saved with the plot (on the phone a camera photo is deleted as
+  soon as it's read, and it doesn't go to your gallery).
+
+### Sizes the planner asks about
+
+A plot can be 0.05 to 1000 m on each side (on the phone, Settings → Plot validation can narrow that). A side under
+0.30 m (inches typed as meters, for example) or over 200 m is allowed, but the planner first asks if it's right; a
+round pot is only asked about above 200 m. **Phone:** "Is that size right?" → **Yes, create it** or
+**Change it**. **Computer:** the question appears in the form; click **Create plot** (or **Save**) again to keep the
+size.
 
 ---
 
@@ -538,18 +592,24 @@ On the computer planner, the message's **How to fix (Help)** button opens this e
 
 Changes save immediately; the reset icon restores the defaults.
 
-- **About this planner:** the disclaimer.
+- **About this planner:** the disclaimer, and **Security audit log**. The log lists important events, newest
+  first: catalog tier switches, plan files opened or refused, a lost storage key, data reset. It is stored
+  encrypted on the phone, and each entry is chained to the one before it. **Verify** checks the chain: "✓ The log is
+  intact" or the first entry that was changed or can't be read.
 - **Language:** English or Español. The screen is rebuilt in the chosen language: menus, buttons, advice, the
   planner's explanations, plant names and the catalog's pest and care notes. Registered variety names (for example
   "Honey Select" or "Golden California Wonder") stay as published; plain ones such as "Mid-Season" are translated.
 - **Catalog:** Basic, Standard or Pro.
-- **Units:** meters or inches. Also switchable from the "[in]/[m]" chip on the layout header.
+- **Units:** meters or inches. Also switchable from the "[in]/[m]" chip on the layout header. Distances show with a
+  space before the unit, rounded half-up: **2.35 m** (2 decimals) or **92.5 in** (1 decimal), with a "." in every
+  language. When typing a size, use a dot or a comma (**1.5** or **1,5**), at most 12 characters, with no sign and
+  no thousands separator.
 - **Spacing & placement:**
   - the spacing margin (0.3× to 2.0×);
   - companion rules on or off (Pro);
   - guild planting (Pro). Also switchable from the "GUILDS ON/OFF" chip.
 - **Canvas display:** ruler text size and tick spacing, zoom limits and step, undo depth.
-- **Plot validation:** minimum and maximum plot size.
+- **Plot validation:** minimum and maximum plot size. Sizes under 0.30 m or over 200 m ask for confirmation (§2).
 - **Household & care:**
   - household size;
   - organic or conventional advice;
@@ -583,7 +643,10 @@ see.
 
 ## 14. Known gaps
 
-- **Camera capture and phone-sensor measuring** of plot size are not connected yet (use the typed size).
+- **Measuring from a photo** needs a reference of known size on the ground and assumes flat ground. Measuring with
+  the phone's motion sensors or AR is not used.
+- **Older app versions:** installing an older build over a newer one may start with empty data (accepted while
+  testing).
 - **Phone:** you can't drag outline corners (tap a corner, then its new place) or add corners. You can't change a
   plant's planting date. Pointing at a spot to see its sun hours is computer-only.
 - **Rotation plans** are shown but not stored as future seasons. They are worked out again when you open them.
@@ -604,6 +667,18 @@ see.
 ---
 
 ## Changelog
+
+- **2026-10-14 (round plots):**
+  - Plots can be **round** (a pot or a round bed), given by their diameter, on the phone and the computer.
+  - The computer accepts plots from 0.05 m (was 0.5 m), like the phone, and refuses a new size or shape that would
+    leave plants outside.
+
+- **2026-10-14 (measuring, audit log, distances):**
+  - **Measure a plot from a photo** on the phone and the computer: lay something of known size on the ground, take
+    one photo and tap the corners (§2).
+  - Sizes under 0.30 m or over 200 m ask for confirmation before the plot is created.
+  - **Security audit log** (phone, Settings → About this planner): encrypted, chained, with **Verify**.
+  - Distances show "2.35 m" / "92.5 in" with a space and half-up rounding; sizes accept a dot or a comma.
 
 - **2026-09-28 (checks):**
   - A plant whose variety is missing from the catalog is no longer ignored: nothing can be placed right on top of it,

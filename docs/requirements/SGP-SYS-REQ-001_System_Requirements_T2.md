@@ -75,16 +75,28 @@ Parent: ConOps §5.3 · Safety: FC-01 · Verify: Test · Status: Proposed
 necessarily "captured".
 **Now:** Implemented (IMPL).
 
+### T2-FUN-022 — Round plots
+**Statement:** The system shall let the user create a round plot, for example a pot (possibly the only plot on an
+apartment balcony) or a round bed, by entering its diameter in the selected display unit (T2-CFG-100), within the
+allowed range (T2-CFG-090). Plants shall be placed only inside the circle, and the plot's size shall be shown as its
+diameter.
+Parent: Owner direction 2026-10-14 ("A pot can be circular and I can use a pot as my only plot on an apartment") ·
+Verify: Test · Status: Proposed (new 2026-10-14)
+**Now:** Implemented (IMPL) on the phone and the computer (HLR-PLOT-140).
+
 ### T2-FUN-025 — Measuring plot dimensions with the device
 **Statement:** The system shall provide a way to obtain plot dimensions by measuring with the device, as an
 alternative to typing them. The measured values shall be shown with their uncertainty (T2-PRE-020), and the
 user shall be able to accept or edit them before use.
-Parent: ConOps §5.2 · Safety: FC-14 · Verify: Test (target) · Status: **Suspended — decision D-03 (method)**
+Parent: ConOps §5.2 · Safety: FC-14 · Verify: Test · Status: Active (decision D-03 taken 2026-10-14: a reference object in a photo)
 **Was:** "…local measuring tool utilizing onboard device sensors to estimate physical distances or dimensions post-capture."
 **Why changed:** Stated as a capability, independent of the method. Measuring by double-integrating the
 accelerometer (the method in the HLRs) does not give usable meter-scale accuracy on a phone. Candidate
 methods: ARCore, a reference object in the photo, or GPS for large fields.
-**Now:** An unused, physically unsound IMU engine exists (DEC).
+**Decision D-03 (owner, 2026-10-14):** a reference object in a photo, "something that should allow us to make an
+estimation just looking at a picture and not having a measuring tape with us". Lay something of known size flat
+on the ground, take one photo, mark its four corners and the plot's corners (HLR-MEAS-020).
+**Now:** Implemented (IMPL) in New plot on the phone and the computer. The unused IMU engine is still in the code (DEC).
 
 ### T2-FUN-030 — Variety and planting date per plant
 **Statement:** For every plant placed, the system shall record its variety and its planting date. The
@@ -776,17 +788,19 @@ Parent: ConOps §5.3 · Verify: Test · Status: Proposed
 **Statement:** If the source of a plot's dimensions is changed after plants have been placed (typed ↔
 measured), the system shall warn the user that all plants will be removed, and shall remove them only if
 the user confirms.
-Parent: ConOps §5.5 · Verify: Test · Status: **Suspended — D-03** (only typed dimensions exist today)
+Parent: ConOps §5.5 · Verify: Test · Status: **Suspended — not reachable today** (D-03 taken 2026-10-14: measuring is offered only in New plot, before any plant exists, so the source can't change after planting)
 **Was:** "…clear all active canvas seed node placements and require a layout reset if the user changes the configuration scale engine source type post-initialization."
 **Why changed:** Added a confirmation instead of silent clearing.
 
 ### T2-VAL-015 — Unusual dimensions need confirmation
 **Statement:** When the user enters a plot length or width that is allowed but below `[TBC-18: 0.30 m]` or
-above `[TBC-18: 200 m]`, the system shall ask for confirmation before creating or updating the plot.
+above `[TBC-18: 200 m]`, the system shall ask for confirmation before creating or updating the plot. A round plot
+(T2-FUN-022) is asked about only above 200 m, because pots are often 0.15–0.30 m across `[TBC-18]`.
 Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 **Was:** "…trigger a confirmation prompt if values are unrealistically small or large."
 **Why changed:** "Unrealistically" given values.
-**Now:** Hard limits only; no confirmation (PART).
+**Now:** Implemented (IMPL): the phone asks "Is that size right?" before creating the plot; the computer explains
+in the dialog and creates or saves on a second click (LLR-EDIT-020).
 
 ### T2-VAL-017 — Resizing must keep plants inside
 **Statement:** The system shall refuse a change to a plot's dimensions that would leave any plant or path
@@ -986,20 +1000,24 @@ Parent: KB Part 11 · Verify: Test · Status: Proposed
 ### T2-PRE-010 — Calibration before measuring
 **Statement:** If the measuring method (T2-FUN-025) needs calibration, the system shall guide the user through
 it before any measurement is shown.
-Parent: ConOps §5.2 · Verify: Test · Status: **Suspended — D-03**
+Parent: ConOps §5.2 · Verify: Test · Status: Active (D-03 taken 2026-10-14)
 **Was:** "…require a sensor calibration routine (e.g., planar reference step) before generating measurement data from the onboard IMU/camera framework."
+**Now:** Implemented (IMPL): the reference object is the calibration. The dialog asks for the reference first (and
+its size, for "something else"), and shows no size until its four corners are marked (LLR-PMEAS-050/060).
 
 ### T2-PRE-020 — Measurements show their uncertainty
 **Statement:** Any dimension obtained by measurement shall be displayed together with its estimated
 uncertainty (for example "3.20 m ± 0.05 m").
-Parent: ConOps §5.2 · Safety: FC-14 · Verify: Test · Status: Proposed (applies once T2-FUN-025 exists)
+Parent: ConOps §5.2 · Safety: FC-14 · Verify: Test · Status: Proposed
 **Was:** "…display estimated dimensions with an explicit tolerance margin indication (e.g., +/- X cm) based on sensor accuracy readings."
-**Now:** Only in unused IMU code.
+**Now:** Implemented (IMPL): "8.00 × 5.00 m (± 0.12 m), 40.00 m²", or "± unknown: retake the photo" when the range
+can't be estimated (LLR-PMEAS-040).
 
 ### T2-PRE-030 — IMU as primary tracking
 **Statement:** —
-Status: **Suspended — D-03; recommended for deletion.** It prescribes one measuring method (raw inertial
-tracking), and that method is not accurate enough on a phone.
+Status: **Suspended — recommended for deletion.** It prescribes one measuring method (raw inertial
+tracking), and that method is not accurate enough on a phone. D-03 (2026-10-14) chose a reference object in a
+photo instead; deleting this requirement is the owner's call.
 **Was:** "…maintain raw IMU sensor alignment calculations as the primary coordinate tracking matrix."
 
 ### T2-PRE-040 — Corner markers to correct the photo
@@ -1289,11 +1307,11 @@ Settle these whenever you're ready. Each proposal is what the requirement says u
 
 | Status | Count |
 |---|---|
-| Proposed (original IDs) | 77 (PRE-020 applies only once FUN-025 exists) |
+| Proposed (original IDs) | 79 (FUN-025 and PRE-010 active since decision D-03, 2026-10-14) |
 | Proposed (new) | 22 (17 in Rev A; FUN-160, FUN-170, FUN-180, FUN-190, PLT-040 added 2026-09-27) |
-| Suspended (D-03) | 4 (FUN-025, VAL-012, PRE-010, PRE-030) |
+| Suspended | 2 (VAL-012: not reachable today; PRE-030: recommended for deletion) |
 | Merged | 1 (DAT-070) |
 | Deleted | 2 (GOV-010, GOV-020) |
-| **Total original IDs accounted for** | **84** (77 + 4 + 1 + 2) |
+| **Total original IDs accounted for** | **84** (79 + 2 + 1 + 2) |
 
 Next step: re-baseline the HLRs so that each traces to these T2 requirements (SGP-DWR-001 DW-0301 continues).

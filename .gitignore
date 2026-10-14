@@ -1,0 +1,2 @@
+# Python bytecode caches (e.g. from importing tools/req_trace.py)
+__pycache__/

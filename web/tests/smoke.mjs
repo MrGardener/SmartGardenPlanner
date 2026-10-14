@@ -11,6 +11,8 @@ const shots = process.env.SGP_SHOTS || os.tmpdir();
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, acceptDownloads: true });
 const page = await ctx.newPage();
+// Plan B and the planting calendar depend on the date: pin a mid-May day so the checks give the same answer all year.
+await page.clock.setFixedTime(new Date('2026-05-15T10:00:00'));
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
@@ -58,9 +60,9 @@ const modal = page.locator('.modal');
 await modal.locator('input').nth(0).fill('Test bed');
 await modal.locator('input').nth(1).fill('8');
 await modal.locator('input').nth(2).fill('5');
-await modal.locator('input').nth(3).fill('48104');
-await modal.locator('input').nth(3).dispatchEvent('input');
-const zone = await modal.locator('select').inputValue();
+await modal.getByPlaceholder('e.g. 48104').fill('48104');
+await modal.getByPlaceholder('e.g. 48104').dispatchEvent('input');
+const zone = await modal.locator('label', { hasText: 'USDA hardiness zone' }).locator('select').inputValue();
 check(zone === '6a' || zone === '6b', `ZIP 48104 fills zone (${zone})`);
 check((await modal.innerText()).includes('latitude 42.'), 'ZIP fills latitude');
 await modal.getByRole('button', { name: 'S', exact: true }).click();
@@ -552,6 +554,100 @@ await chooser.setFiles(saved);
 await page.waitForFunction(() => document.querySelector('.status').textContent.startsWith('Opened'));
 d = await draft();
 check(d.plots[0].history.length === historyCount, 're-opened file has the same history');
+
+// Measure a plot from a photo (LLR-PMEAS-060): a made-up photo of an L-shaped 8 x 5 m plot with a 4 x 8 ft bed on it,
+// seen from a camera 3.5 m up. Clicking the bed's and the plot's corners gives the plot's size and outline.
+const cam = (() => {
+  const C = [4, -5, 3.5], T = [4, 2.5, 0], n = Math.hypot(T[0] - C[0], T[1] - C[1], T[2] - C[2]);
+  const f = [(T[0] - C[0]) / n, (T[1] - C[1]) / n, (T[2] - C[2]) / n], r = [1, 0, 0], u = [0, -f[2], f[1]];
+  return ([X, Y]) => { const d = [X - C[0], Y - C[1], -C[2]]; const dot = v => d[0] * v[0] + d[1] * v[1] + d[2] * v[2]; return [800 + 1000 * dot(r) / dot(f), 600 - 1000 * dot(u) / dot(f)]; };
+})();
+const bedPx = [[1, 1], [3.4384, 1], [3.4384, 2.2192], [1, 2.2192]].map(cam);
+const lPx = [[0, 0], [8, 0], [8, 2], [4, 2], [4, 5], [0, 5]].map(cam);
+const measurePng = await page.evaluate(([bed, plot]) => {
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const g = c.getContext('2d');
+  g.fillStyle = '#4d7c0f'; g.fillRect(0, 0, 1600, 1200);
+  const poly = (pts, color) => { g.fillStyle = color; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); };
+  poly(plot, '#92400e'); poly(bed, '#a8a29e');
+  return c.toDataURL('image/png').split(',')[1];
+}, [bedPx, lPx]);
+const measurePath = path.join(shots, 'sgp-measure.png');
+fs.writeFileSync(measurePath, Buffer.from(measurePng, 'base64'));
+await btn('New plot').first().click();
+await page.locator('.modal input').nth(0).fill('Photo plot');
+check((await page.locator('.modal').innerText()).includes('No tape measure?'), 'New plot offers to measure from a photo');
+const [measureChooser] = await Promise.all([page.waitForEvent('filechooser'), btn('Measure from a photo…').click()]);
+await measureChooser.setFiles(measurePath);
+await page.locator('.modal svg.measure-photo').waitFor();
+async function clickPhoto([x, y]) {
+  await page.evaluate(() => document.querySelector('.modal svg.measure-photo').scrollIntoView({ block: 'center' }));
+  const p = await page.evaluate(([x, y]) => { const m = document.querySelector('.modal svg.measure-photo').getScreenCTM(); return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f }; }, [x, y]);
+  await page.mouse.click(p.x, p.y);
+}
+for (const p of bedPx) await clickPhoto(p);
+check((await page.locator('.modal .measure-step').innerText()).startsWith('Step 2'), 'after the 4 reference corners it asks for the plot corners');
+await clickPhoto(lPx[0]); await clickPhoto(lPx[1]);
+const distText = await page.locator('.modal .measure-size').innerText();
+check(distText.startsWith('Distance: ') && Math.abs(parseFloat(distText.slice(10)) - 8) < 0.16, `two points measure one distance (${distText})`);
+check((await page.locator('.modal').innerText()).includes('off by more than 10%'), 'a low, slanted photo warns that the result may be off');
+for (const p of lPx.slice(2)) await clickPhoto(p);
+const sizeText = await page.locator('.modal .measure-size').innerText();
+const [ml, mw] = (sizeText.match(/[\d.]+/g) || []).map(Number);
+check(Math.abs(ml - 8) < 0.16 && Math.abs(mw - 5) < 0.1 && sizeText.includes('outline kept'), `photo gives 8 x 5 m and keeps the L-shaped outline (${sizeText})`);
+await btn('Use these sizes').click();
+await page.waitForFunction(() => document.querySelector('.modal-title')?.textContent === 'New plot');
+check(await page.locator('.modal input').nth(0).inputValue() === 'Photo plot' && Math.abs(Number(await page.locator('.modal input').nth(1).inputValue()) - 8) < 0.16
+  && Math.abs(Number(await page.locator('.modal input').nth(2).inputValue()) - 5) < 0.1, 'New plot comes back with the name and the measured sizes');
+await btn('Create plot').click();
+d = await draft();
+const photoPlot = d.plots.find(p => p.name === 'Photo plot');
+const shoelace = pts => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % pts.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+check(photoPlot && photoPlot.outline && photoPlot.outline.length === 6 && Math.abs(shoelace(photoPlot.outline) - 28) < 1.2,
+  `the plot is created with the measured L-shaped outline (${photoPlot && JSON.stringify(photoPlot.outline)})`);
+
+// An allowed but unusual size asks first (T2-VAL-015, LLR-EDIT-020): the first click explains, the second creates.
+const plotsBefore = (await draft()).plots.length;
+await btn('New plot').first().click();
+await page.locator('.modal input').nth(0).fill('Long field');
+await page.locator('.modal input').nth(1).fill('250');
+await page.locator('.modal input').nth(2).fill('4');
+await btn('Create plot').click();
+check(await page.locator('.modal').count() === 1 && (await page.locator('.modal .warn').first().innerText()).includes('250.00 m × 4.00 m, which is unusually small or large')
+  && (await draft()).plots.length === plotsBefore, 'an unusual size is explained first and nothing is created');
+await btn('Create plot').click();
+d = await draft();
+check(d.plots.length === plotsBefore + 1 && d.plots.some(p => p.name === 'Long field' && p.lengthM === 250), 'clicking again creates the unusual plot');
+
+// A round plot: a pot on a balcony (LLR-ROUND-030/040).
+await btn('New plot').first().click();
+await page.locator('.modal input').nth(0).fill('Balcony pot');
+await page.locator('.modal label', { hasText: 'Shape' }).locator('select').selectOption('ROUND');
+check(await page.locator('.modal label', { hasText: 'Length (left' }).count() === 0, 'a round plot asks only for its diameter');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('0.6');
+await btn('Create plot').click();
+d = await draft();
+let pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot && pot.lengthM === 0.6 && pot.widthM === 0.6 && pot.outline && pot.outline.length === 64, `pot saved as a 0.6 m circle (${pot && pot.outline && pot.outline.length} corners)`);
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+check((await page.locator('.panel-body').innerText()).includes('Ø 0.60 m (0.28 m²)'), 'the plot panel shows the diameter and the circle\'s area');
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
+await page.getByPlaceholder(/Search .* varieties/).fill('Genovese');
+await page.locator('button.seed').first().click();
+await clickMetres(0.45, 0.3);
+await clickMetres(0.03, 0.03);
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.plants.length === 1, `one basil in the pot, none in the corner outside the circle (${pot.plants.length})`);
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+await btn('Edit details…').click();
+check(await page.locator('.modal label', { hasText: 'Shape' }).locator('select').inputValue() === 'ROUND', 'Plot details knows the pot is round');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('0.3');
+await page.locator('.modal-actions').getByRole('button', { name: 'Save', exact: true }).click();
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.lengthM === 0.6 && (await page.locator('.status').innerText()).includes('1 plant(s) would be outside'), 'shrinking the pot past a plant is refused');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('1');
+await page.locator('.modal-actions').getByRole('button', { name: 'Save', exact: true }).click();
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.lengthM === 1 && pot.outline.length === 64 && pot.plants.length === 1, 'a bigger pot keeps its plant and stays round');
 
 // Phone-size layout.
 await page.setViewportSize({ width: 412, height: 915 });
