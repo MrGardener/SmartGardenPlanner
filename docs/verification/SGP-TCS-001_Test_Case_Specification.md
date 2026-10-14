@@ -55,15 +55,15 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 | LLRs | 302 |
 | Test cases | 950 |
 | Regression entries | 31 |
-| LLR status | IMPL 130 · PART 107 · DEV 31 · TGT 29 · OBS 5 |
-| Case results | PASS 479 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 43 |
-| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 24 · RND 50 |
-| Case methods | AUTO 348 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 342 · REVIEW 12 · Planned 106 |
+| LLR status | IMPL 132 · PART 107 · DEV 29 · TGT 29 · OBS 5 |
+| Case results | PASS 482 · MANUAL 307 · PLANNED 67 · BLOCKED 54 · DEV 40 |
+| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 241 · ALN 24 · RND 51 |
+| Case methods | AUTO 350 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 343 · REVIEW 12 · Planned 103 |
 
-| LLR status | IMPL 130 · PART 107 · DEV 31 · TGT 29 · OBS 5 |
-| Case results | PASS 479 · MANUAL 306 · PLANNED 68 · BLOCKED 54 · DEV 43 |
-| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 242 · ALN 24 · RND 50 |
-| Case methods | AUTO 348 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 342 · REVIEW 12 · Planned 106 |
+| LLR status | IMPL 132 · PART 107 · DEV 29 · TGT 29 · OBS 5 |
+| Case results | PASS 482 · MANUAL 307 · PLANNED 67 · BLOCKED 54 · DEV 40 |
+| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 241 · ALN 24 · RND 51 |
+| Case methods | AUTO 350 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 343 · REVIEW 12 · Planned 103 |
 
 ## 3. Test cases by LLR
 
@@ -121,26 +121,26 @@ Most model classes carry field comments; no systematic KDoc of unit and range.
 | TC-UNIT-020.3 | MAX | 2000 m (largest plot setting) | Round trip within 0.01 % | AUTO `LlrGapTest.units_convertAndParseAtTheLimits` | PASS |
 | TC-UNIT-020.4 | RND | 5,000 random values 0–2,000 m in both units | Text round trip within 0.01 % | AUTO `LlrGapTest.units_randomValuesRoundTripInBothUnits` | PASS |
 
-#### LLR-UNIT-030 — DEV
+#### LLR-UNIT-030 — IMPL
 
-`format` writes no space before the suffix ("3.25m") and always uses "." as the decimal separator; inches use 2 decimals unless asked.
-
-| TC | Kind | Input / action | Expected | Method | Result |
-|---|---|---|---|---|---|
-| TC-UNIT-030.1 | NOM | format(1 m, METERS) | "1.00m" (LLR says "1.00 m") | AUTO `LlrGapTest.units_convertAndParseAtTheLimits` | DEV |
-| TC-UNIT-030.2 | BND | Rounding half-up at 0.005 m | "0.01 m" | Planned | PLANNED |
-| TC-UNIT-030.3 | INV | Locale with decimal comma | Comma separator per LLR; implementation keeps "." | Planned | DEV |
-
-#### LLR-UNIT-040 — DEV
-
-`parseToMeters` trims, accepts one "," as the decimal sign and any finite number; it accepts signs and exponents ("1e3", "-2") the LLR rejects.
+Space before the unit, 2 decimals in meters and 1 in inches, half-up, "." in every language (owner decision 2026-10-14).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-UNIT-040.1 | NOM | " 2,5 " in meters | 2.5 m | AUTO `LlrGapTest.units_convertAndParseAtTheLimits` | PASS |
-| TC-UNIT-040.2 | INV | "", "abc", "1.2.3", "12m", "NaN", "Infinity", "1e40" | null | AUTO `LlrGapTest.units_convertAndParseAtTheLimits` | PASS |
-| TC-UNIT-040.3 | ALN | Random text, comma and dot mixes | null or a finite number, never an exception | AUTO `InputRobustnessTest.distances_invalidTextGivesNull_andCommaDecimalsAreAccepted` | PASS |
-| TC-UNIT-040.4 | BND | 13-character number; "-2"; "1e3" | Rejected per LLR; implementation accepts | Planned | DEV |
+| TC-UNIT-030.1 | NOM | format(1 m) in both units | "1.00 m", "39.4 in" | AUTO `LlrGapTest.units_convertAndParseAtTheLimits` | PASS |
+| TC-UNIT-030.2 | BND | 0.005 m (stored as 0.00499… as a Float), 0.0049 m, 0 and 1000 m | "0.01 m", "0.00 m", "0.00 m", "1000.00 m" / "39370.1 in" | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
+| TC-UNIT-030.3 | INV | Spanish interface | Same "." decimal sign (no locale separator) | MANUAL TP-20.1 | MANUAL |
+
+#### LLR-UNIT-040 — IMPL
+
+Trimmed; digits with at most one "." or ",", at least one digit, at most 12 characters; no sign, exponent or grouping (owner decision 2026-10-14).
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-UNIT-040.1 | NOM | "2.5", "2,5", "  7 ", "1.", ".5" | 2.5, 2.5, 7, 1, 0.5 | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
+| TC-UNIT-040.2 | BND | 12 and 13 characters; "." alone; "0" | 12 accepted, 13 refused; refused; 0 | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
+| TC-UNIT-040.3 | ALN | "-2", "+2", "1e3", "1,000.5", "1 000", "2 m", "½", Arabic and full-width digits, "NaN" | Refused | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
+| TC-UNIT-040.4 | RND | 5,000 random strings of digits, signs, separators, letters and blanks | Never throws; anything accepted is finite, ≥ 0 and ≤ 12 characters | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
 
 #### LLR-UNIT-050 — TGT
 
@@ -3188,8 +3188,6 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 |---|---|---|
 | LLR-LIM-010 | DEV | No single constants object; the limits live next to their users (e.g. `AutoPopulateEngine.MAX_POINTS` = 20 000, plan file 5000 plants/plot, name 200 characters, plot 0.5–1000 m on the web). |
 | LLR-UNIT-010 | DEV | `DistanceUnit` {METERS, INCHES}; the factor is 39.3701 in/m, not exactly 1/0.0254. |
-| LLR-UNIT-030 | DEV | `format` writes no space before the suffix ("3.25m") and always uses "." as the decimal separator; inches use 2 decimals unless asked. |
-| LLR-UNIT-040 | DEV | `parseToMeters` trims, accepts one "," as the decimal sign and any finite number; it accepts signs and exponents ("1e3", "-2") the LLR rejects. |
 | LLR-GEO-040 | DEV | `distanceToPolyline` returns `Float.MAX_VALUE` (not +∞) for an empty list. |
 | LLR-GEO-050 | DEV | `pointInPolygon` is plain even-odd ray casting with no on-edge rule; `PlotShape.contains` adds the rectangle check. |
 | LLR-VALD-080 | DEV | `validatePlacement` returns lists of spacing and antagonist conflicts; boundary and path are checked by callers; no ordered single reason. |

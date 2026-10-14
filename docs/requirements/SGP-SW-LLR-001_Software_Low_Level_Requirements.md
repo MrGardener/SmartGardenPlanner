@@ -83,14 +83,17 @@ by a space and the suffix:
 - METERS: 2 decimals, suffix "m"
 - INCHES: 1 decimal, suffix "in"
 
-The decimal separator shall be the locale's. ↑ HLR-NAV-090, HLR-RULE-090, HLR-LAY-040
+The decimal separator shall be "." in every language (owner decision 2026-10-14; implemented by
+`DistanceFormatter.format`, which nudges Float values by 10⁻⁷ relative so that, for example, 0.005 m shows as
+"0.01 m"). ↑ HLR-NAV-090, HLR-RULE-090, HLR-LAY-040
 
 **LLR-UNIT-040** `parseDistance(text, unit)` shall:
 - trim the text
 - accept only digits with at most one decimal separator ("." or ",") and at least one digit
 - reject signs, exponents, grouping separators, empty text and more than 12 characters
 
-It returns meters (via LLR-UNIT-020), or `null` if rejected. ↑ HLR-PLOT-030, HLR-PLOT-040, HLR-NAV-090
+It returns meters (via LLR-UNIT-020), or `null` if rejected. Implemented by `DistanceFormatter.parseToMeters`
+(owner decision 2026-10-14). ↑ HLR-PLOT-030, HLR-PLOT-040, HLR-NAV-090
 
 **LLR-UNIT-050** `formatArea(m2, unit)` shall return m² with 2 decimals for METERS, and ft² with 1 decimal
 for INCHES, where ft² = m² / 0.09290304. ↑ HLR-VIEW-080
