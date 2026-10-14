@@ -24,6 +24,9 @@ object PlotGeometry {
         }
     }
 
+    /** Smallest area an outline may enclose: 1 cm², below the smallest round plot (5 cm across, about 20 cm²). */
+    const val MIN_OUTLINE_AREA_M2 = 0.0001f
+
     fun serializePoints(points: List<PlotPoint>): String = points.joinToString(";") { "${it.x},${it.y}" }
 
     /** Ray-casting point-in-polygon test. A polygon needs at least 3 points. */
@@ -128,10 +131,13 @@ object PlotGeometry {
         return false
     }
 
-    /** Checks an outline the user drew: at least 3 corners, non-zero area, edges not crossing. */
+    /**
+     * Checks an outline: at least 3 corners, an area of at least [MIN_OUTLINE_AREA_M2] (so a small round pot still
+     * counts, LLR-ROUND-010), edges not crossing.
+     */
     fun validateOutline(polygon: List<PlotPoint>): String? {
         if (polygon.size < 3) return "An outline needs at least 3 corners."
-        if (polygonArea(polygon) < 0.01f) return "The outline encloses almost no area."
+        if (polygonArea(polygon) < MIN_OUTLINE_AREA_M2) return "The outline encloses almost no area."
         if (isSelfIntersecting(polygon)) return "The outline's edges cross each other. Tap the corners in order around the plot."
         return null
     }
@@ -161,7 +167,51 @@ object PlotShape {
     }
 
     fun areaM2(plot: PlotEntity): Float {
+        roundDiameter(plot)?.let { d -> return (kotlin.math.PI * d * d / 4.0).toFloat() }
         val custom = outline(plot)
         return if (custom.isEmpty()) plot.lengthM * plot.widthM else PlotGeometry.polygonArea(custom)
+    }
+
+    /** Corners of a round plot's outline (LLR-ROUND-010): enough for a smooth circle, well under MAX_POINTS_PER_SHAPE. */
+    const val ROUND_SEGMENTS = 64
+
+    /** Smallest and largest diameter of a round plot, in meters (T2-CFG-090 absolute range). */
+    const val ROUND_MIN_DIAMETER_M = 0.05f
+    const val ROUND_MAX_DIAMETER_M = 1000f
+
+    /**
+     * The outline of a round plot of [diameterM] (LLR-ROUND-010): [ROUND_SEGMENTS] corners on the circle that touches
+     * all four sides of the diameter × diameter box, starting at the top and going clockwise on screen.
+     */
+    fun circleOutline(diameterM: Float): List<PlotPoint> {
+        val r = diameterM / 2.0
+        return (0 until ROUND_SEGMENTS).map { i ->
+            val a = 2.0 * kotlin.math.PI * i / ROUND_SEGMENTS
+            PlotPoint((r + r * kotlin.math.sin(a)).toFloat().coerceIn(0f, diameterM), (r - r * kotlin.math.cos(a)).toFloat().coerceIn(0f, diameterM))
+        }
+    }
+
+    /**
+     * The diameter when [plot] is round, else null (LLR-ROUND-020): a square box and an outline of at least 32 corners,
+     * every one within 1 % of the radius from the box's center. Plan files keep round plots round this way, with no
+     * extra field.
+     */
+    fun roundDiameter(plot: PlotEntity): Float? {
+        val l = plot.lengthM; val w = plot.widthM
+        if (!(l > 0f) || !l.isFinite() || kotlin.math.abs(l - w) > 1e-4f * l) return null
+        val pts = outline(plot)
+        if (pts.size < 32) return null
+        val r = l / 2.0
+        val ok = pts.all { p ->
+            val d = kotlin.math.hypot(p.x - r, p.y - r)
+            kotlin.math.abs(d - r) <= 0.01 * r
+        }
+        return if (ok) l else null
+    }
+
+    /** "Ø 0.40 m" for a round plot, "8.00 × 5.00 m" otherwise, in the display unit (LLR-ROUND-030). */
+    fun describeSize(plot: PlotEntity, unit: DistanceUnit): String {
+        roundDiameter(plot)?.let { return "Ø " + DistanceFormatter.format(it, unit) }
+        return DistanceFormatter.format(plot.lengthM, unit).substringBeforeLast(" ") + " × " + DistanceFormatter.format(plot.widthM, unit)
     }
 }

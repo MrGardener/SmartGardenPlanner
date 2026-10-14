@@ -136,6 +136,7 @@ test on a phone with Android 8 or later; clear the app's data first; language En
 | **TP-12.4** | Note a plot's modified time; open it without changes; rename it; add a plant. | Unchanged when only opened; updated by rename and by the plant. |
 | **TP-12.5** | Delete a plot with 500 plants: cancel, then confirm. | Confirmation states the counts; cancel keeps it; confirm deletes it and its plants. |
 | **TP-12.6** | Create a plot of 250 × 4 m: press "Change it", then save again and press "Yes, create it". Create 200 × 4 m. Switch units to inches and create 10 × 100 in. | "Is that size right?" names the sizes; "Change it" returns to the form unchanged; "Yes, create it" creates the plot; no question at 200 m; asked for 10 in (0.254 m, under 0.30 m). |
+| **TP-12.7** | Create a round plot: Shape → "Round: a pot or a round bed", diameter 0.4 m. Open it and plant at the center and near the edge; tap in a corner of the square around the circle. Back on the plot list, read the row. Switch units to inches and create a 12 in pot. | Only a diameter is asked; the layout shows a circle; plants inside the circle are placed, the corner tap is refused as outside the plot; the row says "Size: Ø 0.40 m • round"; the header "Plot Layout Size: Ø 0.40 m"; the 12 in pot works and isn't asked about its size. |
 
 ### TP-13 — Layout view
 

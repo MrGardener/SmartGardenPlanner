@@ -55,7 +55,7 @@ sealed class PhotoMeasureResult {
  */
 object PhotoMeasure {
 
-    const val MIN_SIDE_M = 0.5
+    const val MIN_SIDE_M = 0.05
     const val MAX_SIDE_M = 1000.0
     const val MAX_CORNERS = 20
     private const val SAMPLES = 64
@@ -269,4 +269,12 @@ object PlotLimits {
     const val UNUSUAL_MIN_M = 0.30f
     const val UNUSUAL_MAX_M = 200f
     fun isUnusual(lengthM: Float, widthM: Float): Boolean = minOf(lengthM, widthM) < UNUSUAL_MIN_M || maxOf(lengthM, widthM) > UNUSUAL_MAX_M
+
+    /** A round plot (a pot) is asked about only above [UNUSUAL_MAX_M]: pots are often 0.15–0.30 m across (LLR-ROUND-040). */
+    fun isUnusualRound(diameterM: Float): Boolean = diameterM > UNUSUAL_MAX_M
+
+    /** "Ø 0.20 m" or "8.00 m × 5.00 m": the size named in the "Is that size right?" question. */
+    fun questionSize(lengthM: Float, widthM: Float, round: Boolean, unit: DistanceUnit): String =
+        if (round) "Ø " + DistanceFormatter.format(lengthM, unit)
+        else DistanceFormatter.format(lengthM, unit) + " × " + DistanceFormatter.format(widthM, unit)
 }

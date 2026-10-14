@@ -52746,7 +52746,6 @@ Legend (nothing placed yet)	Leyenda (aún no hay nada colocado)
 Legend (this plot)	Leyenda (esta parcela)
 Legumes	Leguminosas
 Length (left–right), m	Longitud (izquierda–derecha), m
-Length and width must be between 0.5 and 1000 m.	La longitud y la anchura deben estar entre 0,5 y 1000 m.
 Let the planner choose ({0})	Que elija el planificador ({0})
 Lettuce - Buttercrunch	Lechuga - Buttercrunch
 Lettuce family	Familia de la lechuga
@@ -55263,6 +55262,21 @@ Yes, create it	Sí, crearla
 Change it	Cambiarlo
 Click “Create plot” again to create it.	Haz clic de nuevo en «Crear parcela» para crearla.
 Click “Save” again to keep it.	Haz clic de nuevo en «Guardar» para conservarlo.
+# Round plots: pots and round beds (LLR-ROUND)
+Shape	Forma
+Rectangle	Rectángulo
+Rectangle (or draw an outline later)	Rectángulo (o dibuja un contorno después)
+Round: a pot or a round bed	Redonda: una maceta o un bancal redondo
+Diameter (across the pot or bed), m	Diámetro (de lado a lado de la maceta o el bancal), m
+Diameter across the pot or bed ({0})	Diámetro de lado a lado de la maceta o el bancal ({0})
+The diameter must be between 0.05 and 1000 m.	El diámetro debe estar entre 0.05 y 1000 m.
+Length and width must be between 0.05 and 1000 m.	El largo y el ancho deben estar entre 0.05 y 1000 m.
+{0} plant(s) would be outside the new shape or size. Move or delete them first.	{0} planta(s) quedarían fuera de la nueva forma o tamaño. Muévelas o bórralas primero.
+The plot is {0}, which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.	La parcela mide {0}, algo inusualmente pequeño o grande para un huerto. Revisa la unidad (metros o pulgadas) antes de seguir.
+Size: {0}	Tamaño: {0}
+round	redonda
+custom outline	contorno personalizado
+Plot Layout Size: {0}	Tamaño del plano: {0}
 
 </script>
 <script type="module">
@@ -55305,6 +55319,15 @@ if (typeof Array.prototype.fill === 'undefined') {
     Object.defineProperty(TypedArray.prototype, 'fill', {value: Array.prototype.fill});
   }
 });
+if (typeof Math.sign === 'undefined') {
+  Math.sign = function (x) {
+    x = +x; // convert to a number
+    if (x === 0 || isNaN(x)) {
+      return Number(x);
+    }
+    return x > 0 ? 1 : -1;
+  };
+}
 if (typeof Math.clz32 === 'undefined') {
   Math.clz32 = function (log, LN2) {
     return function (x) {
@@ -55327,15 +55350,6 @@ if (typeof Math.hypot === 'undefined') {
       y += arguments[i] * arguments[i];
     }
     return Math.sqrt(y);
-  };
-}
-if (typeof Math.sign === 'undefined') {
-  Math.sign = function (x) {
-    x = +x; // convert to a number
-    if (x === 0 || isNaN(x)) {
-      return Number(x);
-    }
-    return x > 0 ? 1 : -1;
   };
 }
 if (typeof String.prototype.endsWith === 'undefined') {
@@ -65963,7 +65977,7 @@ class Computed {
 }
 class PhotoMeasure {
   constructor() {
-    this.MIN_SIDE_M_1 = 0.5;
+    this.MIN_SIDE_M_1 = 0.05;
     this.MAX_SIDE_M_1 = 1000.0;
     this.MAX_CORNERS_1 = 20;
     this.SAMPLES_1 = 64;
@@ -66191,8 +66205,8 @@ class PhotoMeasure {
     var nominal = tmp_0;
     if (nominal.sides_1.get_size_woubt6_k$() > 2 && nominal.outline_1.get_size_woubt6_k$() >= 3 && !(PlotGeometry_instance.validateOutline_9hlhbh_k$(nominal.outline_1) == null))
       return new Failed('The plot corners must go around the plot in order without crossing.');
-    if (plot.get_size_woubt6_k$() >= 3 && (nominal.lengthM_1 < 0.5 || nominal.widthM_1 < 0.5))
-      return new Failed('The plot comes out smaller than ' + 0.5 + ' m. Check the reference size and the taps.');
+    if (plot.get_size_woubt6_k$() >= 3 && (nominal.lengthM_1 < 0.05 || nominal.widthM_1 < 0.05))
+      return new Failed('The plot comes out smaller than ' + 0.05 + ' m. Check the reference size and the taps.');
     if (nominal.lengthM_1 > 1000.0 || nominal.widthM_1 > 1000.0)
       return new Failed('The plot comes out larger than ' + numberToInt(1000.0) + ' m. Check the reference size and the taps.');
     var rnd = Random_0(20261014);
@@ -66334,6 +66348,12 @@ class PlotLimits {
       tmp = Math.max(lengthM, widthM) > 200.0;
     }
     return tmp;
+  }
+  isUnusualRound_89drnb_k$(diameterM) {
+    return diameterM > 200.0;
+  }
+  questionSize_jeas5k_k$(lengthM, widthM, round, unit) {
+    return round ? '\xD8 ' + DistanceFormatter_getInstance().format$default_azr17d_k$(lengthM, unit) : DistanceFormatter_getInstance().format$default_azr17d_k$(lengthM, unit) + ' \xD7 ' + DistanceFormatter_getInstance().format$default_azr17d_k$(widthM, unit);
   }
 }
 class PlanCheck {
@@ -69164,6 +69184,9 @@ class PlotPoint {
   }
 }
 class PlotGeometry {
+  constructor() {
+    this.MIN_OUTLINE_AREA_M2__1 = 1.0E-4;
+  }
   parsePoints_qx11wv_k$(text) {
     // Inline function 'kotlin.text.isNullOrBlank' call
     if (text == null || isBlank(text))
@@ -69350,7 +69373,7 @@ class PlotGeometry {
   validateOutline_9hlhbh_k$(polygon) {
     if (polygon.get_size_woubt6_k$() < 3)
       return 'An outline needs at least 3 corners.';
-    if (this.polygonArea_ko0a7i_k$(polygon) < 0.01)
+    if (this.polygonArea_ko0a7i_k$(polygon) < 1.0E-4)
       return 'The outline encloses almost no area.';
     if (this.isSelfIntersecting_5sjx0g_k$(polygon))
       return "The outline's edges cross each other. Tap the corners in order around the plot.";
@@ -69358,6 +69381,11 @@ class PlotGeometry {
   }
 }
 class PlotShape {
+  constructor() {
+    this.ROUND_SEGMENTS_1 = 64;
+    this.ROUND_MIN_DIAMETER_M_1 = 0.05;
+    this.ROUND_MAX_DIAMETER_M_1 = 1000.0;
+  }
   outline_ieyvk6_k$(plot) {
     var points = PlotGeometry_instance.parsePoints_qx11wv_k$(plot.boundaryJson_1);
     return points.get_size_woubt6_k$() >= 3 ? points : emptyList();
@@ -69385,8 +69413,98 @@ class PlotShape {
     return custom.isEmpty_y1axqb_k$() || PlotGeometry_instance.pointInPolygon_1ubb6c_k$(x, y, custom);
   }
   areaM2_j3eiiy_k$(plot) {
+    var tmp0_safe_receiver = this.roundDiameter_peoqyb_k$(plot);
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      return 3.141592653589793 * tmp0_safe_receiver * tmp0_safe_receiver / 4.0;
+    }
     var custom = this.outline_ieyvk6_k$(plot);
     return custom.isEmpty_y1axqb_k$() ? plot.lengthM_1 * plot.widthM_1 : PlotGeometry_instance.polygonArea_ko0a7i_k$(custom);
+  }
+  circleOutline_22cc86_k$(diameterM) {
+    var r = diameterM / 2.0;
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = until(0, 64);
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList.new_kotlin_collections_ArrayList_tdd6ob_k$(collectionSizeOrDefault(this_0, 10));
+    var inductionVariable = this_0.first_1;
+    var last = this_0.last_1;
+    if (inductionVariable <= last)
+      do {
+        var item = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var a = 2.0 * 3.141592653589793 * item / 64;
+        // Inline function 'kotlin.math.sin' call
+        var tmp$ret$0 = Math.sin(a);
+        var tmp = coerceIn(r + r * tmp$ret$0, 0.0, diameterM);
+        // Inline function 'kotlin.math.cos' call
+        var tmp$ret$1 = Math.cos(a);
+        var tmp$ret$2 = new PlotPoint(tmp, coerceIn(r - r * tmp$ret$1, 0.0, diameterM));
+        destination.add_utx5q5_k$(tmp$ret$2);
+      }
+       while (!(item === last));
+    return destination;
+  }
+  roundDiameter_peoqyb_k$(plot) {
+    var l = plot.lengthM_1;
+    var w = plot.widthM_1;
+    var tmp;
+    if (!(l > 0.0) || !isFinite(l)) {
+      tmp = true;
+    } else {
+      // Inline function 'kotlin.math.abs' call
+      var x = l - w;
+      tmp = Math.abs(x) > 1.0E-4 * l;
+    }
+    if (tmp)
+      return null;
+    var pts = this.outline_ieyvk6_k$(plot);
+    if (pts.get_size_woubt6_k$() < 32)
+      return null;
+    var r = l / 2.0;
+    var tmp$ret$1;
+    $l$block_0: {
+      // Inline function 'kotlin.collections.all' call
+      var tmp_0;
+      if (isInterface(pts, Collection)) {
+        tmp_0 = pts.isEmpty_y1axqb_k$();
+      } else {
+        tmp_0 = false;
+      }
+      if (tmp_0) {
+        tmp$ret$1 = true;
+        break $l$block_0;
+      }
+      var _iterator__ex2g4s = pts.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+        var element = _iterator__ex2g4s.next_20eer_k$();
+        var tmp0 = element.x_1 - r;
+        // Inline function 'kotlin.math.hypot' call
+        var y = element.y_1 - r;
+        var d = hypot(tmp0, y);
+        // Inline function 'kotlin.math.abs' call
+        var x_0 = d - r;
+        if (!(Math.abs(x_0) <= 0.01 * r)) {
+          tmp$ret$1 = false;
+          break $l$block_0;
+        }
+      }
+      tmp$ret$1 = true;
+    }
+    var ok = tmp$ret$1;
+    return ok ? l : null;
+  }
+  describeSize_6gzgb6_k$(plot, unit) {
+    var tmp0_safe_receiver = this.roundDiameter_peoqyb_k$(plot);
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      return '\xD8 ' + DistanceFormatter_getInstance().format$default_azr17d_k$(tmp0_safe_receiver, unit);
+    }
+    return substringBeforeLast(DistanceFormatter_getInstance().format$default_azr17d_k$(plot.lengthM_1, unit), ' ') + ' \xD7 ' + DistanceFormatter_getInstance().format$default_azr17d_k$(plot.widthM_1, unit);
   }
 }
 class CivilDate {
@@ -73525,6 +73643,7 @@ class sam$kotlin_Comparator$0_21 {
 class Dialogs {
   constructor() {
     this.open_1 = null;
+    this.MIN_PLOT_M_1 = 0.05;
   }
   isOpen_jiokto_k$() {
     return !(this.open_1 == null);
@@ -73661,28 +73780,43 @@ class Dialogs {
     }
     var tmp10_elvis_lhs = tmp_1;
     var width = numberField$default(this, tmp10_elvis_lhs == null ? 4.0 : tmp10_elvis_lhs);
+    var tmp_3;
+    if (existing == null) {
+      tmp_3 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_3 = PlotShape_instance.roundDiameter_peoqyb_k$(existing);
+    }
+    var wasRound = tmp_3;
+    var diameter = numberField(this, wasRound == null ? 0.4 : wasRound, '0.01');
+    var round = {_v: !(wasRound == null)};
+    var sizeRow = h('div', 'grid2', VOID, VOID, listOf_0([label('Length (left\u2013right), m', length), label('Width (top\u2013bottom), m', width)]));
+    var diameterRow = label('Diameter (across the pot or bed), m', diameter);
+    var tmp_4 = listOf_0([to('RECT', 'Rectangle (or draw an outline later)'), to('ROUND', 'Round: a pot or a round bed')]);
+    var tmp_5 = round._v ? 'ROUND' : 'RECT';
+    var shape = select(tmp_4, tmp_5, Dialogs$plotDetails$lambda);
     var outline = {_v: measured == null ? null : measured.outline_1};
     // Inline function 'kotlin.also' call
     var this_0 = para('', 'warn');
     this_0.style.display = 'none';
     var unusualNote = this_0;
     var unusualAccepted = {_v: null};
-    on(length, 'input', Dialogs$plotDetails$lambda(outline, unusualNote));
-    on(width, 'input', Dialogs$plotDetails$lambda_0(outline, unusualNote));
-    var tmp_3;
+    on(length, 'input', Dialogs$plotDetails$lambda_0(outline, unusualNote));
+    on(width, 'input', Dialogs$plotDetails$lambda_1(outline, unusualNote));
+    var tmp_6;
     if (!(existing == null)) {
-      tmp_3 = null;
+      tmp_6 = null;
     } else {
-      tmp_3 = h('div', 'field', VOID, VOID, listOf_0([button('Measure from a photo\u2026', VOID, 'No tape measure? Lay something of known size on the ground, take one photo and click the corners.', Dialogs$plotDetails$lambda_1(name)), para(!(measured == null) ? 'Measured from the photo: ' + PhotoMeasure_instance.describe_ycnvy1_k$(measured, DistanceUnit_METERS_getInstance()) : 'No tape measure? Measure the plot in a photo.', 'hint')]));
+      tmp_6 = h('div', 'field', VOID, VOID, listOf_0([button('Measure from a photo\u2026', VOID, 'No tape measure? Lay something of known size on the ground, take one photo and click the corners.', Dialogs$plotDetails$lambda_2(name)), para(!(measured == null) ? 'Measured from the photo: ' + PhotoMeasure_instance.describe_ycnvy1_k$(measured, DistanceUnit_METERS_getInstance()) : 'No tape measure? Measure the plot in a photo.', 'hint')]));
     }
-    var measureRow = tmp_3;
-    var tmp13_elvis_lhs = existing == null ? null : existing.locationZip_1;
-    var zip = input(tmp13_elvis_lhs == null ? '' : tmp13_elvis_lhs, VOID, 'e.g. 48104');
-    var tmp15_elvis_lhs = existing == null ? null : existing.address_1;
-    var address = input(tmp15_elvis_lhs == null ? '' : tmp15_elvis_lhs, VOID, 'e.g. 123 Main St, Ann Arbor, MI (optional)');
+    var measureRow = tmp_6;
+    var tmp15_elvis_lhs = existing == null ? null : existing.locationZip_1;
+    var zip = input(tmp15_elvis_lhs == null ? '' : tmp15_elvis_lhs, VOID, 'e.g. 48104');
+    var tmp17_elvis_lhs = existing == null ? null : existing.address_1;
+    var address = input(tmp17_elvis_lhs == null ? '' : tmp17_elvis_lhs, VOID, 'e.g. 123 Main St, Ann Arbor, MI (optional)');
     address.title = 'Used by \u201COpen in Google Maps\u201D to find your yard for a satellite screenshot. Stays in your plan file only.';
     var zoneInfo = para('', 'hint');
-    var tmp_4 = listOf(to('', 'Unknown'));
+    var tmp_7 = listOf(to('', 'Unknown'));
     // Inline function 'kotlin.collections.map' call
     var this_1 = HardinessZones_getInstance().LABELS_1;
     // Inline function 'kotlin.collections.mapTo' call
@@ -73690,30 +73824,30 @@ class Dialogs {
     var _iterator__ex2g4s = this_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$6 = to(item, 'Zone ' + item);
-      destination.add_utx5q5_k$(tmp$ret$6);
+      var tmp$ret$8 = to(item, 'Zone ' + item);
+      destination.add_utx5q5_k$(tmp$ret$8);
     }
-    var tmp_5 = plus_0(tmp_4, destination);
-    var tmp_6 = existing == null ? null : existing.hardinessZone_1;
-    var zone = select(tmp_5, tmp_6, Dialogs$plotDetails$lambda_2);
-    var tmp_7;
+    var tmp_8 = plus_0(tmp_7, destination);
+    var tmp_9 = existing == null ? null : existing.hardinessZone_1;
+    var zone = select(tmp_8, tmp_9, Dialogs$plotDetails$lambda_3);
+    var tmp_10;
     if (existing == null) {
-      tmp_7 = null;
+      tmp_10 = null;
     } else {
       // Inline function 'kotlin.takeIf' call
-      var tmp_8;
+      var tmp_11;
       if (existing.orientationSet_1) {
-        tmp_8 = existing;
+        tmp_11 = existing;
       } else {
-        tmp_8 = null;
+        tmp_11 = null;
       }
-      tmp_7 = tmp_8;
+      tmp_10 = tmp_11;
     }
-    var tmp18_safe_receiver = tmp_7;
-    var bearing = {_v: tmp18_safe_receiver == null ? null : tmp18_safe_receiver.northBearingDeg_1};
+    var tmp20_safe_receiver = tmp_10;
+    var bearing = {_v: tmp20_safe_receiver == null ? null : tmp20_safe_receiver.northBearingDeg_1};
     var lat = {_v: existing == null ? null : existing.latitude_1};
     var lon = {_v: existing == null ? null : existing.longitude_1};
-    on(zip, 'input', Dialogs$plotDetails$lambda_3(zip, zoneInfo, lat, lon, zone));
+    on(zip, 'input', Dialogs$plotDetails$lambda_4(zip, zoneInfo, lat, lon, zone));
     if (!((existing == null ? null : existing.locationZip_1) == null)) {
       plotDetails$lookupZip(zip, zoneInfo, lat, lon, zone);
     }
@@ -73722,9 +73856,9 @@ class Dialogs {
     var clay = numberField(this, existing == null ? null : existing.soilClayPct_1, '1');
     var organic = numberField$default(this, existing == null ? null : existing.soilOrganicPct_1);
     var ph = numberField$default(this, existing == null ? null : existing.soilPh_1);
-    var tmp_9 = Companion_getInstance_14();
-    var chosenPests = toMutableSet(tmp_9.parse_6kqlp0_k$(existing == null ? null : existing.pests_1));
-    var tmp_10 = h('span', 'lbl', 'What pests or animals do you see regularly in your yard? (tick all that apply)');
+    var tmp_12 = Companion_getInstance_14();
+    var chosenPests = toMutableSet(tmp_12.parse_6kqlp0_k$(existing == null ? null : existing.pests_1));
+    var tmp_13 = h('span', 'lbl', 'What pests or animals do you see regularly in your yard? (tick all that apply)');
     // Inline function 'kotlin.collections.map' call
     var this_2 = get_entries_4();
     // Inline function 'kotlin.collections.mapTo' call
@@ -73732,29 +73866,33 @@ class Dialogs {
     var _iterator__ex2g4s_0 = this_2.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
       var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp_11 = h('input', VOID, VOID, mapOf(to('type', 'checkbox')));
+      var tmp_14 = h('input', VOID, VOID, mapOf(to('type', 'checkbox')));
       // Inline function 'kotlin.also' call
-      var this_3 = tmp_11 instanceof HTMLInputElement ? tmp_11 : THROW_CCE();
+      var this_3 = tmp_14 instanceof HTMLInputElement ? tmp_14 : THROW_CCE();
       this_3.checked = chosenPests.contains_aljjnj_k$(item_0);
       var cb = this_3;
-      on(cb, 'change', Dialogs$plotDetails$lambda_4(cb, chosenPests, item_0));
-      var tmp$ret$13 = h('label', 'check chip-check', VOID, VOID, listOf_0([cb, h('span', VOID, item_0.label_1)]));
-      destination_0.add_utx5q5_k$(tmp$ret$13);
+      on(cb, 'change', Dialogs$plotDetails$lambda_5(cb, chosenPests, item_0));
+      var tmp$ret$15 = h('label', 'check chip-check', VOID, VOID, listOf_0([cb, h('span', VOID, item_0.label_1)]));
+      destination_0.add_utx5q5_k$(tmp$ret$15);
     }
-    var pestBox = h('div', 'field pests', VOID, VOID, listOf_0([tmp_10, h('div', 'chips', VOID, VOID, destination_0), para('The Care tab then shows how to keep them away (fencing and other measures) and which of your plants they go for. You can change this later in Plot details.', 'hint')]));
+    var pestBox = h('div', 'field pests', VOID, VOID, listOf_0([tmp_13, h('div', 'chips', VOID, VOID, destination_0), para('The Care tab then shows how to keep them away (fencing and other measures) and which of your plants they go for. You can change this later in Plot details.', 'hint')]));
     var soil = h('details', 'soil', VOID, VOID, listOf_0([h('summary', VOID, 'Soil (optional)'), h('div', 'grid3', VOID, VOID, listOf_0([label('Sand %', sand), label('Silt %', silt), label('Clay %', clay), label('Organic matter %', organic), label('pH', ph)]))]));
-    var tmp_12 = label('Name', name);
-    var tmp_13 = h('div', 'grid2', VOID, VOID, listOf_0([label('Length (left\u2013right), m', length), label('Width (top\u2013bottom), m', width)]));
-    var tmp_14 = label('ZIP code (fills in zone and latitude, offline)', zip);
-    var tmp_15 = label('Address (optional, to open your yard in Google Maps)', address);
-    var tmp_16 = label('USDA hardiness zone', zone);
-    var tmp_17 = h('span', 'lbl', 'Which way does the TOP edge of the plot face?');
-    var tmp_18 = bearing._v;
-    var body = listOfNotNull([tmp_12, tmp_13, unusualNote, measureRow, tmp_14, zoneInfo, tmp_15, tmp_16, h('div', 'field', VOID, VOID, listOf_0([tmp_17, compassPicker(this, tmp_18, Dialogs$plotDetails$lambda_5(bearing)), para('Stand at the bottom edge looking across the plot: the direction you face. This lets the planner work out shade and put tall plants at the back.', 'hint')])), pestBox, soil]);
-    var tmp_19 = existing == null ? 'New plot' : 'Plot details';
-    var tmp_20 = to('Cancel', Dialogs$plotDetails$lambda_6);
-    var tmp_21 = existing == null ? 'Create plot' : 'Save';
-    this.modal$default_uwejiz_k$(tmp_19, body, listOf_0([tmp_20, to(tmp_21, Dialogs$plotDetails$lambda_7(length, width, name, existing, unusualAccepted, unusualNote, zip, sand, silt, clay, organic, ph, measured, outline, zone, lat, lon, bearing, chosenPests, address))]));
+    var sizeHolder = h('div', 'size-fields');
+    on(shape, 'change', Dialogs$plotDetails$lambda_6(round, shape, sizeHolder, diameterRow, sizeRow, measureRow, unusualNote));
+    on(diameter, 'input', Dialogs$plotDetails$lambda_7(unusualNote));
+    plotDetails$showShape(sizeHolder, round, diameterRow, sizeRow, measureRow, unusualNote);
+    var tmp_15 = label('Name', name);
+    var tmp_16 = label('Shape', shape);
+    var tmp_17 = label('ZIP code (fills in zone and latitude, offline)', zip);
+    var tmp_18 = label('Address (optional, to open your yard in Google Maps)', address);
+    var tmp_19 = label('USDA hardiness zone', zone);
+    var tmp_20 = h('span', 'lbl', 'Which way does the TOP edge of the plot face?');
+    var tmp_21 = bearing._v;
+    var body = listOfNotNull([tmp_15, tmp_16, sizeHolder, unusualNote, measureRow, tmp_17, zoneInfo, tmp_18, tmp_19, h('div', 'field', VOID, VOID, listOf_0([tmp_20, compassPicker(this, tmp_21, Dialogs$plotDetails$lambda_8(bearing)), para('Stand at the bottom edge looking across the plot: the direction you face. This lets the planner work out shade and put tall plants at the back.', 'hint')])), pestBox, soil]);
+    var tmp_22 = existing == null ? 'New plot' : 'Plot details';
+    var tmp_23 = to('Cancel', Dialogs$plotDetails$lambda_9);
+    var tmp_24 = existing == null ? 'Create plot' : 'Save';
+    this.modal$default_uwejiz_k$(tmp_22, body, listOf_0([tmp_23, to(tmp_24, Dialogs$plotDetails$lambda_10(round, diameter, length, width, name, existing, unusualAccepted, unusualNote, zip, sand, silt, clay, organic, ph, measured, outline, wasRound, zone, lat, lon, bearing, chosenPests, address))]));
   }
   plotDetails$default_nwqoi7_k$(existing, presetName, measured, $super) {
     presetName = presetName === VOID ? null : presetName;
@@ -87322,6 +87460,17 @@ function plotDetails$lookupZip(zip, zoneInfo, lat, lon, zone) {
   }
   zoneInfo.textContent = tmp;
 }
+function plotDetails$showShape(sizeHolder, round, diameterRow, sizeRow, measureRow, unusualNote) {
+  clear(sizeHolder);
+  add_0(sizeHolder, [round._v ? diameterRow : sizeRow]);
+  var tmp1_safe_receiver = measureRow == null ? null : measureRow.style;
+  if (tmp1_safe_receiver == null)
+    null;
+  else {
+    tmp1_safe_receiver.display = round._v ? 'none' : '';
+  }
+  unusualNote.style.display = 'none';
+}
 function planForMe$remember(nextSeason, rows) {
   if (nextSeason)
     return Unit_instance;
@@ -87690,12 +87839,8 @@ function Dialogs$confirm$lambda_0($onYes) {
     return true;
   };
 }
-function Dialogs$plotDetails$lambda($outline, $unusualNote) {
-  return function (it) {
-    $outline._v = null;
-    $unusualNote.style.display = 'none';
-    return Unit_instance;
-  };
+function Dialogs$plotDetails$lambda(it) {
+  return Unit_instance;
 }
 function Dialogs$plotDetails$lambda_0($outline, $unusualNote) {
   return function (it) {
@@ -87704,22 +87849,29 @@ function Dialogs$plotDetails$lambda_0($outline, $unusualNote) {
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_1($name) {
+function Dialogs$plotDetails$lambda_1($outline, $unusualNote) {
+  return function (it) {
+    $outline._v = null;
+    $unusualNote.style.display = 'none';
+    return Unit_instance;
+  };
+}
+function Dialogs$plotDetails$lambda_2($name) {
   return function () {
     Measure_instance.pick_ew6tih_k$($name.value);
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_2(it) {
+function Dialogs$plotDetails$lambda_3(it) {
   return Unit_instance;
 }
-function Dialogs$plotDetails$lambda_3($zip, $zoneInfo, $lat, $lon, $zone) {
+function Dialogs$plotDetails$lambda_4($zip, $zoneInfo, $lat, $lon, $zone) {
   return function (it) {
     plotDetails$lookupZip($zip, $zoneInfo, $lat, $lon, $zone);
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_4($cb, $chosenPests, $pest) {
+function Dialogs$plotDetails$lambda_5($cb, $chosenPests, $pest) {
   return function (it) {
     var tmp;
     if ($cb.checked) {
@@ -87738,13 +87890,26 @@ function Dialogs$plotDetails$lambda_4($cb, $chosenPests, $pest) {
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_5($bearing) {
+function Dialogs$plotDetails$lambda_6($round, $shape, $sizeHolder, $diameterRow, $sizeRow, $measureRow, $unusualNote) {
+  return function (it) {
+    $round._v = $shape.value === 'ROUND';
+    plotDetails$showShape($sizeHolder, $round, $diameterRow, $sizeRow, $measureRow, $unusualNote);
+    return Unit_instance;
+  };
+}
+function Dialogs$plotDetails$lambda_7($unusualNote) {
+  return function (it) {
+    $unusualNote.style.display = 'none';
+    return Unit_instance;
+  };
+}
+function Dialogs$plotDetails$lambda_8($bearing) {
   return function (it) {
     $bearing._v = it;
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_6() {
+function Dialogs$plotDetails$lambda_9() {
   return true;
 }
 function Dialogs$plotDetails$lambda$lambda($updated) {
@@ -87753,25 +87918,32 @@ function Dialogs$plotDetails$lambda$lambda($updated) {
     return Unit_instance;
   };
 }
-function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusualAccepted, $unusualNote, $zip, $sand, $silt, $clay, $organic, $ph, $measured, $outline, $zone, $lat, $lon, $bearing, $chosenPests, $address) {
+function Dialogs$plotDetails$lambda_10($round, $diameter, $length, $width, $name, $existing, $unusualAccepted, $unusualNote, $zip, $sand, $silt, $clay, $organic, $ph, $measured, $outline, $wasRound, $zone, $lat, $lon, $bearing, $chosenPests, $address) {
   return function () {
-    var l = Numbers_instance.parse_6kqlp0_k$($length.value);
-    var w = Numbers_instance.parse_6kqlp0_k$($width.value);
+    var d = $round._v ? Numbers_instance.parse_6kqlp0_k$($diameter.value) : null;
+    var l = $round._v ? d : Numbers_instance.parse_6kqlp0_k$($length.value);
+    var w = $round._v ? d : Numbers_instance.parse_6kqlp0_k$($width.value);
     var tmp;
     if (isBlank($name.value)) {
       App_instance.status_b46o3c_k$('Give the plot a name.');
       return false;
     }
     var tmp_0;
-    if (l == null || w == null || l < 0.5 || w < 0.5 || l > 1000.0 || w > 1000.0) {
-      App_instance.status_b46o3c_k$('Length and width must be between 0.5 and 1000 m.');
+    if ($round._v && (d == null || d < 0.05 || d > 1000.0)) {
+      App_instance.status_b46o3c_k$('The diameter must be between 0.05 and 1000 m.');
+      return false;
+    }
+    var tmp_1;
+    if (l == null || w == null || l < 0.05 || w < 0.05 || l > 1000.0 || w > 1000.0) {
+      App_instance.status_b46o3c_k$('Length and width must be between 0.05 and 1000 m.');
       return false;
     }
     var resized = $existing == null || !($existing.lengthM_1 === l) || !($existing.widthM_1 === w);
-    var tmp_1;
-    if (resized && PlotLimits_instance.isUnusual_htxj29_k$(l, w) && !equals($unusualAccepted._v, to(l, w))) {
+    var unusual = $round._v ? PlotLimits_instance.isUnusualRound_89drnb_k$(l) : PlotLimits_instance.isUnusual_htxj29_k$(l, w);
+    var tmp_2;
+    if (resized && unusual && !equals($unusualAccepted._v, to(l, w))) {
       $unusualAccepted._v = to(l, w);
-      $unusualNote.textContent = Lang_instance.tr_8q01fg_k$('The plot is ' + DistanceFormatter_getInstance().format$default_azr17d_k$(l, DistanceUnit_METERS_getInstance()) + ' \xD7 ' + DistanceFormatter_getInstance().format$default_azr17d_k$(w, DistanceUnit_METERS_getInstance()) + ', which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.') + ' ' + Lang_instance.tr_8q01fg_k$($existing == null ? 'Click \u201CCreate plot\u201D again to create it.' : 'Click \u201CSave\u201D again to keep it.');
+      $unusualNote.textContent = Lang_instance.tr_8q01fg_k$('The plot is ' + PlotLimits_instance.questionSize_jeas5k_k$(l, w, $round._v, DistanceUnit_METERS_getInstance()) + ', which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.') + ' ' + Lang_instance.tr_8q01fg_k$($existing == null ? 'Click \u201CCreate plot\u201D again to create it.' : 'Click \u201CSave\u201D again to keep it.');
       $unusualNote.style.display = '';
       $unusualNote.scrollIntoView();
       return false;
@@ -87779,33 +87951,33 @@ function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusua
     // Inline function 'kotlin.text.trim' call
     var this_0 = $zip.value;
     var zipText = toString_1(trim(isCharSequence(this_0) ? this_0 : THROW_CCE()));
-    var tmp_2;
     var tmp_3;
+    var tmp_4;
     // Inline function 'kotlin.text.isNotEmpty' call
     if (charSequenceLength(zipText) > 0) {
-      tmp_3 = !ZipTable_instance.isValidZip_5kv8ln_k$(zipText);
+      tmp_4 = !ZipTable_instance.isValidZip_5kv8ln_k$(zipText);
     } else {
-      tmp_3 = false;
+      tmp_4 = false;
     }
-    if (tmp_3) {
+    if (tmp_4) {
       App_instance.status_b46o3c_k$('Enter a 5-digit ZIP code, or leave it empty.');
       return false;
     }
     var s = Numbers_instance.parse_6kqlp0_k$($sand.value);
     var si = Numbers_instance.parse_6kqlp0_k$($silt.value);
     var c = Numbers_instance.parse_6kqlp0_k$($clay.value);
-    var tmp_4;
+    var tmp_5;
     var tmp0 = listOf_0([s, si, c]);
     var tmp$ret$2;
     $l$block: {
       // Inline function 'kotlin.collections.count' call
-      var tmp_5;
+      var tmp_6;
       if (isInterface(tmp0, Collection)) {
-        tmp_5 = tmp0.isEmpty_y1axqb_k$();
+        tmp_6 = tmp0.isEmpty_y1axqb_k$();
       } else {
-        tmp_5 = false;
+        tmp_6 = false;
       }
-      if (tmp_5) {
+      if (tmp_6) {
         tmp$ret$2 = 0;
         break $l$block;
       }
@@ -87825,7 +87997,7 @@ function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusua
       App_instance.status_b46o3c_k$('Enter all three of sand, silt and clay, or none.');
       return false;
     }
-    var tmp_6;
+    var tmp_7;
     if (!(s == null) && !(si == null) && !(c == null)) {
       var tmp0_safe_receiver = SoilAnalyzer_instance.validateTexture_8jse8d_k$(s, si, c);
       if (tmp0_safe_receiver == null)
@@ -87835,28 +88007,28 @@ function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusua
         App_instance.status_b46o3c_k$(tmp0_safe_receiver);
         return false;
       }
-      tmp_6 = Unit_instance;
+      tmp_7 = Unit_instance;
     }
     var org = Numbers_instance.parse_6kqlp0_k$($organic.value);
     var phV = Numbers_instance.parse_6kqlp0_k$($ph.value);
-    var tmp_7;
+    var tmp_8;
     if (!(org == null) && !rangeTo(0.0, 100.0).contains_3tkdvy_k$(org)) {
       App_instance.status_b46o3c_k$('Organic matter must be 0\u2013100 %.');
       return false;
     }
-    var tmp_8;
+    var tmp_9;
     if (!(phV == null) && !rangeTo(3.0, 10.0).contains_3tkdvy_k$(phV)) {
       App_instance.status_b46o3c_k$('pH must be between 3 and 10.');
       return false;
     }
     var tmp1_elvis_lhs = $existing;
-    var tmp_9;
+    var tmp_10;
     if (tmp1_elvis_lhs == null) {
-      var tmp_10 = !($measured == null) ? 'PHOTO' : 'MANUAL';
+      var tmp_11 = !($measured == null) ? 'PHOTO' : 'MANUAL';
       var tmp2_safe_receiver = $outline._v;
-      var tmp_11;
+      var tmp_12;
       if (tmp2_safe_receiver == null) {
-        tmp_11 = null;
+        tmp_12 = null;
       } else {
         // Inline function 'kotlin.collections.map' call
         // Inline function 'kotlin.collections.mapTo' call
@@ -87867,55 +88039,56 @@ function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusua
           var tmp$ret$5 = new PlotPoint(coerceIn(item.x_1, 0.0, l), coerceIn(item.y_1, 0.0, w));
           destination.add_utx5q5_k$(tmp$ret$5);
         }
-        tmp_11 = destination;
+        tmp_12 = destination;
       }
-      var tmp3_safe_receiver = tmp_11;
-      var tmp_12;
+      var tmp3_safe_receiver = tmp_12;
+      var tmp_13;
       if (tmp3_safe_receiver == null) {
-        tmp_12 = null;
+        tmp_13 = null;
       } else {
         // Inline function 'kotlin.takeIf' call
-        var tmp_13;
+        var tmp_14;
         if (PlotGeometry_instance.validateOutline_9hlhbh_k$(tmp3_safe_receiver) == null) {
-          tmp_13 = tmp3_safe_receiver;
+          tmp_14 = tmp3_safe_receiver;
         } else {
-          tmp_13 = null;
+          tmp_14 = null;
         }
-        tmp_12 = tmp_13;
+        tmp_13 = tmp_14;
       }
-      var tmp4_safe_receiver = tmp_12;
-      var tmp_14;
+      var tmp4_safe_receiver = tmp_13;
+      var tmp_15;
       if (tmp4_safe_receiver == null) {
-        tmp_14 = null;
+        tmp_15 = null;
       } else {
         // Inline function 'kotlin.let' call
-        tmp_14 = PlotGeometry_instance.serializePoints_ourzje_k$(tmp4_safe_receiver);
+        tmp_15 = PlotGeometry_instance.serializePoints_ourzje_k$(tmp4_safe_receiver);
       }
-      tmp_9 = new PlotEntity(VOID, '', l, w, VOID, VOID, tmp_10, VOID, VOID, VOID, VOID, tmp_14);
+      tmp_10 = new PlotEntity(VOID, '', l, w, VOID, VOID, tmp_11, VOID, VOID, VOID, VOID, tmp_15);
     } else {
-      tmp_9 = tmp1_elvis_lhs;
+      tmp_10 = tmp1_elvis_lhs;
     }
-    var base = tmp_9;
+    var base = tmp_10;
+    var boundary = $round._v ? PlotGeometry_instance.serializePoints_ourzje_k$(PlotShape_instance.circleOutline_22cc86_k$(l)) : !($wasRound == null) ? null : base.boundaryJson_1;
     // Inline function 'kotlin.text.trim' call
     var this_1 = $name.value;
     var tmp6_name = toString_1(trim(isCharSequence(this_1) ? this_1 : THROW_CCE()));
     // Inline function 'kotlin.text.ifBlank' call
-    var tmp_15;
-    if (isBlank(zipText)) {
-      tmp_15 = null;
-    } else {
-      tmp_15 = zipText;
-    }
-    var tmp7_locationZip = tmp_15;
-    // Inline function 'kotlin.text.ifBlank' call
-    var this_2 = $zone.value;
     var tmp_16;
-    if (isBlank(this_2)) {
+    if (isBlank(zipText)) {
       tmp_16 = null;
     } else {
-      tmp_16 = this_2;
+      tmp_16 = zipText;
     }
-    var tmp8_hardinessZone = tmp_16;
+    var tmp7_locationZip = tmp_16;
+    // Inline function 'kotlin.text.ifBlank' call
+    var this_2 = $zone.value;
+    var tmp_17;
+    if (isBlank(this_2)) {
+      tmp_17 = null;
+    } else {
+      tmp_17 = this_2;
+    }
+    var tmp8_hardinessZone = tmp_17;
     var tmp9_latitude = $lat._v;
     var tmp10_longitude = $lon._v;
     var tmp5_elvis_lhs = $bearing._v;
@@ -87927,22 +88100,58 @@ function Dialogs$plotDetails$lambda_7($length, $width, $name, $existing, $unusua
     var tmp$ret$17 = toString_1(trim(isCharSequence(this_3) ? this_3 : THROW_CCE()));
     // Inline function 'kotlin.text.ifBlank' call
     var this_4 = take_1(tmp$ret$17, 200);
-    var tmp_17;
-    if (isBlank(this_4)) {
-      tmp_17 = null;
-    } else {
-      tmp_17 = this_4;
-    }
-    var tmp14_address = tmp_17;
-    var updated = base.copy$default_tl68wr_k$(VOID, tmp6_name, l, w, VOID, VOID, VOID, tmp7_locationZip, VOID, VOID, VOID, VOID, tmp8_hardinessZone, tmp9_latitude, tmp10_longitude, tmp11_northBearingDeg, s, si, c, org, phV, tmp12_orientationSet, tmp13_pests, VOID, tmp14_address);
     var tmp_18;
+    if (isBlank(this_4)) {
+      tmp_18 = null;
+    } else {
+      tmp_18 = this_4;
+    }
+    var tmp14_address = tmp_18;
+    var updated = base.copy$default_tl68wr_k$(VOID, tmp6_name, l, w, VOID, VOID, VOID, tmp7_locationZip, VOID, VOID, VOID, boundary, tmp8_hardinessZone, tmp9_latitude, tmp10_longitude, tmp11_northBearingDeg, s, si, c, org, phV, tmp12_orientationSet, tmp13_pests, VOID, tmp14_address);
+    var cur = Store_getInstance().plot_21tcx_k$();
+    var tmp_19;
+    if (!($existing == null) && !(cur == null) && (resized || !(boundary == $existing.boundaryJson_1))) {
+      var tmp0_0 = cur.plants_1;
+      var tmp$ret$20;
+      $l$block_0: {
+        // Inline function 'kotlin.collections.count' call
+        var tmp_20;
+        if (isInterface(tmp0_0, Collection)) {
+          tmp_20 = tmp0_0.isEmpty_y1axqb_k$();
+        } else {
+          tmp_20 = false;
+        }
+        if (tmp_20) {
+          tmp$ret$20 = 0;
+          break $l$block_0;
+        }
+        var count_0 = 0;
+        var _iterator__ex2g4s_1 = tmp0_0.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+          var element_0 = _iterator__ex2g4s_1.next_20eer_k$();
+          if (!PlotShape_instance.contains_fxfbhl_k$(updated, element_0.coordinateXM_1, element_0.coordinateYM_1)) {
+            count_0 = count_0 + 1 | 0;
+            checkCountOverflow(count_0);
+          }
+        }
+        tmp$ret$20 = count_0;
+      }
+      var outside = tmp$ret$20;
+      var tmp_21;
+      if (outside > 0) {
+        App_instance.status_b46o3c_k$('' + outside + ' plant(s) would be outside the new shape or size. Move or delete them first.');
+        return false;
+      }
+      tmp_19 = tmp_21;
+    }
+    var tmp_22;
     if ($existing == null) {
       Store_getInstance().addPlot_8vj07e_k$(updated);
-      tmp_18 = Unit_instance;
+      tmp_22 = Unit_instance;
     } else {
-      var tmp_19 = Store_getInstance();
-      tmp_19.change_dk0lks_k$(Dialogs$plotDetails$lambda$lambda(updated));
-      tmp_18 = Unit_instance;
+      var tmp_23 = Store_getInstance();
+      tmp_23.change_dk0lks_k$(Dialogs$plotDetails$lambda$lambda(updated));
+      tmp_22 = Unit_instance;
     }
     Canvas_getInstance().selection_1 = null;
     App_instance.render_dje1iy_k$();
@@ -91236,7 +91445,7 @@ function plot($this, body, wp) {
   var this_0 = heading(p.name_1);
   this_0.setAttribute('translate', 'no');
   add_0(body, [this_0]);
-  add_0(body, [kv($this, 'Size', fmt_0(p.lengthM_1, 1) + ' \xD7 ' + fmt_0(p.widthM_1, 1) + ' m (' + fmt_0(PlotShape_instance.areaM2_j3eiiy_k$(p), 1) + ' m\xB2)')]);
+  add_0(body, [kv($this, 'Size', PlotShape_instance.describeSize_6gzgb6_k$(p, DistanceUnit_METERS_getInstance()) + ' (' + AreaFormatter_instance.format_khfubd_k$(PlotShape_instance.areaM2_j3eiiy_k$(p), DistanceUnit_METERS_getInstance()) + ')')]);
   add_0(body, [kv($this, 'Top edge faces', p.orientationSet_1 ? compassName(p.northBearingDeg_1) : 'not set (assumes north)')]);
   var tmp0_safe_receiver = p.hardinessZone_1;
   var tmp;

@@ -563,9 +563,16 @@ fun DashboardScreen(
                                 Text(plot.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    tr("Physical Boundaries: ${plot.lengthM}m × ${plot.widthM}m" +
-                                        (if (com.example.smartgardenplanner.core.PlotShape.outline(plot).isNotEmpty()) " • custom outline" else "") +
-                                        (plot.hardinessZone?.let { " • zone $it" } ?: "")),
+                                    // LLR-ROUND-030: "Size: Ø 0.40 m • round" for a pot.
+                                    listOfNotNull(
+                                        tr("Size: " + com.example.smartgardenplanner.core.PlotShape.describeSize(plot, com.example.smartgardenplanner.core.DistanceUnit.METERS)),
+                                        when {
+                                            com.example.smartgardenplanner.core.PlotShape.roundDiameter(plot) != null -> tr("round")
+                                            com.example.smartgardenplanner.core.PlotShape.outline(plot).isNotEmpty() -> tr("custom outline")
+                                            else -> null
+                                        },
+                                        plot.hardinessZone?.let { tr("zone $it") }
+                                    ).joinToString(" • "),
                                     fontSize = 12.sp,
                                     color = Color.LightGray
                                 )
@@ -605,6 +612,9 @@ fun CreatorScreen(
     var photoMessage by remember { mutableStateOf<String?>(null) }
     // LLR-EDIT-020: unusual sizes are confirmed before the plot is created.
     var confirmUnusual by remember { mutableStateOf<Pair<Float, Float>?>(null) }
+    // LLR-ROUND-040: a round plot (a pot or a round bed) is given by its diameter.
+    var roundPlot by remember { mutableStateOf(false) }
+    var plotDiameter by remember { mutableStateOf("") }
 
     // [NEW] Plot dimension bounds now come from Settings instead of being hardcoded — see
     // core/AppSettings.kt / ui/SettingsScreen.kt "Plot Validation" section.
@@ -653,7 +663,7 @@ fun CreatorScreen(
 
     // LLR-EDIT-010 / LLR-UNIT-040: the same typing rules as everywhere else (a decimal comma is fine).
     fun typed(t: String) = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(t, settings.distanceUnit)
-    val isInputValid = plotName.isNotBlank() &&
+    val isInputValid = plotName.isNotBlank() && if (roundPlot) (typed(plotDiameter) ?: -1f) in minDim..maxDim else
             (typed(plotLength) ?: -1f) in minDim..maxDim &&
             (typed(plotWidth) ?: -1f) in minDim..maxDim
 
@@ -663,8 +673,9 @@ fun CreatorScreen(
                 val now = System.currentTimeMillis()
                 val zip = zipCode.takeIf { com.example.smartgardenplanner.core.ZipTable.isValidZip(it) }
                 val location = zip?.let { com.example.smartgardenplanner.data.ZipLookup.location(creatorContext, it) }
-                // A measured outline is kept only if it still fits the sizes in the fields.
-                val outline = measuredOutline?.map { com.example.smartgardenplanner.core.PlotPoint(it.x.coerceIn(0f, lengthMeters), it.y.coerceIn(0f, widthMeters)) }
+                // A round plot's outline is its circle; a measured outline is kept only if it still fits the sizes in the fields.
+                val outline = if (roundPlot) com.example.smartgardenplanner.core.PlotShape.circleOutline(lengthMeters)
+                    else measuredOutline?.map { com.example.smartgardenplanner.core.PlotPoint(it.x.coerceIn(0f, lengthMeters), it.y.coerceIn(0f, widthMeters)) }
                     ?.takeIf { com.example.smartgardenplanner.core.PlotGeometry.validateOutline(it) == null }
                 val plotId = withContext(SgpExecutors.dbDispatcher) {
                     val zone = zip?.let { com.example.smartgardenplanner.data.ZipLookup.offlineZone(creatorContext, it) ?: database.climateZoneDao().getByZip(it)?.hardinessZone }
@@ -682,7 +693,7 @@ fun CreatorScreen(
                             longitude = location?.longitude,
                             hardinessZone = zone,
                             pests = com.example.smartgardenplanner.core.Pest.encode(yardPests),
-                            scaleSource = if (measuredFromPhoto) "PHOTO" else "MANUAL",
+                            scaleSource = if (measuredFromPhoto && !roundPlot) "PHOTO" else "MANUAL",
                             boundaryJson = outline?.let { com.example.smartgardenplanner.core.PlotGeometry.serializePoints(it) }
                         )
                     )
@@ -723,7 +734,22 @@ fun CreatorScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
+            // LLR-ROUND-040: rectangle (with an optional outline drawn later) or round (a pot or a round bed).
+            Text(tr("Shape"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !roundPlot, onClick = { roundPlot = false }, label = { Text(tr("Rectangle")) })
+                FilterChip(selected = roundPlot, onClick = { roundPlot = true }, label = { Text(tr("Round: a pot or a round bed")) })
+            }
+            if (roundPlot) OutlinedTextField(
+                value = plotDiameter,
+                onValueChange = { newValue -> plotDiameter = newValue.take(12) },
+                label = { Text(tr("Diameter across the pot or bed ($unitSuffix)")) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                isError = plotDiameter.isNotEmpty() && (typed(plotDiameter) ?: -1f) !in minDim..maxDim
+            )
+
+            if (!roundPlot) OutlinedTextField(
                 value = plotLength,
                 onValueChange = { newValue -> plotLength = newValue; measuredOutline = null },
                 label = { Text(tr("Real-World Length Dimension ($unitSuffix)")) },
@@ -732,7 +758,7 @@ fun CreatorScreen(
                 isError = plotLength.isNotEmpty() && (typed(plotLength) ?: -1f) !in minDim..maxDim
             )
 
-            OutlinedTextField(
+            if (!roundPlot) OutlinedTextField(
                 value = plotWidth,
                 onValueChange = { newValue -> plotWidth = newValue; measuredOutline = null },
                 label = { Text(tr("Real-World Width Dimension ($unitSuffix)")) },
@@ -777,10 +803,12 @@ fun CreatorScreen(
 
             Button(
                 onClick = {
-                    val l = typed(plotLength); val w = typed(plotWidth)
+                    val l = typed(if (roundPlot) plotDiameter else plotLength); val w = typed(if (roundPlot) plotDiameter else plotWidth)
                     if (isInputValid && l != null && w != null) {
-                        // LLR-EDIT-020: below 0.30 m or above 200 m, ask first.
-                        if (com.example.smartgardenplanner.core.PlotLimits.isUnusual(l, w)) confirmUnusual = l to w
+                        // LLR-EDIT-020: below 0.30 m or above 200 m, ask first (a round pot only above 200 m).
+                        val unusual = if (roundPlot) com.example.smartgardenplanner.core.PlotLimits.isUnusualRound(l)
+                            else com.example.smartgardenplanner.core.PlotLimits.isUnusual(l, w)
+                        if (unusual) confirmUnusual = l to w
                         else createPlot(l, w)
                     }
                 },
@@ -795,8 +823,12 @@ fun CreatorScreen(
     measurePhoto?.let { photo ->
         com.example.smartgardenplanner.ui.PhotoMeasureDialog(photo, settings.distanceUnit, onUse = { m ->
             fun shown(meters: Double) = com.example.smartgardenplanner.core.DistanceFormatter.metersToDisplay(meters.toFloat(), settings.distanceUnit).toDouble().fmt(2)
-            plotLength = shown(m.lengthM)
-            if (m.widthM > 0) { plotWidth = shown(m.widthM); measuredOutline = m.outline } else measuredOutline = null
+            // Round plot: two points across the pot (or its widest extent) give the diameter.
+            if (roundPlot) plotDiameter = shown(maxOf(m.lengthM, m.widthM))
+            else {
+                plotLength = shown(m.lengthM)
+                if (m.widthM > 0) { plotWidth = shown(m.widthM); measuredOutline = m.outline } else measuredOutline = null
+            }
             measuredFromPhoto = true
             photoMessage = "Measured from the photo: " + com.example.smartgardenplanner.core.PhotoMeasure.describe(m, settings.distanceUnit) + ". Check the numbers before saving."
             measurePhoto = null
@@ -807,8 +839,7 @@ fun CreatorScreen(
             onDismissRequest = { confirmUnusual = null },
             title = { Text(tr("Is that size right?")) },
             text = {
-                Text(tr("The plot is " + com.example.smartgardenplanner.core.DistanceFormatter.format(l, settings.distanceUnit) + " × " +
-                    com.example.smartgardenplanner.core.DistanceFormatter.format(w, settings.distanceUnit) +
+                Text(tr("The plot is " + com.example.smartgardenplanner.core.PlotLimits.questionSize(l, w, roundPlot, settings.distanceUnit) +
                     ", which is unusually small or large for a garden. Check the unit (meters or inches) before you go on."))
             },
             confirmButton = { TextButton(onClick = { confirmUnusual = null; createPlot(l, w) }) { Text(tr("Yes, create it")) } },
@@ -1734,7 +1765,7 @@ fun CanvasWorkspaceScreen(
                     Column(modifier = Modifier.weight(1f, fill = false)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                tr("Plot Layout Size: ${DistanceFormatter.format(state.lengthM, settings.distanceUnit)} × ${DistanceFormatter.format(state.widthM, settings.distanceUnit)}"),
+                                tr("Plot Layout Size: " + com.example.smartgardenplanner.core.PlotShape.describeSize(state, settings.distanceUnit)),
                                 fontWeight = FontWeight.SemiBold, fontSize = 13.sp
                             )
                             Spacer(modifier = Modifier.width(6.dp))

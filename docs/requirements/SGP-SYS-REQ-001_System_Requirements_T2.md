@@ -75,6 +75,15 @@ Parent: ConOps §5.3 · Safety: FC-01 · Verify: Test · Status: Proposed
 necessarily "captured".
 **Now:** Implemented (IMPL).
 
+### T2-FUN-022 — Round plots
+**Statement:** The system shall let the user create a round plot, for example a pot (possibly the only plot on an
+apartment balcony) or a round bed, by entering its diameter in the selected display unit (T2-CFG-100), within the
+allowed range (T2-CFG-090). Plants shall be placed only inside the circle, and the plot's size shall be shown as its
+diameter.
+Parent: Owner direction 2026-10-14 ("A pot can be circular and I can use a pot as my only plot on an apartment") ·
+Verify: Test · Status: Proposed (new 2026-10-14)
+**Now:** Implemented (IMPL) on the phone and the computer (HLR-PLOT-140).
+
 ### T2-FUN-025 — Measuring plot dimensions with the device
 **Statement:** The system shall provide a way to obtain plot dimensions by measuring with the device, as an
 alternative to typing them. The measured values shall be shown with their uncertainty (T2-PRE-020), and the
@@ -785,7 +794,8 @@ Parent: ConOps §5.5 · Verify: Test · Status: **Suspended — not reachable to
 
 ### T2-VAL-015 — Unusual dimensions need confirmation
 **Statement:** When the user enters a plot length or width that is allowed but below `[TBC-18: 0.30 m]` or
-above `[TBC-18: 200 m]`, the system shall ask for confirmation before creating or updating the plot.
+above `[TBC-18: 200 m]`, the system shall ask for confirmation before creating or updating the plot. A round plot
+(T2-FUN-022) is asked about only above 200 m, because pots are often 0.15–0.30 m across `[TBC-18]`.
 Parent: ConOps §5.5 · Verify: Test · Status: Proposed
 **Was:** "…trigger a confirmation prompt if values are unrealistically small or large."
 **Why changed:** "Unrealistically" given values.

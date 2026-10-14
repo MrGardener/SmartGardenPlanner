@@ -60,6 +60,22 @@ open the same plan files.
 - The planner also remembers your work in the browser between visits. The file is what you keep and share.
 - **?** opens the help.
 
+### Round plots: pots and round beds
+
+A plot can be round: a pot on a balcony (even your only plot), a half barrel, or a round bed.
+
+- **Phone:** in **Create New Plot**, choose **Shape → Round: a pot or a round bed** and type the **diameter** (the
+  distance across the top of the pot).
+- **Computer:** in **New plot** (or **Edit details…** later), set **Shape** to **Round: a pot or a round bed** and
+  type the diameter.
+
+The layout shows the circle; plants go only inside it. The size shows as **Ø 0.40 m** with the circle's area.
+Sizes from 5 cm to 1000 m are accepted, and a pot is not asked about being small. On the computer, a new diameter
+or shape that would leave a plant outside is refused until you move or delete that plant. Round plots stay round
+in plan files on both versions.
+
+To measure a pot from a photo on the phone, choose Round first, then tap two points straight across the pot.
+
 ### No tape measure? Measure the plot from a photo
 
 Both versions can work out a plot's size from one photo, when something of known size lies flat on the ground in
@@ -92,8 +108,9 @@ Tips:
 
 ### Sizes the planner asks about
 
-A plot can be 0.5 to 1000 m on each side. A side under 0.30 m (inches typed as meters, for example) or over 200 m is
-allowed, but the planner first asks if it's right. **Phone:** "Is that size right?" → **Yes, create it** or
+A plot can be 0.05 to 1000 m on each side (on the phone, Settings → Plot validation can narrow that). A side under
+0.30 m (inches typed as meters, for example) or over 200 m is allowed, but the planner first asks if it's right; a
+round pot is only asked about above 200 m. **Phone:** "Is that size right?" → **Yes, create it** or
 **Change it**. **Computer:** the question appears in the form; click **Create plot** (or **Save**) again to keep the
 size.
 
@@ -650,6 +667,11 @@ see.
 ---
 
 ## Changelog
+
+- **2026-10-14 (round plots):**
+  - Plots can be **round** (a pot or a round bed), given by their diameter, on the phone and the computer.
+  - The computer accepts plots from 0.05 m (was 0.5 m), like the phone, and refuses a new size or shape that would
+    leave plants outside.
 
 - **2026-10-14 (measuring, audit log, distances):**
   - **Measure a plot from a photo** on the phone and the computer: lay something of known size on the ground, take

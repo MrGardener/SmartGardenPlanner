@@ -60,9 +60,9 @@ const modal = page.locator('.modal');
 await modal.locator('input').nth(0).fill('Test bed');
 await modal.locator('input').nth(1).fill('8');
 await modal.locator('input').nth(2).fill('5');
-await modal.locator('input').nth(3).fill('48104');
-await modal.locator('input').nth(3).dispatchEvent('input');
-const zone = await modal.locator('select').inputValue();
+await modal.getByPlaceholder('e.g. 48104').fill('48104');
+await modal.getByPlaceholder('e.g. 48104').dispatchEvent('input');
+const zone = await modal.locator('label', { hasText: 'USDA hardiness zone' }).locator('select').inputValue();
 check(zone === '6a' || zone === '6b', `ZIP 48104 fills zone (${zone})`);
 check((await modal.innerText()).includes('latitude 42.'), 'ZIP fills latitude');
 await modal.getByRole('button', { name: 'S', exact: true }).click();
@@ -617,6 +617,37 @@ check(await page.locator('.modal').count() === 1 && (await page.locator('.modal 
 await btn('Create plot').click();
 d = await draft();
 check(d.plots.length === plotsBefore + 1 && d.plots.some(p => p.name === 'Long field' && p.lengthM === 250), 'clicking again creates the unusual plot');
+
+// A round plot: a pot on a balcony (LLR-ROUND-030/040).
+await btn('New plot').first().click();
+await page.locator('.modal input').nth(0).fill('Balcony pot');
+await page.locator('.modal label', { hasText: 'Shape' }).locator('select').selectOption('ROUND');
+check(await page.locator('.modal label', { hasText: 'Length (left' }).count() === 0, 'a round plot asks only for its diameter');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('0.6');
+await btn('Create plot').click();
+d = await draft();
+let pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot && pot.lengthM === 0.6 && pot.widthM === 0.6 && pot.outline && pot.outline.length === 64, `pot saved as a 0.6 m circle (${pot && pot.outline && pot.outline.length} corners)`);
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+check((await page.locator('.panel-body').innerText()).includes('Ø 0.60 m (0.28 m²)'), 'the plot panel shows the diameter and the circle\'s area');
+await page.locator('.tabs .tab', { hasText: /^Plants$/ }).click();
+await page.getByPlaceholder(/Search .* varieties/).fill('Genovese');
+await page.locator('button.seed').first().click();
+await clickMetres(0.45, 0.3);
+await clickMetres(0.03, 0.03);
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.plants.length === 1, `one basil in the pot, none in the corner outside the circle (${pot.plants.length})`);
+await page.locator('.tabs .tab', { hasText: /^Plot$/ }).click();
+await btn('Edit details…').click();
+check(await page.locator('.modal label', { hasText: 'Shape' }).locator('select').inputValue() === 'ROUND', 'Plot details knows the pot is round');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('0.3');
+await page.locator('.modal-actions').getByRole('button', { name: 'Save', exact: true }).click();
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.lengthM === 0.6 && (await page.locator('.status').innerText()).includes('1 plant(s) would be outside'), 'shrinking the pot past a plant is refused');
+await page.locator('.modal label', { hasText: 'Diameter' }).locator('input').fill('1');
+await page.locator('.modal-actions').getByRole('button', { name: 'Save', exact: true }).click();
+d = await draft(); pot = d.plots.find(p => p.name === 'Balcony pot');
+check(pot.lengthM === 1 && pot.outline.length === 64 && pot.plants.length === 1, 'a bigger pot keeps its plant and stays round');
 
 // Phone-size layout.
 await page.setViewportSize({ width: 412, height: 915 });

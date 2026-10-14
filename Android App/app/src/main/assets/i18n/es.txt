@@ -886,7 +886,6 @@ Legend (nothing placed yet)	Leyenda (aún no hay nada colocado)
 Legend (this plot)	Leyenda (esta parcela)
 Legumes	Leguminosas
 Length (left–right), m	Longitud (izquierda–derecha), m
-Length and width must be between 0.5 and 1000 m.	La longitud y la anchura deben estar entre 0,5 y 1000 m.
 Let the planner choose ({0})	Que elija el planificador ({0})
 Lettuce - Buttercrunch	Lechuga - Buttercrunch
 Lettuce family	Familia de la lechuga
@@ -3403,3 +3402,18 @@ Yes, create it	Sí, crearla
 Change it	Cambiarlo
 Click “Create plot” again to create it.	Haz clic de nuevo en «Crear parcela» para crearla.
 Click “Save” again to keep it.	Haz clic de nuevo en «Guardar» para conservarlo.
+# Round plots: pots and round beds (LLR-ROUND)
+Shape	Forma
+Rectangle	Rectángulo
+Rectangle (or draw an outline later)	Rectángulo (o dibuja un contorno después)
+Round: a pot or a round bed	Redonda: una maceta o un bancal redondo
+Diameter (across the pot or bed), m	Diámetro (de lado a lado de la maceta o el bancal), m
+Diameter across the pot or bed ({0})	Diámetro de lado a lado de la maceta o el bancal ({0})
+The diameter must be between 0.05 and 1000 m.	El diámetro debe estar entre 0.05 y 1000 m.
+Length and width must be between 0.05 and 1000 m.	El largo y el ancho deben estar entre 0.05 y 1000 m.
+{0} plant(s) would be outside the new shape or size. Move or delete them first.	{0} planta(s) quedarían fuera de la nueva forma o tamaño. Muévelas o bórralas primero.
+The plot is {0}, which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.	La parcela mide {0}, algo inusualmente pequeño o grande para un huerto. Revisa la unidad (metros o pulgadas) antes de seguir.
+Size: {0}	Tamaño: {0}
+round	redonda
+custom outline	contorno personalizado
+Plot Layout Size: {0}	Tamaño del plano: {0}

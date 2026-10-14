@@ -52,18 +52,18 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 
 | | Count |
 |---|---|
-| LLRs | 308 |
-| Test cases | 982 |
+| LLRs | 312 |
+| Test cases | 1001 |
 | Regression entries | 31 |
-| LLR status | IMPL 149 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
-| Case results | PASS 531 · MANUAL 307 · PLANNED 53 · BLOCKED 54 · DEV 37 |
-| Case kinds | NOM 333 · MIN 11 · MAX 38 · BND 273 · INV 244 · ALN 27 · RND 56 |
-| Case methods | AUTO 390 · WEB 139 · CI 4 · DEVICE 11 · MANUAL 340 · REVIEW 12 · Planned 86 |
+| LLR status | IMPL 153 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
+| Case results | PASS 548 · MANUAL 309 · PLANNED 53 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 341 · MIN 12 · MAX 39 · BND 276 · INV 248 · ALN 28 · RND 57 |
+| Case methods | AUTO 401 · WEB 145 · CI 4 · DEVICE 11 · MANUAL 342 · REVIEW 12 · Planned 86 |
 
-| LLR status | IMPL 149 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
-| Case results | PASS 531 · MANUAL 307 · PLANNED 53 · BLOCKED 54 · DEV 37 |
-| Case kinds | NOM 333 · MIN 11 · MAX 38 · BND 273 · INV 244 · ALN 27 · RND 56 |
-| Case methods | AUTO 390 · WEB 139 · CI 4 · DEVICE 11 · MANUAL 340 · REVIEW 12 · Planned 86 |
+| LLR status | IMPL 153 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
+| Case results | PASS 548 · MANUAL 309 · PLANNED 53 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 341 · MIN 12 · MAX 39 · BND 276 · INV 248 · ALN 28 · RND 57 |
+| Case methods | AUTO 401 · WEB 145 · CI 4 · DEVICE 11 · MANUAL 342 · REVIEW 12 · Planned 86 |
 
 ## 3. Test cases by LLR
 
@@ -1697,8 +1697,8 @@ Name and sizes validated; Create enabled only when valid (web and Android).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-EDIT-010.1 | NOM | Name "Bed", 8 × 5 m | Accepted | WEB `adversarial.mjs` «minimum size 0.5 m» | PASS |
-| TC-EDIT-010.2 | BND | 0.49 m and 1000.01 m; 0.5 m and 1000 m | Refused; accepted | WEB `adversarial.mjs` «length 1000.01 m» | PASS |
+| TC-EDIT-010.1 | NOM | Name "Bed", 3.5 × 2.25 m | Accepted | WEB `adversarial.mjs` «decimals» | PASS |
+| TC-EDIT-010.2 | BND | 0.04 m and 1000.01 m; 0.05 m and 1000 m (computer: T2-CFG-090 default minimum) | Refused; accepted | WEB `adversarial.mjs` «length 1000.01 m» | PASS |
 | TC-EDIT-010.3 | INV | Empty or blank name, "abc", NaN, Infinity, −5 | Refused with a reason | WEB `adversarial.mjs` «length NaN» | PASS |
 | TC-EDIT-010.4 | ALN | Name with HTML | Shown as text, never run | WEB `adversarial.mjs` «HTML in a plot name is shown as text» | PASS |
 
@@ -3162,7 +3162,7 @@ Every refusal of the LLR returns `Failed` with a reason and no size.
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
 | TC-PMEAS-020.1 | NOM | A 4 × 8 ft bed and an 8 × 5 m plot, all in view | A result, no refusal | AUTO `PhotoMeasureTest.rectanglePlot_comesBackAtItsRealSize` | PASS |
-| TC-PMEAS-020.2 | MIN | 1 plot point; 3 reference corners; a 0.3 m plot (under 0.5 m) | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
+| TC-PMEAS-020.2 | MIN | 1 plot point; 3 reference corners; a 0.03 m plot (under 0.05 m); a 0.3 m pot | Refused with a reason; the pot is measured (0.3 m) | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
 | TC-PMEAS-020.3 | MAX | 21 plot corners; reference sizes 101 m; a plot over 1000 m | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
 | TC-PMEAS-020.4 | INV | Reference size 0, negative, NaN or infinite; a tap off the photo; photo width 0; corners crossing | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
 | TC-PMEAS-020.5 | RND | 2000 sets of random taps, sizes and tap errors | Never throws | AUTO `PhotoMeasureTest.randomCamerasAndPlots_giveBackTheRealSizes` | PASS |
@@ -3214,6 +3214,53 @@ Computer: file chooser, SVG clicks through the inverse screen transform, zoom, r
 | TC-PMEAS-060.2 | BND | Exactly 4 reference clicks, then 2 plot clicks | Step 2 asked; then one distance | WEB `smoke.mjs` «two points measure one distance» | PASS |
 | TC-PMEAS-060.3 | NOM | The created plot | 6-corner outline of 28 m² | WEB `smoke.mjs` «the plot is created with the measured L-shaped outline» | PASS |
 | TC-PMEAS-060.4 | INV | Use these sizes with fewer than 3 plot corners; click off the photo | Refused with a reason; ignored | MANUAL TP-24.7 | MANUAL |
+
+#### LLR-ROUND-010 — IMPL
+
+`PlotShape.circleOutline` (64 corners, clamped to the box); outlines down to 1 cm².
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-ROUND-010.1 | NOM | Circle of 0.4 m and 2.5 m | 64 corners on the circle, inside the box, starting at the top, clockwise; a valid outline | AUTO `RoundPlotTest.circleOutline_touchesTheBoxAndIsAValidOutline` | PASS |
+| TC-ROUND-010.2 | MIN | Circle of 0.05 m (about 20 cm²) | Still a valid outline (minimum area 1 cm²) | AUTO `RoundPlotTest.circleOutline_touchesTheBoxAndIsAValidOutline` | PASS |
+| TC-ROUND-010.3 | MAX | Circle of 1000 m | Valid; 64 corners, under the 200-corner limit | AUTO `RoundPlotTest.circleOutline_touchesTheBoxAndIsAValidOutline` | PASS |
+| TC-ROUND-010.4 | INV | Outlines with 2 corners, 3 in a line, or crossing edges | Refused | AUTO `EditingAndSitePropertyTest.geometry_randomRectanglesAndDegenerateOutlines` | PASS |
+
+#### LLR-ROUND-020 — IMPL
+
+`PlotShape.roundDiameter` recognizes round plots; plan files keep them round.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-ROUND-020.1 | NOM | A 0.4 m round plot | Diameter 0.4 | AUTO `RoundPlotTest.roundPlots_areRecognized_andOtherShapesAreNot` | PASS |
+| TC-ROUND-020.2 | INV | No outline; not square; an octagon; one corner moved to the center; NaN or zero sizes | Not round (null) | AUTO `RoundPlotTest.roundPlots_areRecognized_andOtherShapesAreNot` | PASS |
+| TC-ROUND-020.3 | BND | Plan file round trip at 0.05 m, 0.1 m, 0.3 m and 1000 m (outline written to 4 decimals) | Still round, same diameter, plant kept, no outline warning | AUTO `RoundPlotTest.planFiles_keepRoundPlotsRound_atEverySize` | PASS |
+| TC-ROUND-020.4 | RND | 40 random diameters from 0.05 to 1000 m through a plan file | Still round every time | AUTO `RoundPlotTest.planFiles_keepRoundPlotsRound_atEverySize` | PASS |
+
+#### LLR-ROUND-030 — IMPL
+
+Area π·d²/4 and "Ø d" for round plots; shown in the plot list, layout header and Plot tab.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-ROUND-030.1 | NOM | 0.4 m pot: area and size text, meters and inches | 0.1257 m²; "Ø 0.40 m", "Ø 15.7 in" | AUTO `RoundPlotTest.sizeText_showsTheDiameterForRoundPlots` | PASS |
+| TC-ROUND-030.2 | BND | Points at the center, near the top edge, and in the box corners | Center and edge inside; corners outside the circle | AUTO `RoundPlotTest.plantsGoOnlyInsideTheCircle_andTheAreaIsPiRSquared` | PASS |
+| TC-ROUND-030.3 | NOM | Computer: Plot tab of a 0.6 m pot | "Ø 0.60 m (0.28 m²)" | WEB `smoke.mjs` «the plot panel shows the diameter and the circle» | PASS |
+| TC-ROUND-030.4 | INV | A rectangle without an outline | "8.00 × 5.00 m" and L × W area, unchanged | AUTO `RoundPlotTest.sizeText_showsTheDiameterForRoundPlots` | PASS |
+| TC-ROUND-030.5 | NOM | Phone: plot list and layout header of a pot | "Size: Ø 0.40 m • round"; "Plot Layout Size: Ø 0.40 m" | MANUAL TP-12.7 | MANUAL |
+
+#### LLR-ROUND-040 — IMPL
+
+Shape choice and diameter on the phone creator and the computer's New plot / Plot details; resize guard.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-ROUND-040.1 | NOM | Computer: New plot, Round, diameter 0.6; plant a basil; Plot details shows Round | Saved as a 64-corner 0.6 m circle; one basil; the shape is kept | WEB `smoke.mjs` «pot saved as a 0.6 m circle» | PASS |
+| TC-ROUND-040.2 | BND | Computer: diameters 0.05 and 0.2 (no question), 200.01 (asked), 0.04 and 1000.01 (refused) | As listed; round plots saved as 64-corner circles | WEB `adversarial.mjs` «round pot 0.05 m across» | PASS |
+| TC-ROUND-040.3 | INV | Computer: diameter "abc"; shrink the pot past a plant | Refused with the diameter message; refused with "1 plant(s) would be outside…" | WEB `smoke.mjs` «shrinking the pot past a plant is refused» | PASS |
+| TC-ROUND-040.4 | NOM | Computer: a bigger diameter | Plant kept, still round | WEB `smoke.mjs` «a bigger pot keeps its plant and stays round» | PASS |
+| TC-ROUND-040.5 | NOM | Phone: create a 0.4 m round pot, plant in it, tap outside the circle in the box corner; inches | Created; plants only inside the circle; diameter typed in inches works | MANUAL TP-12.7 | MANUAL |
+| TC-ROUND-040.6 | ALN | Spanish: the round plot fields | Translated | WEB `i18n_coverage.mjs` «new round plot» | PASS |
 
 ## 4. Regression register
 

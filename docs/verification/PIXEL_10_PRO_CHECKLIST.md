@@ -6,7 +6,7 @@
 | Build | The plain APK each Android build publishes: `https://github.com/MrGardener/SmartGardenPlanner/releases/download/phone-build-<branch>/smart-garden-planner-debug.apk` (`<branch>` with `/` as `-`, e.g. `main`) |
 | Procedures | Each check names its step in SGP-TPR-001; the step there is the full definition |
 | Test files | [`phone-test-files/`](phone-test-files/) |
-| Checks | 44 |
+| Checks | 45 |
 
 Mark each check Pass, Fail or Skip. For a failure, note what you did, what you saw, and take a screenshot (Power + Volume down).
 
@@ -41,6 +41,7 @@ The features built this round. Most important.
 | **N10** How distances show and type | In meters and in inches, look at the rulers, plant details and dialogs. In a size field type 1,5 (allowed), then -3, 1e2, 1,000 and 1.2.3 (each refused, field turns red). | A space before the unit: "2.35 m" (2 decimals), "92.5 in" (1 decimal), always with a dot. | LLR-UNIT-030/040 |
 | **N11** Security audit log | Switch the catalog Basic → Pro → Basic (Settings → Catalog). Open a plan file, then try damaged.sgp.json from the test files. Then Settings → About this planner → Security audit log → Verify. | Newest first: IMPORT_REJECTED (reason), IMPORT_ACCEPTED (plots, plants), TIER_SWITCH (from, to, kept) and the first TIER_SWITCH from NONE; "✓ The log is intact (n entries)." | TP-21.9 |
 | **N12** Plan file with an unknown variety | Open unknown-variety.sgp.json from the test files with Open plan file. | The plot opens with one tomato, and a message says 1 plant was skipped because its variety isn't in this phone's catalog. | TP-14.7 |
+| **N13** A round pot | Create New Plot → Shape → Round: a pot or a round bed, diameter 0.4. Plant at the center and near the edge; tap in a corner of the square around the circle. Look at the plot list row and the layout header. In inches, create a 12 in pot. | Only a diameter is asked; a circle is drawn; plants inside it are placed, the corner tap is refused; "Size: Ø 0.40 m • round" and "Plot Layout Size: Ø 0.40 m"; the 12 in pot isn't asked about its size. | TP-12.7 |
 
 ## P. This phone and Android 16
 

@@ -36,7 +36,13 @@ async function tryPlot(fields, expectOk, why) {
   const m = page.locator('.modal');
   const inputs = m.locator('input');
   const values = { name: 'Bed', length: '8', width: '5', zip: '', ...fields };
-  await fillAny(inputs.nth(0), values.name); await fillAny(inputs.nth(1), values.length); await fillAny(inputs.nth(2), values.width); await fillAny(inputs.nth(3), values.zip);
+  await fillAny(inputs.nth(0), values.name);
+  if (values.diameter !== undefined) {
+    // A round plot (a pot): only its diameter (LLR-ROUND-040).
+    await m.locator('label', { hasText: 'Shape' }).locator('select').selectOption('ROUND');
+    await fillAny(m.locator('label', { hasText: 'Diameter' }).locator('input'), values.diameter);
+  } else { await fillAny(inputs.nth(1), values.length); await fillAny(inputs.nth(2), values.width); }
+  await fillAny(m.getByPlaceholder('e.g. 48104'), values.zip);
   if (values.ph !== undefined || values.organic !== undefined || values.sand !== undefined) {
     await m.locator('details.soil summary').click();
     const soil = m.locator('details.soil input');
@@ -57,18 +63,23 @@ async function tryPlot(fields, expectOk, why) {
 }
 for (const [f, ok, why] of [
   [{ name: '' }, false, 'empty name'], [{ name: '   ' }, false, 'blank name'],
-  [{ length: '0.49' }, false, 'length 0.49 m'], [{ length: '1000.01' }, false, 'length 1000.01 m'], [{ length: 'NaN' }, false, 'length NaN'],
+  [{ length: '0.04' }, false, 'length 0.04 m'], [{ length: '1000.01' }, false, 'length 1000.01 m'], [{ length: 'NaN' }, false, 'length NaN'],
   [{ length: 'abc' }, false, 'length abc'], [{ width: '-5' }, false, 'negative width'], [{ width: 'Infinity' }, false, 'width Infinity'],
   [{ zip: 'abcde' }, false, 'ZIP abcde'], [{ zip: '1234' }, false, 'ZIP 1234'], [{ ph: '11' }, false, 'pH 11'], [{ organic: '101' }, false, 'organic 101 %'],
   [{ sand: '40' }, false, 'only sand given'],
-  [{ length: '0.5', width: '0.5', expectAsk: false }, true, 'minimum size 0.5 m'], [{ length: '1000', width: '1000', expectAsk: true }, true, 'maximum size 1000 m'],
+  [{ length: '0.05', width: '0.05', expectAsk: true }, true, 'minimum size 0.05 m'], [{ length: '1000', width: '1000', expectAsk: true }, true, 'maximum size 1000 m'],
+  [{ length: '0.3', width: '0.3', expectAsk: false }, true, 'usual size limit 0.30 m'], [{ length: '0.29', width: '4', expectAsk: true }, true, 'just under 0.30 m'],
+  [{ diameter: '0.04' }, false, 'round plot 0.04 m across'], [{ diameter: '1000.01' }, false, 'round plot 1000.01 m across'], [{ diameter: 'abc' }, false, 'round plot diameter abc'],
+  [{ diameter: '0.05', expectAsk: false }, true, 'round pot 0.05 m across'], [{ diameter: '0.2', expectAsk: false }, true, 'round pot 0.2 m across'],
+  [{ diameter: '200.01', expectAsk: true }, true, 'round bed just over 200 m'],
   [{ length: '200', width: '4', expectAsk: false }, true, 'usual size limit 200 m'], [{ length: '200.01', width: '4', expectAsk: true }, true, 'just over 200 m'],
   [{ length: '3.5', width: '2.25' }, true, 'decimals'], [{ zip: '48104' }, true, 'valid ZIP'],
   [{ name: '<img src=x onerror="window.__xss=1">' }, true, 'name with HTML'],
 ]) await tryPlot(f, ok, why);
 check(await page.evaluate(() => window.__xss === undefined), 'HTML in a plot name is shown as text, never run');
 const plotsNow = (await draft()).plots;
-check(plotsNow.every(p => p.lengthM >= 0.5 && p.lengthM <= 1000 && Number.isFinite(p.lengthM)), 'every stored plot has a real size');
+check(plotsNow.every(p => p.lengthM >= 0.05 && p.lengthM <= 1000 && Number.isFinite(p.lengthM)), 'every stored plot has a real size');
+check(plotsNow.filter(p => p.outline && p.outline.length === 64).length === 3 && plotsNow.filter(p => p.outline && p.outline.length === 64).every(p => p.lengthM === p.widthM), 'the 3 round plots are saved as 64-corner circles in a square box');
 
 // ------------------------------------------------------------------ Hostile plan files are refused without harm.
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sgp-adv-'));

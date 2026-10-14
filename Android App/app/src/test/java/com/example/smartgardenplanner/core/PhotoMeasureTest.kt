@@ -100,7 +100,9 @@ class PhotoMeasureTest {
         val horizonY = (0 until cam.ht).firstOrNull { y -> PhotoMeasure.homography(ref, listOf(0.0 to 0.0, 2.4384 to 0.0, 2.4384 to 1.2192, 0.0 to 1.2192))!!.map(PixelPoint(1500.0, y.toDouble())) != null }!!
         failed(PhotoMeasure.measure(ref, 2.4384, 1.2192, listOf(plot[0], plot[1], PixelPoint(1500.0, maxOf(0, horizonY - 50).toDouble())), cam.w, cam.ht))
         // Sizes outside 0.5 … 1000 m.
-        failed(PhotoMeasure.measure(ref, 2.4384, 1.2192, listOf(0.0 to 0.0, 0.3 to 0.0, 0.3 to 0.3, 0.0 to 0.3).map { cam.px(it.first + 4, it.second + 4)!! }, cam.w, cam.ht))
+        failed(PhotoMeasure.measure(ref, 2.4384, 1.2192, listOf(0.0 to 0.0, 0.03 to 0.0, 0.03 to 0.03, 0.0 to 0.03).map { cam.px(it.first + 4, it.second + 4)!! }, cam.w, cam.ht))
+        // A 0.3 m pot is above the 0.05 m minimum (T2-CFG-090) and is measured.
+        assertEquals(0.3, ok(PhotoMeasure.measure(ref, 2.4384, 1.2192, listOf(0.0 to 0.0, 0.3 to 0.0, 0.3 to 0.3, 0.0 to 0.3).map { cam.px(it.first + 4, it.second + 4)!! }, cam.w, cam.ht, 0.0)).lengthM, 1e-3)
         failed(PhotoMeasure.measure(ref, 2438.4, 1219.2, plot, cam.w, cam.ht))
     }
 

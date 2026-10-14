@@ -74,11 +74,14 @@ const modal = page.locator('.modal');
 await modal.locator('input').nth(0).fill('Test bed');
 await modal.locator('input').nth(1).fill('12');
 await modal.locator('input').nth(2).fill('9');
-await modal.locator('input').nth(3).fill('48104');
-await modal.locator('input').nth(3).dispatchEvent('input');
+await modal.getByPlaceholder('e.g. 48104').fill('48104');
+await modal.getByPlaceholder('e.g. 48104').dispatchEvent('input');
 await modal.getByRole('button', { name: 'S', exact: true }).click();
 await modal.locator('label.chip-check', { hasText: 'Deer' }).locator('input').check();
 await collect('new plot');
+await modal.locator('label', { hasText: 'Shape' }).locator('select').selectOption('ROUND');
+await collect('new round plot');
+await modal.locator('label', { hasText: 'Shape' }).locator('select').selectOption('RECT');
 await btn('Create plot').click();
 for (const tab of ['Plants', 'Plot', 'Care', 'Food', 'Harmony']) {
   const t = page.locator('.tabs .tab', { hasText: new RegExp('^' + tab + '$') });
