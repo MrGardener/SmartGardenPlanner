@@ -62,7 +62,8 @@ import com.example.smartgardenplanner.core.SeedEntity
 import com.example.smartgardenplanner.core.SgpExecutors
 import com.example.smartgardenplanner.core.RealSecurityKeyManager
 import com.example.smartgardenplanner.core.SecurityKeyManager
-import com.example.smartgardenplanner.core.SecurityAuditLogger
+import com.example.smartgardenplanner.data.SecurityAuditLogger
+import com.example.smartgardenplanner.core.AuditType
 import com.example.smartgardenplanner.core.SensorMeasurementEngine
 import com.example.smartgardenplanner.core.BoundedHistoryStack
 import com.example.smartgardenplanner.core.AutoPopulateEngine
@@ -169,7 +170,7 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
         val basicSeeds = com.example.smartgardenplanner.data.SeedCatalogLoader(context)
             .loadTier(com.example.smartgardenplanner.data.CatalogTier.BASIC)
         database.seedDao().insertAll(basicSeeds)
-        auditLogger.appendLog("DATABASE_INIT: Seed dictionary pre-populated (${basicSeeds.size} records, Basic tier).")
+        auditLogger.record(AuditType.TIER_SWITCH, mapOf("from" to "NONE", "to" to "BASIC", "kept" to 0, "varieties" to basicSeeds.size))
     }
     // New bundled varieties (e.g. the spring onions added 2026-09-27) reach existing installs: insert any
     // entries of the active tier that are missing. IGNORE keeps every existing row, custom or not, unchanged.
@@ -185,7 +186,7 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        auditLogger.appendLog("CATALOG: top-up skipped (${e.javaClass.simpleName}).")
+        android.util.Log.w("Sgp", "catalog top-up skipped (${e.javaClass.simpleName})")
     }
     if (database.climateZoneDao().count() == 0) {
         database.climateZoneDao().insertAll(com.example.smartgardenplanner.data.SeedDataset.starterClimateZones)
@@ -201,7 +202,7 @@ private suspend fun startServices(context: Context): AppServices = withContext(D
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        auditLogger.appendLog("REMINDERS: could not schedule (${e.javaClass.simpleName}).")
+        android.util.Log.w("Sgp", "reminders not scheduled (${e.javaClass.simpleName})")
     }
 
     AppServices(database, auditLogger, SensorMeasurementEngine(context))
@@ -230,7 +231,7 @@ fun AppRoot() {
             throw e
         } catch (e: DataUnreadableException) {
             withContext(Dispatchers.IO) {
-                SecurityAuditLogger(appContext).appendLog("KEY_LOSS: stored data unreadable on this device (${e.message})")
+                SecurityAuditLogger(appContext).record(AuditType.KEY_LOSS, mapOf("what" to "database unreadable on this device", "error" to e.javaClass.simpleName))
             }
             StartupState.Unreadable
         } catch (e: Exception) {
@@ -252,7 +253,7 @@ fun AppRoot() {
                 scope.launch {
                     withContext(Dispatchers.IO) {
                         AppDatabase.setAsideUnreadableData(appContext)
-                        SecurityAuditLogger(appContext).appendLog("DATA_RESET: unreadable data set aside; starting with empty data")
+                        SecurityAuditLogger(appContext).record(AuditType.DATA_RESET, mapOf("action" to "unreadable data set aside; starting with empty data"))
                     }
                     state = StartupState.Loading
                     attempt++
@@ -436,12 +437,18 @@ fun DashboardScreen(
                 fileMessage = try {
                     val text = com.example.smartgardenplanner.data.PlanFileIo.read(dashContext, uri)
                     val report = withContext(SgpExecutors.dbDispatcher) { com.example.smartgardenplanner.data.PlanFileRepository(database, filesDir = dashContext.filesDir).import(text) }
+                    withContext(SgpExecutors.dbDispatcher) {
+                        val auditLogger = SecurityAuditLogger(dashContext)
+                        if (report.plotsImported == 0) auditLogger.record(AuditType.IMPORT_REJECTED, mapOf("reason" to report.messages.joinToString(" ").take(300)))
+                        else auditLogger.record(AuditType.IMPORT_ACCEPTED, mapOf("plots" to report.plotsImported, "plants" to report.plantsImported, "warnings" to report.messages.size))
+                    }
                     reloadPlots()
                     if (report.plotsImported == 0) "Couldn't open the file: " + report.messages.joinToString(" ")
                     else "Opened ${report.plotsImported} plot(s) with ${report.plantsImported} plants." + if (report.messages.isNotEmpty()) " " + report.messages.joinToString(" ") else ""
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
+                    withContext(SgpExecutors.dbDispatcher) { SecurityAuditLogger(dashContext).record(AuditType.IMPORT_REJECTED, mapOf("reason" to e.javaClass.simpleName)) }
                     "Couldn't open the file (${e.javaClass.simpleName}). Nothing was changed."
                 }
             }

@@ -3327,3 +3327,14 @@ A plant whose variety isn't in the catalog (for example a custom variety that wa
 How to fix (Help)	Cómo corregirlo (Ayuda)
 Delete that plant	Borrar esa planta
 Plant deleted. You can now plant a substitute there; Undo brings it back.	Planta borrada. Ahora puedes plantar un sustituto allí; Deshacer la devuelve.
+Security audit log	Registro de auditoría de seguridad
+Verify	Verificar
+No entries yet.	Todavía no hay entradas.
+The log is intact ({0} entries).	El registro está intacto ({0} entradas).
+Problem at entry {0}: {1}.	Problema en la entrada {0}: {1}.
+Unreadable at entry {0}.	Ilegible en la entrada {0}.
+contents changed	contenido modificado
+not linked to the entry before it	no está enlazada con la entrada anterior
+sequence number {0} where {1} was expected	número de secuencia {0} donde se esperaba {1}
+details over {0} bytes	detalles de más de {0} bytes
+rotation entry doesn't name the hash it continues from	la entrada de rotación no indica el hash del que continúa

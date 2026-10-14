@@ -53,17 +53,17 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 | | Count |
 |---|---|
 | LLRs | 302 |
-| Test cases | 950 |
+| Test cases | 951 |
 | Regression entries | 31 |
-| LLR status | IMPL 132 · PART 107 · DEV 29 · TGT 29 · OBS 5 |
-| Case results | PASS 482 · MANUAL 307 · PLANNED 67 · BLOCKED 54 · DEV 40 |
-| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 241 · ALN 24 · RND 51 |
-| Case methods | AUTO 350 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 343 · REVIEW 12 · Planned 103 |
+| LLR status | IMPL 141 · PART 102 · DEV 25 · TGT 29 · OBS 5 |
+| Case results | PASS 501 · MANUAL 299 · PLANNED 60 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 322 · MIN 10 · MAX 37 · BND 265 · INV 239 · ALN 25 · RND 53 |
+| Case methods | AUTO 370 · WEB 129 · CI 4 · DEVICE 11 · MANUAL 332 · REVIEW 12 · Planned 93 |
 
-| LLR status | IMPL 132 · PART 107 · DEV 29 · TGT 29 · OBS 5 |
-| Case results | PASS 482 · MANUAL 307 · PLANNED 67 · BLOCKED 54 · DEV 40 |
-| Case kinds | NOM 322 · MIN 10 · MAX 42 · BND 260 · INV 241 · ALN 24 · RND 51 |
-| Case methods | AUTO 350 · WEB 130 · CI 4 · DEVICE 8 · MANUAL 343 · REVIEW 12 · Planned 103 |
+| LLR status | IMPL 141 · PART 102 · DEV 25 · TGT 29 · OBS 5 |
+| Case results | PASS 501 · MANUAL 299 · PLANNED 60 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 322 · MIN 10 · MAX 37 · BND 265 · INV 239 · ALN 25 · RND 53 |
+| Case methods | AUTO 370 · WEB 129 · CI 4 · DEVICE 11 · MANUAL 332 · REVIEW 12 · Planned 93 |
 
 ## 3. Test cases by LLR
 
@@ -792,35 +792,36 @@ Plants are labeled with short kind names ("Bell red", "Cherry") instead of 3-let
 | TC-LTR-010.2 | BND | Two varieties with the same short name | Both drawn; letter-code uniqueness not required | MANUAL TP-13.4 | MANUAL |
 | TC-LTR-010.3 | INV | Unique 3-character codes per plot | Not implemented | Planned | DEV |
 
-#### LLR-AUD-010 — DEV
+#### LLR-AUD-010 — IMPL
 
-`SecurityAuditLogger` stores free-text lines (e.g. "KEY_LOSS: …"), not typed JSON entries with seq/time.
-
-| TC | Kind | Input / action | Expected | Method | Result |
-|---|---|---|---|---|---|
-| TC-AUD-010.1 | NOM | Key loss at start | Audit line written | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-010.2 | BND | First entry ever | Chains from 64 zeros | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-010.3 | INV | Details over 1024 bytes | Limit per LLR; not enforced | Planned | DEV |
-
-#### LLR-AUD-020 — PART
-
-SHA-256 hash chain over the previous hash and the message.
+`AuditChain`/`AuditEntry`: seq, UTC time with ms, type, details (JSON object, ≤ 1024 bytes), prevHash, hash (owner decision 2026-10-14: build the encrypted rotating log).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-AUD-020.1 | NOM | Two appends | Second chains to the first | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-020.2 | BND | Empty log | First hash from the zero string | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-020.3 | INV | Unicode message | UTF-8 hashed | Planned | PLANNED |
+| TC-AUD-010.1 | NOM | TIER_SWITCH with from/to/kept | Entry 1 with ISO-8601 ms time and compact JSON details | AUTO `AuditLogTest.entries_chainFromSixtyFourZeros_withContinuousSequence` | PASS |
+| TC-AUD-010.2 | MAX | Details of 5,000 characters and 800 emoji | Shortened to ≤ 1024 UTF-8 bytes, still valid JSON; an entry over the limit fails verification | AUTO `AuditLogTest.details_areLimitedTo1024Bytes_andEveryValueKindIsEncoded` | PASS |
+| TC-AUD-010.3 | ALN | Quotes, backslashes, newlines, NaN, null; malformed or unknown-type lines | Escaped correctly / null for NaN; malformed lines don't decode | AUTO `AuditLogTest.details_areLimitedTo1024Bytes_andEveryValueKindIsEncoded` | PASS |
 
-#### LLR-AUD-030 — PART
+#### LLR-AUD-020 — IMPL
 
-`verifyChainIntegrity` returns true/false, not the first failing seq.
+Portable SHA-256 (`Sha256`) of "prevHash|seq|time|type|details"; first entry from 64 zeros.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-AUD-030.1 | NOM | Untouched log | Intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-030.2 | INV | One line edited | Not intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUD-030.3 | BND | Report the first failing entry | Not implemented | Planned | DEV |
+| TC-AUD-020.1 | NOM | FIPS vectors "", "abc", 448-bit message, 10⁶ × "a" | Published digests | AUTO `AuditLogTest.sha256_matchesTheFipsVectors` | PASS |
+| TC-AUD-020.2 | BND | Every message length 0–130 bytes (padding boundaries 55/56/64), 1000 and 4096, UTF-8 text | Same digest as the JVM's SHA-256 | AUTO `AuditLogTest.sha256_matchesTheFipsVectors` | PASS |
+| TC-AUD-020.3 | INV | First entry whose prevHash isn't 64 zeros | Broken at entry 1 | AUTO `AuditLogTest.tampering_isFoundAtTheFirstChangedEntry` | PASS |
+
+#### LLR-AUD-030 — IMPL
+
+`AuditChain.verify` returns Intact or the first failing seq with the reason.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-AUD-030.1 | NOM | Untouched log | Intact | AUTO `AuditLogTest.entries_chainFromSixtyFourZeros_withContinuousSequence` | PASS |
+| TC-AUD-030.2 | BND | First entry changed; the last entry appended again | Broken at entry 1; Broken at entry 6 of 5 | AUTO `AuditLogTest.tampering_isFoundAtTheFirstChangedEntry` | PASS |
+| TC-AUD-030.3 | INV | Changed details, type or time; re-hashed entry; deleted, swapped or duplicated line | Broken at the first affected entry | AUTO `AuditLogTest.tampering_isFoundAtTheFirstChangedEntry` | PASS |
+| TC-AUD-030.4 | RND | 40 random logs with rotations and key changes, then one flipped character | Intact before, never intact after, no exception | AUTO `AuditLogTest.randomAppendsTamperAndKeyChanges_neverThrow_andAnUntouchedLogIsAlwaysIntact` | PASS |
 
 #### LLR-CLIMQ-010 — IMPL
 
@@ -955,13 +956,13 @@ Room runs each migration in a transaction.
 | TC-MIG-020.2 | INV | Migration throws half-way | Version unchanged, error shown | Planned | PLANNED |
 | TC-MIG-020.3 | BND | Two migrations in a row (10→12) | Both applied | MANUAL TP-21.2 | MANUAL |
 
-#### LLR-MIG-030 — PART
+#### LLR-MIG-030 — DEV
 
-Room refuses a newer database; the app shows the unreadable-data screen.
+Installing an older build over newer data erases the database (`fallbackToDestructiveMigrationOnDowngrade`). Owner decision 2026-10-14: accepted while the app is being tested (data can be re-entered); revisit before release.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-MIG-030.1 | NOM | Database at version 13 | Not opened for writing | Planned | PLANNED |
+| TC-MIG-030.1 | NOM | Database at version 13 opened by this build | Not opened for writing per LLR; erased today (accepted for testing) | Planned | DEV |
 | TC-MIG-030.2 | BND | Version 12 (current) | Opened | MANUAL TP-21.1 | MANUAL |
 | TC-MIG-030.3 | INV | Garbage file in place of the database | Unreadable-data screen | MANUAL TP-21.4 | MANUAL |
 
@@ -1095,65 +1096,65 @@ Camera photos of plots are deferred (HLR-CAM, DW-1101); satellite photos use LLR
 | TC-PHOTO-070.2 | MAX | 50 MP photo / 1 MB limit exceeded at quality 60 | Handled per the LLR (E-IMG-002) | MANUAL TP-22.1 | BLOCKED |
 | TC-PHOTO-070.3 | INV | Corrupt image or out of memory | E-IMG-001, previous photo kept | MANUAL TP-22.1 | BLOCKED |
 
-#### LLR-AUDS-010 — DEV
+#### LLR-AUDS-010 — IMPL
 
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: encrypted audit files.
-
-| TC | Kind | Input / action | Expected | Method | Result |
-|---|---|---|---|---|---|
-| TC-AUDS-010.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-010.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | PLANNED |
-| TC-AUDS-010.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
-
-#### LLR-AUDS-020 — PART
-
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: append and flush.
+Lines are Base64(IV[12] | AES-GCM) with keystore key sgp_audit_v1, in files/audit/audit-<n>.log.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-AUDS-020.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-020.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | PLANNED |
-| TC-AUDS-020.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
+| TC-AUDS-010.1 | NOM | Seal then open a line on a phone | Same bytes; a fresh IV each time | DEVICE `AuditLoggerDeviceTest.keystoreCipher_roundTripsAndRefusesChangedLines` | MANUAL |
+| TC-AUDS-010.2 | INV | One bit of the tag changed; not Base64; empty | Refused (null) | DEVICE `AuditLoggerDeviceTest.keystoreCipher_roundTripsAndRefusesChangedLines` | MANUAL |
+| TC-AUDS-010.3 | BND | Stored file on the phone | Base64 lines only, no readable text | MANUAL TP-21.9 | MANUAL |
 
-#### LLR-AUDS-030 — DEV
+#### LLR-AUDS-020 — IMPL
 
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: rotation at 1 MB.
-
-| TC | Kind | Input / action | Expected | Method | Result |
-|---|---|---|---|---|---|
-| TC-AUDS-030.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-030.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | DEV |
-| TC-AUDS-030.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
-
-#### LLR-AUDS-040 — DEV
-
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: read and verify all files.
+Append reads the last entry of the newest file, builds the next one and flushes it (fsync) before returning.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-AUDS-040.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-040.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | PLANNED |
-| TC-AUDS-040.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
+| TC-AUDS-020.1 | NOM | Two appends | seq 1 then 2, linked | AUTO `AuditLogTest.entries_chainFromSixtyFourZeros_withContinuousSequence` | PASS |
+| TC-AUDS-020.2 | INV | A torn last line (app killed while writing) | Chain continues from the last readable entry; reading reports it as unreadable | AUTO `AuditLogTest.keyLoss_keepsTheOldFilesAndStartsANewChainWithKeyLoss` | PASS |
+| TC-AUDS-020.3 | BND | First append on a phone with no audit folder | Folder and audit-1.log created, chain intact | DEVICE `AuditLoggerDeviceTest.logger_writesEncryptedLinesAndReadsAnIntactChain` | MANUAL |
 
-#### LLR-AUDS-050 — DEV
+#### LLR-AUDS-030 — IMPL
 
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: new chain after key loss.
-
-| TC | Kind | Input / action | Expected | Method | Result |
-|---|---|---|---|---|---|
-| TC-AUDS-050.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-050.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | PLANNED |
-| TC-AUDS-050.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
-
-#### LLR-AUDS-060 — PART
-
-`SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: log outside the database.
+Over 1 MiB, a new file n + 1 starts with LOG_ROTATED {previousFile, lastHash}.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-AUDS-060.1 | NOM | Key loss, then open About | Entry present, chain intact | MANUAL TP-21.4 | MANUAL |
-| TC-AUDS-060.2 | MAX | Log over 1 MB | Rotated per the LLR | Planned | PLANNED |
-| TC-AUDS-060.3 | INV | Log file edited by hand | Chain reported broken | MANUAL TP-21.4 | MANUAL |
+| TC-AUDS-030.1 | NOM | 60 appends with a small limit | Several files; each starts with LOG_ROTATED naming the previous file and hash; seq continues | AUTO `AuditLogTest.rotation_startsANewFileWithALogRotatedEntry` | PASS |
+| TC-AUDS-030.2 | BND | File exactly at the limit; one byte over | No rotation; rotation on the next append | AUTO `AuditLogTest.rotation_startsANewFileWithALogRotatedEntry` | PASS |
+| TC-AUDS-030.3 | INV | Forged LOG_ROTATED naming another hash | Broken | AUTO `AuditLogTest.rotation_startsANewFileWithALogRotatedEntry` | PASS |
+
+#### LLR-AUDS-040 — IMPL
+
+Reading decrypts every file in order; a line that can't be decrypted gives 'unreadable at seq n'.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-AUDS-040.1 | NOM | Read an intact log | All entries in order, Intact | AUTO `AuditLogTest.entries_chainFromSixtyFourZeros_withContinuousSequence` | PASS |
+| TC-AUDS-040.2 | INV | A damaged line in the middle | Unreadable at its seq | AUTO `AuditLogTest.tampering_isFoundAtTheFirstChangedEntry` | PASS |
+| TC-AUDS-040.3 | BND | Empty log; phone Verify button | Intact with no entries; verdict shown in Settings | MANUAL TP-21.9 | MANUAL |
+
+#### LLR-AUDS-050 — IMPL
+
+When nothing in the newest file decrypts (key lost), the old files are kept in aside-<time>/ and a new chain starts with KEY_LOSS {'log':'previous audit files unreadable'}.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-AUDS-050.1 | NOM | Key changed, then an append | Old files set aside unchanged; new chain KEY_LOSS then the event; intact | AUTO `AuditLogTest.keyLoss_keepsTheOldFilesAndStartsANewChainWithKeyLoss` | PASS |
+| TC-AUDS-050.2 | RND | Random key changes during 40 random runs | Always intact after each write | AUTO `AuditLogTest.randomAppendsTamperAndKeyChanges_neverThrow_andAnUntouchedLogIsAlwaysIntact` | PASS |
+| TC-AUDS-050.3 | BND | Phone: keystore entry deleted (TP-21.4) | KEY_LOSS chain; old files kept | MANUAL TP-21.4 | MANUAL |
+
+#### LLR-AUDS-060 — IMPL
+
+The log lives in files/audit, outside the database, so KEY_LOSS and DATA_RESET are recorded when the database can't be read.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-AUDS-060.1 | NOM | Database key lost at start | KEY_LOSS recorded before the data-unreadable screen | MANUAL TP-21.4 | MANUAL |
+| TC-AUDS-060.2 | BND | Start with empty data | DATA_RESET recorded | MANUAL TP-21.4 | MANUAL |
+| TC-AUDS-060.3 | INV | Audit write fails (storage full) | App continues; nothing thrown | MANUAL TP-21.5 | MANUAL |
 
 #### LLR-SETST-010 — IMPL
 
@@ -2285,13 +2286,13 @@ Errors shown as snackbars/dialogs with text; no error codes.
 
 #### LLR-ABOUT-010 — PART
 
-"About this planner" shows the disclaimer and data sources; audit view not present.
+Settings → About this planner: disclaimer, sources and the security audit log (newest first) with Verify; app version and climate source/version not yet shown.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-ABOUT-010.1 | NOM | Open About | Version and sources | MANUAL TP-10.7 | MANUAL |
-| TC-ABOUT-010.2 | BND | Disclaimer text | Same as at first start | WEB `smoke.mjs` «help repeats the disclaimer» | PASS |
-| TC-ABOUT-010.3 | INV | Audit list and Verify | Not implemented | Planned | DEV |
+| TC-ABOUT-010.1 | NOM | Open the audit log after a tier switch and an import | Entries newest first with time, type and details | MANUAL TP-21.9 | MANUAL |
+| TC-ABOUT-010.2 | INV | Log with a damaged line | "⚠ Unreadable at entry n" | AUTO `AuditLogTest.tampering_isFoundAtTheFirstChangedEntry` | PASS |
+| TC-ABOUT-010.3 | BND | No entries yet | "No entries yet." and Intact | MANUAL TP-21.9 | MANUAL |
 
 #### LLR-UNRD-010 — IMPL
 
@@ -3201,12 +3202,8 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | LLR-CATP-010 | DEV | Catalog files are 14-field v1 lines with no header line; fields 15–21 are not used. |
 | LLR-CATP-030 | DEV | No `species.txt` / `families.txt`; species are the code prefixes of the Pro catalog. |
 | LLR-LTR-010 | DEV | Plants are labeled with short kind names ("Bell red", "Cherry") instead of 3-letter codes. |
-| LLR-AUD-010 | DEV | `SecurityAuditLogger` stores free-text lines (e.g. "KEY_LOSS: …"), not typed JSON entries with seq/time. |
 | LLR-CLIMQ-020 | DEV | Nearest frost station uses an equirectangular distance within 250 km (LLR-FROST-010), not haversine within 50 km. |
-| LLR-AUDS-010 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: encrypted audit files. |
-| LLR-AUDS-030 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: rotation at 1 MB. |
-| LLR-AUDS-040 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: read and verify all files. |
-| LLR-AUDS-050 | DEV | `SecurityAuditLogger` keeps one plain hash-chained file in app storage (not encrypted, no rotation). Target: new chain after key loss. |
+| LLR-MIG-030 | DEV | Installing an older build over newer data erases the database (`fallbackToDestructiveMigrationOnDowngrade`). Owner decision 2026-10-14: accepted while the app is being tested (data can be re-entered); revisit before release. |
 | LLR-CATI-020 | DEV | No hash check; bundled data is validated by unit tests in CI instead. |
 | LLR-CATI-050 | DEV | No species/families files (see LLR-CATP-030). |
 | LLR-CATI-060 | DEV | Climate data is the text table `zip_data.txt` plus `frost_stations.txt`, not `climate.db`. |

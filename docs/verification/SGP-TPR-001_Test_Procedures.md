@@ -223,6 +223,7 @@ test on a phone with Android 8 or later; clear the app's data first; language En
 | **TP-21.6** | Insert a plant for an unknown plot id (debug console); delete the last plot. | Rejected by the constraint; no orphan rows. |
 | **TP-21.7** | `adb backup`; cloud backup; device-to-device transfer. | No app data included. |
 | **TP-21.8** | With Online features off, press every online button; turn it on with no network. | No connection attempted, buttons explain they're off; error message offline. |
+| **TP-21.9** | Switch the catalog tier (Basic → Pro → Basic), open a plan file, try to open a damaged file; then Settings → About this planner → **Security audit log**, and press **Verify**. With a file manager (or `adb shell run-as`), look at files/audit/audit-1.log. | Entries newest first: TIER_SWITCH (from, to, kept), IMPORT_ACCEPTED (plots, plants), IMPORT_REJECTED (reason); "✓ The log is intact"; the file holds Base64 lines, no readable text. |
 
 ### TP-22 — Camera, sensors, location (deferred)
 
