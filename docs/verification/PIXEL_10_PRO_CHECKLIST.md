@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Purpose | Everything in Smart Garden Planner that needs a real phone, for a campaign on a Google Pixel 10 Pro (Android 16) |
-| Build | The debug APK from the "Android build and unit tests" run of the commit under test (artifact `smart-garden-planner-debug-apk`) |
+| Build | The plain APK each Android build publishes: `https://github.com/MrGardener/SmartGardenPlanner/releases/download/phone-build-<branch>/smart-garden-planner-debug.apk` (`<branch>` with `/` as `-`, e.g. `main`) |
 | Procedures | Each check names its step in SGP-TPR-001; the step there is the full definition |
 | Test files | [`phone-test-files/`](phone-test-files/) |
 | Checks | 44 |
@@ -18,9 +18,9 @@ Do these first, in order.
 
 | Check | How | You should see | Step |
 |---|---|---|---|
-| **S1** Download the app | On the phone, sign in to github.com (browser or GitHub app) and open the build page link. Scroll to Artifacts and tap smart-garden-planner-debug-apk. | A zip of about 25 MB lands in Downloads. | — |
+| **S1** Download the app | On the phone, open the APK link at the top of this page (no GitHub sign-in needed). Chrome may ask to keep the file: tap Download anyway. | smart-garden-planner-debug.apk (about 25 MB) is in Downloads. No zip. | — |
 | **S2** Remove the old copy | If Smart Garden Planner is already installed, long-press its icon → Uninstall. Each build is signed with a new test key, so installing over an older build fails with "App not installed". This deletes its data. | No Smart Garden Planner icon left. | — |
-| **S3** Install | Open the zip in Files by Google and tap app-debug.apk. Allow "Install unknown apps" for Files when asked. If Play Protect warns about an unknown developer, tap More details → Install anyway. | Installed; the icon appears in the app drawer. | — |
+| **S3** Install | Tap the finished download (or Files → Downloads → smart-garden-planner-debug.apk). Allow Chrome (or Files) to install unknown apps when asked, go back, and tap Install. If Play Protect warns about an unknown developer, tap More details → Install anyway. | Installed; the icon appears in the app drawer. | — |
 | **S4** First start | Open the app; try to get past the disclaimer without accepting; accept; close the app from Recents and open it again. | Disclaimer can't be skipped; then an empty plot list; not shown again after restarting; Encyclopedia lists the Basic catalog (253 varieties). | TP-10.1 |
 
 ## N. New in this build
