@@ -325,7 +325,7 @@ A nearby plant with an unknown variety gets a 0.3 m safe-guess radius and blocks
 | TC-VALD-090.2 | BND | On top of it; just inside and exactly at (candidate radius + 0.3 m) × margin; margins 0.5 and 2 | Refused with its id; allowed at the distance; the margin scales it | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
 | TC-VALD-090.3 | RND | 2,000 random positions around an unknown plant | Never allowed inside the distance, always allowed outside | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
 | TC-VALD-090.4 | INV | Known neighbor at the same spot | Ordinary spacing conflict, not an unknown-variety one | AUTO `LlrGapTest.unknownVariety_nearbyPlantIsNeverSkipped` | PASS |
-| TC-VALD-090.5 | NOM | Phone: place, move and change variety next to an unknown plant; Delete that plant; Undo | Dialog with the two fixes; plant deleted in one undo step; Undo restores it | MANUAL TP-14.7 | MANUAL |
+| TC-VALD-090.5 | NOM | Phone: open a plan file whose plant uses a code not in the catalog and has no variety name | The plant is skipped with the catalog message, so no unknown plant reaches the layout (the dialog itself is checked by the automated cases) | MANUAL TP-14.7 | MANUAL |
 
 #### LLR-VALD-100 — PART
 
