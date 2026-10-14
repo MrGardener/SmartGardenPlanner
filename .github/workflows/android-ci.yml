@@ -34,6 +34,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug
+      - name: Upload the debug APK (install on a phone for manual testing)
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-garden-planner-debug-apk
+          path: Android App/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
