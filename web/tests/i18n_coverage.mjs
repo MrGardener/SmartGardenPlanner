@@ -35,6 +35,40 @@ await btn('I understand').click();
 await page.waitForSelector('.modal');
 await collect('help');
 await btn('Close').click();
+// Measure from a photo: each step, the result with its warning, and a refused reference.
+const cam = (() => {
+  const C = [4, -5, 3.5], T = [4, 2.5, 0], n = Math.hypot(T[0] - C[0], T[1] - C[1], T[2] - C[2]);
+  const f = [(T[0] - C[0]) / n, (T[1] - C[1]) / n, (T[2] - C[2]) / n], r = [1, 0, 0], u = [0, -f[2], f[1]];
+  return ([X, Y]) => { const d = [X - C[0], Y - C[1], -C[2]]; const dot = v => d[0] * v[0] + d[1] * v[1] + d[2] * v[2]; return [800 + 1000 * dot(r) / dot(f), 600 - 1000 * dot(u) / dot(f)]; };
+})();
+const bedPx = [[1, 1], [3.4384, 1], [3.4384, 2.2192], [1, 2.2192]].map(cam);
+const lPx = [[0, 0], [8, 0], [8, 2], [4, 2], [4, 5], [0, 5]].map(cam);
+const photo = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const g = c.getContext('2d'); g.fillStyle = '#4d7c0f'; g.fillRect(0, 0, 1600, 1200); return c.toDataURL('image/png').split(',')[1]; });
+async function clickPhoto([x, y]) {
+  await page.evaluate(() => document.querySelector('.modal svg.measure-photo').scrollIntoView({ block: 'center' }));
+  const p = await page.evaluate(([x, y]) => { const m = document.querySelector('.modal svg.measure-photo').getScreenCTM(); return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f }; }, [x, y]);
+  await page.mouse.click(p.x, p.y);
+}
+await btn('New plot').first().click();
+const [measureChooser] = await Promise.all([page.waitForEvent('filechooser'), btn('Measure from a photo…').click()]);
+await measureChooser.setFiles({ name: 'yard.png', mimeType: 'image/png', buffer: Buffer.from(photo, 'base64') });
+await page.locator('.modal svg.measure-photo').waitFor();
+await collect('measure step 1');
+for (const p of bedPx) await clickPhoto(p);
+await collect('measure step 2');
+await clickPhoto(lPx[0]); await clickPhoto(lPx[1]);
+await collect('measure distance');
+for (const p of lPx.slice(2)) await clickPhoto(p);
+await collect('measure result');
+await page.locator('.modal select').first().selectOption('CUSTOM');
+await collect('measure custom reference');
+await page.locator('.modal select').first().selectOption('RAISED_BED_4X8');
+await btn('Start over').click();
+for (const i of [0, 2, 1, 3]) await clickPhoto(bedPx[i]);
+await clickPhoto(lPx[0]); await clickPhoto(lPx[1]);
+await collect('measure refused');
+await btn('Cancel').click();
+
 await btn('New plot').first().click();
 const modal = page.locator('.modal');
 await modal.locator('input').nth(0).fill('Test bed');

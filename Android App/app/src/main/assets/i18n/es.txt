@@ -3338,3 +3338,68 @@ not linked to the entry before it	no está enlazada con la entrada anterior
 sequence number {0} where {1} was expected	número de secuencia {0} donde se esperaba {1}
 details over {0} bytes	detalles de más de {0} bytes
 rotation entry doesn't name the hash it continues from	la entrada de rotación no indica el hash del que continúa
+# Measure a plot from a photo (T2-FUN-025, LLR-PMEAS)
+Measure from a photo	Medir con una foto
+Measure from a photo…	Medir con una foto…
+No tape measure? Measure the plot in a photo.	¿Sin cinta métrica? Mide la parcela en una foto.
+No tape measure? Measure the plot in a photo	¿Sin cinta métrica? Mide la parcela en una foto
+No tape measure? Lay something of known size on the ground, take one photo and click the corners.	¿Sin cinta métrica? Pon en el suelo algo de tamaño conocido, toma una foto y haz clic en las esquinas.
+Measured from the photo: {0}	Medido en la foto: {0}
+Measured from the photo: {0}. Check the numbers before saving.	Medido en la foto: {0}. Revisa los números antes de guardar.
+Take a photo	Tomar una foto
+Choose a photo	Elegir una foto
+That photo couldn't be opened.	No se pudo abrir esa foto.
+Camera permission refused. You can still choose a photo from the gallery.	Permiso de cámara denegado. Aun así puedes elegir una foto de la galería.
+Lay something of known size flat on the ground (a 4 × 8 ft raised bed, a sheet of paper…), take one photo from as high as you can, then tap its corners and the plot's corners.	Pon en el suelo, bien plano, algo de tamaño conocido (un bancal de 4 × 8 pies, una hoja de papel…), toma una foto desde lo más alto que puedas y toca sus esquinas y las de la parcela.
+Lay something of known size flat on the ground, take one photo from as high as you can, then click its corners and the plot's corners. Valid for flat ground.	Pon en el suelo, bien plano, algo de tamaño conocido, toma una foto desde lo más alto que puedas y haz clic en sus esquinas y en las de la parcela. Válido para terreno llano.
+Reference	Referencia
+Long side, m	Lado largo, m
+Short side, m	Lado corto, m
+Long side ({0})	Lado largo ({0})
+Short side ({0})	Lado corto ({0})
+Zoom	Zoom
+Undo last click	Deshacer el último clic
+Undo last tap	Deshacer el último toque
+Start over	Empezar de nuevo
+Fit photo	Ajustar la foto
+Use these sizes	Usar estas medidas
+Use as the length	Usar como largo
+Step 1: click the 4 corners of the reference, in order around it, starting along a long side ({0} of 4).	Paso 1: haz clic en las 4 esquinas de la referencia, en orden alrededor de ella, empezando por un lado largo ({0} de 4).
+Step 2: click the plot's corners in order around it. Two points measure one distance.	Paso 2: haz clic en las esquinas de la parcela en orden alrededor de ella. Dos puntos miden una distancia.
+Keep clicking the plot's corners, or read the result below ({0} points).	Sigue haciendo clic en las esquinas de la parcela o lee el resultado abajo ({0} puntos).
+Step 1: tap the 4 corners of the reference, in order around it, starting along a long side ({0} of 4).	Paso 1: toca las 4 esquinas de la referencia, en orden alrededor de ella, empezando por un lado largo ({0} de 4).
+Step 2: tap the plot's corners in order around it. Two points measure one distance.	Paso 2: toca las esquinas de la parcela en orden alrededor de ella. Dos puntos miden una distancia.
+Keep tapping the plot's corners, or read the result below ({0} points).	Sigue tocando las esquinas de la parcela o lee el resultado abajo ({0} puntos).
+Type the reference's long and short sides.	Escribe el lado largo y el lado corto de la referencia.
+Click the reference and at least 3 plot corners first.	Primero haz clic en la referencia y en al menos 3 esquinas de la parcela.
+Two points measure one distance. Click at least 3 plot corners to get a size.	Dos puntos miden una distancia. Haz clic en al menos 3 esquinas de la parcela para obtener un tamaño.
+Distance: {0}	Distancia: {0}
+{0} (± unknown: retake the photo)	{0} (± desconocido: repite la foto)
+{0} (not a rectangle: outline kept)	{0} (no es un rectángulo: se conserva el contorno)
+Raised bed 4 × 8 ft	Bancal elevado de 4 × 8 pies
+Square 1 × 1 m (string or tape)	Cuadrado de 1 × 1 m (cuerda o cinta)
+Paving slab 2 × 2 ft	Losa de 2 × 2 pies
+Letter paper 8.5 × 11 in	Papel carta de 8.5 × 11 pulgadas
+A4 paper	Papel A4
+Something else (type its size)	Otra cosa (escribe su tamaño)
+Tap the 4 corners of the reference.	Toca las 4 esquinas de la referencia.
+Enter the reference's real size (more than 0 and up to 100 m).	Escribe el tamaño real de la referencia (más de 0 y hasta 100 m).
+Tap at least 2 points of the plot.	Toca al menos 2 puntos de la parcela.
+Tap at most {0} corners.	Toca como máximo {0} esquinas.
+The photo couldn't be read.	No se pudo leer la foto.
+Every tap must be on the photo.	Cada toque debe estar sobre la foto.
+Tap the reference's corners in order around it (no crossing, no three in a line).	Toca las esquinas de la referencia en orden alrededor de ella (sin cruces ni tres en línea).
+A corner is too close to the horizon, or the plot corners cross. Take the photo from higher up, looking more down at the ground.	Una esquina está demasiado cerca del horizonte, o las esquinas de la parcela se cruzan. Toma la foto desde más alto, mirando más hacia el suelo.
+The plot corners must go around the plot in order without crossing.	Las esquinas de la parcela deben ir en orden alrededor de ella sin cruzarse.
+The plot comes out smaller than {0} m. Check the reference size and the taps.	La parcela sale de menos de {0} m. Revisa el tamaño de la referencia y los toques.
+The plot comes out larger than {0} m. Check the reference size and the taps.	La parcela sale de más de {0} m. Revisa el tamaño de la referencia y los toques.
+The reference is small in the photo. Use a bigger reference or move closer to it for a better result.	La referencia se ve pequeña en la foto. Usa una referencia más grande o acércate para un mejor resultado.
+The plot is much bigger than the reference, so the far corners are less accurate.	La parcela es mucho más grande que la referencia, así que las esquinas lejanas son menos precisas.
+The result may be off by more than 10%. Take the photo from higher up, looking down, with a bigger reference.	El resultado puede tener un error de más del 10 %. Toma la foto desde más alto, mirando hacia abajo, con una referencia más grande.
+# Unusual plot size (EDIT-020)
+Is that size right?	¿Es correcto ese tamaño?
+The plot is {0} × {1}, which is unusually small or large for a garden. Check the unit (meters or inches) before you go on.	La parcela mide {0} × {1}, algo inusualmente pequeño o grande para un huerto. Revisa la unidad (metros o pulgadas) antes de seguir.
+Yes, create it	Sí, crearla
+Change it	Cambiarlo
+Click “Create plot” again to create it.	Haz clic de nuevo en «Crear parcela» para crearla.
+Click “Save” again to keep it.	Haz clic de nuevo en «Guardar» para conservarlo.

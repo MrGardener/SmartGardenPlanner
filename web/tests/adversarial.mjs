@@ -46,6 +46,10 @@ async function tryPlot(fields, expectOk, why) {
   }
   const before = ((await draft())?.plots || []).length;
   await btn('Create plot').click();
+  // An allowed but unusual size (over 200 m) asks first; a second click confirms it (T2-VAL-015).
+  const asked = await page.locator('.modal .warn', { hasText: 'unusually small or large' }).isVisible().catch(() => false);
+  if (asked) await btn('Create plot').click();
+  if (fields.expectAsk !== undefined) check(asked === fields.expectAsk, `new plot ${why}: ${fields.expectAsk ? 'asks to confirm the unusual size' : 'no size question'}`);
   const after = ((await draft())?.plots || []).length;
   const ok = after === before + 1;
   if (!ok && await page.locator('.modal').count()) await btn('Cancel').click();
@@ -57,7 +61,8 @@ for (const [f, ok, why] of [
   [{ length: 'abc' }, false, 'length abc'], [{ width: '-5' }, false, 'negative width'], [{ width: 'Infinity' }, false, 'width Infinity'],
   [{ zip: 'abcde' }, false, 'ZIP abcde'], [{ zip: '1234' }, false, 'ZIP 1234'], [{ ph: '11' }, false, 'pH 11'], [{ organic: '101' }, false, 'organic 101 %'],
   [{ sand: '40' }, false, 'only sand given'],
-  [{ length: '0.5', width: '0.5' }, true, 'minimum size 0.5 m'], [{ length: '1000', width: '1000' }, true, 'maximum size 1000 m'],
+  [{ length: '0.5', width: '0.5', expectAsk: false }, true, 'minimum size 0.5 m'], [{ length: '1000', width: '1000', expectAsk: true }, true, 'maximum size 1000 m'],
+  [{ length: '200', width: '4', expectAsk: false }, true, 'usual size limit 200 m'], [{ length: '200.01', width: '4', expectAsk: true }, true, 'just over 200 m'],
   [{ length: '3.5', width: '2.25' }, true, 'decimals'], [{ zip: '48104' }, true, 'valid ZIP'],
   [{ name: '<img src=x onerror="window.__xss=1">' }, true, 'name with HTML'],
 ]) await tryPlot(f, ok, why);

@@ -135,6 +135,7 @@ test on a phone with Android 8 or later; clear the app's data first; language En
 | **TP-12.3** | Rename a plot; shrink it with no plants outside; shrink it so a plant is exactly on the new edge; shrink it so plants fall outside (web: Plot details). | Saved; saved; edge plant allowed; refused with the list of plants outside. |
 | **TP-12.4** | Note a plot's modified time; open it without changes; rename it; add a plant. | Unchanged when only opened; updated by rename and by the plant. |
 | **TP-12.5** | Delete a plot with 500 plants: cancel, then confirm. | Confirmation states the counts; cancel keeps it; confirm deletes it and its plants. |
+| **TP-12.6** | Create a plot of 250 × 4 m: press "Change it", then save again and press "Yes, create it". Create 200 × 4 m. Switch units to inches and create 10 × 100 in. | "Is that size right?" names the sizes; "Change it" returns to the form unchanged; "Yes, create it" creates the plot; no question at 200 m; asked for 10 in (0.254 m, under 0.30 m). |
 
 ### TP-13 — Layout view
 
@@ -230,6 +231,22 @@ test on a phone with Android 8 or later; clear the app's data first; language En
 | Step | Action | Expected |
 |---|---|---|
 | **TP-22.1** | Blocked: camera, sensor and location screens are not built (DW-1101, DW-1104, DW-1105). The steps are written when the features are scheduled. | — |
+
+### TP-24 — Measuring a plot from a photo
+
+Extra set-up: a tape measure (to check the result), a sheet of Letter or A4 paper, and a flat floor, patio or lawn.
+Mark a rectangle about 3 × 2 m (tape, string or chalk) and an L-shape next to it. Lay the sheet flat inside the
+rectangle.
+
+| Step | Action | Expected |
+|---|---|---|
+| **TP-24.1** | New plot → "Take a photo" on a fresh install; deny the camera permission. Then "Choose a photo" and pick a file that isn't a photo (or a damaged image), if the picker allows it. Then allow the camera in the system settings and press "Take a photo" again. | Message "Camera permission refused. You can still choose a photo from the gallery."; the photo picker still works; "That photo couldn't be opened." for a bad file; the camera opens once allowed. |
+| **TP-24.2** | Stand at the edge of the rectangle, phone at head height, aiming down at about 45°, and take the photo. Reference: Letter (or A4). Tap the sheet's 4 corners in order, starting along a long side, then the rectangle's 4 corners. "Use these sizes", then create the plot. | Step text guides each tap; result "L × W m (± r m), area m²"; the tape-measured sizes are within the ± shown; the fields are filled with those sizes; the plot has them. |
+| **TP-24.3** | Measure again: tap only 2 points along one side; then "Start over" and tap the L-shape's 6 corners. Pinch to zoom in as far as it goes and back; pan; "Fit photo"; "Undo last tap". | "Distance: … m" and the button "Use as the length"; the L-shape says "(not a rectangle: outline kept)" and the created plot shows that outline; zoom stops at 1× and 8×; Fit returns to the whole photo; Undo removes the last tap. |
+| **TP-24.4** | Take the photo from low down (phone near the ground, looking across) and from far away with the paper small in the picture. | Warnings: "The reference is small in the photo…" and/or "The result may be off by more than 10%…"; or "A corner is too close to the horizon…" when a corner is near the horizon. |
+| **TP-24.5** | Reference "Something else": leave the sizes empty; type letters; type "1,5" and "0.30"; type 13 characters; switch units to inches and type 11 and 8.5. Tap the reference corners in crossing order. | "Type the reference's long and short sides." until both parse; the comma is accepted; long text cut at 12 characters; inches give the same result as Letter; crossing order is refused with the reason. |
+| **TP-24.6** | After measuring with the camera: open the gallery; with `adb shell run-as` list `cache/measure/`; open the plot's details. | The photo is not in the gallery; the cache folder is empty; the plot stores sizes (and outline), not the photo. |
+| **TP-24.7** | On the computer planner: New plot → "Measure from a photo…" with a phone photo of the same rectangle; press "Use these sizes" with only 2 plot corners; click outside the photo; then finish and create. Switch to Spanish and repeat the first steps. | Refused with "Two points measure one distance…"; clicks outside the photo do nothing; New plot returns with the name and sizes; all texts in Spanish. |
 
 ### TP-23 — Performance on the target phone
 

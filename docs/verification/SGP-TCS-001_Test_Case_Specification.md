@@ -52,18 +52,18 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 
 | | Count |
 |---|---|
-| LLRs | 302 |
-| Test cases | 951 |
+| LLRs | 308 |
+| Test cases | 982 |
 | Regression entries | 31 |
-| LLR status | IMPL 141 · PART 102 · DEV 25 · TGT 29 · OBS 5 |
-| Case results | PASS 501 · MANUAL 299 · PLANNED 60 · BLOCKED 54 · DEV 37 |
-| Case kinds | NOM 322 · MIN 10 · MAX 37 · BND 265 · INV 239 · ALN 25 · RND 53 |
-| Case methods | AUTO 370 · WEB 129 · CI 4 · DEVICE 11 · MANUAL 332 · REVIEW 12 · Planned 93 |
+| LLR status | IMPL 149 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
+| Case results | PASS 531 · MANUAL 307 · PLANNED 53 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 333 · MIN 11 · MAX 38 · BND 273 · INV 244 · ALN 27 · RND 56 |
+| Case methods | AUTO 390 · WEB 139 · CI 4 · DEVICE 11 · MANUAL 340 · REVIEW 12 · Planned 86 |
 
-| LLR status | IMPL 141 · PART 102 · DEV 25 · TGT 29 · OBS 5 |
-| Case results | PASS 501 · MANUAL 299 · PLANNED 60 · BLOCKED 54 · DEV 37 |
-| Case kinds | NOM 322 · MIN 10 · MAX 37 · BND 265 · INV 239 · ALN 25 · RND 53 |
-| Case methods | AUTO 370 · WEB 129 · CI 4 · DEVICE 11 · MANUAL 332 · REVIEW 12 · Planned 93 |
+| LLR status | IMPL 149 · PART 102 · DEV 25 · TGT 27 · OBS 5 |
+| Case results | PASS 531 · MANUAL 307 · PLANNED 53 · BLOCKED 54 · DEV 37 |
+| Case kinds | NOM 333 · MIN 11 · MAX 38 · BND 273 · INV 244 · ALN 27 · RND 56 |
+| Case methods | AUTO 390 · WEB 139 · CI 4 · DEVICE 11 · MANUAL 340 · REVIEW 12 · Planned 86 |
 
 ## 3. Test cases by LLR
 
@@ -142,16 +142,16 @@ Trimmed; digits with at most one "." or ",", at least one digit, at most 12 char
 | TC-UNIT-040.3 | ALN | "-2", "+2", "1e3", "1,000.5", "1 000", "2 m", "½", Arabic and full-width digits, "NaN" | Refused | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
 | TC-UNIT-040.4 | RND | 5,000 random strings of digits, signs, separators, letters and blanks | Never throws; anything accepted is finite, ≥ 0 and ≤ 12 characters | AUTO `LlrGapTest.units_formatHasASpaceAndRoundsHalfUp_parseRefusesSignsAndExponents` | PASS |
 
-#### LLR-UNIT-050 — TGT
+#### LLR-UNIT-050 — IMPL
 
-No `formatArea`; areas are shown in m² only.
+`AreaFormatter.format`, used for measured plots.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-UNIT-050.1 | NOM | formatArea(10 m², INCHES) | "107.6 ft²" | Planned | PLANNED |
-| TC-UNIT-050.2 | MIN | formatArea(0, METERS) | "0.00 m²" | Planned | PLANNED |
-| TC-UNIT-050.3 | MAX | formatArea(4 000 000 m², INCHES) | No exponent notation | Planned | PLANNED |
-| TC-UNIT-050.4 | INV | formatArea of NaN or a negative area | Refused, never shown as NaN | Planned | PLANNED |
+| TC-UNIT-050.1 | NOM | formatArea(10 m², INCHES) | "107.6 ft²" | AUTO `PhotoMeasureTest.areas_showInSquareMetersOrSquareFeet` | PASS |
+| TC-UNIT-050.2 | MIN | formatArea(0, METERS); 0.005 m² | "0.00 m²"; "0.01 m²" (half-up) | AUTO `PhotoMeasureTest.areas_showInSquareMetersOrSquareFeet` | PASS |
+| TC-UNIT-050.3 | MAX | formatArea(1 000 000 m², METERS and INCHES) | "1000000.00 m²", "10763910.4 ft²": no exponent notation | AUTO `PhotoMeasureTest.areas_showInSquareMetersOrSquareFeet` | PASS |
+| TC-UNIT-050.4 | INV | formatArea of NaN, a negative area or infinity | "—", never NaN | AUTO `PhotoMeasureTest.areas_showInSquareMetersOrSquareFeet` | PASS |
 
 #### LLR-GEO-010 — IMPL
 
@@ -1702,15 +1702,17 @@ Name and sizes validated; Create enabled only when valid (web and Android).
 | TC-EDIT-010.3 | INV | Empty or blank name, "abc", NaN, Infinity, −5 | Refused with a reason | WEB `adversarial.mjs` «length NaN» | PASS |
 | TC-EDIT-010.4 | ALN | Name with HTML | Shown as text, never run | WEB `adversarial.mjs` «HTML in a plot name is shown as text» | PASS |
 
-#### LLR-EDIT-020 — TGT
+#### LLR-EDIT-020 — IMPL
 
-No unusual-size confirmation.
+`PlotLimits.isUnusual` (0.30 m, 200 m): phone dialog before creating; computer question in the dialog and a second click.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
-| TC-EDIT-020.1 | NOM | Plot 0.2 m | Confirmation dialog | Planned | PLANNED |
-| TC-EDIT-020.2 | BND | Exactly 0.30 m and 200 m | No dialog | Planned | PLANNED |
-| TC-EDIT-020.3 | INV | Cancel in the dialog | Form unchanged | Planned | PLANNED |
+| TC-EDIT-020.1 | NOM | Computer: New plot 250 × 4 m | Explained first, nothing created; the second click creates it | WEB `smoke.mjs` «an unusual size is explained first and nothing is created» | PASS |
+| TC-EDIT-020.2 | BND | Computer: 200 × 4 m and 200.01 × 4 m; 1000 × 1000 m | No question at 200 m; asked just over 200 m and at 1000 m | WEB `adversarial.mjs` «asks to confirm the unusual size» | PASS |
+| TC-EDIT-020.3 | BND | Computer: 0.5 × 0.5 m (smallest allowed, above 0.30 m) | No question | WEB `adversarial.mjs` «no size question» | PASS |
+| TC-EDIT-020.4 | NOM | Phone: create a 250 × 4 m plot; "Change it", then "Yes, create it" | Form unchanged after Change it; created after Yes | MANUAL TP-12.6 | MANUAL |
+| TC-EDIT-020.5 | ALN | Phone, units inches: 10 in × 100 in | Asked (0.254 m is under 0.30 m) | MANUAL TP-12.6 | MANUAL |
 
 #### LLR-EDIT-030 — IMPL
 
@@ -3142,6 +3144,77 @@ Plan dialog and side panel.
 | TC-WEB-040.2 | BND | Each tab | Renders | WEB `smoke.mjs` «tab renders» | PASS |
 | TC-WEB-040.3 | INV | Monkey run | No script errors | WEB `adversarial.mjs` «no script errors» | PASS |
 
+#### LLR-PMEAS-010 — IMPL
+
+`PhotoMeasure.homography` (DLT, scaled coordinates, partial pivoting); `map` is null at or beyond the horizon.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-010.1 | NOM | Four photo points of a slanted 4 × 3 m rectangle | Each maps back to its ground corner within 0.1 mm | AUTO `PhotoMeasureTest.homography_mapsTheFourPointsExactly_andRefusesDegenerateOnes` | PASS |
+| TC-PMEAS-010.2 | BND | A point just above the vanishing line of the ground | No position (null); the measurement is refused | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
+| TC-PMEAS-010.3 | INV | Three points in a line; a repeated point; NaN; only 3 pairs | No mapping (null) | AUTO `PhotoMeasureTest.homography_mapsTheFourPointsExactly_andRefusesDegenerateOnes` | PASS |
+| TC-PMEAS-010.4 | RND | 300 random cameras (height, tilt, turn, lens) and plots | Sizes come back within 0.2 % | AUTO `PhotoMeasureTest.randomCamerasAndPlots_giveBackTheRealSizes` | PASS |
+
+#### LLR-PMEAS-020 — IMPL
+
+Every refusal of the LLR returns `Failed` with a reason and no size.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-020.1 | NOM | A 4 × 8 ft bed and an 8 × 5 m plot, all in view | A result, no refusal | AUTO `PhotoMeasureTest.rectanglePlot_comesBackAtItsRealSize` | PASS |
+| TC-PMEAS-020.2 | MIN | 1 plot point; 3 reference corners; a 0.3 m plot (under 0.5 m) | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
+| TC-PMEAS-020.3 | MAX | 21 plot corners; reference sizes 101 m; a plot over 1000 m | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
+| TC-PMEAS-020.4 | INV | Reference size 0, negative, NaN or infinite; a tap off the photo; photo width 0; corners crossing | Refused with a reason | AUTO `PhotoMeasureTest.badTapsAndSizesAreRefusedWithAReason` | PASS |
+| TC-PMEAS-020.5 | RND | 2000 sets of random taps, sizes and tap errors | Never throws | AUTO `PhotoMeasureTest.randomCamerasAndPlots_giveBackTheRealSizes` | PASS |
+| TC-PMEAS-020.6 | INV | Computer: reference clicked in crossing order | The reason is shown and translated | WEB `i18n_coverage.mjs` «measure refused» | PASS |
+
+#### LLR-PMEAS-030 — IMPL
+
+Ground rectangle on the taps' side, rotation only, rectangle rule 6° / 6 %.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-030.1 | NOM | Rectangle 8 × 5 m | 8 × 5 m, 40 m², no outline, sides 8, 5, 8, 5 | AUTO `PhotoMeasureTest.rectanglePlot_comesBackAtItsRealSize` | PASS |
+| TC-PMEAS-030.2 | BND | Two points 5 m apart | One distance: width 0, no outline | AUTO `PhotoMeasureTest.twoPoints_measureOneDistance` | PASS |
+| TC-PMEAS-030.3 | NOM | L-shaped plot, reference tapped clockwise and counterclockwise | Same sizes, outline of 6 corners, not mirrored | AUTO `PhotoMeasureTest.lShapedPlot_keepsItsOutlineUnmirrored_andTheTapDirectionDoesNotMatter` | PASS |
+| TC-PMEAS-030.4 | RND | Random cameras and rectangles | Real sizes back | AUTO `PhotoMeasureTest.randomCamerasAndPlots_giveBackTheRealSizes` | PASS |
+| TC-PMEAS-030.5 | NOM | Computer: L-shaped 8 × 5 m plot in a made-up photo | 8 × 5 m and the outline kept | WEB `smoke.mjs` «photo gives 8 x 5 m and keeps the L-shaped outline» | PASS |
+
+#### LLR-PMEAS-040 — IMPL
+
+64 seeded repeats, 2 × RMS; infinite when a quarter fail; three warnings; `describe` text.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-040.1 | NOM | Same taps with a tap error of 0, 5 and 20 px | ± 0, then growing; the same taps give the same ± | AUTO `PhotoMeasureTest.uncertaintyGrowsWithTapErrorAndDistance_andWarnsWhenTheReferenceIsSmall` | PASS |
+| TC-PMEAS-040.2 | BND | A Letter sheet for a 30 × 25 m field from far away | Small-reference and much-bigger warnings; a larger ± | AUTO `PhotoMeasureTest.uncertaintyGrowsWithTapErrorAndDistance_andWarnsWhenTheReferenceIsSmall` | PASS |
+| TC-PMEAS-040.3 | INV | Unknown ± (infinite) with an outline; two points with unknown ±; inches | "… (± unknown: retake the photo) (not a rectangle: outline kept)"; "Distance: … (± unknown …)"; in, ft² | AUTO `PhotoMeasureTest.describe_putsTheRangeAndTheNotesInWholePhrases` | PASS |
+| TC-PMEAS-040.4 | BND | Computer: a low, slanted photo | The 10 % warning is shown | WEB `smoke.mjs` «a low, slanted photo warns that the result may be off» | PASS |
+| TC-PMEAS-040.5 | NOM | Spanish: the result, the notes and the warnings | All translated | WEB `i18n_coverage.mjs` «measure result» | PASS |
+
+#### LLR-PMEAS-050 — IMPL
+
+Phone: camera (FileProvider cache file deleted after decoding) or photo picker; full-screen dialog with zoom, undo, result; fills the creator.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-050.1 | NOM | Measure a rectangle on the ground with a Letter sheet as the reference; Use these sizes; create | Within the ± of a tape measurement; the fields filled; plot created with those sizes | MANUAL TP-24.2 | MANUAL |
+| TC-PMEAS-050.2 | BND | Two points; an L-shaped area; pinch to 8× and back | "Use as the length"; outline kept in the plot; zoom stops at 1× and 8× | MANUAL TP-24.3 | MANUAL |
+| TC-PMEAS-050.3 | INV | Camera permission refused; a photo that can't be decoded | Message, gallery still offered; "That photo couldn't be opened." | MANUAL TP-24.1 | MANUAL |
+| TC-PMEAS-050.4 | ALN | Something else: sizes typed as letters, "1,5", 13 characters, in inches | No result until both sizes parse (LLR-UNIT-040); inches accepted | MANUAL TP-24.5 | MANUAL |
+| TC-PMEAS-050.5 | BND | After measuring: the app cache and the gallery | No photo kept | MANUAL TP-24.6 | MANUAL |
+
+#### LLR-PMEAS-060 — IMPL
+
+Computer: file chooser, SVG clicks through the inverse screen transform, zoom, reopens New plot with the name, sizes and outline.
+
+| TC | Kind | Input / action | Expected | Method | Result |
+|---|---|---|---|---|---|
+| TC-PMEAS-060.1 | NOM | Measure from a photo in New plot; Use these sizes; Create plot | New plot comes back with the name and sizes; plot saved with the outline | WEB `smoke.mjs` «New plot comes back with the name and the measured sizes» | PASS |
+| TC-PMEAS-060.2 | BND | Exactly 4 reference clicks, then 2 plot clicks | Step 2 asked; then one distance | WEB `smoke.mjs` «two points measure one distance» | PASS |
+| TC-PMEAS-060.3 | NOM | The created plot | 6-corner outline of 28 m² | WEB `smoke.mjs` «the plot is created with the measured L-shaped outline» | PASS |
+| TC-PMEAS-060.4 | INV | Use these sizes with fewer than 3 plot corners; click off the photo | Refused with a reason; ignored | MANUAL TP-24.7 | MANUAL |
+
 ## 4. Regression register
 
 Every failure found by testing, review or use becomes a regression case here. Each is automated where the
@@ -3218,5 +3291,5 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 | LLR-AUTOP-040 | OBS | Describes the plant-by-plant planner removed 2026-09-28; both layouts now run `BlockPlanner` (LLR-BLK-010/050). Recommend delete or rewrite. Former subject: score terms. |
 | LLR-AUTOP-050 | OBS | Describes the plant-by-plant planner removed 2026-09-28; both layouts now run `BlockPlanner` (LLR-BLK-010/050). Recommend delete or rewrite. Former subject: result notes. |
 
-LLRs with status TGT (29) describe the Phase-1 target design and have no code yet; their cases stay PLANNED until the LLR is implemented, rewritten or deleted (SGP-GAP-001 §4.3, SGP-DWR-001 WP-03).
+LLRs with status TGT (27) describe the Phase-1 target design and have no code yet; their cases stay PLANNED until the LLR is implemented, rewritten or deleted (SGP-GAP-001 §4.3, SGP-DWR-001 WP-03).
 

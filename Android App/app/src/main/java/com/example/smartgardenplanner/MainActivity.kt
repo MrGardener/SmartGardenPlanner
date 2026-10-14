@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,6 +43,7 @@ import kotlin.math.roundToInt
 
 // --- EXPLICIT COMPLIANCE IMPORTS: PREVENT COUPLING RESOLUTION FAILURES ---
 import com.example.smartgardenplanner.core.PlotEntity
+import com.example.smartgardenplanner.core.fmt
 import com.example.smartgardenplanner.core.LayoutPalette
 import androidx.compose.ui.graphics.toArgb
 import com.example.smartgardenplanner.core.PlantingHistoryEntity
@@ -596,8 +598,13 @@ fun CreatorScreen(
     var yardPests by remember { mutableStateOf<Set<com.example.smartgardenplanner.core.Pest>>(emptySet()) }
     var plotLength by remember { mutableStateOf("") }
     var plotWidth by remember { mutableStateOf("") }
-    var scaleEngineSelection by remember { mutableStateOf("Manual Dimensions Entry") }
-    var dropdownExpanded by remember { mutableStateOf(false) }
+    // T2-FUN-025: sizes measured from a photo (LLR-PMEAS-050); the outline is kept when the plot isn't a rectangle.
+    var measurePhoto by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var measuredOutline by remember { mutableStateOf<List<com.example.smartgardenplanner.core.PlotPoint>?>(null) }
+    var measuredFromPhoto by remember { mutableStateOf(false) }
+    var photoMessage by remember { mutableStateOf<String?>(null) }
+    // LLR-EDIT-020: unusual sizes are confirmed before the plot is created.
+    var confirmUnusual by remember { mutableStateOf<Pair<Float, Float>?>(null) }
 
     // [NEW] Plot dimension bounds now come from Settings instead of being hardcoded — see
     // core/AppSettings.kt / ui/SettingsScreen.kt "Plot Validation" section.
@@ -614,23 +621,80 @@ fun CreatorScreen(
     // [NEW] Bounds shown/validated in whatever unit is currently selected — the text fields hold
     // the raw typed value in that display unit; conversion back to meters happens only once, at
     // the point of actually saving the plot (see the Initialize Workspace button below).
-    val minDimDisplay = com.example.smartgardenplanner.core.DistanceFormatter.metersToDisplay(minDim, settings.distanceUnit)
-    val maxDimDisplay = com.example.smartgardenplanner.core.DistanceFormatter.metersToDisplay(maxDim, settings.distanceUnit)
     val unitSuffix = settings.distanceUnit.suffix
 
-    val regexValidator = remember { Regex("^[0-9]+(\\.[0-9]+)?$") }
     val creatorScope = rememberCoroutineScope()
     var saveError by remember { mutableStateOf<String?>(null) }
     // FR-028: direction and ZIP asked up front (both optional here; the layout keeps asking until set).
     var topFaces by remember { mutableStateOf<Float?>(null) }
     var zipCode by remember { mutableStateOf("") }
     val creatorContext = LocalContext.current
+    val measureCameraFile = remember { java.io.File(creatorContext.cacheDir, "measure/photo.jpg").apply { parentFile?.mkdirs() } }
+    val measureCameraUri = remember {
+        androidx.core.content.FileProvider.getUriForFile(creatorContext, creatorContext.packageName + ".fileprovider", measureCameraFile)
+    }
+    fun openMeasurePhoto(uri: android.net.Uri, deleteAfter: Boolean) {
+        creatorScope.launch {
+            val bmp = withContext(Dispatchers.IO) { com.example.smartgardenplanner.ui.decodeMeasurePhoto(creatorContext, uri) }
+            if (deleteAfter) withContext(Dispatchers.IO) { measureCameraFile.delete() }   // the photo is never kept
+            if (bmp == null) photoMessage = "That photo couldn't be opened." else measurePhoto = bmp.asImageBitmap()
+        }
+    }
+    val takeMeasurePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (ok) openMeasurePhoto(measureCameraUri, deleteAfter = true)
+    }
+    val askCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) takeMeasurePhoto.launch(measureCameraUri)
+        else photoMessage = "Camera permission refused. You can still choose a photo from the gallery."
+    }
+    val pickMeasurePhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) openMeasurePhoto(uri, deleteAfter = false)
+    }
 
+    // LLR-EDIT-010 / LLR-UNIT-040: the same typing rules as everywhere else (a decimal comma is fine).
+    fun typed(t: String) = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(t, settings.distanceUnit)
     val isInputValid = plotName.isNotBlank() &&
-            plotLength.matches(regexValidator) &&
-            plotWidth.matches(regexValidator) &&
-            (plotLength.toFloatOrNull() ?: 0f) in minDimDisplay..maxDimDisplay &&
-            (plotWidth.toFloatOrNull() ?: 0f) in minDimDisplay..maxDimDisplay
+            (typed(plotLength) ?: -1f) in minDim..maxDim &&
+            (typed(plotWidth) ?: -1f) in minDim..maxDim
+
+    fun createPlot(lengthMeters: Float, widthMeters: Float) {
+        creatorScope.launch {
+            try {
+                val now = System.currentTimeMillis()
+                val zip = zipCode.takeIf { com.example.smartgardenplanner.core.ZipTable.isValidZip(it) }
+                val location = zip?.let { com.example.smartgardenplanner.data.ZipLookup.location(creatorContext, it) }
+                // A measured outline is kept only if it still fits the sizes in the fields.
+                val outline = measuredOutline?.map { com.example.smartgardenplanner.core.PlotPoint(it.x.coerceIn(0f, lengthMeters), it.y.coerceIn(0f, widthMeters)) }
+                    ?.takeIf { com.example.smartgardenplanner.core.PlotGeometry.validateOutline(it) == null }
+                val plotId = withContext(SgpExecutors.dbDispatcher) {
+                    val zone = zip?.let { com.example.smartgardenplanner.data.ZipLookup.offlineZone(creatorContext, it) ?: database.climateZoneDao().getByZip(it)?.hardinessZone }
+                    database.plotDao().insert(
+                        PlotEntity(
+                            name = plotName.trim(),
+                            lengthM = lengthMeters,
+                            widthM = widthMeters,
+                            createdTimestamp = now,
+                            lastModifiedTimestamp = now,
+                            northBearingDeg = topFaces ?: 0f,
+                            orientationSet = topFaces != null,
+                            locationZip = zip,
+                            latitude = location?.latitude,
+                            longitude = location?.longitude,
+                            hardinessZone = zone,
+                            pests = com.example.smartgardenplanner.core.Pest.encode(yardPests),
+                            scaleSource = if (measuredFromPhoto) "PHOTO" else "MANUAL",
+                            boundaryJson = outline?.let { com.example.smartgardenplanner.core.PlotGeometry.serializePoints(it) }
+                        )
+                    )
+                }
+                onWorkspaceInitialized(plotId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                saveError = "Couldn't save the plot. Nothing was changed. (${e.javaClass.simpleName})"
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -661,53 +725,36 @@ fun CreatorScreen(
 
             OutlinedTextField(
                 value = plotLength,
-                onValueChange = { newValue -> plotLength = newValue },
+                onValueChange = { newValue -> plotLength = newValue; measuredOutline = null },
                 label = { Text(tr("Real-World Length Dimension ($unitSuffix)")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
-                isError = plotLength.isNotEmpty() && (!plotLength.matches(regexValidator) || (plotLength.toFloatOrNull() ?: 0f) < minDimDisplay || (plotLength.toFloatOrNull() ?: 0f) > maxDimDisplay)
+                isError = plotLength.isNotEmpty() && (typed(plotLength) ?: -1f) !in minDim..maxDim
             )
 
             OutlinedTextField(
                 value = plotWidth,
-                onValueChange = { newValue -> plotWidth = newValue },
+                onValueChange = { newValue -> plotWidth = newValue; measuredOutline = null },
                 label = { Text(tr("Real-World Width Dimension ($unitSuffix)")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
-                isError = plotWidth.isNotEmpty() && (!plotWidth.matches(regexValidator) || (plotWidth.toFloatOrNull() ?: 0f) < minDimDisplay || (plotWidth.toFloatOrNull() ?: 0f) > maxDimDisplay)
+                isError = plotWidth.isNotEmpty() && (typed(plotWidth) ?: -1f) !in minDim..maxDim
             )
 
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = scaleEngineSelection,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(tr("Scale Engine Computing Source")) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { dropdownExpanded = true }
-                )
-                DropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(tr("Manual Dimensions Entry")) },
-                        onClick = {
-                            scaleEngineSelection = "Manual Dimensions Entry"
-                            dropdownExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(tr("Device IMU Sensor Measuring")) },
-                        onClick = {
-                            scaleEngineSelection = "Device IMU Sensor Measuring"
-                            dropdownExpanded = false
-                        }
-                    )
-                }
+            // T2-FUN-025 / HLR-MEAS-020: no tape measure? Measure the plot in a photo with a reference of known size.
+            Text(tr("No tape measure? Measure the plot in a photo"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(tr("Lay something of known size flat on the ground (a 4 × 8 ft raised bed, a sheet of paper…), take one photo from as high as you can, then tap its corners and the plot's corners."), fontSize = 11.sp, color = Color.Gray)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(creatorContext, android.Manifest.permission.CAMERA) ==
+                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (granted) takeMeasurePhoto.launch(measureCameraUri) else askCameraPermission.launch(android.Manifest.permission.CAMERA)
+                }) { Text(tr("Take a photo")) }
+                OutlinedButton(onClick = {
+                    pickMeasurePhoto.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text(tr("Choose a photo")) }
             }
+            photoMessage?.let { Text(tr(it), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
 
             Text(tr("Which way does the top edge of the plot face?"), fontSize = 13.sp, fontWeight = FontWeight.Medium)
             Text(tr("Stand at the bottom edge and look across the plot. Used to place tall plants where they won't shade others, and for sun and shade."), fontSize = 11.sp, color = Color.Gray)
@@ -730,42 +777,11 @@ fun CreatorScreen(
 
             Button(
                 onClick = {
-                    if (isInputValid) {
-                        creatorScope.launch {
-                            try {
-                                // Text fields hold the typed value in the display unit; storage is always meters.
-                                val lengthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotLength, settings.distanceUnit)
-                                val widthMeters = com.example.smartgardenplanner.core.DistanceFormatter.parseToMeters(plotWidth, settings.distanceUnit)
-                                if (lengthMeters == null || widthMeters == null) return@launch
-                                val now = System.currentTimeMillis()
-                                val zip = zipCode.takeIf { com.example.smartgardenplanner.core.ZipTable.isValidZip(it) }
-                                val location = zip?.let { com.example.smartgardenplanner.data.ZipLookup.location(creatorContext, it) }
-                                val plotId = withContext(SgpExecutors.dbDispatcher) {
-                                    val zone = zip?.let { com.example.smartgardenplanner.data.ZipLookup.offlineZone(creatorContext, it) ?: database.climateZoneDao().getByZip(it)?.hardinessZone }
-                                    database.plotDao().insert(
-                                        PlotEntity(
-                                            name = plotName.trim(),
-                                            lengthM = lengthMeters,
-                                            widthM = widthMeters,
-                                            createdTimestamp = now,
-                                            lastModifiedTimestamp = now,
-                                            northBearingDeg = topFaces ?: 0f,
-                                            orientationSet = topFaces != null,
-                                            locationZip = zip,
-                                            latitude = location?.latitude,
-                                            longitude = location?.longitude,
-                                            hardinessZone = zone,
-                                            pests = com.example.smartgardenplanner.core.Pest.encode(yardPests)
-                                        )
-                                    )
-                                }
-                                onWorkspaceInitialized(plotId)
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                saveError = "Couldn't save the plot. Nothing was changed. (${e.javaClass.simpleName})"
-                            }
-                        }
+                    val l = typed(plotLength); val w = typed(plotWidth)
+                    if (isInputValid && l != null && w != null) {
+                        // LLR-EDIT-020: below 0.30 m or above 200 m, ask first.
+                        if (com.example.smartgardenplanner.core.PlotLimits.isUnusual(l, w)) confirmUnusual = l to w
+                        else createPlot(l, w)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -775,6 +791,29 @@ fun CreatorScreen(
                 Text(tr("Initialize Spatial Workspace"), fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
             }
         }
+    }
+    measurePhoto?.let { photo ->
+        com.example.smartgardenplanner.ui.PhotoMeasureDialog(photo, settings.distanceUnit, onUse = { m ->
+            fun shown(meters: Double) = com.example.smartgardenplanner.core.DistanceFormatter.metersToDisplay(meters.toFloat(), settings.distanceUnit).toDouble().fmt(2)
+            plotLength = shown(m.lengthM)
+            if (m.widthM > 0) { plotWidth = shown(m.widthM); measuredOutline = m.outline } else measuredOutline = null
+            measuredFromPhoto = true
+            photoMessage = "Measured from the photo: " + com.example.smartgardenplanner.core.PhotoMeasure.describe(m, settings.distanceUnit) + ". Check the numbers before saving."
+            measurePhoto = null
+        }, onClose = { measurePhoto = null })
+    }
+    confirmUnusual?.let { (l, w) ->
+        AlertDialog(
+            onDismissRequest = { confirmUnusual = null },
+            title = { Text(tr("Is that size right?")) },
+            text = {
+                Text(tr("The plot is " + com.example.smartgardenplanner.core.DistanceFormatter.format(l, settings.distanceUnit) + " × " +
+                    com.example.smartgardenplanner.core.DistanceFormatter.format(w, settings.distanceUnit) +
+                    ", which is unusually small or large for a garden. Check the unit (meters or inches) before you go on."))
+            },
+            confirmButton = { TextButton(onClick = { confirmUnusual = null; createPlot(l, w) }) { Text(tr("Yes, create it")) } },
+            dismissButton = { TextButton(onClick = { confirmUnusual = null }) { Text(tr("Change it")) } }
+        )
     }
 }
 
