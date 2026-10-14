@@ -71,7 +71,7 @@ Every LLR in SGP-SW-LLR-001 has **at least three** test cases: a nominal case, a
 
 #### LLR-LIM-010 — DEV
 
-No single constants object; the limits live next to their users (e.g. `AutoPopulateEngine.MAX_POINTS` = 20 000, plan file 5000 plants/plot, name 200 characters, plot 0.5–1000 m on the web).
+No single constants object; the limits live next to their users (e.g. `AutoPopulateEngine.MAX_POINTS` = 20 000, plan file 5000 plants/plot, name 200 characters, plot 0.05–1000 m on the web).
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
@@ -1208,7 +1208,7 @@ No hash check; bundled data is validated by unit tests in CI instead.
 
 #### LLR-CATI-030 — PART
 
-Tier switch replaces bundled rows; no audit entry or batching rule.
+Tier switch replaces bundled rows and records TIER_SWITCH in the audit log; no batching rule.
 
 | TC | Kind | Input / action | Expected | Method | Result |
 |---|---|---|---|---|---|
@@ -3307,7 +3307,7 @@ A register entry is never deleted; if the behavior is later changed on purpose, 
 
 | LLR | Status | What differs |
 |---|---|---|
-| LLR-LIM-010 | DEV | No single constants object; the limits live next to their users (e.g. `AutoPopulateEngine.MAX_POINTS` = 20 000, plan file 5000 plants/plot, name 200 characters, plot 0.5–1000 m on the web). |
+| LLR-LIM-010 | DEV | No single constants object; the limits live next to their users (e.g. `AutoPopulateEngine.MAX_POINTS` = 20 000, plan file 5000 plants/plot, name 200 characters, plot 0.05–1000 m on the web). |
 | LLR-UNIT-010 | DEV | `DistanceUnit` {METERS, INCHES}; the factor is 39.3701 in/m, not exactly 1/0.0254. |
 | LLR-GEO-040 | DEV | `distanceToPolyline` returns `Float.MAX_VALUE` (not +∞) for an empty list. |
 | LLR-GEO-050 | DEV | `pointInPolygon` is plain even-odd ray casting with no on-edge rule; `PlotShape.contains` adds the rectangle check. |
